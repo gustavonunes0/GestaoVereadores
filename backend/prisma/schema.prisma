@@ -1,0 +1,362 @@
+// Schema derivado da aba "Atividade Legislativa" — Mapeamento_Banco_Dados_IntGest_Cardinalidade_CORRIGIDO.drawio
+// Telas de pesquisa (MATERIA_PESQUISAR, SESSAO_PESQUISAR, NORMA_PESQUISAR) são filtros de API, não tabelas.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Domínios auxiliares (tabelas inferidas no drawio) ---
+
+model Ano {
+  id        String   @id @default(uuid())
+  valor     Int      @unique
+  materias  Materia[]
+  normas    Norma[]
+  createdAt DateTime @default(now())
+}
+
+model TipoMateria {
+  id       String    @id @default(uuid())
+  nome     String    @unique
+  materias Materia[]
+}
+
+model TipoListagem {
+  id       String    @id @default(uuid())
+  nome     String    @unique
+  materias Materia[]
+}
+
+model Tematica {
+  id       String    @id @default(uuid())
+  nome     String    @unique
+  materias Materia[]
+}
+
+model OrigemMateria {
+  id       String    @id @default(uuid())
+  nome     String    @unique
+  materias Materia[]
+}
+
+model LocalOrigemExterna {
+  id       String    @id @default(uuid())
+  nome     String    @unique
+  materias Materia[]
+}
+
+model TipoAutor {
+  id     String @id @default(uuid())
+  nome   String @unique
+  autores Autor[]
+}
+
+model StatusTramitacao {
+  id       String    @id @default(uuid())
+  nome     String    @unique
+  materias Materia[]
+}
+
+model UnidadeTramitacao {
+  id       String    @id @default(uuid())
+  nome     String    @unique
+  materias Materia[]
+}
+
+model TipoSessao {
+  id              String          @id @default(uuid())
+  nome            String          @unique
+  sessoesPlenarias SessaoPlenaria[]
+}
+
+model SituacaoSessao {
+  id              String          @id @default(uuid())
+  nome            String          @unique
+  sessoesPlenarias SessaoPlenaria[]
+}
+
+model EsferaFederacao {
+  id     String @id @default(uuid())
+  nome   String @unique
+  normas Norma[]
+}
+
+model IdentificadorNorma {
+  id     String @id @default(uuid())
+  nome   String @unique
+  normas Norma[]
+}
+
+model TipoNorma {
+  id     String @id @default(uuid())
+  nome   String @unique
+  normas Norma[]
+}
+
+model ClassificacaoAto {
+  id   String @id @default(uuid())
+  nome String @unique
+  atos Ato[]
+}
+
+model TipoAto {
+  id   String @id @default(uuid())
+  nome String @unique
+  atos Ato[]
+}
+
+model CargoMesa {
+  id      String              @id @default(uuid())
+  nome    String              @unique
+  membros MesaDiretoraMembro[]
+}
+
+// --- Cadastros estruturais ---
+
+model Pessoa {
+  id          String       @id @default(uuid())
+  nome        String
+  cpf         String?      @unique
+  email       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  parlamentar Parlamentar?
+}
+
+model Parlamentar {
+  id        String   @id @default(uuid())
+  pessoaId  String   @unique
+  pessoa    Pessoa   @relation(fields: [pessoaId], references: [id], onDelete: Cascade)
+  ativo     Boolean  @default(true)
+  mensagem  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  autores              Autor[]
+  materiasRelator      Materia[]           @relation("RelatorMateria")
+  materiasPrimeiroAutor Materia[]           @relation("PrimeiroAutorMateria")
+  membrosMesa          MesaDiretoraMembro[]
+  membrosComissao      ComissaoMembro[]
+  membrosFrente        FrenteMembro[]
+  presencas            PresencaSessao[]
+}
+
+model Autor {
+  id            String       @id @default(uuid())
+  nome          String
+  tipoAutorId   String
+  tipoAutor     TipoAutor    @relation(fields: [tipoAutorId], references: [id])
+  parlamentarId String?
+  parlamentar   Parlamentar? @relation(fields: [parlamentarId], references: [id])
+  materias      Materia[]    @relation("AutorMateria")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Comissao {
+  id        String           @id @default(uuid())
+  nome      String
+  mensagem  String?
+  ativa     Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  membros   ComissaoMembro[]
+}
+
+model ComissaoMembro {
+  id            String      @id @default(uuid())
+  comissaoId    String
+  comissao      Comissao    @relation(fields: [comissaoId], references: [id], onDelete: Cascade)
+  parlamentarId String
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  titular       Boolean     @default(true)
+  @@unique([comissaoId, parlamentarId])
+}
+
+model FrenteParlamentar {
+  id        String         @id @default(uuid())
+  nome      String
+  mensagem  String?
+  ativa     Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  membros   FrenteMembro[]
+}
+
+model FrenteMembro {
+  id            String           @id @default(uuid())
+  frenteId      String
+  frente        FrenteParlamentar @relation(fields: [frenteId], references: [id], onDelete: Cascade)
+  parlamentarId String
+  parlamentar   Parlamentar      @relation(fields: [parlamentarId], references: [id])
+  @@unique([frenteId, parlamentarId])
+}
+
+model Legislatura {
+  id         String            @id @default(uuid())
+  numero     Int               @unique
+  dataInicio DateTime
+  dataFim    DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  sessoesLegislativas SessaoLegislativa[]
+  mesasDiretoras     MesaDiretora[]
+}
+
+model SessaoLegislativa {
+  id            String         @id @default(uuid())
+  legislaturaId String
+  legislatura   Legislatura    @relation(fields: [legislaturaId], references: [id], onDelete: Cascade)
+  numero        Int
+  dataInicio    DateTime?
+  dataFim       DateTime?
+  sessoesPlenarias SessaoPlenaria[]
+  @@unique([legislaturaId, numero])
+}
+
+model SessaoPlenaria {
+  id                 String          @id @default(uuid())
+  sessaoLegislativaId String?
+  sessaoLegislativa  SessaoLegislativa? @relation(fields: [sessaoLegislativaId], references: [id])
+  dataInicio         DateTime
+  tipoSessaoId       String
+  tipoSessao         TipoSessao      @relation(fields: [tipoSessaoId], references: [id])
+  situacaoId         String
+  situacao           SituacaoSessao  @relation(fields: [situacaoId], references: [id])
+  mensagem           String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  mesasDiretoras     MesaDiretora[]
+  pautaItens         PautaItem[]
+  presencas          PresencaSessao[]
+}
+
+model MesaDiretora {
+  id            String              @id @default(uuid())
+  legislaturaId String
+  legislatura   Legislatura         @relation(fields: [legislaturaId], references: [id])
+  sessaoId      String?
+  sessao        SessaoPlenaria?     @relation(fields: [sessaoId], references: [id])
+  mensagem      String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  membros       MesaDiretoraMembro[]
+}
+
+model MesaDiretoraMembro {
+  id            String      @id @default(uuid())
+  mesaId        String
+  mesa          MesaDiretora @relation(fields: [mesaId], references: [id], onDelete: Cascade)
+  parlamentarId String
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  cargoId       String
+  cargo         CargoMesa   @relation(fields: [cargoId], references: [id])
+  @@unique([mesaId, cargoId])
+}
+
+// --- Processo legislativo ---
+
+model Materia {
+  id                         String             @id @default(uuid())
+  tipoId                     String
+  tipo                       TipoMateria        @relation(fields: [tipoId], references: [id])
+  ementa                     String
+  numero                     Int?
+  numeroProtocolo            Int?
+  anoId                      String?
+  ano                        Ano?               @relation(fields: [anoId], references: [id])
+  tematicaId                 String?
+  tematica                   Tematica?          @relation(fields: [tematicaId], references: [id])
+  origemId                   String?
+  origem                     OrigemMateria?     @relation(fields: [origemId], references: [id])
+  tipoListagemId             String?
+  tipoListagem               TipoListagem?      @relation(fields: [tipoListagemId], references: [id])
+  dataApresentacaoInicio     DateTime?
+  dataApresentacaoFim        DateTime?
+  dataPublicacaoInicio       DateTime?
+  dataPublicacaoFim          DateTime?
+  autorId                    String?
+  autor                      Autor?             @relation("AutorMateria", fields: [autorId], references: [id])
+  primeiroAutorId            String?
+  primeiroAutor              Parlamentar?       @relation("PrimeiroAutorMateria", fields: [primeiroAutorId], references: [id])
+  relatorId                  String?
+  relator                    Parlamentar?       @relation("RelatorMateria", fields: [relatorId], references: [id])
+  localOrigemExternaId       String?
+  localOrigemExterna         LocalOrigemExterna? @relation(fields: [localOrigemExternaId], references: [id])
+  unidadeTramitacaoDestinoId String?
+  unidadeTramitacaoDestino   UnidadeTramitacao? @relation(fields: [unidadeTramitacaoDestinoId], references: [id])
+  statusTramitacaoId         String?
+  statusTramitacao           StatusTramitacao?  @relation(fields: [statusTramitacaoId], references: [id])
+  emTramitacao               Boolean            @default(true)
+  mensagem                   String?
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+  pautaItens                 PautaItem[]
+  normas                     Norma[]
+}
+
+model Norma {
+  id                   String             @id @default(uuid())
+  tipoId               String
+  tipo                 TipoNorma          @relation(fields: [tipoId], references: [id])
+  numero               String
+  anoId                String?
+  ano                  Ano?               @relation(fields: [anoId], references: [id])
+  data                 DateTime?
+  dataPublicacaoInicio DateTime?
+  dataPublicacaoFim    DateTime?
+  esferaFederacaoId    String?
+  esferaFederacao      EsferaFederacao?   @relation(fields: [esferaFederacaoId], references: [id])
+  ementa               String
+  identificadorId      String?
+  identificador        IdentificadorNorma? @relation(fields: [identificadorId], references: [id])
+  materiaOrigemId      String?
+  materiaOrigem        Materia?           @relation(fields: [materiaOrigemId], references: [id])
+  mensagem             String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+model Ato {
+  id                   String           @id @default(uuid())
+  tipoId               String
+  tipo                 TipoAto          @relation(fields: [tipoId], references: [id])
+  classificacaoId      String
+  classificacao        ClassificacaoAto @relation(fields: [classificacaoId], references: [id])
+  numero               String
+  dataInicio           DateTime?
+  dataFim              DateTime?
+  dataPublicacaoInicio DateTime?
+  dataPublicacaoFim    DateTime?
+  mensagem             String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+}
+
+// --- Sessão plenária (telas SESSAO_186/187/188 → pauta e presença) ---
+
+model PautaItem {
+  id        String         @id @default(uuid())
+  sessaoId  String
+  sessao    SessaoPlenaria @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+  materiaId String
+  materia   Materia        @relation(fields: [materiaId], references: [id])
+  ordem     Int
+  @@unique([sessaoId, materiaId])
+  @@unique([sessaoId, ordem])
+}
+
+model PresencaSessao {
+  id            String         @id @default(uuid())
+  sessaoId      String
+  sessao        SessaoPlenaria @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+  parlamentarId String
+  parlamentar   Parlamentar    @relation(fields: [parlamentarId], references: [id])
+  presente      Boolean        @default(true)
+  @@unique([sessaoId, parlamentarId])
+}

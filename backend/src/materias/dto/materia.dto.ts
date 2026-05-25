@@ -1,0 +1,120 @@
+import { Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsDateString,
+  IsInt,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
+
+export class CreateMateriaDto {
+  @IsString()
+  tipoId: string;
+
+  @IsString()
+  @MinLength(3)
+  ementa: string;
+
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  numero?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  numeroProtocolo?: number;
+
+  @IsOptional()
+  @IsString()
+  anoId?: string;
+
+  @IsOptional()
+  @IsString()
+  tematicaId?: string;
+
+  @IsOptional()
+  @IsString()
+  origemId?: string;
+
+  @IsOptional()
+  @IsString()
+  tipoListagemId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dataApresentacaoInicio?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dataApresentacaoFim?: string;
+
+  @IsOptional()
+  @IsString()
+  autorId?: string;
+
+  @IsOptional()
+  @IsString()
+  primeiroAutorId?: string;
+
+  @IsOptional()
+  @IsString()
+  relatorId?: string;
+
+  @IsOptional()
+  @IsString()
+  localOrigemExternaId?: string;
+
+  @IsOptional()
+  @IsString()
+  unidadeTramitacaoDestinoId?: string;
+
+  @IsOptional()
+  @IsString()
+  statusTramitacaoId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  emTramitacao?: boolean;
+}
+
+export class FilterMateriaDto {
+  @IsOptional()
+  @IsString()
+  tipoId?: string;
+
+  @IsOptional()
+  @IsString()
+  anoId?: string;
+
+  @IsOptional()
+  @IsString()
+  tematicaId?: string;
+
+  @IsOptional()
+  @IsString()
+  autorId?: string;
+
+  @IsOptional()
+  @IsString()
+  relatorId?: string;
+
+  @IsOptional()
+  @IsString()
+  statusTramitacaoId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  emTramitacao?: boolean;
+
+  @IsOptional()
+  @IsString()
+  ementa?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  numero?: number;
+}

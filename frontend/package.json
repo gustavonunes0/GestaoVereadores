@@ -1,0 +1,14 @@
+{
+  "name": "gestao-vereadores-web",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Placeholder até o frontend ser implementado",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 5173"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}
