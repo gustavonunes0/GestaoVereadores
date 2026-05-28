@@ -10,6 +10,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- Autenticação ---
+
+enum RoleUsuario {
+  MASTER
+  ADMIN
+  OPERADOR
+}
+
+model Usuario {
+  id           String      @id @default(uuid())
+  username     String      @unique
+  passwordHash String
+  nome         String
+  role         RoleUsuario @default(OPERADOR)
+  ativo        Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
 // --- Domínios auxiliares (tabelas inferidas no drawio) ---
 
 model Ano {

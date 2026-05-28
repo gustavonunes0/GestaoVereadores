@@ -1,8 +1,22 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, RoleUsuario } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  const passwordHash = await bcrypt.hash('admin', 10);
+  await prisma.usuario.upsert({
+    where: { username: 'admin' },
+    update: { passwordHash, role: RoleUsuario.MASTER, ativo: true },
+    create: {
+      username: 'admin',
+      passwordHash,
+      nome: 'Administrador Master',
+      role: RoleUsuario.MASTER,
+      ativo: true,
+    },
+  });
+  console.log('Usuário master: admin / admin');
   const ano2026 = await prisma.ano.upsert({
     where: { valor: 2026 },
     update: {},
@@ -16,6 +30,41 @@ async function main() {
       update: {},
       create: { nome },
     });
+  }
+
+  const tiposListagem = ['Expediente', 'Ordem do Dia', 'Geral'];
+  for (const nome of tiposListagem) {
+    await prisma.tipoListagem.upsert({ where: { nome }, update: {}, create: { nome } });
+  }
+
+  const tematicas = ['Educação', 'Saúde', 'Obras', 'Meio Ambiente'];
+  for (const nome of tematicas) {
+    await prisma.tematica.upsert({ where: { nome }, update: {}, create: { nome } });
+  }
+
+  const origens = ['Iniciativa Popular', 'Executivo', 'Legislativo'];
+  for (const nome of origens) {
+    await prisma.origemMateria.upsert({ where: { nome }, update: {}, create: { nome } });
+  }
+
+  const locais = ['Assembleia Estadual', 'Congresso Nacional', 'Câmara Municipal'];
+  for (const nome of locais) {
+    await prisma.localOrigemExterna.upsert({ where: { nome }, update: {}, create: { nome } });
+  }
+
+  const unidades = ['Protocolo', 'Comissão de Constituição', 'Plenário'];
+  for (const nome of unidades) {
+    await prisma.unidadeTramitacao.upsert({ where: { nome }, update: {}, create: { nome } });
+  }
+
+  const esferas = ['Municipal', 'Estadual', 'Federal'];
+  for (const nome of esferas) {
+    await prisma.esferaFederacao.upsert({ where: { nome }, update: {}, create: { nome } });
+  }
+
+  const identificadores = ['Lei nº', 'Decreto nº', 'Resolução nº'];
+  for (const nome of identificadores) {
+    await prisma.identificadorNorma.upsert({ where: { nome }, update: {}, create: { nome } });
   }
 
   const tiposNorma = ['Lei Ordinária', 'Lei Complementar', 'Resolução'];
@@ -66,6 +115,24 @@ async function main() {
   const cargos = ['Presidente', 'Vice-Presidente', '1º Secretário', '2º Secretário'];
   for (const nome of cargos) {
     await prisma.cargoMesa.upsert({
+      where: { nome },
+      update: {},
+      create: { nome },
+    });
+  }
+
+  const tiposAto = ['Portaria', 'Decreto Legislativo', 'Resolução Interna'];
+  for (const nome of tiposAto) {
+    await prisma.tipoAto.upsert({
+      where: { nome },
+      update: {},
+      create: { nome },
+    });
+  }
+
+  const classificacoesAto = ['Administrativo', 'Legislativo', 'Protocolo'];
+  for (const nome of classificacoesAto) {
+    await prisma.classificacaoAto.upsert({
       where: { nome },
       update: {},
       create: { nome },

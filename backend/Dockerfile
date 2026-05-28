@@ -3,7 +3,8 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# postinstall roda prisma generate; schema ainda não foi copiado
+RUN npm ci --ignore-scripts
 
 COPY prisma ./prisma/
 COPY tsconfig.json tsconfig.build.json nest-cli.json ./
@@ -15,4 +16,4 @@ RUN npm run build
 ENV NODE_ENV=production
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma db push && npx prisma db seed && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && node dist/main.js"]

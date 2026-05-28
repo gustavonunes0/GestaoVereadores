@@ -1,36 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsOptional, Min } from 'class-validator';
+import { Injectable } from '@nestjs/common';
+import { assertFound } from '../common/prisma/assert-found';
+import { toOptionalDate } from '../common/prisma/date-fields';
+import { paginatedQuery } from '../common/prisma/paginate';
+import { ListQueryDto } from '../common/dto/list-query.dto';
 import { PrismaService } from '../prisma/prisma.service';
-
-export class CreateLegislaturaDto {
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  numero: number;
-
-  @IsDateString()
-  dataInicio: string;
-
-  @IsOptional()
-  @IsDateString()
-  dataFim?: string;
-}
-
-export class CreateSessaoLegislativaDto {
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  numero: number;
-
-  @IsOptional()
-  @IsDateString()
-  dataInicio?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dataFim?: string;
-}
+import {
+  CreateLegislaturaDto,
+  CreateSessaoLegislativaDto,
+} from './dto/legislatura.dto';
+import { UpdateLegislaturaDto } from './dto/update-legislatura.dto';
 
 @Injectable()
 export class LegislaturasService {
@@ -41,16 +19,23 @@ export class LegislaturasService {
       data: {
         numero: dto.numero,
         dataInicio: new Date(dto.dataInicio),
-        dataFim: dto.dataFim ? new Date(dto.dataFim) : undefined,
+        dataFim: toOptionalDate(dto.dataFim),
       },
     });
   }
 
-  findAll() {
-    return this.prisma.legislatura.findMany({
-      include: { sessoesLegislativas: true },
-      orderBy: { numero: 'desc' },
-    });
+  findAll(query: ListQueryDto) {
+    return paginatedQuery(
+      () => this.prisma.legislatura.count(),
+      (skip, take) =>
+        this.prisma.legislatura.findMany({
+          include: { sessoesLegislativas: true },
+          orderBy: { numero: 'desc' },
+          skip,
+          take,
+        }),
+      query,
+    );
   }
 
   async findOne(id: string) {
@@ -61,18 +46,37 @@ export class LegislaturasService {
         mesasDiretoras: { include: { membros: true } },
       },
     });
-    if (!item) throw new NotFoundException('Legislatura não encontrada');
-    return item;
+    return assertFound(item, 'Legislatura não encontrada');
   }
 
-  async createSessaoLegislativa(legislaturaId: string, dto: CreateSessaoLegislativaDto) {
+  async update(id: string, dto: UpdateLegislaturaDto) {
+    await this.findOne(id);
+    return this.prisma.legislatura.update({
+      where: { id },
+      data: {
+        numero: dto.numero,
+        dataInicio: dto.dataInicio ? new Date(dto.dataInicio) : undefined,
+        dataFim: toOptionalDate(dto.dataFim),
+      },
+    });
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.legislatura.delete({ where: { id } });
+  }
+
+  async createSessaoLegislativa(
+    legislaturaId: string,
+    dto: CreateSessaoLegislativaDto,
+  ) {
     await this.findOne(legislaturaId);
     return this.prisma.sessaoLegislativa.create({
       data: {
         legislaturaId,
         numero: dto.numero,
-        dataInicio: dto.dataInicio ? new Date(dto.dataInicio) : undefined,
-        dataFim: dto.dataFim ? new Date(dto.dataFim) : undefined,
+        dataInicio: toOptionalDate(dto.dataInicio),
+        dataFim: toOptionalDate(dto.dataFim),
       },
     });
   }

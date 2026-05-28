@@ -1,53 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { IsDateString, IsOptional, IsString, MinLength } from 'class-validator';
+import { assertFound } from '../common/prisma/assert-found';
+import { toOptionalDate } from '../common/prisma/date-fields';
+import { paginatedQuery } from '../common/prisma/paginate';
 import { PrismaService } from '../prisma/prisma.service';
-
-export class CreateNormaDto {
-  @IsString()
-  tipoId: string;
-
-  @IsString()
-  numero: string;
-
-  @IsString()
-  @MinLength(3)
-  ementa: string;
-
-  @IsOptional()
-  @IsString()
-  anoId?: string;
-
-  @IsOptional()
-  @IsDateString()
-  data?: string;
-
-  @IsOptional()
-  @IsString()
-  esferaFederacaoId?: string;
-
-  @IsOptional()
-  @IsString()
-  identificadorId?: string;
-
-  @IsOptional()
-  @IsString()
-  materiaOrigemId?: string;
-}
-
-export class FilterNormaDto {
-  @IsOptional()
-  @IsString()
-  tipoId?: string;
-
-  @IsOptional()
-  @IsString()
-  anoId?: string;
-
-  @IsOptional()
-  @IsString()
-  numero?: string;
-}
+import { CreateNormaDto, FilterNormaDto } from './dto/norma.dto';
+import { UpdateNormaDto } from './dto/update-norma.dto';
 
 @Injectable()
 export class NormasService {
@@ -57,7 +15,7 @@ export class NormasService {
     return this.prisma.norma.create({
       data: {
         ...dto,
-        data: dto.data ? new Date(dto.data) : undefined,
+        data: toOptionalDate(dto.data),
       },
       include: { tipo: true, ano: true, materiaOrigem: true },
     });
@@ -68,11 +26,19 @@ export class NormasService {
     if (filters.tipoId) where.tipoId = filters.tipoId;
     if (filters.anoId) where.anoId = filters.anoId;
     if (filters.numero) where.numero = { contains: filters.numero };
-    return this.prisma.norma.findMany({
-      where,
-      include: { tipo: true, ano: true },
-      orderBy: { createdAt: 'desc' },
-    });
+
+    return paginatedQuery(
+      () => this.prisma.norma.count({ where }),
+      (skip, take) =>
+        this.prisma.norma.findMany({
+          where,
+          include: { tipo: true, ano: true },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take,
+        }),
+      filters,
+    );
   }
 
   async findOne(id: string) {
@@ -80,7 +46,21 @@ export class NormasService {
       where: { id },
       include: { tipo: true, ano: true, materiaOrigem: true, esferaFederacao: true },
     });
-    if (!item) throw new NotFoundException('Norma não encontrada');
-    return item;
+    return assertFound(item, 'Norma não encontrada');
+  }
+
+  async update(id: string, dto: UpdateNormaDto) {
+    await this.findOne(id);
+    const { data, ...rest } = dto;
+    return this.prisma.norma.update({
+      where: { id },
+      data: { ...rest, data: toOptionalDate(data) },
+      include: { tipo: true, ano: true, materiaOrigem: true },
+    });
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.norma.delete({ where: { id } });
   }
 }

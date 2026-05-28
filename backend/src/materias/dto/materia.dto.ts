@@ -7,6 +7,7 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
+import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 export class CreateMateriaDto {
   @IsString()
@@ -79,7 +80,7 @@ export class CreateMateriaDto {
   emTramitacao?: boolean;
 }
 
-export class FilterMateriaDto {
+export class FilterMateriaDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   tipoId?: string;

@@ -7,6 +7,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
+import { PaginationQueryDto } from '../../common/dto/pagination.dto';
 
 export class CreateSessaoPlenariaDto {
   @IsDateString()
@@ -27,7 +28,7 @@ export class CreateSessaoPlenariaDto {
   mensagem?: string;
 }
 
-export class FilterSessaoPlenariaDto {
+export class FilterSessaoPlenariaDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   tipoSessaoId?: string;

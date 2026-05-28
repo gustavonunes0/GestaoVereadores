@@ -1,39 +1,35 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { assertFound } from '../common/prisma/assert-found';
+import { toOptionalDate } from '../common/prisma/date-fields';
+import { paginatedQuery } from '../common/prisma/paginate';
+import { materiaRelationsInclude } from '../common/prisma/prisma-includes';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMateriaDto, FilterMateriaDto } from './dto/materia.dto';
-
-const materiaInclude = {
-  tipo: true,
-  ano: true,
-  tematica: true,
-  origem: true,
-  autor: true,
-  primeiroAutor: { include: { pessoa: true } },
-  relator: { include: { pessoa: true } },
-  statusTramitacao: true,
-  unidadeTramitacaoDestino: true,
-};
+import { UpdateMateriaDto } from './dto/update-materia.dto';
 
 @Injectable()
 export class MateriasService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapDates(dto: CreateMateriaDto) {
+  private mapPresentationDates(dto: {
+    dataApresentacaoInicio?: string;
+    dataApresentacaoFim?: string;
+  }) {
     return {
-      ...dto,
-      dataApresentacaoInicio: dto.dataApresentacaoInicio
-        ? new Date(dto.dataApresentacaoInicio)
-        : undefined,
-      dataApresentacaoFim: dto.dataApresentacaoFim
-        ? new Date(dto.dataApresentacaoFim)
-        : undefined,
+      dataApresentacaoInicio: toOptionalDate(dto.dataApresentacaoInicio),
+      dataApresentacaoFim: toOptionalDate(dto.dataApresentacaoFim),
     };
   }
 
   create(dto: CreateMateriaDto) {
-    const { dataApresentacaoInicio, dataApresentacaoFim, ...rest } =
-      this.mapDates(dto);
+    const {
+      dataApresentacaoInicio: _di,
+      dataApresentacaoFim: _df,
+      ...rest
+    } = dto;
+    const { dataApresentacaoInicio, dataApresentacaoFim } =
+      this.mapPresentationDates(dto);
     return this.prisma.materia.create({
       data: {
         ...rest,
@@ -41,7 +37,7 @@ export class MateriasService {
         dataApresentacaoFim,
         emTramitacao: dto.emTramitacao ?? true,
       },
-      include: materiaInclude,
+      include: materiaRelationsInclude,
     });
   }
 
@@ -62,34 +58,45 @@ export class MateriasService {
     if (filters.ementa) {
       where.ementa = { contains: filters.ementa };
     }
-    return this.prisma.materia.findMany({
-      where,
-      include: materiaInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+    return paginatedQuery(
+      () => this.prisma.materia.count({ where }),
+      (skip, take) =>
+        this.prisma.materia.findMany({
+          where,
+          include: materiaRelationsInclude,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take,
+        }),
+      filters,
+    );
   }
 
   async findOne(id: string) {
     const item = await this.prisma.materia.findUnique({
       where: { id },
       include: {
-        ...materiaInclude,
+        ...materiaRelationsInclude,
         pautaItens: { include: { sessao: true } },
         normas: true,
       },
     });
-    if (!item) throw new NotFoundException('Matéria não encontrada');
-    return item;
+    return assertFound(item, 'Matéria não encontrada');
   }
 
-  async update(id: string, dto: Partial<CreateMateriaDto>) {
+  async update(id: string, dto: UpdateMateriaDto) {
     await this.findOne(id);
-    const { dataApresentacaoInicio, dataApresentacaoFim, ...rest } =
-      this.mapDates(dto as CreateMateriaDto);
+    const {
+      dataApresentacaoInicio: _di,
+      dataApresentacaoFim: _df,
+      ...rest
+    } = dto;
+    const { dataApresentacaoInicio, dataApresentacaoFim } =
+      this.mapPresentationDates(dto);
     return this.prisma.materia.update({
       where: { id },
       data: { ...rest, dataApresentacaoInicio, dataApresentacaoFim },
-      include: materiaInclude,
+      include: materiaRelationsInclude,
     });
   }
 

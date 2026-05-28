@@ -1,4 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { assertFound } from '../common/prisma/assert-found';
+import { paginatedQuery } from '../common/prisma/paginate';
+import { membrosComParlamentar } from '../common/prisma/prisma-includes';
+import { ListQueryDto } from '../common/dto/list-query.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddMembroComissaoDto, CreateComissaoDto } from './dto/create-comissao.dto';
 import { UpdateComissaoDto } from './dto/update-comissao.dto';
@@ -11,20 +15,26 @@ export class ComissoesService {
     return this.prisma.comissao.create({ data: dto });
   }
 
-  findAll() {
-    return this.prisma.comissao.findMany({
-      include: { membros: { include: { parlamentar: { include: { pessoa: true } } } } },
-      orderBy: { nome: 'asc' },
-    });
+  findAll(query: ListQueryDto) {
+    return paginatedQuery(
+      () => this.prisma.comissao.count(),
+      (skip, take) =>
+        this.prisma.comissao.findMany({
+          include: { membros: membrosComParlamentar },
+          orderBy: { nome: 'asc' },
+          skip,
+          take,
+        }),
+      query,
+    );
   }
 
   async findOne(id: string) {
     const item = await this.prisma.comissao.findUnique({
       where: { id },
-      include: { membros: { include: { parlamentar: { include: { pessoa: true } } } } },
+      include: { membros: membrosComParlamentar },
     });
-    if (!item) throw new NotFoundException('Comissão não encontrada');
-    return item;
+    return assertFound(item, 'Comissão não encontrada');
   }
 
   async update(id: string, dto: UpdateComissaoDto) {
@@ -47,6 +57,12 @@ export class ComissoesService {
 
   async removeMembro(comissaoId: string, membroId: string) {
     await this.findOne(comissaoId);
+    const membro = await this.prisma.comissaoMembro.findFirst({
+      where: { id: membroId, comissaoId },
+    });
+    if (!membro) {
+      throw new NotFoundException('Membro não encontrado nesta comissão');
+    }
     return this.prisma.comissaoMembro.delete({ where: { id: membroId } });
   }
 }

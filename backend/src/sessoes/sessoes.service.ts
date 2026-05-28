@@ -1,5 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { assertFound } from '../common/prisma/assert-found';
+import { buildDateRangeFilter } from '../common/prisma/date-fields';
+import { paginatedQuery } from '../common/prisma/paginate';
+import { sessaoPlenariaInclude } from '../common/prisma/prisma-includes';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   AddPautaItemDto,
@@ -7,14 +11,7 @@ import {
   FilterSessaoPlenariaDto,
   RegistrarPresencaDto,
 } from './dto/sessao.dto';
-
-const sessaoInclude = {
-  tipoSessao: true,
-  situacao: true,
-  sessaoLegislativa: { include: { legislatura: true } },
-  pautaItens: { include: { materia: true }, orderBy: { ordem: 'asc' as const } },
-  presencas: { include: { parlamentar: { include: { pessoa: true } } } },
-};
+import { UpdateSessaoPlenariaDto } from './dto/update-sessao.dto';
 
 @Injectable()
 export class SessoesService {
@@ -29,7 +26,7 @@ export class SessoesService {
         sessaoLegislativaId: dto.sessaoLegislativaId,
         mensagem: dto.mensagem,
       },
-      include: sessaoInclude,
+      include: sessaoPlenariaInclude,
     });
   }
 
@@ -40,29 +37,52 @@ export class SessoesService {
     if (filters.sessaoLegislativaId) {
       where.sessaoLegislativaId = filters.sessaoLegislativaId;
     }
-    if (filters.dataInicioDe || filters.dataInicioAte) {
-      where.dataInicio = {};
-      if (filters.dataInicioDe) {
-        where.dataInicio.gte = new Date(filters.dataInicioDe);
-      }
-      if (filters.dataInicioAte) {
-        where.dataInicio.lte = new Date(filters.dataInicioAte);
-      }
-    }
-    return this.prisma.sessaoPlenaria.findMany({
-      where,
-      include: sessaoInclude,
-      orderBy: { dataInicio: 'desc' },
-    });
+    const range = buildDateRangeFilter(
+      filters.dataInicioDe,
+      filters.dataInicioAte,
+    );
+    if (range) where.dataInicio = range;
+
+    return paginatedQuery(
+      () => this.prisma.sessaoPlenaria.count({ where }),
+      (skip, take) =>
+        this.prisma.sessaoPlenaria.findMany({
+          where,
+          include: sessaoPlenariaInclude,
+          orderBy: { dataInicio: 'desc' },
+          skip,
+          take,
+        }),
+      filters,
+    );
   }
 
   async findOne(id: string) {
     const item = await this.prisma.sessaoPlenaria.findUnique({
       where: { id },
-      include: sessaoInclude,
+      include: sessaoPlenariaInclude,
     });
-    if (!item) throw new NotFoundException('Sessão plenária não encontrada');
-    return item;
+    return assertFound(item, 'Sessão plenária não encontrada');
+  }
+
+  async update(id: string, dto: UpdateSessaoPlenariaDto) {
+    await this.findOne(id);
+    return this.prisma.sessaoPlenaria.update({
+      where: { id },
+      data: {
+        dataInicio: dto.dataInicio ? new Date(dto.dataInicio) : undefined,
+        tipoSessaoId: dto.tipoSessaoId,
+        situacaoId: dto.situacaoId,
+        sessaoLegislativaId: dto.sessaoLegislativaId,
+        mensagem: dto.mensagem,
+      },
+      include: sessaoPlenariaInclude,
+    });
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.sessaoPlenaria.delete({ where: { id } });
   }
 
   async addPautaItem(sessaoId: string, dto: AddPautaItemDto) {

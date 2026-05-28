@@ -1,9 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { assertFound } from '../common/prisma/assert-found';
+import { paginatedQuery } from '../common/prisma/paginate';
+import { parlamentarComPessoa } from '../common/prisma/prisma-includes';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateParlamentarDto } from './dto/create-parlamentar.dto';
+import { FilterParlamentarDto } from './dto/filter-parlamentar.dto';
 import { UpdateParlamentarDto } from './dto/update-parlamentar.dto';
-
-const includeDefault = { pessoa: true };
 
 @Injectable()
 export class ParlamentaresService {
@@ -17,29 +19,37 @@ export class ParlamentaresService {
         mensagem,
         pessoa: { create: { nome, cpf, email } },
       },
-      include: includeDefault,
+      include: parlamentarComPessoa.include,
     });
   }
 
-  findAll(ativo?: boolean) {
-    return this.prisma.parlamentar.findMany({
-      where: ativo !== undefined ? { ativo } : undefined,
-      include: includeDefault,
-      orderBy: { pessoa: { nome: 'asc' } },
-    });
+  findAll(filters: FilterParlamentarDto) {
+    const where =
+      filters.ativo !== undefined ? { ativo: filters.ativo } : undefined;
+    return paginatedQuery(
+      () => this.prisma.parlamentar.count({ where }),
+      (skip, take) =>
+        this.prisma.parlamentar.findMany({
+          where,
+          include: parlamentarComPessoa.include,
+          orderBy: { pessoa: { nome: 'asc' } },
+          skip,
+          take,
+        }),
+      filters,
+    );
   }
 
   async findOne(id: string) {
     const item = await this.prisma.parlamentar.findUnique({
       where: { id },
       include: {
-        ...includeDefault,
+        ...parlamentarComPessoa.include,
         membrosComissao: { include: { comissao: true } },
         membrosFrente: { include: { frente: true } },
       },
     });
-    if (!item) throw new NotFoundException('Parlamentar não encontrado');
-    return item;
+    return assertFound(item, 'Parlamentar não encontrado');
   }
 
   async update(id: string, dto: UpdateParlamentarDto) {
@@ -58,7 +68,7 @@ export class ParlamentaresService {
           },
         },
       },
-      include: includeDefault,
+      include: parlamentarComPessoa.include,
     });
   }
 

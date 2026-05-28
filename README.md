@@ -7,7 +7,7 @@ Sistema de gestão da atividade legislativa da Câmara (baseado no mapeamento In
 | Pasta | Descrição |
 |-------|-----------|
 | `backend/` | API **NestJS** + **Prisma** (módulo Atividade Legislativa) |
-| `frontend/` | Placeholder **Vite** até o app definitivo |
+| `frontend/` | SPA **React** + **Vite** (login, cadastros legislativos, relatórios) |
 | `docs/` | Engenharia reversa, ERD e fluxos de trabalho |
 
 ## Pré-requisitos
@@ -15,27 +15,22 @@ Sistema de gestão da atividade legislativa da Câmara (baseado no mapeamento In
 - Node.js 20+
 - Docker Desktop (recomendado para banco e stack completa)
 
-## Início rápido com Docker
-
-### Apenas API + banco
+## Início rápido com Docker (stack completa)
 
 ```bash
 docker compose up --build
 ```
 
-- API: http://localhost:3000/api  
-- PostgreSQL: `localhost:5432` (usuário/senha/db: `postgres` / `postgres` / `gestao_vereadores`)
+| Serviço | URL |
+|---------|-----|
+| Frontend (SPA) | http://localhost:8080 |
+| API | http://localhost:3000/api |
+| Swagger (documentação da API) | http://localhost:3000/api/docs |
+| PostgreSQL | `localhost:5432` |
 
-Na primeira subida, o container da API executa `prisma db push` e o seed automaticamente.
+**Login:** `admin` / `admin` (usuário master criado no seed).
 
-### Stack completa (API + banco + frontend placeholder)
-
-```bash
-docker compose --profile full up --build
-```
-
-- Frontend: http://localhost:5173  
-- Variável `VITE_API_URL` aponta para `http://localhost:3000/api`
+Na primeira subida, a API executa `prisma migrate deploy` e o seed (domínios + usuário admin).
 
 ## Desenvolvimento local (sem container da API)
 
@@ -57,16 +52,47 @@ npm run prisma:seed
 npm run start:dev
 ```
 
-3. (Opcional) Frontend placeholder:
+3. Frontend:
 
 ```bash
 cd frontend
-cp .env.example .env
 npm install
 npm run dev
 ```
 
-## Build de verificação
+Acesse http://localhost:5173 e entre com `admin` / `admin`.
+
+API local: http://localhost:3000/api — Swagger: http://localhost:3000/api/docs
+
+## Swagger
+
+Documentação interativa da API (OpenAPI), com autenticação JWT:
+
+1. Suba a API (`docker compose up` ou `npm run start:dev` no `backend/`).
+2. Abra http://localhost:3000/api/docs
+3. Faça login em `POST /api/auth/login` (corpo: `username`, `password`) ou use o botão **Authorize** com o token `Bearer <access_token>` retornado no login.
+
+Rotas públicas: `POST /api/auth/login` e `GET /api/health`.
+
+## Testes
+
+Os testes ficam no backend (Jest). É necessário Node.js 20+ e dependências instaladas (`npm install` em `backend/`).
+
+**Testes unitários** (helpers, auth, etc.):
+
+```bash
+cd backend
+npm test
+```
+
+**Testes e2e** (sobe o app Nest em memória; recomenda-se Postgres disponível para `/api/health`):
+
+```bash
+cd backend
+npm run test:e2e
+```
+
+**Build de verificação** (compilação TypeScript da API):
 
 ```bash
 cd backend
@@ -75,7 +101,7 @@ npm run build
 
 ## Documentação da API
 
-Detalhes de rotas, mapeamento drawio → tabelas e scripts: [backend/README.md](backend/README.md).
+Detalhes de rotas, perfis de acesso, paginação, mapeamento drawio → tabelas e scripts: [backend/README.md](backend/README.md).
 
 ## Referências de domínio
 

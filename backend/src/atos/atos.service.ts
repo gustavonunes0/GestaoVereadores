@@ -1,36 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { assertFound } from '../common/prisma/assert-found';
+import { toOptionalDate } from '../common/prisma/date-fields';
+import { paginatedQuery } from '../common/prisma/paginate';
 import { PrismaService } from '../prisma/prisma.service';
-
-export class CreateAtoDto {
-  @IsString()
-  tipoId: string;
-
-  @IsString()
-  classificacaoId: string;
-
-  @IsString()
-  numero: string;
-
-  @IsOptional()
-  @IsDateString()
-  dataInicio?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dataFim?: string;
-}
-
-export class FilterAtoDto {
-  @IsOptional()
-  @IsString()
-  tipoId?: string;
-
-  @IsOptional()
-  @IsString()
-  classificacaoId?: string;
-}
+import { CreateAtoDto, FilterAtoDto } from './dto/ato.dto';
+import { UpdateAtoDto } from './dto/update-ato.dto';
 
 @Injectable()
 export class AtosService {
@@ -40,8 +15,8 @@ export class AtosService {
     return this.prisma.ato.create({
       data: {
         ...dto,
-        dataInicio: dto.dataInicio ? new Date(dto.dataInicio) : undefined,
-        dataFim: dto.dataFim ? new Date(dto.dataFim) : undefined,
+        dataInicio: toOptionalDate(dto.dataInicio),
+        dataFim: toOptionalDate(dto.dataFim),
       },
       include: { tipo: true, classificacao: true },
     });
@@ -51,11 +26,19 @@ export class AtosService {
     const where: Prisma.AtoWhereInput = {};
     if (filters.tipoId) where.tipoId = filters.tipoId;
     if (filters.classificacaoId) where.classificacaoId = filters.classificacaoId;
-    return this.prisma.ato.findMany({
-      where,
-      include: { tipo: true, classificacao: true },
-      orderBy: { createdAt: 'desc' },
-    });
+
+    return paginatedQuery(
+      () => this.prisma.ato.count({ where }),
+      (skip, take) =>
+        this.prisma.ato.findMany({
+          where,
+          include: { tipo: true, classificacao: true },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take,
+        }),
+      filters,
+    );
   }
 
   async findOne(id: string) {
@@ -63,7 +46,26 @@ export class AtosService {
       where: { id },
       include: { tipo: true, classificacao: true },
     });
-    if (!item) throw new NotFoundException('Ato não encontrado');
-    return item;
+    return assertFound(item, 'Ato não encontrado');
+  }
+
+  async update(id: string, dto: UpdateAtoDto) {
+    await this.findOne(id);
+    return this.prisma.ato.update({
+      where: { id },
+      data: {
+        tipoId: dto.tipoId,
+        classificacaoId: dto.classificacaoId,
+        numero: dto.numero,
+        dataInicio: toOptionalDate(dto.dataInicio),
+        dataFim: toOptionalDate(dto.dataFim),
+      },
+      include: { tipo: true, classificacao: true },
+    });
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.ato.delete({ where: { id } });
   }
 }

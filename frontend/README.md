@@ -1,30 +1,31 @@
-# Frontend (placeholder)
+# Frontend — Gestão Vereadores (SIGL)
 
-Estrutura mínima com **Vite** para validar integração com a API até o app definitivo existir.
+Aplicação **React + Vite** integrada à API NestJS do módulo **Atividade Legislativa**.
 
-## Variáveis
+## Login padrão
 
-| Variável | Descrição |
-|----------|-----------|
-| `VITE_API_URL` | Base da API (ex.: `http://localhost:3000/api`) |
+| Usuário | Senha | Perfil |
+|---------|-------|--------|
+| `admin` | `admin` | MASTER |
 
-## Desenvolvimento local
+## Desenvolvimento
 
 ```bash
 cd frontend
-cp .env.example .env
 npm install
 npm run dev
 ```
 
-Acesse `http://localhost:5173`.
+Acesse http://localhost:5173. O proxy do Vite encaminha `/api` para `http://localhost:3000`.
+
+Certifique-se de que o backend está rodando com `JWT_SECRET` configurado no `.env`.
+
+## Build
+
+```bash
+npm run build
+```
 
 ## Docker
 
-Com o profile `full` na raiz do repositório:
-
-```bash
-docker compose --profile full up --build
-```
-
-Quando criar o frontend real, mantenha `VITE_API_URL` e substitua este diretório pelo projeto (React, Next.js, etc.).
+Na raiz do repositório, o serviço `frontend` expõe a SPA em http://localhost:8080 e faz proxy de `/api` para o container da API.

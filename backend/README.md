@@ -8,6 +8,21 @@ Backend **NestJS** + **Prisma** modelado a partir da aba **Atividade Legislativa
 - **Prisma 6** — ORM com **PostgreSQL**
 - **TypeScript** — build em `dist/`
 
+## Arquitetura (`src/`)
+
+Organização por **módulos de feature** (NestJS), cada um com `controller` → `service` → Prisma:
+
+| Pasta | Papel |
+|---|---|
+| `common/` | Infra compartilhada: filtro de erros Prisma, includes reutilizáveis, helpers de data e `assertFound` |
+| `prisma/` | `PrismaModule` global + `PrismaService` |
+| `auth/` | JWT, guards (`JwtAuthGuard`, `RolesGuard`), decorators (`@Public`, `@Roles`) |
+| `parlamentares`, `comissoes`, … | Domínios legislativos; DTOs em `dto/` com `class-validator` |
+
+Fluxo HTTP: **Controller** valida entrada (pipes globais) → **Service** aplica regra de negócio e acessa o banco via `PrismaService`. Erros Prisma (`P2002`, `P2003`, `P2025`) são mapeados para HTTP 409/400/404 pelo `PrismaExceptionFilter`.
+
+Para restringir rotas por perfil, use `@Roles(RoleUsuario.ADMIN)` (o `RolesGuard` ignora endpoints sem o decorator).
+
 ## Pré-requisitos
 
 - Node.js 20+
@@ -62,12 +77,34 @@ npm run start:prod
 | `RELATORIOS_*` | `POST /api/relatorios/*` |
 | Domínios tracejados | Tabelas de domínio + `GET /api/dominios` |
 
+## Autenticação
+
+| Método | Rota | Descrição |
+|---|---|---|
+| POST | `/api/auth/login` | Login (`username`, `password`) → JWT |
+| GET | `/api/auth/me` | Usuário autenticado |
+| GET | `/api/health` | Health check (público) |
+| GET | `/api/docs` | Swagger UI |
+
+Demais rotas exigem header `Authorization: Bearer <token>`.
+
+**Perfis:** leitura (`GET`) — `MASTER`, `ADMIN`, `OPERADOR`; escrita (`POST`/`PATCH`/`DELETE`) — `MASTER`, `ADMIN`; gestão de usuários — `MASTER`.
+
+**Listagens:** resposta paginada `{ data, meta }` com query `page` e `limit` (máx. 100).
+
+Usuário seed: **admin** / **admin** (perfil `MASTER`). O papel vai no JWT; use `@Roles(...)` nos controllers que precisarem de autorização por perfil.
+
+Variáveis: `JWT_SECRET`, `CORS_ORIGIN`.
+
 ## Rotas principais
 
 | Método | Rota | Descrição |
 |---|---|---|
 | GET | `/api/dominios` | Listas auxiliares |
 | CRUD | `/api/parlamentares` | Vereadores |
+| CRUD | `/api/autores` | Autores de matérias |
+| CRUD | `/api/usuarios` | Usuários (MASTER) |
+| PATCH | `/api/usuarios/me/senha` | Alterar senha do usuário logado |
 | CRUD | `/api/comissoes` | Comissões (+ membros) |
 | CRUD | `/api/frentes` | Frentes parlamentares |
 | GET/POST | `/api/legislaturas` | Legislaturas e sessões legislativas |
@@ -88,7 +125,9 @@ npm run start:prod
 | `npm run build` | Compilar para produção |
 | `npm run start:prod` | Rodar `dist/main.js` |
 | `npm run prisma:generate` | Gerar client Prisma |
-| `npx prisma db push` | Sincronizar schema com o banco |
+| `npm run prisma:migrate` | Criar/aplicar migrations (dev) |
+| `npm run prisma:migrate:deploy` | Aplicar migrations (produção/Docker) |
+| `npm test` | Testes unitários |
 | `npm run prisma:seed` | Dados iniciais de domínio |
 | `npm run prisma:studio` | UI do banco |
 

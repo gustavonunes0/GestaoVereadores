@@ -1,76 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { Prisma } from '@prisma/client';
+import { buildDateRangeFilter } from '../common/prisma/date-fields';
 import { PrismaService } from '../prisma/prisma.service';
-
-/** Filtros equivalentes a RELATORIOS_ATIVIDADELEGISLATIVACOMPLETO */
-export class RelatorioAtividadeCompletoDto {
-  @IsString()
-  legislaturaId: string;
-
-  @IsString()
-  sessaoLegislativaId: string;
-
-  @IsOptional()
-  @IsDateString()
-  dataInicioDe?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dataInicioAte?: string;
-}
-
-/** Filtros equivalentes a RELATORIOS_ATIVIDADELEGISLATIVAGERAL */
-export class RelatorioAtividadeGeralDto {
-  @IsString()
-  legislaturaId: string;
-
-  @IsOptional()
-  @IsDateString()
-  dataApresentacaoDe?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dataApresentacaoAte?: string;
-
-  @IsOptional()
-  @IsString()
-  tipoAutorId?: string;
-
-  @IsOptional()
-  @IsString()
-  autorId?: string;
-}
-
-/** Filtros equivalentes a RELATORIOS_PRESENCAANALITICA / PRESENCAGERAL */
-export class RelatorioPresencaDto {
-  @IsString()
-  legislaturaId: string;
-
-  @IsString()
-  sessaoLegislativaId: string;
-
-  @IsOptional()
-  @IsString()
-  tipoSessaoId?: string;
-
-  @IsOptional()
-  @IsString()
-  sessaoPlenariaId?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dataInicioDe?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dataInicioAte?: string;
-}
+import {
+  RelatorioAtividadeCompletoDto,
+  RelatorioAtividadeGeralDto,
+  RelatorioPresencaDto,
+} from './dto/relatorio.dto';
 
 @Injectable()
 export class RelatoriosService {
   constructor(private readonly prisma: PrismaService) {}
 
   async atividadeCompleto(dto: RelatorioAtividadeCompletoDto) {
+    const range = buildDateRangeFilter(dto.dataInicioDe, dto.dataInicioAte);
     const materias = await this.prisma.materia.findMany({
       where: {
         pautaItens: {
@@ -78,14 +21,7 @@ export class RelatoriosService {
             sessao: {
               sessaoLegislativaId: dto.sessaoLegislativaId,
               sessaoLegislativa: { legislaturaId: dto.legislaturaId },
-              ...(dto.dataInicioDe || dto.dataInicioAte
-                ? {
-                    dataInicio: {
-                      ...(dto.dataInicioDe && { gte: new Date(dto.dataInicioDe) }),
-                      ...(dto.dataInicioAte && { lte: new Date(dto.dataInicioAte) }),
-                    },
-                  }
-                : {}),
+              ...(range && { dataInicio: range }),
             },
           },
         },
@@ -105,42 +41,61 @@ export class RelatoriosService {
   }
 
   async atividadeGeral(dto: RelatorioAtividadeGeralDto) {
-    const materias = await this.prisma.materia.findMany({
-      where: {
-        ...(dto.autorId && { autorId: dto.autorId }),
-        ...(dto.dataApresentacaoDe || dto.dataApresentacaoAte
-          ? {
-              dataApresentacaoInicio: {
-                ...(dto.dataApresentacaoDe && {
-                  gte: new Date(dto.dataApresentacaoDe),
-                }),
-                ...(dto.dataApresentacaoAte && {
-                  lte: new Date(dto.dataApresentacaoAte),
-                }),
+    const legislatura = await this.prisma.legislatura.findUnique({
+      where: { id: dto.legislaturaId },
+    });
+
+    const apresentacaoRange = buildDateRangeFilter(
+      dto.dataApresentacaoDe,
+      dto.dataApresentacaoAte,
+    );
+
+    const where: Prisma.MateriaWhereInput = {
+      ...(dto.autorId && { autorId: dto.autorId }),
+      ...(dto.tipoAutorId && { autor: { tipoAutorId: dto.tipoAutorId } }),
+      ...(apresentacaoRange && { dataApresentacaoInicio: apresentacaoRange }),
+    };
+
+    if (legislatura) {
+      where.AND = [
+        {
+          OR: [
+            {
+              pautaItens: {
+                some: {
+                  sessao: {
+                    sessaoLegislativa: { legislaturaId: dto.legislaturaId },
+                  },
+                },
               },
-            }
-          : {}),
-      },
+            },
+            {
+              dataApresentacaoInicio: {
+                gte: legislatura.dataInicio,
+                ...(legislatura.dataFim && { lte: legislatura.dataFim }),
+              },
+            },
+          ],
+        },
+      ];
+    }
+
+    const materias = await this.prisma.materia.findMany({
+      where,
       include: { tipo: true, autor: { include: { tipoAutor: true } } },
     });
     return { filtros: dto, total: materias.length, materias };
   }
 
   async presenca(dto: RelatorioPresencaDto) {
+    const range = buildDateRangeFilter(dto.dataInicioDe, dto.dataInicioAte);
     const sessoes = await this.prisma.sessaoPlenaria.findMany({
       where: {
         sessaoLegislativaId: dto.sessaoLegislativaId,
         sessaoLegislativa: { legislaturaId: dto.legislaturaId },
         ...(dto.tipoSessaoId && { tipoSessaoId: dto.tipoSessaoId }),
         ...(dto.sessaoPlenariaId && { id: dto.sessaoPlenariaId }),
-        ...(dto.dataInicioDe || dto.dataInicioAte
-          ? {
-              dataInicio: {
-                ...(dto.dataInicioDe && { gte: new Date(dto.dataInicioDe) }),
-                ...(dto.dataInicioAte && { lte: new Date(dto.dataInicioAte) }),
-              },
-            }
-          : {}),
+        ...(range && { dataInicio: range }),
       },
       include: {
         presencas: {
