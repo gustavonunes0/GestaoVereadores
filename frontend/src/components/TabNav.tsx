@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
+import { ModuleTitle } from './common/ModuleTitle';
 
-export type TabItem = { to: string; label: string; end?: boolean };
+export type TabItem = { to: string; label: string; icon?: string; end?: boolean };
 
 type Props = {
   tabs: TabItem[];
@@ -17,7 +18,9 @@ export function TabNav({ tabs, className = '' }: Props) {
           end={tab.end}
           className={({ isActive }) => `tab-nav-item${isActive ? ' active' : ''}`}
         >
-          {tab.label}
+          <ModuleTitle icon={tab.icon} as="span" className="tab-nav-item__label">
+            {tab.label}
+          </ModuleTitle>
         </NavLink>
       ))}
     </nav>

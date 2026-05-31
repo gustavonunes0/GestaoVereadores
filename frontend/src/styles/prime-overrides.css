@@ -5,12 +5,18 @@
   Prefer using tokens from prime-theme-tokens.css instead of hardcoded colors.
 */
 
+.p-component {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+}
+
 /* SIGL: all action buttons use small size by default */
 .p-button:not(.p-button-lg) {
   border-radius: var(--layout-radius-sm);
-  font-weight: 600;
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-semibold);
   padding: 0.4375rem 0.875rem;
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
 }
 
 .p-button.p-button-icon-only:not(.p-button-lg) {
@@ -31,9 +37,46 @@
 
 .p-button.p-button-primary,
 .p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warning):not(.p-button-info) {
-  background: var(--brand-blue-iris);
-  border-color: var(--brand-blue-iris);
+  background: var(--brand-night-blue);
+  border-color: var(--brand-night-blue);
   color: var(--text-inverse);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.p-button.p-button-primary:enabled:hover,
+.p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warning):not(.p-button-info):enabled:hover {
+  background: var(--brand-blue-iris-soft);
+  border-color: var(--brand-blue-iris-soft);
+}
+
+.p-button.p-button-secondary:enabled:hover,
+.p-button.p-button-outlined:enabled:hover {
+  background: var(--bg-soft);
+  border-color: var(--bg-border);
+  color: var(--text-primary);
+}
+
+.p-button:disabled {
+  opacity: 0.55;
+}
+
+.p-inputtext,
+.p-dropdown,
+.p-multiselect,
+.p-inputtextarea {
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-sm);
+  border-color: var(--bg-border);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.p-inputtext:enabled:hover {
+  border-color: var(--text-300);
 }
 
 .p-button:focus,
@@ -47,7 +90,7 @@
 .p-card {
   border-radius: var(--layout-radius-md);
   box-shadow: var(--layout-shadow-sm);
-  border: 1px solid var(--bg-border);
+  border: 1px solid var(--card-border-color);
 }
 
 .p-dialog {
@@ -56,6 +99,8 @@
 
 .p-dialog .p-dialog-header {
   color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
   border-bottom: 1px solid var(--bg-border);
   padding: var(--layout-gap-lg) var(--layout-gap-lg) var(--layout-gap-md);
 }
@@ -73,13 +118,16 @@
   color: var(--text-800);
   background: var(--bg-soft);
   border-color: var(--bg-border);
-  font-weight: 700;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
   padding: var(--space-table-cell-y) var(--space-table-cell-x);
 }
 
 .p-datatable .p-datatable-tbody > tr > td {
   border-color: var(--bg-border);
   color: var(--text-800);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
   padding: var(--space-table-cell-y) var(--space-table-cell-x);
 }
 
@@ -96,13 +144,55 @@
   padding: var(--layout-gap-lg);
 }
 
+.p-datatable .p-datatable-tbody > tr {
+  transition: background var(--transition-fast);
+}
+
 .p-datatable .p-datatable-tbody > tr:hover {
-  background: var(--bg-soft);
+  background: var(--brand-blue-iris-muted);
+}
+
+.p-datatable .p-datatable-emptymessage > td {
+  text-align: center;
+  color: var(--text-600);
+  padding: var(--layout-gap-3xl, 2rem) var(--space-card) !important;
+  font-size: 0.9rem;
+}
+
+.p-paginator {
+  background: var(--bg-subtle);
+  border-color: var(--bg-border);
 }
 
 .p-tag {
   border-radius: 999px;
   font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.p-tag.p-tag-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.p-tag.p-tag-info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.p-tag.p-tag-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.p-tag.p-tag-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.p-tag.p-tag-secondary {
+  background: var(--bg-soft);
+  color: var(--text-600);
 }
 
 .page {
@@ -111,7 +201,7 @@
 
 .page-card {
   background: var(--bg-card);
-  border: 1px solid var(--bg-border);
+  border: 1px solid var(--card-border-color);
   border-radius: var(--layout-radius-md);
   box-shadow: var(--layout-shadow-sm);
 }
@@ -146,8 +236,8 @@
 
 .p-selectbutton .p-button.p-highlight,
 .p-selectbutton .p-button:focus.p-highlight {
-  background: var(--brand-blue-iris) !important;
-  border-color: var(--brand-blue-iris) !important;
+  background: var(--brand-night-blue) !important;
+  border-color: var(--brand-night-blue) !important;
   color: var(--text-inverse) !important;
 }
 

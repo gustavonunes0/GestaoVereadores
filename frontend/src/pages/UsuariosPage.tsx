@@ -1,6 +1,8 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
+import { PageHeader } from '../components/PageHeader';
 
 type Usuario = {
   id: string;
@@ -85,9 +87,10 @@ export function UsuariosPage() {
 
   return (
     <section className="page">
-      <div className="page-header">
-        <h1 className="page-title">Usuários do sistema</h1>
-        <div className="page-header-actions">
+      <PageHeader
+        icon={MODULE_ICONS.usuarios}
+        title="Usuários do sistema"
+        actions={
           <button
             type="button"
             className="btn btn-primary"
@@ -98,8 +101,8 @@ export function UsuariosPage() {
           >
             Novo usuário
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <p className="page-context">
         Apenas perfil Master pode criar e alterar usuários. Operadores têm acesso somente leitura

@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { CAMARA_TABS } from '../app/navigation';
+import { CAMARA_TABS, MODULE_ICONS } from '../app/navigation';
 import { PageHeader } from '../components/PageHeader';
 import { TabNav } from '../components/TabNav';
 
@@ -7,6 +7,7 @@ export function CamaraPage() {
   return (
     <div className="flow-page">
       <PageHeader
+        icon={MODULE_ICONS.camara}
         title="Estrutura da Câmara"
         subtitle="Parlamentares, colegiados e legislatura — base para matérias, sessões e publicação."
       />

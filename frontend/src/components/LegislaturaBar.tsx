@@ -13,7 +13,7 @@ export function LegislaturaBar() {
   } = useLegislatura();
 
   if (loading) {
-    return <span className="legislatura-bar muted">Carregando legislatura…</span>;
+    return <span className="legislatura-bar ui-loading-inline">Carregando legislatura…</span>;
   }
 
   if (!legislaturas.length) {
@@ -29,7 +29,7 @@ export function LegislaturaBar() {
   return (
     <div className="legislatura-bar">
       <label className="legislatura-bar-field">
-        <span className="sr-only">Legislatura</span>
+        <span className="legislatura-bar-field__label">Legislatura</span>
         <select
           value={legislaturaId}
           onChange={(e) => setLegislaturaId(e.target.value)}
@@ -44,7 +44,7 @@ export function LegislaturaBar() {
       </label>
       {sessoes.length > 0 && (
         <label className="legislatura-bar-field">
-          <span className="sr-only">Sessão legislativa</span>
+          <span className="legislatura-bar-field__label">Sessão legislativa</span>
           <select
             value={sessaoLegislativaId}
             onChange={(e) => setSessaoLegislativaId(e.target.value)}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ROUTES } from '../app/navigation';
+import { MODULE_ICONS, ROUTES } from '../app/navigation';
 import { apiList, apiTotal } from '../api/client';
 import { ContextBanner } from '../components/ContextBanner';
 import { PageHeader } from '../components/PageHeader';
@@ -34,9 +34,15 @@ const pipeline = [
   },
   {
     step: '4',
-    title: 'Publicação',
-    desc: 'Normas jurídicas e atos administrativos',
-    to: ROUTES.publicacao.normas,
+    title: 'Normas jurídicas',
+    desc: 'Leis, resoluções e normas oficiais',
+    to: ROUTES.normasJuridicas,
+  },
+  {
+    step: '5',
+    title: 'Atos administrativos',
+    desc: 'Portarias, nomeações e gestão interna',
+    to: ROUTES.atosAdministrativos,
   },
 ];
 
@@ -70,6 +76,7 @@ export function DashboardPage() {
   return (
     <section className="page">
       <PageHeader
+        icon={MODULE_ICONS.dashboard}
         title="Painel legislativo"
         subtitle="Acompanhe o fluxo da legislatura em exercício e acesse cada etapa em sequência."
       />

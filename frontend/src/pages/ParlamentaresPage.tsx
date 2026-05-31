@@ -5,6 +5,7 @@ import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
+import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
 import { PageHeader } from '../components/PageHeader';
 import { useAppToast } from '../hooks/useAppToast';
@@ -110,6 +111,7 @@ export function ParlamentaresPage() {
     <section className="page">
       <PageHeader
         embedded={embedded}
+        icon={MODULE_ICONS.parlamentares}
         title="Parlamentares"
         subtitle={
           embedded

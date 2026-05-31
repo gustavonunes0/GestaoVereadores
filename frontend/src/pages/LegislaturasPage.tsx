@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
@@ -45,6 +46,7 @@ export function LegislaturasPage() {
   return (
     <>
       <PanelToolbar
+        icon={MODULE_ICONS.legislaturas}
         title="Legislaturas"
         actions={
           canWrite ? (

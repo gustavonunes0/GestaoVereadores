@@ -15,7 +15,6 @@ import { MateriasPage } from './pages/MateriasPage';
 import { MesaDiretoraPage } from './pages/MesaDiretoraPage';
 import { NormasPage } from './pages/NormasPage';
 import { ParlamentaresPage } from './pages/ParlamentaresPage';
-import { PublicacaoPage } from './pages/PublicacaoPage';
 import { RelatoriosPage } from './pages/RelatoriosPage';
 import { SessoesPage } from './pages/SessoesPage';
 import { UsuariosPage } from './pages/UsuariosPage';
@@ -30,6 +29,8 @@ export default function App() {
           <Route path="materias" element={<MateriasPage />} />
           <Route path="sessoes" element={<SessoesPage />} />
           <Route path="relatorios" element={<RelatoriosPage />} />
+          <Route path="normas-juridicas" element={<NormasPage />} />
+          <Route path="atos-administrativos" element={<AtosPage />} />
 
           <Route path="camara" element={<CamaraPage />}>
             <Route index element={<Navigate to="parlamentares" replace />} />
@@ -39,12 +40,6 @@ export default function App() {
             <Route path="mesa-diretora" element={<MesaDiretoraPage />} />
             <Route path="autores" element={<AutoresPage />} />
             <Route path="legislaturas" element={<LegislaturasPage />} />
-          </Route>
-
-          <Route path="publicacao" element={<PublicacaoPage />}>
-            <Route index element={<Navigate to="normas" replace />} />
-            <Route path="normas" element={<NormasPage />} />
-            <Route path="atos" element={<AtosPage />} />
           </Route>
 
           <Route element={<MasterRoute />}>

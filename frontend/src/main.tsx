@@ -6,8 +6,10 @@ import { PrimeReactProvider } from 'primereact/api';
 import 'primereact/resources/themes/lara-light-blue/theme.css';
 import 'primeicons/primeicons.css';
 import './styles/prime-theme-tokens.css';
+import './styles/typography.css';
 import './styles/spacing-layout.css';
 import './styles/prime-overrides.css';
+import './styles/sigl-ui-patterns.css';
 import './index.css';
 
 import App from './App';

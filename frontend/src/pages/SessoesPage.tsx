@@ -2,6 +2,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SiglButton } from '../components/common/SiglButton';
 import { api, apiList } from '../api/client';
+import { MODULE_ICONS } from '../app/navigation';
 import { ContextBanner } from '../components/ContextBanner';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
@@ -165,6 +166,7 @@ export function SessoesPage() {
   return (
     <section className="page">
       <PageHeader
+        icon={MODULE_ICONS.sessoes}
         title="Sessões plenárias"
         subtitle="Pauta e presenças vinculadas à sessão legislativa selecionada no topo."
         actions={

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../api/client';
 import { ActionCard } from '../components/common/ActionCard';
 import { SiglButton } from '../components/common/SiglButton';
+import { MODULE_ICONS } from '../app/navigation';
 import { ContextBanner } from '../components/ContextBanner';
 import { PageHeader } from '../components/PageHeader';
 import { useLegislatura } from '../contexts/LegislaturaContext';
@@ -65,6 +66,7 @@ export function RelatoriosPage() {
   return (
     <section className="page">
       <PageHeader
+        icon={MODULE_ICONS.relatorios}
         title="Relatórios"
         subtitle="Indicadores da legislatura e sessão legislativa selecionadas no topo."
       />

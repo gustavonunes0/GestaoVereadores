@@ -12,9 +12,13 @@ export function ContextBanner({ step, hint }: Props) {
   if (loading || !legislaturaAtiva) return null;
 
   return (
-    <div className="context-banner">
+    <div className="context-banner" role="status">
       <div className="context-banner-main">
-        {step && <span className="context-step">{step}</span>}
+        {step && (
+          <span className="context-step">
+            <i className="pi pi-compass" aria-hidden /> {step}
+          </span>
+        )}
         <span>
           <strong>Legislatura {legislaturaAtiva.numero}</strong>
           {sessaoLegislativaAtiva && (

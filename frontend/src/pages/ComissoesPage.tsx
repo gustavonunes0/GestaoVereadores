@@ -1,5 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
+import { EmptyState } from '../components/common/EmptyState';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
 import { usePermissions } from '../hooks/usePermissions';
@@ -37,6 +39,7 @@ export function ComissoesPage() {
   return (
     <>
       <PanelToolbar
+        icon={MODULE_ICONS.comissoes}
         title="Comissões"
         actions={
           canWrite ? (
@@ -71,6 +74,13 @@ export function ComissoesPage() {
             ))}
           </tbody>
         </table>
+        {items.length === 0 && (
+          <EmptyState
+            icon="pi pi-sitemap"
+            title="Nenhuma comissão cadastrada"
+            hint="Crie a primeira comissão para organizar a tramitação das matérias."
+          />
+        )}
       </div>
       {open && (
         <Modal title="Nova comissão" onClose={() => setOpen(false)}>

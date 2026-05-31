@@ -9,6 +9,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { SelectButton } from 'primereact/selectbutton';
 import { Tag } from 'primereact/tag';
 import { api, apiList } from '../api/client';
+import { MODULE_ICONS } from '../app/navigation';
 import { ContextBanner } from '../components/ContextBanner';
 import { PageHeader } from '../components/PageHeader';
 import { useAppToast } from '../hooks/useAppToast';
@@ -132,6 +133,7 @@ export function MateriasPage() {
   return (
     <section className="page">
       <PageHeader
+        icon={MODULE_ICONS.materias}
         title="Matérias e proposições"
         subtitle="Somente matérias em tramitação podem entrar na pauta de sessão em andamento."
         actions={

@@ -1,19 +1,23 @@
 import type { ReactNode } from 'react';
+import { ModuleTitle } from './common/ModuleTitle';
 
 type Props = {
   title: string;
+  icon?: string;
   subtitle?: string;
   actions?: ReactNode;
-  /** Dentro de /camara ou /publicacao — evita título duplicado do layout pai. */
+  /** Dentro de /camara — evita título duplicado do layout pai. */
   embedded?: boolean;
 };
 
-export function PageHeader({ title, subtitle, actions, embedded }: Props) {
+export function PageHeader({ title, icon, subtitle, actions, embedded }: Props) {
   if (embedded) {
     return (
       <div className="page-header page-header--embedded">
         <div className="page-header--embedded__main">
-          <h2 className="tab-panel-title">{title}</h2>
+          <ModuleTitle icon={icon} as="h2" className="tab-panel-title">
+            {title}
+          </ModuleTitle>
           {subtitle && <p className="page-subtitle">{subtitle}</p>}
         </div>
         {actions && <div className="page-header-actions sigl-cluster">{actions}</div>}
@@ -24,7 +28,9 @@ export function PageHeader({ title, subtitle, actions, embedded }: Props) {
   return (
     <div className="page-header">
       <div>
-        <h1 className="page-title">{title}</h1>
+        <ModuleTitle icon={icon} as="h1" className="page-title">
+          {title}
+        </ModuleTitle>
         {subtitle && <p className="page-subtitle">{subtitle}</p>}
       </div>
       {actions && <div className="page-header-actions sigl-cluster">{actions}</div>}
