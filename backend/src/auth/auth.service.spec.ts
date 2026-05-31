@@ -9,13 +9,27 @@ describe('AuthService', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    tenant: {
+      findFirst: jest.fn(),
+    },
   };
   const jwt = { sign: jest.fn().mockReturnValue('token') } as unknown as JwtService;
+  const passwordHasher = {
+    hash: jest.fn(),
+    compare: jest.fn(),
+  };
   let service: AuthService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AuthService(prisma as never, jwt);
+    prisma.tenant.findFirst.mockResolvedValue({
+      id: 'a0000000-0000-4000-8000-000000000001',
+    });
+    service = new AuthService(
+      prisma as never,
+      jwt,
+      passwordHasher as never,
+    );
   });
 
   it('login rejeita usuário inexistente', async () => {
@@ -38,5 +52,6 @@ describe('AuthService', () => {
     const result = await service.login({ username: 'admin', password: 'admin' });
     expect(result.access_token).toBe('token');
     expect(result.user.username).toBe('admin');
+    expect(result.user.tenantId).toBeDefined();
   });
 });

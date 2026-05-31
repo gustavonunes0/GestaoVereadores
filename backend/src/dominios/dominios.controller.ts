@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ReadRoles } from '../common/decorators/api-roles.decorator';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
 import { DominiosService } from './dominios.service';
 
 @ApiTags('dominios')
@@ -9,9 +9,8 @@ import { DominiosService } from './dominios.service';
 export class DominiosController {
   constructor(private readonly service: DominiosService) {}
 
-  @ReadRoles()
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(@TenantId() tenantId: string) {
+    return this.service.findAll(tenantId);
   }
 }

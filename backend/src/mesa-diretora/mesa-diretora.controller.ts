@@ -1,9 +1,21 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ReadRoles, WriteRoles } from '../common/decorators/api-roles.decorator';
+import { TenantUserRole } from '@prisma/client';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
+import { TenantRoles } from '../common/decorators/tenant-roles.decorator';
+import { TenantRolesGuard } from '../common/guards/tenant-roles.guard';
 import { ListQueryDto } from '../common/dto/list-query.dto';
-import { AddMembroMesaDto, CreateMesaDiretoraDto } from './dto/mesa-diretora.dto';
 import { MesaDiretoraService } from './mesa-diretora.service';
+import { AddMembroMesaDto, CreateMesaDiretoraDto } from './dto/mesa-diretora.dto';
 
 @ApiTags('mesa-diretora')
 @ApiBearerAuth()
@@ -11,27 +23,42 @@ import { MesaDiretoraService } from './mesa-diretora.service';
 export class MesaDiretoraController {
   constructor(private readonly service: MesaDiretoraService) {}
 
-  @ReadRoles()
   @Get()
-  findAll(@Query() query: ListQueryDto) {
-    return this.service.findAll(query);
+  findAll(@TenantId() tenantId: string, @Query() query: ListQueryDto) {
+    return this.service.findAll(tenantId, query);
   }
 
-  @ReadRoles()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  findOne(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.findOne(tenantId, id);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Post()
-  create(@Body() dto: CreateMesaDiretoraDto) {
-    return this.service.create(dto);
+  create(@TenantId() tenantId: string, @Body() dto: CreateMesaDiretoraDto) {
+    return this.service.create(tenantId, dto);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Post(':id/membros')
-  addMembro(@Param('id') id: string, @Body() dto: AddMembroMesaDto) {
-    return this.service.addMembro(id, dto);
+  addMembro(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddMembroMesaDto,
+  ) {
+    return this.service.addMembro(tenantId, id, dto);
   }
 }

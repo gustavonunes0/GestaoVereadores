@@ -9,11 +9,11 @@ type Props = {
 export function PanelToolbar({ title, actions }: Props) {
   const embedded = useEmbeddedPage();
   return (
-    <div className="toolbar">
+    <div className="toolbar sigl-cluster sigl-cluster--loose">
       {embedded ? (
         <h2 className="tab-panel-title">{title}</h2>
       ) : (
-        <h1 className="page-title" style={{ margin: 0 }}>
+        <h1 className="page-title page-toolbar-title">
           {title}
         </h1>
       )}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ROUTES } from '../app/navigation';
 import { apiList, apiTotal } from '../api/client';
 import { ContextBanner } from '../components/ContextBanner';
 import { PageHeader } from '../components/PageHeader';
@@ -17,25 +18,25 @@ const pipeline = [
     step: '1',
     title: 'Estrutura',
     desc: 'Parlamentares, comissões, mesa e legislatura',
-    to: '/camara/parlamentares',
+    to: ROUTES.camara.parlamentares,
   },
   {
     step: '2',
     title: 'Matérias',
     desc: 'Protocolo, autores e tramitação',
-    to: '/materias',
+    to: ROUTES.materias,
   },
   {
     step: '3',
     title: 'Sessões',
-    desc: 'Pauta, presença e deliberação',
-    to: '/sessoes',
+    desc: 'Pauta, presença e votação',
+    to: ROUTES.sessoes,
   },
   {
     step: '4',
     title: 'Publicação',
-    desc: 'Normas e atos resultantes',
-    to: '/publicacao/normas',
+    desc: 'Normas jurídicas e atos administrativos',
+    to: ROUTES.publicacao.normas,
   },
 ];
 
@@ -67,7 +68,7 @@ export function DashboardPage() {
   }, []);
 
   return (
-    <>
+    <section className="page">
       <PageHeader
         title="Painel legislativo"
         subtitle="Acompanhe o fluxo da legislatura em exercício e acesse cada etapa em sequência."
@@ -88,14 +89,14 @@ export function DashboardPage() {
         ))}
       </div>
 
-      <div className="form-grid" style={{ margin: '1.25rem 0' }}>
+      <div className="stats-row">
         {[
-          ['Parlamentares', stats.parlamentares, '/camara/parlamentares'],
-          ['Matérias', stats.materias, '/materias'],
-          ['Em tramitação', stats.emTramitacao, '/materias'],
-          ['Sessões plenárias', stats.sessoes, '/sessoes'],
+          ['Parlamentares', stats.parlamentares, ROUTES.camara.parlamentares],
+          ['Matérias', stats.materias, ROUTES.materias],
+          ['Em tramitação', stats.emTramitacao, ROUTES.materias],
+          ['Sessões plenárias', stats.sessoes, ROUTES.sessoes],
         ].map(([label, value, to]) => (
-          <Link key={String(label)} to={String(to)} className="stat-card card">
+          <Link key={String(label)} to={String(to)} className="stat-card">
             <div className="stat-value">{value}</div>
             <div className="stat-label">{label}</div>
           </Link>
@@ -123,17 +124,17 @@ export function DashboardPage() {
           ) : (
             <p className="muted">
               Cadastre uma legislatura em{' '}
-              <Link to="/camara/legislaturas">Estrutura da Câmara</Link>.
+              <Link to={ROUTES.camara.legislaturas}>Estrutura da Câmara</Link>.
             </p>
           )}
           <div className="quick-actions">
-            <Link to="/materias" className="btn btn-primary btn-sm">
+            <Link to={ROUTES.materias} className="btn btn-primary btn-sm">
               Nova matéria
             </Link>
-            <Link to="/sessoes" className="btn btn-secondary btn-sm">
+            <Link to={ROUTES.sessoes} className="btn btn-secondary btn-sm">
               Sessões
             </Link>
-            <Link to="/relatorios" className="btn btn-secondary btn-sm">
+            <Link to={ROUTES.relatorios} className="btn btn-secondary btn-sm">
               Relatórios
             </Link>
           </div>
@@ -153,11 +154,11 @@ export function DashboardPage() {
               ))}
             </ul>
           )}
-          <Link to="/materias" className="link-more">
+          <Link to={ROUTES.materias} className="link-more">
             Ver todas as matérias →
           </Link>
         </div>
       </div>
-    </>
+    </section>
   );
 }

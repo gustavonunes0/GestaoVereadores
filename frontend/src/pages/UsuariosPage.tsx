@@ -84,24 +84,24 @@ export function UsuariosPage() {
   }
 
   return (
-    <>
-      <div className="toolbar">
-        <h1 className="page-title" style={{ margin: 0 }}>
-          Usuários do sistema
-        </h1>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => {
-            resetForm();
-            setCreateOpen(true);
-          }}
-        >
-          Novo usuário
-        </button>
+    <section className="page">
+      <div className="page-header">
+        <h1 className="page-title">Usuários do sistema</h1>
+        <div className="page-header-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              resetForm();
+              setCreateOpen(true);
+            }}
+          >
+            Novo usuário
+          </button>
+        </div>
       </div>
 
-      <p style={{ color: 'var(--muted)', marginTop: 0, fontSize: '0.9rem' }}>
+      <p className="page-context">
         Apenas perfil Master pode criar e alterar usuários. Operadores têm acesso somente leitura
         nas demais telas.
       </p>
@@ -140,14 +140,12 @@ export function UsuariosPage() {
           </tbody>
         </table>
         {items.length === 0 && (
-          <p style={{ padding: '1rem', color: 'var(--muted)', margin: 0 }}>
-            Nenhum usuário cadastrado.
-          </p>
+          <p className="table-empty-state">Nenhum usuário cadastrado.</p>
         )}
       </div>
 
       {meta.totalPages > 1 && (
-        <div className="toolbar" style={{ marginTop: '0.75rem' }}>
+        <div className="toolbar sigl-cluster pagination-bar">
           <button
             type="button"
             className="btn btn-secondary btn-sm"
@@ -156,7 +154,7 @@ export function UsuariosPage() {
           >
             Anterior
           </button>
-          <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+          <span className="text-muted">
             Página {meta.page} de {meta.totalPages} ({meta.total} usuários)
           </span>
           <button
@@ -251,7 +249,7 @@ export function UsuariosPage() {
                 ))}
               </select>
             </label>
-            <label style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
+            <label className="label-inline">
               <input
                 type="checkbox"
                 checked={ativo}
@@ -274,6 +272,6 @@ export function UsuariosPage() {
           </form>
         </Modal>
       )}
-    </>
+    </section>
   );
 }

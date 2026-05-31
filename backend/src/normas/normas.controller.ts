@@ -4,12 +4,17 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ReadRoles, WriteRoles } from '../common/decorators/api-roles.decorator';
+import { TenantUserRole } from '@prisma/client';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
+import { TenantRoles } from '../common/decorators/tenant-roles.decorator';
+import { TenantRolesGuard } from '../common/guards/tenant-roles.guard';
 import { CreateNormaDto, FilterNormaDto } from './dto/norma.dto';
 import { UpdateNormaDto } from './dto/update-norma.dto';
 import { NormasService } from './normas.service';
@@ -20,33 +25,52 @@ import { NormasService } from './normas.service';
 export class NormasController {
   constructor(private readonly service: NormasService) {}
 
-  @ReadRoles()
   @Get()
-  findAll(@Query() filters: FilterNormaDto) {
-    return this.service.findAll(filters);
+  findAll(@TenantId() tenantId: string, @Query() filters: FilterNormaDto) {
+    return this.service.findAll(tenantId, filters);
   }
 
-  @ReadRoles()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  findOne(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.findOne(tenantId, id);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Post()
-  create(@Body() dto: CreateNormaDto) {
-    return this.service.create(dto);
+  create(@TenantId() tenantId: string, @Body() dto: CreateNormaDto) {
+    return this.service.create(tenantId, dto);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateNormaDto) {
-    return this.service.update(id, dto);
+  update(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateNormaDto,
+  ) {
+    return this.service.update(tenantId, id, dto);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(TenantUserRole.ADMIN, TenantUserRole.OWNER)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.remove(tenantId, id);
   }
 }

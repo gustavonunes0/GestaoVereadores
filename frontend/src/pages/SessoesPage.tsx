@@ -1,26 +1,53 @@
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SiglButton } from '../components/common/SiglButton';
 import { api, apiList } from '../api/client';
 import { ContextBanner } from '../components/ContextBanner';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
 import { useLegislatura } from '../contexts/LegislaturaContext';
+import { useAppToast } from '../hooks/useAppToast';
 import { useDominios } from '../hooks/useDominios';
+import { usePermissions } from '../hooks/usePermissions';
+import {
+  SessaoDeliberacaoPanel,
+  type PautaItemDeliberacao,
+} from '../components/sessoes/SessaoDeliberacaoPanel';
+import { canAddMateriaToPauta, MATERIA_STATUS, type MateriaStatus } from '../types/legislative';
 
 type Sessao = {
   id: string;
   dataInicio: string;
   tipoSessao?: { nome: string };
-  situacao?: { nome: string };
+  situacao?: { nome: string; codigo?: string };
   mensagem?: string;
-  pautaItens?: { id: string; ordem: number; materia?: { id: string; ementa: string } }[];
-  presencas?: { parlamentar?: { pessoa?: { nome: string } }; presente: boolean }[];
+  pautaItens?: PautaItemDeliberacao[];
+  presencas?: {
+    parlamentarId?: string;
+    presente: boolean;
+    situacao?: string;
+    parlamentar?: { id: string; pessoa?: { nome: string } };
+  }[];
 };
 
-type Materia = { id: string; ementa: string; tipo?: { nome: string } };
+type Materia = {
+  id: string;
+  ementa: string;
+  tipo?: { nome: string };
+  status?: MateriaStatus;
+  emTramitacao?: boolean;
+};
+
+function sessaoAceitaPauta(situacao?: { nome: string; codigo?: string }): boolean {
+  if (situacao?.codigo === 'EM_ANDAMENTO') return true;
+  const nome = situacao?.nome?.toLowerCase() ?? '';
+  return nome.includes('andamento');
+}
 
 export function SessoesPage() {
   const { dominios } = useDominios();
+  const { canWrite } = usePermissions();
+  const { showApiError, showSuccess } = useAppToast();
   const { sessaoLegislativaId, legislaturaAtiva } = useLegislatura();
   const [items, setItems] = useState<Sessao[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -65,56 +92,90 @@ export function SessoesPage() {
     }
   }, [dominios, tipoSessaoId, situacaoId]);
 
+  const sessaoEmAndamento = useMemo(
+    () => !!detail && sessaoAceitaPauta(detail.situacao),
+    [detail],
+  );
+
+  const podeIncluirPauta = useMemo(
+    () => sessaoEmAndamento && canWrite,
+    [sessaoEmAndamento, canWrite],
+  );
+
+  function refreshDetail() {
+    if (!selectedId) return;
+    api<Sessao>(`/sessoes/${selectedId}`).then(setDetail);
+    void load();
+  }
+
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
-    await api('/sessoes', {
-      method: 'POST',
-      body: JSON.stringify({
-        dataInicio: new Date(dataInicio).toISOString(),
-        tipoSessaoId,
-        situacaoId,
-        sessaoLegislativaId: sessaoLegislativaId || undefined,
-      }),
-    });
-    setOpen(false);
-    load();
+    try {
+      await api('/sessoes', {
+        method: 'POST',
+        body: JSON.stringify({
+          dataInicio: new Date(dataInicio).toISOString(),
+          tipoSessaoId,
+          situacaoId,
+          sessaoLegislativaId: sessaoLegislativaId || undefined,
+        }),
+      });
+      setOpen(false);
+      showSuccess('Sessão plenária agendada.');
+      await load();
+    } catch (err) {
+      showApiError(err);
+    }
   }
 
   async function handleAddPauta(e: FormEvent) {
     e.preventDefault();
-    if (!selectedId) return;
-    await api(`/sessoes/${selectedId}/pauta`, {
-      method: 'POST',
-      body: JSON.stringify({ materiaId, ordem: ordemPauta }),
-    });
-    setPautaOpen(false);
-    api<Sessao>(`/sessoes/${selectedId}`).then(setDetail);
-    load();
+    if (!selectedId || !podeIncluirPauta) return;
+    try {
+      await api(`/sessoes/${selectedId}/pauta`, {
+        method: 'POST',
+        body: JSON.stringify({ materiaId, ordem: ordemPauta }),
+      });
+      setPautaOpen(false);
+      showSuccess('Matéria incluída na pauta.');
+      api<Sessao>(`/sessoes/${selectedId}`).then(setDetail);
+      await load();
+    } catch (err) {
+      showApiError(err);
+    }
   }
 
-  function openPautaModal() {
-    apiList<Materia>('/materias', { limit: 100, emTramitacao: true }).then((r) => {
-      setMaterias(r.data);
-      if (r.data[0]) setMateriaId(r.data[0].id);
+  async function openPautaModal() {
+    if (!podeIncluirPauta) return;
+    try {
+      const response = await apiList<Materia>('/materias', {
+        limit: 100,
+        status: MATERIA_STATUS.EM_TRAMITACAO,
+      });
+      const elegiveis = response.data.filter((m) => canAddMateriaToPauta(m));
+      setMaterias(elegiveis);
+      if (elegiveis[0]) setMateriaId(elegiveis[0].id);
       setOrdemPauta((detail?.pautaItens?.length ?? 0) + 1);
       setPautaOpen(true);
-    });
+    } catch (err) {
+      showApiError(err);
+    }
   }
 
   return (
-    <>
+    <section className="page">
       <PageHeader
         title="Sessões plenárias"
         subtitle="Pauta e presenças vinculadas à sessão legislativa selecionada no topo."
         actions={
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => setOpen(true)}
-            disabled={!sessaoLegislativaId}
-          >
-            Nova sessão
-          </button>
+          canWrite ? (
+            <SiglButton
+              label="Nova sessão"
+              icon="pi pi-plus"
+              onClick={() => setOpen(true)}
+              disabled={!sessaoLegislativaId}
+            />
+          ) : undefined
         }
       />
 
@@ -135,83 +196,85 @@ export function SessoesPage() {
       )}
 
       <div className="split-view">
-        <div className="card table-wrap split-list">
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Tipo</th>
-                <th>Pauta</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((s) => (
-                <tr
-                  key={s.id}
-                  className={selectedId === s.id ? 'row-selected' : ''}
-                  onClick={() => setSelectedId(s.id)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <td>{new Date(s.dataInicio).toLocaleString('pt-BR')}</td>
-                  <td>{s.tipoSessao?.nome ?? '—'}</td>
-                  <td>{s.pautaItens?.length ?? 0} itens</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {items.length === 0 && (
-            <p className="empty">Nenhuma sessão nesta sessão legislativa.</p>
-          )}
+        <div className="split-panel split-list">
+          <div className="split-panel__body">
+            <div className="split-panel__scroll table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Tipo</th>
+                    <th>Pauta</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((s) => (
+                    <tr
+                      key={s.id}
+                      className={selectedId === s.id ? 'row-selected' : ''}
+                      onClick={() => setSelectedId(s.id)}
+                    >
+                      <td>{new Date(s.dataInicio).toLocaleString('pt-BR')}</td>
+                      <td>{s.tipoSessao?.nome ?? '—'}</td>
+                      <td>{s.pautaItens?.length ?? 0} itens</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {items.length === 0 && (
+              <p className="split-panel__empty">
+                Nenhuma sessão nesta sessão legislativa.
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="card split-detail">
+        <div className="split-panel split-detail">
           {!detail ? (
-            <p className="muted">Selecione uma sessão para ver pauta e presenças.</p>
+            <p className="split-panel__empty">
+              Selecione uma sessão para ver pauta e presenças.
+            </p>
           ) : (
+            <div className="split-panel__body">
             <>
               <h2 className="card-title">
                 {new Date(detail.dataInicio).toLocaleString('pt-BR')}
-                <span className="badge" style={{ marginLeft: '0.5rem' }}>
+                <span className="badge badge--inline">
                   {detail.situacao?.nome}
                 </span>
               </h2>
-              <div className="detail-actions">
-                <button type="button" className="btn btn-primary btn-sm" onClick={openPautaModal}>
-                  Incluir na pauta
-                </button>
-                <Link to="/materias" className="btn btn-secondary btn-sm">
-                  Ver matérias
+              <div className="detail-actions sigl-cluster">
+                {canWrite && (
+                  <SiglButton
+                    label="Incluir na pauta"
+                    icon="pi pi-list"
+                    disabled={!podeIncluirPauta}
+                    tooltip={
+                      podeIncluirPauta
+                        ? undefined
+                        : 'Disponível apenas com sessão EM_ANDAMENTO e perfil com permissão de escrita'
+                    }
+                    tooltipOptions={{ position: 'top' }}
+                    onClick={() => void openPautaModal()}
+                  />
+                )}
+                <Link to="/materias">
+                  <SiglButton label="Ver matérias" icon="pi pi-file" severity="secondary" outlined />
                 </Link>
               </div>
-              <h3 className="detail-subtitle">Pauta</h3>
-              {detail.pautaItens?.length ? (
-                <ol className="pauta-list">
-                  {detail.pautaItens.map((p) => (
-                    <li key={p.id}>
-                      <span className="pauta-ordem">{p.ordem}</span>
-                      {p.materia?.ementa ?? '—'}
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p className="muted">Pauta vazia — inclua matérias em tramitação.</p>
-              )}
-              <h3 className="detail-subtitle">Presenças ({detail.presencas?.length ?? 0})</h3>
-              {detail.presencas?.length ? (
-                <ul className="presenca-list">
-                  {detail.presencas.map((p, i) => (
-                    <li key={i}>
-                      {p.parlamentar?.pessoa?.nome ?? '—'} —{' '}
-                      {p.presente ? 'Presente' : 'Ausente'}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="muted">
-                  Registre presenças pela API ou em versão futura desta tela.
-                </p>
+              {selectedId && (
+                <SessaoDeliberacaoPanel
+                  sessaoId={selectedId}
+                  pautaItens={detail.pautaItens ?? []}
+                  presencas={detail.presencas ?? []}
+                  canWrite={canWrite}
+                  sessaoEmAndamento={sessaoEmAndamento}
+                  onUpdated={refreshDetail}
+                />
               )}
             </>
+            </div>
           )}
         </div>
       </div>
@@ -268,6 +331,9 @@ export function SessoesPage() {
             <label>
               Matéria *
               <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)} required>
+                {!materias.length && (
+                  <option value="">Nenhuma matéria em tramitação disponível</option>
+                )}
                 {materias.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.tipo?.nome ? `${m.tipo.nome}: ` : ''}
@@ -297,6 +363,6 @@ export function SessoesPage() {
           </form>
         </Modal>
       )}
-    </>
+    </section>
   );
 }

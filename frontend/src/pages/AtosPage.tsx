@@ -3,6 +3,7 @@ import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
 import { useDominios } from '../hooks/useDominios';
+import { usePermissions } from '../hooks/usePermissions';
 
 type Ato = {
   id: string;
@@ -12,6 +13,7 @@ type Ato = {
 };
 
 export function AtosPage() {
+  const { canWrite } = usePermissions();
   const { dominios } = useDominios();
   const [items, setItems] = useState<Ato[]>([]);
   const [open, setOpen] = useState(false);
@@ -46,11 +48,13 @@ export function AtosPage() {
   return (
     <>
       <PanelToolbar
-        title="Atos"
+        title="Atos administrativos"
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-            Adicionar ato
-          </button>
+          canWrite ? (
+            <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
+              Adicionar ato
+            </button>
+          ) : undefined
         }
       />
       <div className="card table-wrap">

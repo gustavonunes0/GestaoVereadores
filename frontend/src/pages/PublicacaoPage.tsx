@@ -1,12 +1,8 @@
 import { Outlet } from 'react-router-dom';
+import { PUBLICACAO_TABS } from '../app/navigation';
 import { ContextBanner } from '../components/ContextBanner';
 import { PageHeader } from '../components/PageHeader';
 import { TabNav } from '../components/TabNav';
-
-const tabs = [
-  { to: '/publicacao/normas', label: 'Normas jurídicas', end: true },
-  { to: '/publicacao/atos', label: 'Atos' },
-];
 
 export function PublicacaoPage() {
   return (
@@ -19,7 +15,7 @@ export function PublicacaoPage() {
         step="Etapa 4"
         hint="Matérias aprovadas podem gerar normas vinculadas à legislatura em exercício."
       />
-      <TabNav tabs={tabs} />
+      <TabNav tabs={[...PUBLICACAO_TABS]} />
       <div className="tab-panel">
         <Outlet />
       </div>

@@ -1,41 +1,78 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SiglButton } from '../components/common/SiglButton';
+import { Column } from 'primereact/column';
+import { DataTable } from 'primereact/datatable';
+import { Dialog } from 'primereact/dialog';
+import { Dropdown } from 'primereact/dropdown';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { SelectButton } from 'primereact/selectbutton';
+import { Tag } from 'primereact/tag';
 import { api, apiList } from '../api/client';
 import { ContextBanner } from '../components/ContextBanner';
-import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
+import { useAppToast } from '../hooks/useAppToast';
 import { useDominios } from '../hooks/useDominios';
+import { usePermissions } from '../hooks/usePermissions';
+import {
+  MATERIA_STATUS,
+  MATERIA_STATUS_LABELS,
+  type MateriaStatus,
+} from '../types/legislative';
 
 type Materia = {
   id: string;
   ementa: string;
   numero?: number;
   emTramitacao: boolean;
+  status?: MateriaStatus;
   tipo?: { nome: string };
   statusTramitacao?: { nome: string };
   autor?: { nome: string };
 };
 
+const TRAMITACAO_FILTER_OPTIONS = [
+  { label: 'Todas', value: 'todas' },
+  { label: 'Em tramitação', value: 'sim' },
+  { label: 'Encerradas', value: 'nao' },
+] as const;
+
 export function MateriasPage() {
   const { dominios } = useDominios();
+  const { canWrite } = usePermissions();
+  const { showSuccess, showApiError } = useAppToast();
+
   const [items, setItems] = useState<Materia[]>([]);
+  const [loading, setLoading] = useState(false);
   const [filtroTramitacao, setFiltroTramitacao] = useState<'todas' | 'sim' | 'nao'>('todas');
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [ementa, setEmenta] = useState('');
   const [tipoId, setTipoId] = useState('');
   const [statusId, setStatusId] = useState('');
   const [autorId, setAutorId] = useState('');
 
-  function load() {
+  const load = useCallback(async () => {
+    setLoading(true);
     const params: Record<string, string | number | boolean | undefined> = { limit: 100 };
-    if (filtroTramitacao === 'sim') params.emTramitacao = true;
-    if (filtroTramitacao === 'nao') params.emTramitacao = false;
-    apiList<Materia>('/materias', params).then((r) => setItems(r.data));
-  }
+    if (filtroTramitacao === 'sim') {
+      params.status = MATERIA_STATUS.EM_TRAMITACAO;
+    } else if (filtroTramitacao === 'nao') {
+      params.emTramitacao = false;
+    }
+    try {
+      const response = await apiList<Materia>('/materias', params);
+      setItems(response.data);
+    } catch (err) {
+      showApiError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [filtroTramitacao, showApiError]);
 
   useEffect(() => {
-    load();
-  }, [filtroTramitacao]);
+    void load();
+  }, [load]);
 
   useEffect(() => {
     if (dominios?.tiposMateria[0] && !tipoId) {
@@ -51,144 +88,155 @@ export function MateriasPage() {
     }
   }, [dominios, autorId]);
 
-  async function handleCreate(e: FormEvent) {
-    e.preventDefault();
-    await api('/materias', {
-      method: 'POST',
-      body: JSON.stringify({
-        ementa,
-        tipoId,
-        autorId: autorId || undefined,
-        statusTramitacaoId: statusId || undefined,
-        emTramitacao: true,
-      }),
-    });
-    setOpen(false);
-    setEmenta('');
-    load();
+  async function handleCreate() {
+    if (!ementa.trim() || !tipoId) return;
+    setSaving(true);
+    try {
+      await api('/materias', {
+        method: 'POST',
+        body: JSON.stringify({
+          ementa: ementa.trim(),
+          tipoId,
+          autorId: autorId || undefined,
+          statusTramitacaoId: statusId || undefined,
+          status: MATERIA_STATUS.EM_TRAMITACAO,
+          emTramitacao: true,
+        }),
+      });
+      setOpen(false);
+      setEmenta('');
+      showSuccess('Matéria protocolada. Inclua na pauta em Sessões quando a sessão estiver em andamento.');
+      await load();
+    } catch (err) {
+      showApiError(err);
+    } finally {
+      setSaving(false);
+    }
   }
 
+  const statusBody = (row: Materia) => {
+    const label = row.status
+      ? MATERIA_STATUS_LABELS[row.status]
+      : row.emTramitacao
+        ? 'Em tramitação'
+        : 'Encerrada';
+    const severity =
+      row.status === MATERIA_STATUS.APROVADA
+        ? 'success'
+        : row.status === MATERIA_STATUS.EM_TRAMITACAO || row.emTramitacao
+          ? 'info'
+          : 'secondary';
+    return <Tag value={label} severity={severity} />;
+  };
+
   return (
-    <>
+    <section className="page">
       <PageHeader
         title="Matérias e proposições"
-        subtitle="Entrada no processo legislativo — após cadastro, tramitem e incluam na pauta da sessão."
+        subtitle="Somente matérias em tramitação podem entrar na pauta de sessão em andamento."
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-            Nova matéria
-          </button>
+          canWrite ? (
+            <SiglButton label="Nova matéria" icon="pi pi-plus" onClick={() => setOpen(true)} />
+          ) : undefined
         }
       />
 
       <ContextBanner
         step="Etapa 2"
-        hint="Matérias em tramitação podem ser incluídas na pauta em Sessões."
+        hint="Matérias com status EM_TRAMITACAO podem ser incluídas na pauta em Sessões."
       />
 
       <div className="toolbar filters-bar">
-        <div className="filter-chips" role="group" aria-label="Filtro tramitação">
-          {(
-            [
-              ['todas', 'Todas'],
-              ['sim', 'Em tramitação'],
-              ['nao', 'Encerradas'],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={`chip${filtroTramitacao === value ? ' active' : ''}`}
-              onClick={() => setFiltroTramitacao(value)}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="filters-bar__filters">
+          <SelectButton
+            className="sigl-selectbutton"
+            value={filtroTramitacao}
+            onChange={(e) => setFiltroTramitacao(e.value)}
+            options={[...TRAMITACAO_FILTER_OPTIONS]}
+            optionLabel="label"
+            optionValue="value"
+          />
         </div>
-        <Link to="/sessoes" className="btn btn-secondary btn-sm">
-          Ir para sessões →
-        </Link>
+        <div className="filters-bar__actions">
+          <Link to="/sessoes">
+            <SiglButton label="Ir para sessões" icon="pi pi-arrow-right" severity="secondary" text />
+          </Link>
+        </div>
       </div>
 
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Nº</th>
-              <th>Tipo</th>
-              <th>Ementa</th>
-              <th>Autor</th>
-              <th>Status</th>
-              <th>Tramitação</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((m) => (
-              <tr key={m.id}>
-                <td>{m.numero ?? '—'}</td>
-                <td>{m.tipo?.nome ?? '—'}</td>
-                <td>{m.ementa}</td>
-                <td>{m.autor?.nome ?? '—'}</td>
-                <td>{m.statusTramitacao?.nome ?? '—'}</td>
-                <td>
-                  <span className={`badge ${m.emTramitacao ? '' : 'badge-muted'}`}>
-                    {m.emTramitacao ? 'Em tramitação' : 'Encerrada'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {items.length === 0 && <p className="empty">Nenhuma matéria encontrada.</p>}
-      </div>
+      <DataTable
+        value={items}
+        loading={loading}
+        dataKey="id"
+        paginator
+        rows={10}
+        emptyMessage="Nenhuma matéria encontrada para o filtro selecionado."
+        className="sigl-datatable"
+      >
+        <Column header="Nº" body={(row: Materia) => row.numero ?? '—'} style={{ width: '4rem' }} />
+        <Column header="Tipo" body={(row: Materia) => row.tipo?.nome ?? '—'} />
+        <Column header="Ementa" body={(row: Materia) => row.ementa} />
+        <Column header="Autor" body={(row: Materia) => row.autor?.nome ?? '—'} />
+        <Column
+          header="Status tramitação"
+          body={(row: Materia) => row.statusTramitacao?.nome ?? '—'}
+        />
+        <Column header="Situação" body={statusBody} style={{ width: '10rem' }} />
+      </DataTable>
 
-      {open && dominios && (
-        <Modal title="Nova matéria" onClose={() => setOpen(false)}>
-          <form onSubmit={handleCreate}>
-            <div className="form-grid">
-              <label>
-                Tipo *
-                <select value={tipoId} onChange={(e) => setTipoId(e.target.value)} required>
-                  {dominios.tiposMateria.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.nome}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Status tramitação
-                <select value={statusId} onChange={(e) => setStatusId(e.target.value)}>
-                  <option value="">—</option>
-                  {dominios.statusTramitacao.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nome}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ gridColumn: '1 / -1' }}>
-                Ementa *
-                <textarea value={ementa} onChange={(e) => setEmenta(e.target.value)} required />
-              </label>
-            </div>
-            <p className="muted" style={{ fontSize: '0.85rem' }}>
-              Após salvar, inclua a matéria na pauta em{' '}
+      <Dialog
+        header="Nova matéria"
+        visible={open && !!dominios}
+        onHide={() => !saving && setOpen(false)}
+        modal
+        className="sigl-dialog-md"
+        footer={
+          <div className="dialog-footer">
+            <SiglButton label="Cancelar" severity="secondary" text disabled={saving} onClick={() => setOpen(false)} />
+            <SiglButton label="Protocolar" icon="pi pi-check" loading={saving} onClick={() => void handleCreate()} />
+          </div>
+        }
+      >
+        {dominios && (
+          <div className="form-stack">
+            <label htmlFor="mat-tipo">Tipo *</label>
+            <Dropdown
+              id="mat-tipo"
+              value={tipoId}
+              options={dominios.tiposMateria}
+              optionLabel="nome"
+              optionValue="id"
+              onChange={(e) => setTipoId(e.value)}
+              className="w-full"
+            />
+            <label htmlFor="mat-status-tram">Status tramitação</label>
+            <Dropdown
+              id="mat-status-tram"
+              value={statusId}
+              options={[{ id: '', nome: '—' }, ...dominios.statusTramitacao]}
+              optionLabel="nome"
+              optionValue="id"
+              onChange={(e) => setStatusId(e.value)}
+              className="w-full"
+            />
+            <label htmlFor="mat-ementa">Ementa *</label>
+            <InputTextarea
+              id="mat-ementa"
+              value={ementa}
+              onChange={(e) => setEmenta(e.target.value)}
+              rows={4}
+              className="w-full"
+            />
+            <p className="form-hint">
+              Após salvar, inclua na pauta em{' '}
               <Link to="/sessoes" onClick={() => setOpen(false)}>
                 Sessões
-              </Link>
-              .
+              </Link>{' '}
+              (sessão em andamento).
             </p>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>
-                Cancelar
-              </button>
-              <button type="submit" className="btn btn-primary">
-                Protocolar
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-    </>
+          </div>
+        )}
+      </Dialog>
+    </section>
   );
 }

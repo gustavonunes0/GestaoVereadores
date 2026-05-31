@@ -4,12 +4,17 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ReadRoles, WriteRoles } from '../common/decorators/api-roles.decorator';
+import { TenantUserRole } from '@prisma/client';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
+import { TenantRoles } from '../common/decorators/tenant-roles.decorator';
+import { TenantRolesGuard } from '../common/guards/tenant-roles.guard';
 import { ListQueryDto } from '../common/dto/list-query.dto';
 import {
   CreateLegislaturaDto,
@@ -24,42 +29,67 @@ import { LegislaturasService } from './legislaturas.service';
 export class LegislaturasController {
   constructor(private readonly service: LegislaturasService) {}
 
-  @ReadRoles()
   @Get()
-  findAll(@Query() query: ListQueryDto) {
-    return this.service.findAll(query);
+  findAll(@TenantId() tenantId: string, @Query() query: ListQueryDto) {
+    return this.service.findAll(tenantId, query);
   }
 
-  @ReadRoles()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  findOne(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.findOne(tenantId, id);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Post()
-  create(@Body() dto: CreateLegislaturaDto) {
-    return this.service.create(dto);
+  create(@TenantId() tenantId: string, @Body() dto: CreateLegislaturaDto) {
+    return this.service.create(tenantId, dto);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateLegislaturaDto) {
-    return this.service.update(id, dto);
+  update(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateLegislaturaDto,
+  ) {
+    return this.service.update(tenantId, id, dto);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(TenantUserRole.ADMIN, TenantUserRole.OWNER)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.remove(tenantId, id);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Post(':id/sessoes-legislativas')
   createSessaoLegislativa(
-    @Param('id') id: string,
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreateSessaoLegislativaDto,
   ) {
-    return this.service.createSessaoLegislativa(id, dto);
+    return this.service.createSessaoLegislativa(tenantId, id, dto);
   }
 }

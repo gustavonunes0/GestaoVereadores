@@ -1,68 +1,63 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import { MasterRoute } from './components/MasterRoute';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { AtosPage } from './pages/AtosPage';
-import { AutoresPage } from './pages/AutoresPage';
-import { CamaraPage } from './pages/CamaraPage';
-import { ComissoesPage } from './pages/ComissoesPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { FrentesPage } from './pages/FrentesPage';
-import { LegislaturasPage } from './pages/LegislaturasPage';
-import { LoginPage } from './pages/LoginPage';
-import { MateriasPage } from './pages/MateriasPage';
-import { MesaDiretoraPage } from './pages/MesaDiretoraPage';
-import { NormasPage } from './pages/NormasPage';
-import { ParlamentaresPage } from './pages/ParlamentaresPage';
-import { PublicacaoPage } from './pages/PublicacaoPage';
-import { RelatoriosPage } from './pages/RelatoriosPage';
-import { SessoesPage } from './pages/SessoesPage';
-import { UsuariosPage } from './pages/UsuariosPage';
-
-export default function App() {
-  return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route element={<ProtectedRoute />}>
-        <Route element={<Layout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="materias" element={<MateriasPage />} />
-          <Route path="sessoes" element={<SessoesPage />} />
-          <Route path="relatorios" element={<RelatoriosPage />} />
-
-          <Route path="camara" element={<CamaraPage />}>
-            <Route index element={<Navigate to="parlamentares" replace />} />
-            <Route path="parlamentares" element={<ParlamentaresPage />} />
-            <Route path="comissoes" element={<ComissoesPage />} />
-            <Route path="frentes" element={<FrentesPage />} />
-            <Route path="mesa-diretora" element={<MesaDiretoraPage />} />
-            <Route path="autores" element={<AutoresPage />} />
-            <Route path="legislaturas" element={<LegislaturasPage />} />
-          </Route>
-
-          <Route path="publicacao" element={<PublicacaoPage />}>
-            <Route index element={<Navigate to="normas" replace />} />
-            <Route path="normas" element={<NormasPage />} />
-            <Route path="atos" element={<AtosPage />} />
-          </Route>
-
-          <Route element={<MasterRoute />}>
-            <Route path="usuarios" element={<UsuariosPage />} />
-          </Route>
-
-          {/* Rotas antigas → nova estrutura */}
-          <Route path="parlamentares" element={<Navigate to="/camara/parlamentares" replace />} />
-          <Route path="comissoes" element={<Navigate to="/camara/comissoes" replace />} />
-          <Route path="frentes" element={<Navigate to="/camara/frentes" replace />} />
-          <Route path="mesa-diretora" element={<Navigate to="/camara/mesa-diretora" replace />} />
-          <Route path="autores" element={<Navigate to="/camara/autores" replace />} />
-          <Route path="legislaturas" element={<Navigate to="/camara/legislaturas" replace />} />
-          <Route path="normas" element={<Navigate to="/publicacao/normas" replace />} />
-          <Route path="atos" element={<Navigate to="/publicacao/atos" replace />} />
-        </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
-}
-
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { LEGACY_REDIRECTS } from './app/navigation';
+import { Layout } from './components/Layout';
+import { MasterRoute } from './components/MasterRoute';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { AtosPage } from './pages/AtosPage';
+import { AutoresPage } from './pages/AutoresPage';
+import { CamaraPage } from './pages/CamaraPage';
+import { ComissoesPage } from './pages/ComissoesPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { FrentesPage } from './pages/FrentesPage';
+import { LegislaturasPage } from './pages/LegislaturasPage';
+import { LoginPage } from './pages/LoginPage';
+import { MateriasPage } from './pages/MateriasPage';
+import { MesaDiretoraPage } from './pages/MesaDiretoraPage';
+import { NormasPage } from './pages/NormasPage';
+import { ParlamentaresPage } from './pages/ParlamentaresPage';
+import { PublicacaoPage } from './pages/PublicacaoPage';
+import { RelatoriosPage } from './pages/RelatoriosPage';
+import { SessoesPage } from './pages/SessoesPage';
+import { UsuariosPage } from './pages/UsuariosPage';
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="materias" element={<MateriasPage />} />
+          <Route path="sessoes" element={<SessoesPage />} />
+          <Route path="relatorios" element={<RelatoriosPage />} />
+
+          <Route path="camara" element={<CamaraPage />}>
+            <Route index element={<Navigate to="parlamentares" replace />} />
+            <Route path="parlamentares" element={<ParlamentaresPage />} />
+            <Route path="comissoes" element={<ComissoesPage />} />
+            <Route path="frentes" element={<FrentesPage />} />
+            <Route path="mesa-diretora" element={<MesaDiretoraPage />} />
+            <Route path="autores" element={<AutoresPage />} />
+            <Route path="legislaturas" element={<LegislaturasPage />} />
+          </Route>
+
+          <Route path="publicacao" element={<PublicacaoPage />}>
+            <Route index element={<Navigate to="normas" replace />} />
+            <Route path="normas" element={<NormasPage />} />
+            <Route path="atos" element={<AtosPage />} />
+          </Route>
+
+          <Route element={<MasterRoute />}>
+            <Route path="usuarios" element={<UsuariosPage />} />
+          </Route>
+
+          {LEGACY_REDIRECTS.map(({ from, to }) => (
+            <Route key={from} path={from} element={<Navigate to={to} replace />} />
+          ))}
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+

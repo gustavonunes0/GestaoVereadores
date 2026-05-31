@@ -1,0 +1,33 @@
+# Cursor Rules — Frontend SIGL
+
+Always read and follow docs/CURSOR_FRONTEND_CONTEXT.md before implementing frontend features.
+
+Use PrimeReact and PrimeIcons as the official UI library.
+
+Use TypeScript.
+
+Use Portuguese Brazilian for UI labels, messages, buttons, validation messages and user-facing texts.
+
+Use English for code names: variables, functions, components, files, folders, hooks and types.
+
+Do not send tenantId manually from the frontend. Tenant context must come from authentication/JWT.
+
+Do not use direct fetch in pages or components. Use the existing API client/services from src/api/client.ts.
+
+Preserve multi-tenancy, authentication, authorization and route protection.
+
+Prefer small, safe and incremental changes.
+
+Reuse existing components, contexts, hooks, routes and API patterns before creating new abstractions.
+
+Use PrimeReact components for buttons, forms, tables, dialogs, toasts, confirmations and feedback.
+
+Always include loading, error, empty state and success feedback when creating screens.
+
+Use the project color tokens from src/styles/prime-theme-tokens.css.
+
+Do not invent loose colors in components.
+
+Do not mix Material UI, Ant Design, Chakra or another UI library unless explicitly requested.
+
+Before finishing, check whether npm run build would pass and fix TypeScript/import errors when possible.

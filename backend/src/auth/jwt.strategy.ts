@@ -2,13 +2,9 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { AuthenticatedUser } from '../common/types/authenticated-request';
 import { PrismaService } from '../prisma/prisma.service';
-
-export type JwtPayload = {
-  sub: string;
-  username: string;
-  role: string;
-};
+import { JwtPayload } from './jwt-payload';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -23,7 +19,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload) {
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
+    if (payload.authType === 'camara') {
+      return this.validateCamaraUser(payload);
+    }
+    return this.validateSiglUser({
+      ...payload,
+      authType: payload.authType ?? 'sigl',
+    });
+  }
+
+  private async validateSiglUser(payload: JwtPayload): Promise<AuthenticatedUser> {
     const user = await this.prisma.usuario.findUnique({
       where: { id: payload.sub },
     });
@@ -32,9 +38,29 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
     return {
       id: user.id,
+      authType: 'sigl',
+      tenantId: payload.tid,
       username: user.username,
       nome: user.nome,
       role: user.role,
+    };
+  }
+
+  private async validateCamaraUser(payload: JwtPayload): Promise<AuthenticatedUser> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: payload.sub, isRemoved: false },
+    });
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    return {
+      id: user.id,
+      authType: 'camara',
+      tenantId: payload.tid,
+      tenantRole: payload.tenantRole,
+      isAdmin: payload.isAdmin,
+      email: user.email,
+      nome: `${user.firstName} ${user.lastName}`.trim(),
     };
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { buildDateRangeFilter } from '../common/prisma/date-fields';
+import { tenantWhere } from '../common/prisma/tenant-scope';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   RelatorioAtividadeCompletoDto,
@@ -12,10 +13,11 @@ import {
 export class RelatoriosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async atividadeCompleto(dto: RelatorioAtividadeCompletoDto) {
+  async atividadeCompleto(tenantId: string, dto: RelatorioAtividadeCompletoDto) {
     const range = buildDateRangeFilter(dto.dataInicioDe, dto.dataInicioAte);
     const materias = await this.prisma.materia.findMany({
       where: {
+        ...tenantWhere(tenantId),
         pautaItens: {
           some: {
             sessao: {
@@ -40,9 +42,9 @@ export class RelatoriosService {
     };
   }
 
-  async atividadeGeral(dto: RelatorioAtividadeGeralDto) {
-    const legislatura = await this.prisma.legislatura.findUnique({
-      where: { id: dto.legislaturaId },
+  async atividadeGeral(tenantId: string, dto: RelatorioAtividadeGeralDto) {
+    const legislatura = await this.prisma.legislatura.findFirst({
+      where: { id: dto.legislaturaId, ...tenantWhere(tenantId) },
     });
 
     const apresentacaoRange = buildDateRangeFilter(
@@ -51,6 +53,7 @@ export class RelatoriosService {
     );
 
     const where: Prisma.MateriaWhereInput = {
+      ...tenantWhere(tenantId),
       ...(dto.autorId && { autorId: dto.autorId }),
       ...(dto.tipoAutorId && { autor: { tipoAutorId: dto.tipoAutorId } }),
       ...(apresentacaoRange && { dataApresentacaoInicio: apresentacaoRange }),
@@ -87,10 +90,11 @@ export class RelatoriosService {
     return { filtros: dto, total: materias.length, materias };
   }
 
-  async presenca(dto: RelatorioPresencaDto) {
+  async presenca(tenantId: string, dto: RelatorioPresencaDto) {
     const range = buildDateRangeFilter(dto.dataInicioDe, dto.dataInicioAte);
     const sessoes = await this.prisma.sessaoPlenaria.findMany({
       where: {
+        ...tenantWhere(tenantId),
         sessaoLegislativaId: dto.sessaoLegislativaId,
         sessaoLegislativa: { legislaturaId: dto.legislaturaId },
         ...(dto.tipoSessaoId && { tipoSessaoId: dto.tipoSessaoId }),

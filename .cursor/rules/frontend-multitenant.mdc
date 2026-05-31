@@ -1,0 +1,17 @@
+---
+description: React SIGL — rotas, API client, UX multi-tenant
+globs: frontend/**/*
+alwaysApply: false
+---
+
+# Frontend
+
+Leia e siga **`frontend/.cursorrules`** e **`/.cursorrules`** (raiz).
+
+## Essencial
+
+- HTTP só via `src/api/client.ts`; token em `localStorage.access_token`.
+- **Nunca** enviar `tenantId` no body para escolher câmara — backend usa JWT.
+- UI em português; código em inglês; `ProtectedRoute` / `MasterRoute` por perfil.
+- Contexto: `LegislaturaContext` + `ContextBanner` em fluxos legislativos.
+- Desabilitar ações que violam regras (pauta, votação, norma, votação secreta).

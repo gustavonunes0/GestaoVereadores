@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
+import { usePermissions } from '../hooks/usePermissions';
 import { useLegislatura } from '../contexts/LegislaturaContext';
 
 type Legislatura = {
@@ -12,6 +13,7 @@ type Legislatura = {
 };
 
 export function LegislaturasPage() {
+  const { canWrite } = usePermissions();
   const { refresh } = useLegislatura();
   const [items, setItems] = useState<Legislatura[]>([]);
   const [open, setOpen] = useState(false);
@@ -45,9 +47,11 @@ export function LegislaturasPage() {
       <PanelToolbar
         title="Legislaturas"
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-            Nova legislatura
-          </button>
+          canWrite ? (
+            <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
+              Nova legislatura
+            </button>
+          ) : undefined
         }
       />
       <div className="card table-wrap">

@@ -1,7 +1,16 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { SiglButton } from '../components/common/SiglButton';
+import { Column } from 'primereact/column';
+import { DataTable } from 'primereact/datatable';
+import { Dialog } from 'primereact/dialog';
+import { InputText } from 'primereact/inputtext';
+import { Tag } from 'primereact/tag';
 import { api, apiList } from '../api/client';
-import { Modal } from '../components/Modal';
-import { PanelToolbar } from '../components/PanelToolbar';
+import { PageHeader } from '../components/PageHeader';
+import { useAppToast } from '../hooks/useAppToast';
+import { useEmbeddedPage } from '../hooks/useEmbeddedPage';
+import { usePermissions } from '../hooks/usePermissions';
+import { digitsOnly } from '../utils/normalizeDocument';
 
 type Parlamentar = {
   id: string;
@@ -10,105 +19,173 @@ type Parlamentar = {
 };
 
 export function ParlamentaresPage() {
+  const embedded = useEmbeddedPage();
+  const { canWrite } = usePermissions();
+  const { showSuccess, showApiError, confirmDestructive } = useAppToast();
+
   const [items, setItems] = useState<Parlamentar[]>([]);
+  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
 
-  function load() {
-    apiList<Parlamentar>('/parlamentares').then((r) => setItems(r.data));
-  }
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await apiList<Parlamentar>('/parlamentares', { limit: 100 });
+      setItems(response.data);
+    } catch (err) {
+      showApiError(err, 'Erro ao carregar');
+    } finally {
+      setLoading(false);
+    }
+  }, [showApiError]);
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [load]);
 
-  async function handleCreate(e: FormEvent) {
-    e.preventDefault();
-    await api('/parlamentares', {
-      method: 'POST',
-      body: JSON.stringify({ nome, cpf: cpf || undefined, email: email || undefined }),
-    });
-    setOpen(false);
-    setNome('');
-    setCpf('');
-    setEmail('');
-    load();
+  async function handleCreate() {
+    if (!nome.trim()) return;
+    setSaving(true);
+    try {
+      await api('/parlamentares', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: nome.trim(),
+          cpf: cpf ? digitsOnly(cpf) : undefined,
+          email: email.trim() || undefined,
+        }),
+      });
+      setOpen(false);
+      setNome('');
+      setCpf('');
+      setEmail('');
+      showSuccess('Parlamentar cadastrado com sucesso.');
+      await load();
+    } catch (err) {
+      showApiError(err);
+    } finally {
+      setSaving(false);
+    }
   }
 
-  async function remove(id: string) {
-    if (!confirm('Excluir parlamentar?')) return;
-    await api(`/parlamentares/${id}`, { method: 'DELETE' });
-    load();
+  function handleRemove(row: Parlamentar) {
+    confirmDestructive(
+      `Excluir o parlamentar "${row.pessoa.nome}"? Esta ação não pode ser desfeita.`,
+      async () => {
+        try {
+          await api(`/parlamentares/${row.id}`, { method: 'DELETE' });
+          showSuccess('Parlamentar removido.');
+          await load();
+        } catch (err) {
+          showApiError(err);
+        }
+      },
+    );
   }
+
+  const actionsBody = (row: Parlamentar) =>
+    canWrite ? (
+      <SiglButton
+        icon="pi pi-trash"
+        severity="danger"
+        text
+        rounded
+        aria-label="Excluir"
+        onClick={() => handleRemove(row)}
+      />
+    ) : null;
+
+  const ativoBody = (row: Parlamentar) => (
+    <Tag
+      value={row.ativo ? 'Ativo' : 'Inativo'}
+      severity={row.ativo ? 'success' : 'secondary'}
+    />
+  );
 
   return (
-    <>
-      <PanelToolbar
+    <section className="page">
+      <PageHeader
+        embedded={embedded}
         title="Parlamentares"
-        actions={
-          <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-            Adicionar parlamentar
-          </button>
+        subtitle={
+          embedded
+            ? undefined
+            : 'Vereadores cadastrados na câmara atual (tenant via JWT).'
         }
-      />      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>CPF</th>
-              <th>E-mail</th>
-              <th>Ativo</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((p) => (
-              <tr key={p.id}>
-                <td>{p.pessoa.nome}</td>
-                <td>{p.pessoa.cpf ?? '—'}</td>
-                <td>{p.pessoa.email ?? '—'}</td>
-                <td>{p.ativo ? 'Sim' : 'Não'}</td>
-                <td>
-                  <button type="button" className="btn btn-danger btn-sm" onClick={() => remove(p.id)}>
-                    Excluir
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!items.length && <p className="empty">Nenhum parlamentar cadastrado.</p>}
-      </div>
-      {open && (
-        <Modal title="Novo parlamentar" onClose={() => setOpen(false)}>
-          <form onSubmit={handleCreate}>
-            <div className="form-grid">
-              <label>
-                Nome *
-                <input value={nome} onChange={(e) => setNome(e.target.value)} required />
-              </label>
-              <label>
-                CPF
-                <input value={cpf} onChange={(e) => setCpf(e.target.value)} />
-              </label>
-              <label>
-                E-mail
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </label>
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>
-                Cancelar
-              </button>
-              <button type="submit" className="btn btn-primary">
-                Salvar
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-    </>
+        actions={
+          canWrite ? (
+            <SiglButton label="Adicionar parlamentar" icon="pi pi-plus" onClick={() => setOpen(true)} />
+          ) : undefined
+        }
+      />
+
+      <DataTable
+        value={items}
+        loading={loading}
+        dataKey="id"
+        paginator
+        rows={10}
+        rowsPerPageOptions={[10, 25, 50]}
+        emptyMessage="Nenhum parlamentar cadastrado. Use o botão acima para incluir o primeiro."
+        className="sigl-datatable"
+      >
+        <Column header="Nome" body={(row: Parlamentar) => row.pessoa.nome} />
+        <Column header="CPF" body={(row: Parlamentar) => row.pessoa.cpf ?? '—'} />
+        <Column header="E-mail" body={(row: Parlamentar) => row.pessoa.email ?? '—'} />
+        <Column header="Situação" body={ativoBody} style={{ width: '8rem' }} />
+        {canWrite && (
+          <Column header="Ações" body={actionsBody} style={{ width: '5rem' }} />
+        )}
+      </DataTable>
+
+      <Dialog
+        header="Novo parlamentar"
+        visible={open}
+        onHide={() => !saving && setOpen(false)}
+        modal
+        className="sigl-dialog-sm"
+        footer={
+          <div className="dialog-footer">
+            <SiglButton
+              label="Cancelar"
+              severity="secondary"
+              text
+              disabled={saving}
+              onClick={() => setOpen(false)}
+            />
+            <SiglButton
+              label="Salvar"
+              icon="pi pi-check"
+              loading={saving}
+              onClick={() => void handleCreate()}
+            />
+          </div>
+        }
+      >
+        <div className="form-stack">
+          <label htmlFor="parl-nome">Nome *</label>
+          <InputText
+            id="parl-nome"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            className="w-full"
+          />
+          <label htmlFor="parl-cpf">CPF</label>
+          <InputText id="parl-cpf" value={cpf} onChange={(e) => setCpf(e.target.value)} className="w-full" />
+          <label htmlFor="parl-email">E-mail</label>
+          <InputText
+            id="parl-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full"
+          />
+        </div>
+      </Dialog>
+    </section>
   );
 }

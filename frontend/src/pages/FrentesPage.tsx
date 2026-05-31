@@ -2,10 +2,12 @@ import { FormEvent, useEffect, useState } from 'react';
 import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
+import { usePermissions } from '../hooks/usePermissions';
 
 type Frente = { id: string; nome: string; ativa: boolean };
 
 export function FrentesPage() {
+  const { canWrite } = usePermissions();
   const [items, setItems] = useState<Frente[]>([]);
   const [open, setOpen] = useState(false);
   const [nome, setNome] = useState('');
@@ -28,9 +30,11 @@ export function FrentesPage() {
       <PanelToolbar
         title="Frentes parlamentares"
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-            Adicionar frente
-          </button>
+          canWrite ? (
+            <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
+              Adicionar frente
+            </button>
+          ) : undefined
         }
       />
       <div className="card table-wrap">

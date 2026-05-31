@@ -14,6 +14,8 @@ export function MasterRoute() {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== 'MASTER') return <Navigate to="/" replace />;
+  if (user.role !== 'MASTER' || user.authType === 'camara') {
+    return <Navigate to="/" replace />;
+  }
   return <Outlet />;
 }

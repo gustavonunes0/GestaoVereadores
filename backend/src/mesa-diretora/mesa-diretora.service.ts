@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { assertFound } from '../common/prisma/assert-found';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { paginatedQuery } from '../common/prisma/paginate';
+import { tenantWhere } from '../common/prisma/tenant-scope';
 import { mesaDiretoraInclude } from '../common/prisma/prisma-includes';
 import { ListQueryDto } from '../common/dto/list-query.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,18 +10,20 @@ import { AddMembroMesaDto, CreateMesaDiretoraDto } from './dto/mesa-diretora.dto
 export class MesaDiretoraService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(dto: CreateMesaDiretoraDto) {
+  create(tenantId: string, dto: CreateMesaDiretoraDto) {
     return this.prisma.mesaDiretora.create({
-      data: dto,
+      data: { ...dto, tenantId },
       include: mesaDiretoraInclude,
     });
   }
 
-  findAll(query: ListQueryDto) {
+  findAll(tenantId: string, query: ListQueryDto) {
+    const where = tenantWhere(tenantId);
     return paginatedQuery(
-      () => this.prisma.mesaDiretora.count(),
+      () => this.prisma.mesaDiretora.count({ where }),
       (skip, take) =>
         this.prisma.mesaDiretora.findMany({
+          where,
           include: mesaDiretoraInclude,
           orderBy: { createdAt: 'desc' },
           skip,
@@ -31,16 +33,17 @@ export class MesaDiretoraService {
     );
   }
 
-  async findOne(id: string) {
-    const item = await this.prisma.mesaDiretora.findUnique({
-      where: { id },
+  async findOne(tenantId: string, id: string) {
+    const item = await this.prisma.mesaDiretora.findFirst({
+      where: { id, ...tenantWhere(tenantId) },
       include: mesaDiretoraInclude,
     });
-    return assertFound(item, 'Mesa diretora não encontrada');
+    if (!item) throw new NotFoundException('Mesa diretora não encontrada');
+    return item;
   }
 
-  async addMembro(mesaId: string, dto: AddMembroMesaDto) {
-    await this.findOne(mesaId);
+  async addMembro(tenantId: string, mesaId: string, dto: AddMembroMesaDto) {
+    await this.findOne(tenantId, mesaId);
     return this.prisma.mesaDiretoraMembro.create({
       data: { mesaId, ...dto },
       include: {

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { assertFound } from '../common/prisma/assert-found';
 import { paginatedQuery } from '../common/prisma/paginate';
+import { tenantWhere } from '../common/prisma/tenant-scope';
 import { membrosComParlamentar } from '../common/prisma/prisma-includes';
 import { ListQueryDto } from '../common/dto/list-query.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -11,15 +11,19 @@ import { UpdateComissaoDto } from './dto/update-comissao.dto';
 export class ComissoesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(dto: CreateComissaoDto) {
-    return this.prisma.comissao.create({ data: dto });
+  create(tenantId: string, dto: CreateComissaoDto) {
+    return this.prisma.comissao.create({
+      data: { ...dto, tenantId },
+    });
   }
 
-  findAll(query: ListQueryDto) {
+  findAll(tenantId: string, query: ListQueryDto) {
+    const where = tenantWhere(tenantId);
     return paginatedQuery(
-      () => this.prisma.comissao.count(),
+      () => this.prisma.comissao.count({ where }),
       (skip, take) =>
         this.prisma.comissao.findMany({
+          where,
           include: { membros: membrosComParlamentar },
           orderBy: { nome: 'asc' },
           skip,
@@ -29,34 +33,38 @@ export class ComissoesService {
     );
   }
 
-  async findOne(id: string) {
-    const item = await this.prisma.comissao.findUnique({
-      where: { id },
+  async findOne(tenantId: string, id: string) {
+    const item = await this.prisma.comissao.findFirst({
+      where: { id, ...tenantWhere(tenantId) },
       include: { membros: membrosComParlamentar },
     });
-    return assertFound(item, 'Comissão não encontrada');
+    if (!item) throw new NotFoundException('Comissão não encontrada');
+    return item;
   }
 
-  async update(id: string, dto: UpdateComissaoDto) {
-    await this.findOne(id);
+  async update(tenantId: string, id: string, dto: UpdateComissaoDto) {
+    await this.findOne(tenantId, id);
     return this.prisma.comissao.update({ where: { id }, data: dto });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.comissao.delete({ where: { id } });
+  async remove(tenantId: string, id: string) {
+    await this.findOne(tenantId, id);
+    return this.prisma.comissao.update({
+      where: { id },
+      data: { isRemoved: true },
+    });
   }
 
-  async addMembro(comissaoId: string, dto: AddMembroComissaoDto) {
-    await this.findOne(comissaoId);
+  async addMembro(tenantId: string, comissaoId: string, dto: AddMembroComissaoDto) {
+    await this.findOne(tenantId, comissaoId);
     return this.prisma.comissaoMembro.create({
       data: { comissaoId, ...dto },
       include: { parlamentar: { include: { pessoa: true } } },
     });
   }
 
-  async removeMembro(comissaoId: string, membroId: string) {
-    await this.findOne(comissaoId);
+  async removeMembro(tenantId: string, comissaoId: string, membroId: string) {
+    await this.findOne(tenantId, comissaoId);
     const membro = await this.prisma.comissaoMembro.findFirst({
       where: { id: membroId, comissaoId },
     });

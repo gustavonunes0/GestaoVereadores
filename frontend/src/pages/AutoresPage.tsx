@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
+import { usePermissions } from '../hooks/usePermissions';
 import { useDominios } from '../hooks/useDominios';
 
 type Autor = {
@@ -11,6 +12,7 @@ type Autor = {
 };
 
 export function AutoresPage() {
+  const { canWrite } = usePermissions();
   const { dominios } = useDominios();
   const [items, setItems] = useState<Autor[]>([]);
   const [open, setOpen] = useState(false);
@@ -53,9 +55,11 @@ export function AutoresPage() {
       <PanelToolbar
         title="Autores"
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-            Novo autor
-          </button>
+          canWrite ? (
+            <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
+              Novo autor
+            </button>
+          ) : undefined
         }
       />
       <div className="card table-wrap">

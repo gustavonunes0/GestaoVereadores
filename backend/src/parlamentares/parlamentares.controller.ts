@@ -4,12 +4,17 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ReadRoles, WriteRoles } from '../common/decorators/api-roles.decorator';
+import { TenantUserRole } from '@prisma/client';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
+import { TenantRoles } from '../common/decorators/tenant-roles.decorator';
+import { TenantRolesGuard } from '../common/guards/tenant-roles.guard';
 import { CreateParlamentarDto } from './dto/create-parlamentar.dto';
 import { FilterParlamentarDto } from './dto/filter-parlamentar.dto';
 import { UpdateParlamentarDto } from './dto/update-parlamentar.dto';
@@ -21,33 +26,55 @@ import { ParlamentaresService } from './parlamentares.service';
 export class ParlamentaresController {
   constructor(private readonly service: ParlamentaresService) {}
 
-  @ReadRoles()
   @Get()
-  findAll(@Query() query: FilterParlamentarDto) {
-    return this.service.findAll(query);
+  findAll(
+    @TenantId() tenantId: string,
+    @Query() query: FilterParlamentarDto,
+  ) {
+    return this.service.findAll(tenantId, query);
   }
 
-  @ReadRoles()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  findOne(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.findOne(tenantId, id);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Post()
-  create(@Body() dto: CreateParlamentarDto) {
-    return this.service.create(dto);
+  create(@TenantId() tenantId: string, @Body() dto: CreateParlamentarDto) {
+    return this.service.create(tenantId, dto);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateParlamentarDto) {
-    return this.service.update(id, dto);
+  update(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateParlamentarDto,
+  ) {
+    return this.service.update(tenantId, id, dto);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(TenantUserRole.ADMIN, TenantUserRole.OWNER)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.remove(tenantId, id);
   }
 }

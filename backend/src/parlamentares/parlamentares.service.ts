@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { assertFound } from '../common/prisma/assert-found';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { paginatedQuery } from '../common/prisma/paginate';
+import { tenantWhere } from '../common/prisma/tenant-scope';
 import { parlamentarComPessoa } from '../common/prisma/prisma-includes';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateParlamentarDto } from './dto/create-parlamentar.dto';
@@ -11,10 +11,11 @@ import { UpdateParlamentarDto } from './dto/update-parlamentar.dto';
 export class ParlamentaresService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(dto: CreateParlamentarDto) {
+  create(tenantId: string, dto: CreateParlamentarDto) {
     const { nome, cpf, email, ativo, mensagem } = dto;
     return this.prisma.parlamentar.create({
       data: {
+        tenant: { connect: { id: tenantId } },
         ativo: ativo ?? true,
         mensagem,
         pessoa: { create: { nome, cpf, email } },
@@ -23,9 +24,11 @@ export class ParlamentaresService {
     });
   }
 
-  findAll(filters: FilterParlamentarDto) {
-    const where =
-      filters.ativo !== undefined ? { ativo: filters.ativo } : undefined;
+  findAll(tenantId: string, filters: FilterParlamentarDto) {
+    const where = {
+      ...tenantWhere(tenantId),
+      ...(filters.ativo !== undefined ? { ativo: filters.ativo } : {}),
+    };
     return paginatedQuery(
       () => this.prisma.parlamentar.count({ where }),
       (skip, take) =>
@@ -40,20 +43,23 @@ export class ParlamentaresService {
     );
   }
 
-  async findOne(id: string) {
-    const item = await this.prisma.parlamentar.findUnique({
-      where: { id },
+  async findOne(tenantId: string, id: string) {
+    const item = await this.prisma.parlamentar.findFirst({
+      where: { id, ...tenantWhere(tenantId) },
       include: {
         ...parlamentarComPessoa.include,
         membrosComissao: { include: { comissao: true } },
         membrosFrente: { include: { frente: true } },
       },
     });
-    return assertFound(item, 'Parlamentar não encontrado');
+    if (!item) {
+      throw new NotFoundException('Parlamentar não encontrado');
+    }
+    return item;
   }
 
-  async update(id: string, dto: UpdateParlamentarDto) {
-    await this.findOne(id);
+  async update(tenantId: string, id: string, dto: UpdateParlamentarDto) {
+    await this.findOne(tenantId, id);
     const { nome, cpf, email, ativo, mensagem } = dto;
     return this.prisma.parlamentar.update({
       where: { id },
@@ -72,8 +78,11 @@ export class ParlamentaresService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.parlamentar.delete({ where: { id } });
+  async remove(tenantId: string, id: string) {
+    await this.findOne(tenantId, id);
+    return this.prisma.parlamentar.update({
+      where: { id },
+      data: { isRemoved: true },
+    });
   }
 }

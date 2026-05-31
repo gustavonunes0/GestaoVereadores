@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { MasterOnly, ReadRoles } from '../common/decorators/api-roles.decorator';
+import { SkipTenant } from '../common/decorators/skip-tenant.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
 import { AuthService } from './auth.service';
 import {
@@ -20,6 +21,7 @@ import {
 
 @ApiTags('usuarios')
 @ApiBearerAuth()
+@SkipTenant()
 @Controller('usuarios')
 export class UsuariosController {
   constructor(private readonly authService: AuthService) {}

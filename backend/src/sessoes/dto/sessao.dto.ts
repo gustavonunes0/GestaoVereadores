@@ -1,7 +1,9 @@
+import { FasePauta, ResultadoPauta, SituacaoPresenca } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -58,6 +60,10 @@ export class AddPautaItemDto {
   @Min(1)
   @Type(() => Number)
   ordem: number;
+
+  @IsOptional()
+  @IsEnum(FasePauta)
+  fase?: FasePauta;
 }
 
 export class RegistrarPresencaDto {
@@ -67,4 +73,17 @@ export class RegistrarPresencaDto {
   @IsOptional()
   @IsBoolean()
   presente?: boolean;
+
+  @IsOptional()
+  @IsEnum(SituacaoPresenca)
+  situacao?: SituacaoPresenca;
+
+  @IsOptional()
+  @IsString()
+  justificativa?: string;
+}
+
+export class RegistrarResultadoPautaDto {
+  @IsEnum(ResultadoPauta)
+  resultado: ResultadoPauta;
 }

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
+import { usePermissions } from '../hooks/usePermissions';
 
 type Mesa = {
   id: string;
@@ -12,6 +13,7 @@ type Mesa = {
 type Legislatura = { id: string; numero: number };
 
 export function MesaDiretoraPage() {
+  const { canWrite } = usePermissions();
   const [items, setItems] = useState<Mesa[]>([]);
   const [legislaturas, setLegislaturas] = useState<Legislatura[]>([]);
   const [open, setOpen] = useState(false);
@@ -40,9 +42,11 @@ export function MesaDiretoraPage() {
       <PanelToolbar
         title="Mesa diretora"
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-            Nova composição
-          </button>
+          canWrite ? (
+            <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
+              Nova composição
+            </button>
+          ) : undefined
         }
       />
       <div className="card table-wrap">

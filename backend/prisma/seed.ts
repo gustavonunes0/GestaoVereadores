@@ -1,9 +1,59 @@
-import { PrismaClient, RoleUsuario } from '@prisma/client';
+import {
+  PrismaClient,
+  RoleUsuario,
+  TenantStatus,
+  TenantUserRole,
+  TenantUserStatus,
+} from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { randomBytes, scrypt as scryptCallback } from 'crypto';
+import { promisify } from 'util';
 
 const prisma = new PrismaClient();
+const scrypt = promisify(scryptCallback);
+
+export const DEMO_TENANT_ID = 'a0000000-0000-4000-8000-000000000001';
+
+async function hashPasswordScrypt(value: string): Promise<string> {
+  const salt = randomBytes(16).toString('hex');
+  const derivedKey = (await scrypt(value, salt, 64)) as Buffer;
+  return `${salt}:${derivedKey.toString('hex')}`;
+}
+
+async function upsertTenantLookup(
+  model: 'tipoMateria' | 'tipoAutor' | 'tipoSessao' | 'cargoMesa',
+  nome: string,
+) {
+  const data = { tenantId: DEMO_TENANT_ID, nome };
+  const where = { tenantId_nome: { tenantId: DEMO_TENANT_ID, nome } };
+  switch (model) {
+    case 'tipoMateria':
+      return prisma.tipoMateria.upsert({ where, update: {}, create: data });
+    case 'tipoAutor':
+      return prisma.tipoAutor.upsert({ where, update: {}, create: data });
+    case 'tipoSessao':
+      return prisma.tipoSessao.upsert({ where, update: {}, create: data });
+    case 'cargoMesa':
+      return prisma.cargoMesa.upsert({ where, update: {}, create: data });
+  }
+}
 
 async function main() {
+  await prisma.tenant.upsert({
+    where: { id: DEMO_TENANT_ID },
+    update: {
+      name: 'Câmara Municipal de Teste',
+      status: TenantStatus.ACTIVE,
+      isRemoved: false,
+    },
+    create: {
+      id: DEMO_TENANT_ID,
+      name: 'Câmara Municipal de Teste',
+      cnpj: '00000000000191',
+      status: TenantStatus.ACTIVE,
+    },
+  });
+
   const passwordHash = await bcrypt.hash('admin', 10);
   await prisma.usuario.upsert({
     where: { username: 'admin' },
@@ -16,20 +66,49 @@ async function main() {
       ativo: true,
     },
   });
-  console.log('Usuário master: admin / admin');
+  console.log('Usuário SIGL master: admin / admin');
+
+  const camaraPasswordHash = await hashPasswordScrypt('camara123');
+  const camaraUser = await prisma.user.upsert({
+    where: { email: 'admin@camara.teste' },
+    update: { passwordHash: camaraPasswordHash, isRemoved: false },
+    create: {
+      firstName: 'Admin',
+      lastName: 'Câmara',
+      cpf: '00000000191',
+      email: 'admin@camara.teste',
+      passwordHash: camaraPasswordHash,
+    },
+  });
+
+  await prisma.tenantUser.upsert({
+    where: {
+      tenantId_userId: { tenantId: DEMO_TENANT_ID, userId: camaraUser.id },
+    },
+    update: {
+      role: TenantUserRole.ADMIN,
+      status: TenantUserStatus.ACTIVE,
+      isAdmin: true,
+      isRemoved: false,
+    },
+    create: {
+      tenantId: DEMO_TENANT_ID,
+      userId: camaraUser.id,
+      role: TenantUserRole.ADMIN,
+      status: TenantUserStatus.ACTIVE,
+      isAdmin: true,
+    },
+  });
+  console.log('Usuário câmara: admin@camara.teste / camara123 (CNPJ 00.000.000/0001-91)');
+
   const ano2026 = await prisma.ano.upsert({
     where: { valor: 2026 },
     update: {},
     create: { valor: 2026 },
   });
 
-  const tiposMateria = ['Projeto de Lei', 'Requerimento', 'Indicação', 'Moção'];
-  for (const nome of tiposMateria) {
-    await prisma.tipoMateria.upsert({
-      where: { nome },
-      update: {},
-      create: { nome },
-    });
+  for (const nome of ['Projeto de Lei', 'Requerimento', 'Indicação', 'Moção']) {
+    await upsertTenantLookup('tipoMateria', nome);
   }
 
   const tiposListagem = ['Expediente', 'Ordem do Dia', 'Geral'];
@@ -76,31 +155,26 @@ async function main() {
     });
   }
 
-  const tiposSessao = ['Ordinária', 'Extraordinária', 'Solene'];
-  for (const nome of tiposSessao) {
-    await prisma.tipoSessao.upsert({
-      where: { nome },
-      update: {},
-      create: { nome },
-    });
+  for (const nome of ['Ordinária', 'Extraordinária', 'Solene']) {
+    await upsertTenantLookup('tipoSessao', nome);
   }
 
-  const situacoes = ['Agendada', 'Em andamento', 'Encerrada', 'Cancelada'];
-  for (const nome of situacoes) {
+  const situacoes: { nome: string; codigo: 'AGENDADA' | 'EM_ANDAMENTO' | 'ENCERRADA' | 'CANCELADA' }[] = [
+    { nome: 'Agendada', codigo: 'AGENDADA' },
+    { nome: 'Em andamento', codigo: 'EM_ANDAMENTO' },
+    { nome: 'Encerrada', codigo: 'ENCERRADA' },
+    { nome: 'Cancelada', codigo: 'CANCELADA' },
+  ];
+  for (const { nome, codigo } of situacoes) {
     await prisma.situacaoSessao.upsert({
       where: { nome },
-      update: {},
-      create: { nome },
+      update: { codigo },
+      create: { nome, codigo },
     });
   }
 
-  const tiposAutor = ['Parlamentar', 'Executivo', 'Popular'];
-  for (const nome of tiposAutor) {
-    await prisma.tipoAutor.upsert({
-      where: { nome },
-      update: {},
-      create: { nome },
-    });
+  for (const nome of ['Parlamentar', 'Executivo', 'Popular']) {
+    await upsertTenantLookup('tipoAutor', nome);
   }
 
   const statusTram = ['Protocolada', 'Em comissão', 'Pauta', 'Aprovada', 'Arquivada'];
@@ -112,13 +186,13 @@ async function main() {
     });
   }
 
-  const cargos = ['Presidente', 'Vice-Presidente', '1º Secretário', '2º Secretário'];
-  for (const nome of cargos) {
-    await prisma.cargoMesa.upsert({
-      where: { nome },
-      update: {},
-      create: { nome },
-    });
+  for (const nome of [
+    'Presidente',
+    'Vice-Presidente',
+    '1º Secretário',
+    '2º Secretário',
+  ]) {
+    await upsertTenantLookup('cargoMesa', nome);
   }
 
   const tiposAto = ['Portaria', 'Decreto Legislativo', 'Resolução Interna'];
@@ -140,9 +214,12 @@ async function main() {
   }
 
   const legislatura = await prisma.legislatura.upsert({
-    where: { numero: 20 },
+    where: {
+      tenantId_numero: { tenantId: DEMO_TENANT_ID, numero: 20 },
+    },
     update: {},
     create: {
+      tenantId: DEMO_TENANT_ID,
       numero: 20,
       dataInicio: new Date('2025-01-01'),
     },
@@ -160,7 +237,7 @@ async function main() {
     },
   });
 
-  console.log('Seed concluído. Ano referência:', ano2026.valor);
+  console.log('Seed concluído. Tenant demo:', DEMO_TENANT_ID, 'Ano:', ano2026.valor);
 }
 
 main()

@@ -1,0 +1,17 @@
+---
+description: API NestJS multi-tenant — guards, Prisma, fluxo legislativo
+globs: backend/**/*
+alwaysApply: false
+---
+
+# Backend
+
+Leia e siga **`backend/.cursorrules`** e **`/.cursorrules`** (raiz).
+
+## Essencial
+
+- Todo dado legislativo: `where: { tenantId, isRemoved: false }` — `tenantId` só do JWT (`tid`), nunca do body.
+- Controllers de câmara: `@UseGuards(JwtAuthGuard, TenantGuard)` + `@TenantId()`.
+- Plataforma (`users`, `tenants`, `tenant-users`): sem TenantGuard; `MasterOnly`.
+- Soft delete apenas; validação de negócio no service.
+- Matéria em pauta só se `EM_TRAMITACAO`; sessão `EM_ANDAMENTO`; norma só se matéria `APROVADA`.

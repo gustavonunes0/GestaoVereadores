@@ -1,15 +1,7 @@
 import { Outlet } from 'react-router-dom';
+import { CAMARA_TABS } from '../app/navigation';
 import { PageHeader } from '../components/PageHeader';
 import { TabNav } from '../components/TabNav';
-
-const tabs = [
-  { to: '/camara/parlamentares', label: 'Parlamentares' },
-  { to: '/camara/comissoes', label: 'Comissões' },
-  { to: '/camara/frentes', label: 'Frentes' },
-  { to: '/camara/mesa-diretora', label: 'Mesa diretora' },
-  { to: '/camara/autores', label: 'Autores' },
-  { to: '/camara/legislaturas', label: 'Legislaturas' },
-];
 
 export function CamaraPage() {
   return (
@@ -18,7 +10,7 @@ export function CamaraPage() {
         title="Estrutura da Câmara"
         subtitle="Parlamentares, colegiados e legislatura — base para matérias, sessões e publicação."
       />
-      <TabNav tabs={tabs} />
+      <TabNav tabs={[...CAMARA_TABS]} />
       <div className="tab-panel">
         <Outlet />
       </div>

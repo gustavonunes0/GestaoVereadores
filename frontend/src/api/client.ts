@@ -1,3 +1,5 @@
+import type { AuthUser, LoginResponse } from '../types/auth';
+
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
 export class ApiError extends Error {
@@ -86,20 +88,22 @@ export async function apiTotal(path: string): Promise<number> {
 }
 
 export const authApi = {
-  login: (username: string, password: string) =>
-    api<{ access_token: string; user: AuthUser }>('/auth/login', {
+  login: (username: string, password: string, tenantId?: string) =>
+    api<LoginResponse>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, tenantId }),
     }),
+
+  loginCamara: (email: string, password: string, tenantCnpj: string) =>
+    api<LoginResponse>('/auth/login-camara', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, tenantCnpj }),
+    }),
+
   me: () => api<AuthUser>('/auth/me'),
 };
 
-export type AuthUser = {
-  id: string;
-  username: string;
-  nome: string;
-  role: string;
-};
+export type { AuthUser } from '../types/auth';
 
 export type Dominios = {
   anos: { id: string; valor: number }[];
@@ -112,7 +116,7 @@ export type Dominios = {
   esferasFederacao: { id: string; nome: string }[];
   identificadoresNorma: { id: string; nome: string }[];
   tiposSessao: { id: string; nome: string }[];
-  situacoesSessao: { id: string; nome: string }[];
+  situacoesSessao: { id: string; nome: string; codigo?: string }[];
   tiposAutor: { id: string; nome: string }[];
   statusTramitacao: { id: string; nome: string }[];
   unidadesTramitacao: { id: string; nome: string }[];

@@ -1,7 +1,9 @@
+import { StatusMateria } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -78,6 +80,10 @@ export class CreateMateriaDto {
   @IsOptional()
   @IsBoolean()
   emTramitacao?: boolean;
+
+  @IsOptional()
+  @IsEnum(StatusMateria)
+  status?: StatusMateria;
 }
 
 export class FilterMateriaDto extends PaginationQueryDto {
@@ -109,6 +115,10 @@ export class FilterMateriaDto extends PaginationQueryDto {
   @IsBoolean()
   @Type(() => Boolean)
   emTramitacao?: boolean;
+
+  @IsOptional()
+  @IsEnum(StatusMateria)
+  status?: StatusMateria;
 
   @IsOptional()
   @IsString()

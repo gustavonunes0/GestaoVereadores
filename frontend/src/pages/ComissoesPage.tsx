@@ -2,10 +2,12 @@ import { FormEvent, useEffect, useState } from 'react';
 import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
+import { usePermissions } from '../hooks/usePermissions';
 
 type Comissao = { id: string; nome: string; ativa: boolean; mensagem?: string };
 
 export function ComissoesPage() {
+  const { canWrite } = usePermissions();
   const [items, setItems] = useState<Comissao[]>([]);
   const [open, setOpen] = useState(false);
   const [nome, setNome] = useState('');
@@ -37,9 +39,11 @@ export function ComissoesPage() {
       <PanelToolbar
         title="Comissões"
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-            Adicionar comissão
-          </button>
+          canWrite ? (
+            <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
+              Adicionar comissão
+            </button>
+          ) : undefined
         }
       />
       <div className="card table-wrap">
@@ -57,9 +61,11 @@ export function ComissoesPage() {
                 <td>{c.nome}</td>
                 <td>{c.ativa ? 'Sim' : 'Não'}</td>
                 <td>
-                  <button type="button" className="btn btn-danger btn-sm" onClick={() => remove(c.id)}>
-                    Excluir
-                  </button>
+                  {canWrite && (
+                    <button type="button" className="btn btn-danger btn-sm" onClick={() => remove(c.id)}>
+                      Excluir
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

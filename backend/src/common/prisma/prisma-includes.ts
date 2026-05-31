@@ -7,16 +7,30 @@ export const membrosComParlamentar = {
   include: { parlamentar: parlamentarComPessoa },
 } as const;
 
+export const materiaAutoresInclude = {
+  include: { autor: true },
+  orderBy: { ordem: 'asc' as const },
+} as const;
+
 export const materiaRelationsInclude = {
   tipo: true,
   ano: true,
   tematica: true,
   origem: true,
   autor: true,
+  materiaAutores: materiaAutoresInclude,
   primeiroAutor: parlamentarComPessoa,
   relator: parlamentarComPessoa,
   statusTramitacao: true,
   unidadeTramitacaoDestino: true,
+} as const;
+
+export const votacaoInclude = {
+  include: {
+    votos: {
+      include: { parlamentar: parlamentarComPessoa },
+    },
+  },
 } as const;
 
 export const sessaoPlenariaInclude = {
@@ -24,7 +38,10 @@ export const sessaoPlenariaInclude = {
   situacao: true,
   sessaoLegislativa: { include: { legislatura: true } },
   pautaItens: {
-    include: { materia: true },
+    include: {
+      materia: true,
+      votacao: votacaoInclude,
+    },
     orderBy: { ordem: 'asc' as const },
   },
   presencas: membrosComParlamentar,

@@ -1,0 +1,72 @@
+:root {
+  /* Brand */
+  --brand-blue-iris: #377EF2;
+  --brand-safety-orange: #FF8465;
+  --brand-pale-purple: #D3D2FD;
+  --brand-night-blue: #0E1E46;
+
+  /* Text / neutral scale */
+  --text-primary: #0E0D35;
+  --text-900: #27264A;
+  --text-800: #3E3D5D;
+  --text-700: #575672;
+  --text-600: #6E6E86;
+  --text-500: #868599;
+  --text-400: #9F9EAE;
+  --text-300: #B7B7C3;
+  --text-200: #CFCFD7;
+  --text-inverse: #FFFFFF;
+
+  /* Background */
+  --bg-app: #F9FAFE;
+  --bg-soft: #F5F6F9;
+  --bg-border: #E6E9F5;
+  --bg-card: #FFFFFF;
+
+  /* System */
+  --info: #2C65DA;
+  --danger: #EB4F46;
+  --success: #65BE58;
+  --warning: #F2B04F;
+
+  /* PrimeReact compatibility */
+  --primary-color: var(--brand-blue-iris);
+  --primary-color-text: #FFFFFF;
+  --surface-ground: var(--bg-app);
+  --surface-section: var(--bg-soft);
+  --surface-card: var(--bg-card);
+  --surface-border: var(--bg-border);
+  --text-color: var(--text-primary);
+  --text-color-secondary: var(--text-600);
+
+  /* Layout */
+  --layout-page-bg: var(--bg-app);
+  --layout-card-bg: var(--bg-card);
+  --layout-border-color: var(--bg-border);
+  --layout-radius-sm: 8px;
+  --layout-radius-md: 12px;
+  --layout-radius-lg: 16px;
+  --layout-shadow-sm: 0 1px 2px rgba(14, 30, 70, 0.06);
+  --layout-shadow-md: 0 8px 24px rgba(14, 30, 70, 0.08);
+
+  /* Focus */
+  --focus-ring-color: rgba(55, 126, 242, 0.25);
+
+  /* Spacing (responsive clusters) */
+  --layout-gap-xs: 0.375rem;
+  --layout-gap-sm: 0.5rem;
+  --layout-gap-md: 0.75rem;
+  --layout-gap-lg: 1rem;
+  --layout-gap-xl: 1.25rem;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+}

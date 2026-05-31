@@ -1,0 +1,165 @@
+/*
+  PrimeReact overrides for SIGL.
+
+  Keep this file small and semantic.
+  Prefer using tokens from prime-theme-tokens.css instead of hardcoded colors.
+*/
+
+/* SIGL: all action buttons use small size by default */
+.p-button:not(.p-button-lg) {
+  border-radius: var(--layout-radius-sm);
+  font-weight: 600;
+  padding: 0.4375rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.p-button.p-button-icon-only:not(.p-button-lg) {
+  width: 2rem;
+  height: 2rem;
+  padding: 0.4375rem;
+}
+
+.p-button:not(.p-button-lg) .p-button-icon {
+  font-size: 0.875rem;
+}
+
+.p-button.p-button-sm,
+.p-button[size='small'] {
+  padding: 0.4375rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.p-button.p-button-primary,
+.p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warning):not(.p-button-info) {
+  background: var(--brand-blue-iris);
+  border-color: var(--brand-blue-iris);
+  color: var(--text-inverse);
+}
+
+.p-button:focus,
+.p-inputtext:enabled:focus,
+.p-dropdown:not(.p-disabled).p-focus,
+.p-multiselect:not(.p-disabled).p-focus,
+.p-calendar:not(.p-disabled).p-focus {
+  box-shadow: 0 0 0 0.2rem var(--focus-ring-color);
+}
+
+.p-card {
+  border-radius: var(--layout-radius-md);
+  box-shadow: var(--layout-shadow-sm);
+  border: 1px solid var(--bg-border);
+}
+
+.p-dialog {
+  border-radius: var(--layout-radius-lg);
+}
+
+.p-dialog .p-dialog-header {
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--bg-border);
+  padding: var(--layout-gap-lg) var(--layout-gap-lg) var(--layout-gap-md);
+}
+
+.p-dialog .p-dialog-content {
+  color: var(--text-800);
+  padding: var(--layout-gap-md) var(--layout-gap-lg);
+}
+
+.p-dialog .p-dialog-footer {
+  padding: var(--layout-gap-md) var(--layout-gap-lg) var(--layout-gap-lg);
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  color: var(--text-800);
+  background: var(--bg-soft);
+  border-color: var(--bg-border);
+  font-weight: 700;
+  padding: var(--space-table-cell-y) var(--space-table-cell-x);
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  border-color: var(--bg-border);
+  color: var(--text-800);
+  padding: var(--space-table-cell-y) var(--space-table-cell-x);
+}
+
+.p-paginator {
+  padding: var(--layout-gap-sm) var(--layout-gap-md);
+  gap: var(--layout-gap-xs);
+}
+
+.p-tabview .p-tabview-nav {
+  gap: var(--layout-gap-xs);
+}
+
+.p-tabview .p-tabview-panels {
+  padding: var(--layout-gap-lg);
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: var(--bg-soft);
+}
+
+.p-tag {
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.page {
+  color: var(--text-primary);
+}
+
+.page-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--layout-radius-md);
+  box-shadow: var(--layout-shadow-sm);
+}
+
+.text-muted {
+  color: var(--text-600);
+}
+
+/* SelectButton: separated pills with gap (not joined segment control) */
+.p-selectbutton,
+.p-selectbutton.sigl-selectbutton {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--layout-gap-sm);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.p-selectbutton .p-button {
+  margin: 0 !important;
+  border-radius: var(--layout-radius-sm) !important;
+  border: 1px solid var(--bg-border) !important;
+  background: var(--bg-card) !important;
+  color: var(--text-800) !important;
+}
+
+.p-selectbutton .p-button + .p-button {
+  border-left: 1px solid var(--bg-border) !important;
+}
+
+.p-selectbutton .p-button.p-highlight,
+.p-selectbutton .p-button:focus.p-highlight {
+  background: var(--brand-blue-iris) !important;
+  border-color: var(--brand-blue-iris) !important;
+  color: var(--text-inverse) !important;
+}
+
+.p-selectbutton .p-button:not(.p-disabled):not(.p-highlight):hover {
+  background: var(--bg-soft) !important;
+  border-color: var(--bg-border) !important;
+  color: var(--text-primary) !important;
+}
+
+.p-dialog .p-dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--layout-gap-sm);
+}

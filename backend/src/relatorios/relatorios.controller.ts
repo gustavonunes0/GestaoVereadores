@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ReadRoles } from '../common/decorators/api-roles.decorator';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
 import {
   RelatorioAtividadeCompletoDto,
   RelatorioAtividadeGeralDto,
@@ -14,21 +14,27 @@ import { RelatoriosService } from './relatorios.service';
 export class RelatoriosController {
   constructor(private readonly service: RelatoriosService) {}
 
-  @ReadRoles()
   @Post('atividade-legislativa/completo')
-  atividadeCompleto(@Body() dto: RelatorioAtividadeCompletoDto) {
-    return this.service.atividadeCompleto(dto);
+  atividadeCompleto(
+    @TenantId() tenantId: string,
+    @Body() dto: RelatorioAtividadeCompletoDto,
+  ) {
+    return this.service.atividadeCompleto(tenantId, dto);
   }
 
-  @ReadRoles()
   @Post('atividade-legislativa/geral')
-  atividadeGeral(@Body() dto: RelatorioAtividadeGeralDto) {
-    return this.service.atividadeGeral(dto);
+  atividadeGeral(
+    @TenantId() tenantId: string,
+    @Body() dto: RelatorioAtividadeGeralDto,
+  ) {
+    return this.service.atividadeGeral(tenantId, dto);
   }
 
-  @ReadRoles()
   @Post('presenca')
-  presenca(@Body() dto: RelatorioPresencaDto) {
-    return this.service.presenca(dto);
+  presenca(
+    @TenantId() tenantId: string,
+    @Body() dto: RelatorioPresencaDto,
+  ) {
+    return this.service.presenca(tenantId, dto);
   }
 }

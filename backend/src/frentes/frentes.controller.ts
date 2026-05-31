@@ -4,16 +4,21 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ReadRoles, WriteRoles } from '../common/decorators/api-roles.decorator';
+import { TenantUserRole } from '@prisma/client';
+import { TenantId } from '../common/decorators/tenant-id.decorator';
+import { TenantRoles } from '../common/decorators/tenant-roles.decorator';
+import { TenantRolesGuard } from '../common/guards/tenant-roles.guard';
 import { ListQueryDto } from '../common/dto/list-query.dto';
-import { CreateFrenteDto, AddMembroFrenteDto } from './dto/create-frente.dto';
-import { UpdateFrenteDto } from './dto/update-frente.dto';
 import { FrentesService } from './frentes.service';
+import { AddMembroFrenteDto, CreateFrenteDto } from './dto/create-frente.dto';
+import { UpdateFrenteDto } from './dto/update-frente.dto';
 
 @ApiTags('frentes')
 @ApiBearerAuth()
@@ -21,48 +26,78 @@ import { FrentesService } from './frentes.service';
 export class FrentesController {
   constructor(private readonly service: FrentesService) {}
 
-  @ReadRoles()
   @Get()
-  findAll(@Query() query: ListQueryDto) {
-    return this.service.findAll(query);
+  findAll(@TenantId() tenantId: string, @Query() query: ListQueryDto) {
+    return this.service.findAll(tenantId, query);
   }
 
-  @ReadRoles()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  findOne(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.findOne(tenantId, id);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Post()
-  create(@Body() dto: CreateFrenteDto) {
-    return this.service.create(dto);
+  create(@TenantId() tenantId: string, @Body() dto: CreateFrenteDto) {
+    return this.service.create(tenantId, dto);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateFrenteDto) {
-    return this.service.update(id, dto);
+  update(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateFrenteDto,
+  ) {
+    return this.service.update(tenantId, id, dto);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(TenantUserRole.ADMIN, TenantUserRole.OWNER)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.remove(tenantId, id);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(
+    TenantUserRole.ADMIN,
+    TenantUserRole.OWNER,
+    TenantUserRole.MANAGER,
+  )
   @Post(':id/membros')
-  addMembro(@Param('id') id: string, @Body() dto: AddMembroFrenteDto) {
-    return this.service.addMembro(id, dto);
+  addMembro(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddMembroFrenteDto,
+  ) {
+    return this.service.addMembro(tenantId, id, dto);
   }
 
-  @WriteRoles()
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(TenantUserRole.ADMIN, TenantUserRole.OWNER)
   @Delete(':id/membros/:membroId')
   removeMembro(
-    @Param('id') id: string,
-    @Param('membroId') membroId: string,
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('membroId', ParseUUIDPipe) membroId: string,
   ) {
-    return this.service.removeMembro(id, membroId);
+    return this.service.removeMembro(tenantId, id, membroId);
   }
 }

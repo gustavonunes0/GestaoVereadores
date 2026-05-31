@@ -10,12 +10,14 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ReadRoles, WriteRoles } from '../common/decorators/api-roles.decorator';
+import { SkipTenant } from '../common/decorators/skip-tenant.decorator';
 import { CreateAtoDto, FilterAtoDto } from './dto/ato.dto';
 import { UpdateAtoDto } from './dto/update-ato.dto';
 import { AtosService } from './atos.service';
 
 @ApiTags('atos')
 @ApiBearerAuth()
+@SkipTenant()
 @Controller('atos')
 export class AtosController {
   constructor(private readonly service: AtosService) {}

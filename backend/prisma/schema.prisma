@@ -10,12 +10,154 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- Autenticação ---
+// --- Multi-tenant (SaaS) ---
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum TenantUserRole {
+  OWNER
+  ADMIN
+  MANAGER
+  MEMBER
+  VIEWER
+}
+
+enum TenantUserStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+model User {
+  id             String       @id @default(uuid())
+  firstName      String
+  lastName       String
+  cpf            String       @unique
+  email          String       @unique
+  passwordHash   String
+  profilePicture String?
+  createdAt      DateTime     @default(now())
+  createdBy      String?
+  modifiedAt     DateTime     @updatedAt
+  modifiedBy     String?
+  isRemoved      Boolean      @default(false)
+  tenantUsers    TenantUser[]
+}
+
+model Tenant {
+  id          String       @id @default(uuid())
+  name        String
+  cnpj        String       @unique
+  logo        String?
+  status      TenantStatus @default(ACTIVE)
+  settings    Json?
+  createdAt   DateTime     @default(now())
+  createdBy   String?
+  modifiedAt  DateTime     @updatedAt
+  modifiedBy  String?
+  isRemoved   Boolean      @default(false)
+  tenantUsers TenantUser[]
+
+  parlamentares    Parlamentar[]
+  legislaturas     Legislatura[]
+  comissoes        Comissao[]
+  frentes          FrenteParlamentar[]
+  materias         Materia[]
+  autores          Autor[]
+  normas           Norma[]
+  sessoesPlenarias SessaoPlenaria[]
+  tiposMateria     TipoMateria[]
+  tiposAutor       TipoAutor[]
+  tiposSessao      TipoSessao[]
+  cargosMesa       CargoMesa[]
+  mesasDiretoras   MesaDiretora[]
+}
+
+model TenantUser {
+  id           String           @id @default(uuid())
+  tenantId     String
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role         TenantUserRole   @default(MEMBER)
+  status       TenantUserStatus @default(ACTIVE)
+  isAdmin      Boolean          @default(false)
+  permissions  Json             @default("[]")
+  lastAccessAt DateTime?
+  createdAt    DateTime         @default(now())
+  createdBy    String?
+  modifiedAt   DateTime         @updatedAt
+  modifiedBy   String?
+  isRemoved    Boolean          @default(false)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+  @@index([userId])
+}
+
+// --- Autenticação SIGL ---
 
 enum RoleUsuario {
   MASTER
   ADMIN
   OPERADOR
+}
+
+enum StatusMateria {
+  EM_TRAMITACAO
+  APROVADA
+  REJEITADA
+  ARQUIVADA
+  RETIRADA
+}
+
+enum CodigoSituacaoSessao {
+  AGENDADA
+  EM_ANDAMENTO
+  ENCERRADA
+  CANCELADA
+}
+
+enum FasePauta {
+  GRANDE_EXPEDIENTE
+  ORDEM_DO_DIA
+  EXPLICACOES_PESSOAIS
+}
+
+enum ResultadoPauta {
+  APROVADO
+  REJEITADO
+  RETIRADO
+  ADIADO
+}
+
+enum TipoVotacao {
+  NOMINAL
+  SIMBOLICA
+  SECRETA
+}
+
+enum ResultadoVotacao {
+  APROVADO
+  REJEITADO
+  EMPATADO
+}
+
+enum Voto {
+  SIM
+  NAO
+  ABSTENCAO
+  PRESENTE
+}
+
+enum SituacaoPresenca {
+  PRESENTE
+  AUSENTE
+  JUSTIFICADO
 }
 
 model Usuario {
@@ -40,9 +182,14 @@ model Ano {
 }
 
 model TipoMateria {
-  id       String    @id @default(uuid())
-  nome     String    @unique
-  materias Materia[]
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  nome      String
+  materias  Materia[]
+
+  @@unique([tenantId, nome])
+  @@index([tenantId])
 }
 
 model TipoListagem {
@@ -70,9 +217,14 @@ model LocalOrigemExterna {
 }
 
 model TipoAutor {
-  id     String @id @default(uuid())
-  nome   String @unique
-  autores Autor[]
+  id        String  @id @default(uuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  nome      String
+  autores   Autor[]
+
+  @@unique([tenantId, nome])
+  @@index([tenantId])
 }
 
 model StatusTramitacao {
@@ -88,14 +240,21 @@ model UnidadeTramitacao {
 }
 
 model TipoSessao {
-  id              String          @id @default(uuid())
-  nome            String          @unique
+  id               String           @id @default(uuid())
+  tenantId         String
+  tenant           Tenant           @relation(fields: [tenantId], references: [id])
+  nome             String
+  requerQuorum     Boolean          @default(true)
   sessoesPlenarias SessaoPlenaria[]
+
+  @@unique([tenantId, nome])
+  @@index([tenantId])
 }
 
 model SituacaoSessao {
-  id              String          @id @default(uuid())
-  nome            String          @unique
+  id               String               @id @default(uuid())
+  nome             String               @unique
+  codigo           CodigoSituacaoSessao? @unique
   sessoesPlenarias SessaoPlenaria[]
 }
 
@@ -130,9 +289,14 @@ model TipoAto {
 }
 
 model CargoMesa {
-  id      String              @id @default(uuid())
-  nome    String              @unique
-  membros MesaDiretoraMembro[]
+  id        String              @id @default(uuid())
+  tenantId  String
+  tenant    Tenant              @relation(fields: [tenantId], references: [id])
+  nome      String
+  membros   MesaDiretoraMembro[]
+
+  @@unique([tenantId, nome])
+  @@index([tenantId])
 }
 
 // --- Cadastros estruturais ---
@@ -149,12 +313,17 @@ model Pessoa {
 
 model Parlamentar {
   id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   pessoaId  String   @unique
   pessoa    Pessoa   @relation(fields: [pessoaId], references: [id], onDelete: Cascade)
   ativo     Boolean  @default(true)
   mensagem  String?
+  isRemoved Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
 
   autores              Autor[]
   materiasRelator      Materia[]           @relation("RelatorMateria")
@@ -163,28 +332,40 @@ model Parlamentar {
   membrosComissao      ComissaoMembro[]
   membrosFrente        FrenteMembro[]
   presencas            PresencaSessao[]
+  votos                VotoParlamentar[]
 }
 
 model Autor {
   id            String       @id @default(uuid())
+  tenantId      String
+  tenant        Tenant       @relation(fields: [tenantId], references: [id])
   nome          String
   tipoAutorId   String
   tipoAutor     TipoAutor    @relation(fields: [tipoAutorId], references: [id])
   parlamentarId String?
   parlamentar   Parlamentar? @relation(fields: [parlamentarId], references: [id])
-  materias      Materia[]    @relation("AutorMateria")
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  materias       Materia[]      @relation("AutorMateria")
+  materiaAutores MateriaAutor[]
+  isRemoved      Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([tenantId])
 }
 
 model Comissao {
   id        String           @id @default(uuid())
+  tenantId  String
+  tenant    Tenant           @relation(fields: [tenantId], references: [id])
   nome      String
   mensagem  String?
   ativa     Boolean          @default(true)
+  isRemoved Boolean          @default(false)
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   membros   ComissaoMembro[]
+
+  @@index([tenantId])
 }
 
 model ComissaoMembro {
@@ -199,12 +380,17 @@ model ComissaoMembro {
 
 model FrenteParlamentar {
   id        String         @id @default(uuid())
+  tenantId  String
+  tenant    Tenant         @relation(fields: [tenantId], references: [id])
   nome      String
   mensagem  String?
   ativa     Boolean        @default(true)
+  isRemoved Boolean        @default(false)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
   membros   FrenteMembro[]
+
+  @@index([tenantId])
 }
 
 model FrenteMembro {
@@ -218,13 +404,19 @@ model FrenteMembro {
 
 model Legislatura {
   id         String            @id @default(uuid())
-  numero     Int               @unique
+  tenantId   String
+  tenant     Tenant            @relation(fields: [tenantId], references: [id])
+  numero     Int
   dataInicio DateTime
   dataFim    DateTime?
+  isRemoved  Boolean           @default(false)
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
   sessoesLegislativas SessaoLegislativa[]
   mesasDiretoras     MesaDiretora[]
+
+  @@unique([tenantId, numero])
+  @@index([tenantId])
 }
 
 model SessaoLegislativa {
@@ -240,6 +432,8 @@ model SessaoLegislativa {
 
 model SessaoPlenaria {
   id                 String          @id @default(uuid())
+  tenantId           String
+  tenant             Tenant          @relation(fields: [tenantId], references: [id])
   sessaoLegislativaId String?
   sessaoLegislativa  SessaoLegislativa? @relation(fields: [sessaoLegislativaId], references: [id])
   dataInicio         DateTime
@@ -248,8 +442,11 @@ model SessaoPlenaria {
   situacaoId         String
   situacao           SituacaoSessao  @relation(fields: [situacaoId], references: [id])
   mensagem           String?
+  isRemoved          Boolean         @default(false)
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
+
+  @@index([tenantId])
   mesasDiretoras     MesaDiretora[]
   pautaItens         PautaItem[]
   presencas          PresencaSessao[]
@@ -257,14 +454,19 @@ model SessaoPlenaria {
 
 model MesaDiretora {
   id            String              @id @default(uuid())
+  tenantId      String
+  tenant        Tenant              @relation(fields: [tenantId], references: [id])
   legislaturaId String
   legislatura   Legislatura         @relation(fields: [legislaturaId], references: [id])
   sessaoId      String?
   sessao        SessaoPlenaria?     @relation(fields: [sessaoId], references: [id])
   mensagem      String?
+  isRemoved     Boolean             @default(false)
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
   membros       MesaDiretoraMembro[]
+
+  @@index([tenantId])
 }
 
 model MesaDiretoraMembro {
@@ -282,6 +484,8 @@ model MesaDiretoraMembro {
 
 model Materia {
   id                         String             @id @default(uuid())
+  tenantId                   String
+  tenant                     Tenant             @relation(fields: [tenantId], references: [id])
   tipoId                     String
   tipo                       TipoMateria        @relation(fields: [tipoId], references: [id])
   ementa                     String
@@ -311,16 +515,26 @@ model Materia {
   unidadeTramitacaoDestino   UnidadeTramitacao? @relation(fields: [unidadeTramitacaoDestinoId], references: [id])
   statusTramitacaoId         String?
   statusTramitacao           StatusTramitacao?  @relation(fields: [statusTramitacaoId], references: [id])
+  status                     StatusMateria      @default(EM_TRAMITACAO)
+  tramitacaoJson             Json               @default("[]")
   emTramitacao               Boolean            @default(true)
   mensagem                   String?
+  isRemoved                  Boolean            @default(false)
   createdAt                  DateTime           @default(now())
   updatedAt                  DateTime           @updatedAt
   pautaItens                 PautaItem[]
+  materiaAutores             MateriaAutor[]
   normas                     Norma[]
+
+  @@unique([tenantId, tipoId, numero, anoId])
+  @@index([tenantId])
+  @@index([tenantId, status])
 }
 
 model Norma {
   id                   String             @id @default(uuid())
+  tenantId             String
+  tenant               Tenant             @relation(fields: [tenantId], references: [id])
   tipoId               String
   tipo                 TipoNorma          @relation(fields: [tipoId], references: [id])
   numero               String
@@ -337,8 +551,11 @@ model Norma {
   materiaOrigemId      String?
   materiaOrigem        Materia?           @relation(fields: [materiaOrigemId], references: [id])
   mensagem             String?
+  isRemoved            Boolean            @default(false)
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
+
+  @@index([tenantId])
 }
 
 model Ato {
@@ -359,23 +576,71 @@ model Ato {
 
 // --- Sessão plenária (telas SESSAO_186/187/188 → pauta e presença) ---
 
-model PautaItem {
-  id        String         @id @default(uuid())
-  sessaoId  String
-  sessao    SessaoPlenaria @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+model MateriaAutor {
+  id        String  @id @default(uuid())
   materiaId String
-  materia   Materia        @relation(fields: [materiaId], references: [id])
+  materia   Materia @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  autorId   String
+  autor     Autor   @relation(fields: [autorId], references: [id])
   ordem     Int
+
+  @@unique([materiaId, autorId])
+  @@unique([materiaId, ordem])
+}
+
+model PautaItem {
+  id         String          @id @default(uuid())
+  sessaoId   String
+  sessao     SessaoPlenaria  @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+  materiaId  String
+  materia    Materia         @relation(fields: [materiaId], references: [id])
+  ordem      Int
+  fase       FasePauta       @default(ORDEM_DO_DIA)
+  resultado  ResultadoPauta?
+  isRemoved  Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  votacao    Votacao?
+
   @@unique([sessaoId, materiaId])
   @@unique([sessaoId, ordem])
 }
 
-model PresencaSessao {
-  id            String         @id @default(uuid())
-  sessaoId      String
-  sessao        SessaoPlenaria @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+model Votacao {
+  id          String            @id @default(uuid())
+  pautaItemId String            @unique
+  pautaItem   PautaItem         @relation(fields: [pautaItemId], references: [id], onDelete: Cascade)
+  tipoVotacao TipoVotacao
+  votosSim    Int               @default(0)
+  votosNao    Int               @default(0)
+  abstencoes  Int               @default(0)
+  resultado   ResultadoVotacao?
+  realizadaAt DateTime?
+  createdAt   DateTime          @default(now())
+  votos       VotoParlamentar[]
+}
+
+model VotoParlamentar {
+  id            String    @id @default(uuid())
+  votacaoId     String
+  votacao       Votacao   @relation(fields: [votacaoId], references: [id], onDelete: Cascade)
   parlamentarId String
-  parlamentar   Parlamentar    @relation(fields: [parlamentarId], references: [id])
-  presente      Boolean        @default(true)
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  voto          Voto
+
+  @@unique([votacaoId, parlamentarId])
+}
+
+model PresencaSessao {
+  id            String            @id @default(uuid())
+  sessaoId      String
+  sessao        SessaoPlenaria    @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+  parlamentarId String
+  parlamentar   Parlamentar       @relation(fields: [parlamentarId], references: [id])
+  presente      Boolean           @default(true)
+  situacao      SituacaoPresenca  @default(PRESENTE)
+  justificativa String?
+  createdAt     DateTime          @default(now())
+
   @@unique([sessaoId, parlamentarId])
 }

@@ -1,0 +1,243 @@
+# Backend — Portal Legislativo Multi-Tenant
+# Fonte canônica de negócio: `../.cursorrules` (raiz do repositório)
+# Stack real deste pacote: NestJS 11, Prisma 6, PostgreSQL, Node 20
+
+## Identidade
+
+SaaS multi-tenant para Câmaras Municipais brasileiras. Cada **Tenant** = uma Câmara.
+Todo dado legislativo pertence a um `tenantId` e **nunca** pode vazar entre tenants.
+
+Dois planos de autenticação (não misturar):
+
+| Plano | Modelo | Rotas | JWT |
+|-------|--------|-------|-----|
+| **Plataforma** | `User`, `Tenant`, `TenantUser` | `/users`, `/tenants`, `/tenant-users` | futuro: sem `tid` ou `tid` opcional; hoje `MasterOnly` via `Usuario.MASTER` |
+| **Câmara (SIGL)** | `Usuario` + domínio legislativo | `/parlamentares`, `/materias`, … | **obrigatório** `tid` (tenantId) + `role` (`TenantUserRole`) |
+
+Ao evoluir auth: unificar em JWT com payload da raiz (`sub`, `tid`, `role`, `isAdmin`).
+
+---
+
+## Convenções de código
+
+- **Idioma**: inglês em código (arquivos, classes, métodos, variáveis).
+- **Mensagens ao usuário** e comentários de negócio: português brasileiro.
+- **Validação**: `class-validator` + `class-transformer` em todos os DTOs de entrada.
+- **Formatação**: Prettier + `.editorconfig` da raiz — sem estilo ad hoc.
+- **Prefixo global**: `/api` (`main.ts`).
+- **Soft delete**: nunca `prisma.*.delete()` em entidades de negócio; usar `isRemoved: true`.
+- **Swagger**: `@ApiTags`, `@ApiBearerAuth`, `@ApiProperty` em DTOs expostos.
+
+---
+
+## Regra #1 — Multi-tenancy (obrigatória)
+
+> **NUNCA** consultar ou alterar dado legislativo sem filtrar por `tenantId`.
+> **NUNCA** aceitar `tenantId` do body, query ou param para autorização — só do JWT (`tid`).
+
+### Implementar / usar
+
+```
+src/common/guards/tenant.guard.ts      → extrai tid, valida tenant ACTIVE, seta req.tenantId
+src/common/decorators/tenant-id.decorator.ts → @TenantId() tenantId: string
+src/common/interceptors/tenant.interceptor.ts → injeta tenantId em CREATE (quando aplicável)
+```
+
+### Controllers de negócio (padrão alvo)
+
+```typescript
+@Controller('parlamentares')
+@UseGuards(JwtAuthGuard, TenantGuard)
+@ApiBearerAuth()
+export class ParlamentarController {
+  @Get()
+  findAll(@TenantId() tenantId: string, @Query() q: PaginationDto) {
+    return this.svc.findAll(tenantId, q);
+  }
+
+  @Post()
+  @Roles(TenantUserRole.ADMIN, TenantUserRole.OPERATOR)
+  create(@TenantId() tenantId: string, @Body() dto: CreateParlamentarDto) {
+    return this.svc.create(tenantId, dto);
+  }
+}
+```
+
+### Services — sempre
+
+```typescript
+async findOne(tenantId: string, id: string) {
+  const record = await this.prisma.parlamentar.findFirst({
+    where: { id, tenantId, isRemoved: false },
+  });
+  if (!record) throw new NotFoundException('Parlamentar não encontrado');
+  return record;
+}
+```
+
+### Rotas de plataforma (exceção)
+
+`tenants`, `users`, `tenant-users`: **sem** `TenantGuard`; proteção `MasterOnly` / roles de plataforma.
+Módulos em `src/tenants`, `src/users`, `src/tenant-users` — arquitetura use-case + repository.
+
+---
+
+## Estrutura de pastas
+
+```
+src/
+├── common/          guards, decorators, filters, dto, base/
+├── prisma/          PrismaModule, PrismaService
+├── auth/            login JWT (Usuario SIGL hoje)
+├── tenants/         plataforma
+├── users/
+├── tenant-users/
+├── parlamentares/   … módulos legislativos (service ou use-case)
+├── materias/
+├── sessoes/
+├── normas/
+└── relatorios/
+```
+
+Novo módulo legislativo: `src/<nome>/` com `*.module.ts`, `*.controller.ts`, `*.service.ts`, `dto/`.
+Refatorações grandes: `domain/`, `application/use-cases/`, `infra/` (como em `users/`).
+
+---
+
+## Schema Prisma (alvo — alinhar migrações)
+
+Seguir modelos e enums do `../.cursorrules` (Camadas 1–7). Pontos críticos:
+
+- `tenantId` em: Legislatura, SessaoLegislativa, Parlamentar, Comissao, TipoMateria, TipoAutor, Materia, SessaoPlenaria, Norma, CargoMesa, TipoSessao, etc.
+- `@@unique([tenantId, …])` onde indicado na raiz.
+- `TenantUser`: `@@unique([tenantId, userId])`, roles `ADMIN | OPERATOR | VIEWER`.
+- `MateriaAutor`, `Votacao`, `VotoParlamentar`, `PresencaSessao` conforme diagrama em `docs/multitenant_camara_flow.html`.
+
+Ao alterar `prisma/schema.prisma`: gerar migration nomeada; atualizar seed se necessário.
+
+---
+
+## Fluxo de negócio (ordem de implementação)
+
+```
+Tenant criado
+  └─ Tipos (TipoMateria, TipoAutor, TipoSessao, CargoMesa)
+       └─ Legislatura
+            ├─ SessaoLegislativa
+            │    └─ MesaDiretora + MesaDiretoraMembro
+            ├─ Parlamentares → Comissões → Autores (PARLAMENTAR)
+            └─ Materias → MateriaAutor → tramitação
+                 └─ SessaoPlenaria → PautaItem
+                      ├─ PresencaSessao
+                      ├─ Votacao + VotoParlamentar
+                      └─ Norma (se aprovada)
+```
+
+### Regras críticas (validar no **service**, não no controller)
+
+**Matéria**
+
+- Unicidade: `tenantId + tipoMateriaId + numero + ano`.
+- Só entra em pauta se `status === EM_TRAMITACAO`.
+- Aprovada em votação → `APROVADA`; rejeitada → `REJEITADA`.
+
+**Sessão plenária**
+
+- `PautaItem` só se `status === EM_ANDAMENTO`.
+- Se `TipoSessao.requerQuorum`: validar % presentes antes de abrir votação.
+- Ao encerrar: persistir resultados de votações pendentes.
+
+**Votação**
+
+- `VotoParlamentar` só se `PresencaSessao.situacao === PRESENTE`.
+- Resultado: `votosSim > votosNao` → `APROVADO`.
+- `tipoVotacao === SECRETA`: não expor votos individuais em APIs públicas.
+
+**Mesa diretora**
+
+- `CargoMesa.isUnique`: um parlamentar por cargo na mesa.
+
+**Norma**
+
+- Só de `Materia` com `status === APROVADA`.
+- Unicidade: `tenantId + tipo + numero + ano`.
+
+**Autor**
+
+- `origem = PARLAMENTAR` → exige `parlamentarId`.
+- `origem = EXTERNO` → exige `nomeExterno`.
+
+---
+
+## Relatórios (`src/relatorios/`)
+
+Sempre `tenantId` do JWT. Query params: `ano`, `legislaturaId`, `sessaoLegislativaId`, `parlamentarId`.
+
+| Método | Rota |
+|--------|------|
+| GET | `/relatorios/atividade-legislativa` |
+| GET | `/relatorios/atividade-legislativa/completa` |
+| GET | `/relatorios/presenca` |
+| GET | `/relatorios/presenca/analitico` |
+| GET | `/relatorios/estatistico-anual` |
+
+---
+
+## JWT (alvo)
+
+```typescript
+interface JwtPayload {
+  sub: string;   // userId
+  tid: string;   // tenantId — obrigatório em token de câmara
+  role: TenantUserRole;
+  isAdmin: boolean;
+}
+```
+
+Access + refresh via `@nestjs/jwt`. Strategy em `auth/strategies/`.
+
+---
+
+## Erros
+
+`PrismaExceptionFilter` global (`common/filters/`):
+
+- `P2002` → 409 Conflict (campo legível)
+- `P2025` → 404 Not Found
+- `P2003` → 400 Bad Request (FK)
+
+Erros de domínio: classes em `application/errors/`, mapeados no controller para HTTP.
+
+---
+
+## Segurança
+
+- `@nestjs/throttler` já no `AppModule`.
+- Helmet e CORS por tenant (`settingsJson`) — quando implementar.
+- Audit log (`userId`, `tenantId`, action, resource) — interceptor futuro.
+- Não retornar `passwordHash`, `isRemoved`, `settingsJson` cru em responses públicas.
+
+---
+
+## O que NÃO fazer
+
+- Query legislativa sem `tenantId` no `where`.
+- `prisma.*.delete()` em entidades de negócio.
+- Lógica de negócio no controller.
+- `tenantId` vindo do cliente para autorização.
+- Hardcode de tenant.
+- Norma sem matéria aprovada.
+- Pauta em sessão não `EM_ANDAMENTO`.
+- Expor votos de votação `SECRETA`.
+
+---
+
+## Comandos úteis
+
+```bash
+cd backend
+npm run start:dev
+npx prisma migrate dev
+npx prisma generate
+npm test
+```
