@@ -52,4 +52,15 @@ export class MesaDiretoraService {
       },
     });
   }
+
+  async removeMembro(tenantId: string, mesaId: string, membroId: string) {
+    await this.findOne(tenantId, mesaId);
+    const membro = await this.prisma.mesaDiretoraMembro.findFirst({
+      where: { id: membroId, mesaId },
+    });
+    if (!membro) {
+      throw new NotFoundException('Membro não encontrado nesta mesa diretora');
+    }
+    return this.prisma.mesaDiretoraMembro.delete({ where: { id: membroId } });
+  }
 }

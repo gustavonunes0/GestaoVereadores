@@ -400,18 +400,6 @@ textarea:not(:disabled):focus {
   border: 1px solid var(--warning-border);
 }
 
-/* ——— Tab nav ——— */
-.tab-nav-item:focus-visible {
-  outline: 2px solid var(--focus-ring-color);
-  outline-offset: 2px;
-  border-radius: var(--layout-radius-sm);
-}
-
-.tab-nav-item.active {
-  color: var(--info);
-  border-bottom-color: var(--brand-blue-iris);
-}
-
 .pauta-ordem {
   color: var(--info);
 }

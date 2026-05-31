@@ -45,4 +45,12 @@ export class FilterNormaDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   numero?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dataPublicacaoDe?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dataPublicacaoAte?: string;
 }

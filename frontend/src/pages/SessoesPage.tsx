@@ -2,19 +2,26 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SiglButton } from '../components/common/SiglButton';
 import { api, apiList } from '../api/client';
-import { MODULE_ICONS } from '../app/navigation';
+import { MODULE_ICONS, ROUTES } from '../app/navigation';
 import { ContextBanner } from '../components/ContextBanner';
+import { IntGestMensagemField } from '../components/forms/IntGestMensagemField';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
-import { useLegislatura } from '../contexts/LegislaturaContext';
-import { useAppToast } from '../hooks/useAppToast';
-import { useDominios } from '../hooks/useDominios';
-import { usePermissions } from '../hooks/usePermissions';
+import {
+  SessaoPesquisaFilters,
+  type SessaoFiltrosForm,
+} from '../components/sessoes/SessaoPesquisaFilters';
 import {
   SessaoDeliberacaoPanel,
   type PautaItemDeliberacao,
 } from '../components/sessoes/SessaoDeliberacaoPanel';
+import { useLegislatura } from '../contexts/LegislaturaContext';
+import type { LegislaturaRef } from '../contexts/LegislaturaContext';
+import { useAppToast } from '../hooks/useAppToast';
+import { useDominios } from '../hooks/useDominios';
+import { usePermissions } from '../hooks/usePermissions';
 import { canAddMateriaToPauta, MATERIA_STATUS, type MateriaStatus } from '../types/legislative';
+import { buildSessaoDataRange } from '../utils/sessaoPesquisa';
 
 type Sessao = {
   id: string;
@@ -22,6 +29,12 @@ type Sessao = {
   tipoSessao?: { nome: string };
   situacao?: { nome: string; codigo?: string };
   mensagem?: string;
+  sessaoLegislativaId?: string | null;
+  sessaoLegislativa?: {
+    id?: string;
+    numero: number;
+    legislatura?: { numero: number };
+  };
   pautaItens?: PautaItemDeliberacao[];
   presencas?: {
     parlamentarId?: string;
@@ -45,37 +58,111 @@ function sessaoAceitaPauta(situacao?: { nome: string; codigo?: string }): boolea
   return nome.includes('andamento');
 }
 
+function toDateTimeLocal(iso?: string) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function defaultFiltros(
+  legislaturaId: string,
+  sessaoLegislativaId: string,
+): SessaoFiltrosForm {
+  return {
+    legislaturaId,
+    sessaoLegislativaId,
+    ano: String(new Date().getFullYear()),
+    mes: '',
+    dia: '',
+    dataDe: '',
+    dataAte: '',
+    tipoSessaoId: '',
+    situacaoId: '',
+  };
+}
+
+function filtrosToQuery(f: SessaoFiltrosForm): Record<string, string | number | undefined> {
+  const params: Record<string, string | number | undefined> = { limit: 100 };
+  if (f.legislaturaId) params.legislaturaId = f.legislaturaId;
+  if (f.sessaoLegislativaId) params.sessaoLegislativaId = f.sessaoLegislativaId;
+  if (f.tipoSessaoId) params.tipoSessaoId = f.tipoSessaoId;
+  if (f.situacaoId) params.situacaoId = f.situacaoId;
+  const range = buildSessaoDataRange({
+    ano: f.ano ? Number(f.ano) : undefined,
+    mes: f.mes ? Number(f.mes) : undefined,
+    dia: f.dia ? Number(f.dia) : undefined,
+    dataDe: f.dataDe || undefined,
+    dataAte: f.dataAte || undefined,
+  });
+  if (range.dataInicioDe) params.dataInicioDe = range.dataInicioDe;
+  if (range.dataInicioAte) params.dataInicioAte = range.dataInicioAte;
+  return params;
+}
+
+function hasActiveFilters(f: SessaoFiltrosForm, baseline: SessaoFiltrosForm) {
+  return JSON.stringify(f) !== JSON.stringify(baseline);
+}
+
 export function SessoesPage() {
   const { dominios } = useDominios();
   const { canWrite } = usePermissions();
   const { showApiError, showSuccess } = useAppToast();
-  const { sessaoLegislativaId, legislaturaAtiva } = useLegislatura();
+  const { legislaturaId, sessaoLegislativaId, legislaturaAtiva, legislaturas, refresh } =
+    useLegislatura();
+
+  const baselineFiltros = useMemo(
+    () => defaultFiltros(legislaturaId, sessaoLegislativaId),
+    [legislaturaId, sessaoLegislativaId],
+  );
+
+  const [filtrosDraft, setFiltrosDraft] = useState<SessaoFiltrosForm>(baselineFiltros);
+  const [filtrosApplied, setFiltrosApplied] = useState<SessaoFiltrosForm>(baselineFiltros);
+  const [legislaturasList, setLegislaturasList] = useState<LegislaturaRef[]>([]);
   const [items, setItems] = useState<Sessao[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Sessao | null>(null);
   const [open, setOpen] = useState(false);
   const [pautaOpen, setPautaOpen] = useState(false);
   const [materias, setMaterias] = useState<Materia[]>([]);
-  const [dataInicio, setDataInicio] = useState('');
-  const [tipoSessaoId, setTipoSessaoId] = useState('');
-  const [situacaoId, setSituacaoId] = useState('');
+  const [savingDetail, setSavingDetail] = useState(false);
+
+  const [editDataInicio, setEditDataInicio] = useState('');
+  const [editTipoSessaoId, setEditTipoSessaoId] = useState('');
+  const [editSituacaoId, setEditSituacaoId] = useState('');
+  const [editSessaoLegislativaId, setEditSessaoLegislativaId] = useState('');
+  const [editMensagem, setEditMensagem] = useState('');
+
+  const [createDataInicio, setCreateDataInicio] = useState('');
+  const [createTipoSessaoId, setCreateTipoSessaoId] = useState('');
+  const [createSituacaoId, setCreateSituacaoId] = useState('');
+  const [createMensagem, setCreateMensagem] = useState('');
+
   const [materiaId, setMateriaId] = useState('');
   const [ordemPauta, setOrdemPauta] = useState(1);
+  const [searchGeneration, setSearchGeneration] = useState(0);
+
+  useEffect(() => {
+    setFiltrosDraft(baselineFiltros);
+    setFiltrosApplied(baselineFiltros);
+  }, [baselineFiltros]);
+
+  useEffect(() => {
+    void refresh().then(setLegislaturasList);
+  }, [refresh]);
 
   const load = useCallback(() => {
-    const params: Record<string, string | number | undefined> = { limit: 50 };
-    if (sessaoLegislativaId) params.sessaoLegislativaId = sessaoLegislativaId;
-    return apiList<Sessao>('/sessoes', params).then((r) => {
+    return apiList<Sessao>('/sessoes', filtrosToQuery(filtrosApplied)).then((r) => {
       setItems(r.data);
       if (selectedId && !r.data.some((s) => s.id === selectedId)) {
         setSelectedId(null);
         setDetail(null);
       }
     });
-  }, [sessaoLegislativaId, selectedId]);
+  }, [filtrosApplied, selectedId]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   useEffect(() => {
@@ -83,15 +170,35 @@ export function SessoesPage() {
       setDetail(null);
       return;
     }
-    api<Sessao>(`/sessoes/${selectedId}`).then(setDetail);
-  }, [selectedId]);
+    api<Sessao>(`/sessoes/${selectedId}`).then((d) => {
+      setDetail(d);
+      setEditDataInicio(toDateTimeLocal(d.dataInicio));
+      setEditMensagem(d.mensagem ?? '');
+      setEditSessaoLegislativaId(
+        d.sessaoLegislativaId ?? d.sessaoLegislativa?.id ?? sessaoLegislativaId ?? '',
+      );
+      if (dominios) {
+        const tipo = dominios.tiposSessao.find((t) => t.nome === d.tipoSessao?.nome);
+        const sit = dominios.situacoesSessao.find((s) => s.nome === d.situacao?.nome);
+        setEditTipoSessaoId(tipo?.id ?? dominios.tiposSessao[0]?.id ?? '');
+        setEditSituacaoId(sit?.id ?? dominios.situacoesSessao[0]?.id ?? '');
+      }
+    });
+  }, [selectedId, dominios, sessaoLegislativaId]);
 
   useEffect(() => {
-    if (dominios) {
-      if (!tipoSessaoId && dominios.tiposSessao[0]) setTipoSessaoId(dominios.tiposSessao[0].id);
-      if (!situacaoId && dominios.situacoesSessao[0]) setSituacaoId(dominios.situacoesSessao[0].id);
+    if (dominios && open) {
+      if (!createTipoSessaoId && dominios.tiposSessao[0]) {
+        setCreateTipoSessaoId(dominios.tiposSessao[0].id);
+      }
+      if (!createSituacaoId && dominios.situacoesSessao[0]) {
+        const agendada =
+          dominios.situacoesSessao.find((s) => s.codigo === 'AGENDADA') ??
+          dominios.situacoesSessao[0];
+        setCreateSituacaoId(agendada.id);
+      }
     }
-  }, [dominios, tipoSessaoId, situacaoId]);
+  }, [dominios, open, createTipoSessaoId, createSituacaoId]);
 
   const sessaoEmAndamento = useMemo(
     () => !!detail && sessaoAceitaPauta(detail.situacao),
@@ -103,10 +210,60 @@ export function SessoesPage() {
     [sessaoEmAndamento, canWrite],
   );
 
+  const sessoesLegislativasEdit = useMemo(() => {
+    const legId = filtrosApplied.legislaturaId || legislaturaId;
+    const leg = legislaturasList.find((l) => l.id === legId);
+    return leg?.sessoesLegislativas ?? legislaturaAtiva?.sessoesLegislativas ?? [];
+  }, [filtrosApplied.legislaturaId, legislaturaId, legislaturasList, legislaturaAtiva]);
+
   function refreshDetail() {
     if (!selectedId) return;
     api<Sessao>(`/sessoes/${selectedId}`).then(setDetail);
     void load();
+  }
+
+  function aplicarPesquisa() {
+    setFiltrosApplied({ ...filtrosDraft });
+    setSelectedId(null);
+    setDetail(null);
+    setSearchGeneration((g) => g + 1);
+  }
+
+  function limparFiltros() {
+    const v = defaultFiltros('', '');
+    setFiltrosDraft(v);
+    setFiltrosApplied(v);
+    setSelectedId(null);
+    setDetail(null);
+  }
+
+  function novaPesquisa() {
+    setSelectedId(null);
+    setDetail(null);
+  }
+
+  async function handleSaveDetail(e: FormEvent) {
+    e.preventDefault();
+    if (!selectedId || !canWrite) return;
+    setSavingDetail(true);
+    try {
+      await api(`/sessoes/${selectedId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          dataInicio: new Date(editDataInicio).toISOString(),
+          tipoSessaoId: editTipoSessaoId,
+          situacaoId: editSituacaoId,
+          sessaoLegislativaId: editSessaoLegislativaId || undefined,
+          mensagem: editMensagem.trim() || undefined,
+        }),
+      });
+      showSuccess('Sessão atualizada.');
+      refreshDetail();
+    } catch (err) {
+      showApiError(err);
+    } finally {
+      setSavingDetail(false);
+    }
   }
 
   async function handleCreate(e: FormEvent) {
@@ -115,14 +272,19 @@ export function SessoesPage() {
       await api('/sessoes', {
         method: 'POST',
         body: JSON.stringify({
-          dataInicio: new Date(dataInicio).toISOString(),
-          tipoSessaoId,
-          situacaoId,
-          sessaoLegislativaId: sessaoLegislativaId || undefined,
+          dataInicio: new Date(createDataInicio).toISOString(),
+          tipoSessaoId: createTipoSessaoId,
+          situacaoId: createSituacaoId,
+          sessaoLegislativaId:
+            filtrosApplied.sessaoLegislativaId ||
+            sessaoLegislativaId ||
+            undefined,
+          mensagem: createMensagem.trim() || undefined,
         }),
       });
       setOpen(false);
-      showSuccess('Sessão plenária agendada.');
+      setCreateMensagem('');
+      showSuccess('Sessão plenária cadastrada.');
       await load();
     } catch (err) {
       showApiError(err);
@@ -139,8 +301,7 @@ export function SessoesPage() {
       });
       setPautaOpen(false);
       showSuccess('Matéria incluída na pauta.');
-      api<Sessao>(`/sessoes/${selectedId}`).then(setDetail);
-      await load();
+      refreshDetail();
     } catch (err) {
       showApiError(err);
     }
@@ -163,38 +324,41 @@ export function SessoesPage() {
     }
   }
 
+  const filterActive = hasActiveFilters(filtrosApplied, defaultFiltros('', ''));
+
   return (
     <section className="page">
       <PageHeader
         icon={MODULE_ICONS.sessoes}
         title="Sessões plenárias"
-        subtitle="Pauta e presenças vinculadas à sessão legislativa selecionada no topo."
+        subtitle="Pesquisar, editar e deliberar sessões (fluxo SIGL / IntGest)."
         actions={
           canWrite ? (
-            <SiglButton
-              label="Nova sessão"
-              icon="pi pi-plus"
-              onClick={() => setOpen(true)}
-              disabled={!sessaoLegislativaId}
-            />
+            <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
+              Adicionar sessão plenária
+            </button>
           ) : undefined
         }
       />
 
       <ContextBanner
         step="Etapa 3"
-        hint={
-          sessaoLegislativaId
-            ? 'Listando sessões da sessão legislativa ativa.'
-            : 'Selecione a sessão legislativa na barra superior.'
-        }
+        hint="Use os filtros como em pesquisar-sessao no IntGest; depois abra a sessão para pauta e presenças."
       />
 
-      {!sessaoLegislativaId && legislaturaAtiva && (
-        <p className="alert alert-warn">
-          Defina a sessão legislativa na barra superior ou em{' '}
-          <Link to="/camara/legislaturas">Legislaturas</Link>.
-        </p>
+      {dominios && (
+        <SessaoPesquisaFilters
+          filtros={filtrosDraft}
+          onChange={(patch) => setFiltrosDraft((f) => ({ ...f, ...patch }))}
+          legislaturas={legislaturasList.length ? legislaturasList : legislaturas}
+          tiposSessao={dominios.tiposSessao}
+          situacoesSessao={dominios.situacoesSessao}
+          onPesquisar={aplicarPesquisa}
+          onClear={limparFiltros}
+          hasFilters={filterActive}
+          resultCount={items.length}
+          searchGeneration={searchGeneration}
+        />
       )}
 
       <div className="split-view">
@@ -204,8 +368,10 @@ export function SessoesPage() {
               <table>
                 <thead>
                   <tr>
-                    <th>Data</th>
+                    <th>Data início</th>
                     <th>Tipo</th>
+                    <th>Situação</th>
+                    <th>Legislatura</th>
                     <th>Pauta</th>
                   </tr>
                 </thead>
@@ -215,10 +381,17 @@ export function SessoesPage() {
                       key={s.id}
                       className={selectedId === s.id ? 'row-selected' : ''}
                       onClick={() => setSelectedId(s.id)}
+                      style={{ cursor: 'pointer' }}
                     >
                       <td>{new Date(s.dataInicio).toLocaleString('pt-BR')}</td>
                       <td>{s.tipoSessao?.nome ?? '—'}</td>
-                      <td>{s.pautaItens?.length ?? 0} itens</td>
+                      <td>{s.situacao?.nome ?? '—'}</td>
+                      <td>
+                        {s.sessaoLegislativa?.legislatura?.numero
+                          ? `${s.sessaoLegislativa.legislatura.numero}ª`
+                          : '—'}
+                      </td>
+                      <td>{s.pautaItens?.length ?? 0}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -226,7 +399,9 @@ export function SessoesPage() {
             </div>
             {items.length === 0 && (
               <p className="split-panel__empty">
-                Nenhuma sessão nesta sessão legislativa.
+                {filterActive
+                  ? 'Nenhuma sessão com os filtros aplicados.'
+                  : 'Nenhuma sessão cadastrada. Clique em Adicionar sessão plenária.'}
               </p>
             )}
           </div>
@@ -235,36 +410,115 @@ export function SessoesPage() {
         <div className="split-panel split-detail">
           {!detail ? (
             <p className="split-panel__empty">
-              Selecione uma sessão para ver pauta e presenças.
+              Selecione uma sessão na lista para editar dados e gerenciar pauta, presenças e
+              votações.
             </p>
           ) : (
             <div className="split-panel__body">
-            <>
-              <h2 className="card-title">
-                {new Date(detail.dataInicio).toLocaleString('pt-BR')}
-                <span className="badge badge--inline">
-                  {detail.situacao?.nome}
-                </span>
-              </h2>
-              <div className="detail-actions sigl-cluster">
+              <div className="detail-actions sigl-cluster" style={{ marginBottom: '0.75rem' }}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={novaPesquisa}>
+                  Fazer nova pesquisa
+                </button>
                 {canWrite && (
                   <SiglButton
                     label="Incluir na pauta"
                     icon="pi pi-list"
                     disabled={!podeIncluirPauta}
-                    tooltip={
-                      podeIncluirPauta
-                        ? undefined
-                        : 'Disponível apenas com sessão EM_ANDAMENTO e perfil com permissão de escrita'
-                    }
-                    tooltipOptions={{ position: 'top' }}
                     onClick={() => void openPautaModal()}
                   />
                 )}
-                <Link to="/materias">
-                  <SiglButton label="Ver matérias" icon="pi pi-file" severity="secondary" outlined />
+                <Link to={ROUTES.materias}>
+                  <SiglButton
+                    label="Ver matérias"
+                    icon="pi pi-file"
+                    severity="secondary"
+                    outlined
+                  />
                 </Link>
               </div>
+
+              <form onSubmit={handleSaveDetail} className="form-stack">
+                <h2 className="card-title">
+                  Sessão — {new Date(detail.dataInicio).toLocaleString('pt-BR')}
+                  <span className="badge badge--inline">{detail.situacao?.nome}</span>
+                </h2>
+
+                <div className="form-section">
+                  <p className="form-section__title">Dados da sessão</p>
+                  <label>
+                    Data início *
+                    <input
+                      type="datetime-local"
+                      value={editDataInicio}
+                      onChange={(e) => setEditDataInicio(e.target.value)}
+                      required
+                      disabled={!canWrite}
+                    />
+                  </label>
+                  <div className="form-grid-2">
+                    <label>
+                      Tipo *
+                      <select
+                        value={editTipoSessaoId}
+                        onChange={(e) => setEditTipoSessaoId(e.target.value)}
+                        required
+                        disabled={!canWrite}
+                      >
+                        {dominios?.tiposSessao.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Situação *
+                      <select
+                        value={editSituacaoId}
+                        onChange={(e) => setEditSituacaoId(e.target.value)}
+                        required
+                        disabled={!canWrite}
+                      >
+                        {dominios?.situacoesSessao.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <label>
+                    Sessão legislativa
+                    <select
+                      value={editSessaoLegislativaId}
+                      onChange={(e) => setEditSessaoLegislativaId(e.target.value)}
+                      disabled={!canWrite}
+                    >
+                      <option value="">—</option>
+                      {sessoesLegislativasEdit.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.numero}ª sessão legislativa
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <IntGestMensagemField
+                    value={editMensagem}
+                    onChange={setEditMensagem}
+                  />
+                  {canWrite && (
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={savingDetail}
+                    >
+                      {savingDetail ? 'Salvando…' : 'Salvar sessão'}
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              <h3 className="detail-subtitle">Pauta, presenças e votação</h3>
               {selectedId && (
                 <SessaoDeliberacaoPanel
                   sessaoId={selectedId}
@@ -275,28 +529,31 @@ export function SessoesPage() {
                   onUpdated={refreshDetail}
                 />
               )}
-            </>
             </div>
           )}
         </div>
       </div>
 
       {open && dominios && (
-        <Modal title="Nova sessão plenária" onClose={() => setOpen(false)}>
-          <form onSubmit={handleCreate}>
-            <div className="form-grid">
-              <label>
-                Data início *
-                <input
-                  type="datetime-local"
-                  value={dataInicio}
-                  onChange={(e) => setDataInicio(e.target.value)}
-                  required
-                />
-              </label>
+        <Modal title="Adicionar sessão plenária" onClose={() => setOpen(false)}>
+          <form onSubmit={handleCreate} className="form-stack">
+            <label>
+              Data início *
+              <input
+                type="datetime-local"
+                value={createDataInicio}
+                onChange={(e) => setCreateDataInicio(e.target.value)}
+                required
+              />
+            </label>
+            <div className="form-grid-2">
               <label>
                 Tipo *
-                <select value={tipoSessaoId} onChange={(e) => setTipoSessaoId(e.target.value)} required>
+                <select
+                  value={createTipoSessaoId}
+                  onChange={(e) => setCreateTipoSessaoId(e.target.value)}
+                  required
+                >
                   {dominios.tiposSessao.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.nome}
@@ -306,7 +563,11 @@ export function SessoesPage() {
               </label>
               <label>
                 Situação *
-                <select value={situacaoId} onChange={(e) => setSituacaoId(e.target.value)} required>
+                <select
+                  value={createSituacaoId}
+                  onChange={(e) => setCreateSituacaoId(e.target.value)}
+                  required
+                >
                   {dominios.situacoesSessao.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.nome}
@@ -315,12 +576,13 @@ export function SessoesPage() {
                 </select>
               </label>
             </div>
+            <IntGestMensagemField value={createMensagem} onChange={setCreateMensagem} />
             <div className="modal-actions">
               <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>
                 Cancelar
               </button>
               <button type="submit" className="btn btn-primary">
-                Agendar sessão
+                Salvar
               </button>
             </div>
           </form>
@@ -329,10 +591,14 @@ export function SessoesPage() {
 
       {pautaOpen && (
         <Modal title="Incluir matéria na pauta" onClose={() => setPautaOpen(false)}>
-          <form onSubmit={handleAddPauta}>
+          <form onSubmit={handleAddPauta} className="form-stack">
             <label>
               Matéria *
-              <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)} required>
+              <select
+                value={materiaId}
+                onChange={(e) => setMateriaId(e.target.value)}
+                required
+              >
                 {!materias.length && (
                   <option value="">Nenhuma matéria em tramitação disponível</option>
                 )}

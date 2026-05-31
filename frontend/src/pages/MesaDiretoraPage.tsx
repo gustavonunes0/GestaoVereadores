@@ -1,41 +1,91 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ROUTES } from '../app/navigation';
 import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
+import { ColegiadoMembersPanel } from '../components/camara/ColegiadoMembersPanel';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
+import { useLegislatura } from '../contexts/LegislaturaContext';
 import { usePermissions } from '../hooks/usePermissions';
 
-type Mesa = {
+type MesaResumo = {
   id: string;
-  legislatura?: { numero: number };
-  membros?: { parlamentar?: { pessoa?: { nome: string } }; cargo?: { nome: string } }[];
+  legislaturaId?: string;
+  legislatura?: { id?: string; numero: number };
+  sessao?: { dataInicio?: string };
+  membros?: { id: string; cargo?: { id: string; nome: string } }[];
 };
 
-type Legislatura = { id: string; numero: number };
+type MesaDetalhe = {
+  id: string;
+  legislatura?: { numero: number };
+  sessao?: { id: string; dataInicio?: string };
+  mensagem?: string;
+  membros: {
+    id: string;
+    parlamentar?: { pessoa?: { nome: string } };
+    cargo?: { nome: string };
+  }[];
+};
 
 export function MesaDiretoraPage() {
   const { canWrite } = usePermissions();
-  const [items, setItems] = useState<Mesa[]>([]);
-  const [legislaturas, setLegislaturas] = useState<Legislatura[]>([]);
+  const { legislaturaId, legislaturaAtiva } = useLegislatura();
+  const [items, setItems] = useState<MesaResumo[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<MesaDetalhe | null>(null);
   const [open, setOpen] = useState(false);
-  const [legislaturaId, setLegislaturaId] = useState('');
+
+  const filtered = useMemo(
+    () =>
+      legislaturaId
+        ? items.filter(
+            (m) =>
+              m.legislaturaId === legislaturaId ||
+              m.legislatura?.id === legislaturaId,
+          )
+        : items,
+    [items, legislaturaId],
+  );
+
+  const load = useCallback(() => {
+    return apiList<MesaResumo>('/mesa-diretora', { limit: 100 }).then((r) => {
+      setItems(r.data);
+      if (selectedId && !r.data.some((m) => m.id === selectedId)) {
+        setSelectedId(null);
+        setDetail(null);
+      }
+    });
+  }, [selectedId]);
 
   useEffect(() => {
-    apiList<Mesa>('/mesa-diretora').then((r) => setItems(r.data));
-    apiList<Legislatura>('/legislaturas').then((list) => {
-      setLegislaturas(list.data);
-      if (list.data[0]) setLegislaturaId(list.data[0].id);
-    });
-  }, []);
+    load();
+  }, [load, legislaturaId]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setDetail(null);
+      return;
+    }
+    api<MesaDetalhe>(`/mesa-diretora/${selectedId}`).then(setDetail);
+  }, [selectedId]);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
+    if (!legislaturaId) return;
     await api('/mesa-diretora', {
       method: 'POST',
       body: JSON.stringify({ legislaturaId }),
     });
     setOpen(false);
-    apiList<Mesa>('/mesa-diretora').then((r) => setItems(r.data));
+    await load();
+  }
+
+  function refreshDetail() {
+    if (!selectedId) return;
+    api<MesaDetalhe>(`/mesa-diretora/${selectedId}`).then(setDetail);
+    load();
   }
 
   return (
@@ -45,62 +95,111 @@ export function MesaDiretoraPage() {
         title="Mesa diretora"
         actions={
           canWrite ? (
-            <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setOpen(true)}
+              disabled={!legislaturaId}
+            >
               Nova composição
             </button>
           ) : undefined
         }
       />
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Legislatura</th>
-              <th>Membros</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((m) => (
-              <tr key={m.id}>
-                <td>{m.legislatura?.numero ?? '—'}ª</td>
-                <td>
-                  {m.membros?.length
-                    ? m.membros
-                        .map(
-                          (mb) =>
-                            `${mb.cargo?.nome}: ${mb.parlamentar?.pessoa?.nome ?? '—'}`,
-                        )
-                        .join('; ')
-                    : '—'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      {!legislaturaId && (
+        <p className="alert alert-warn">
+          Selecione a legislatura na barra superior ou cadastre em{' '}
+          <Link to={ROUTES.camara.legislaturas}>Legislaturas</Link>.
+        </p>
+      )}
+
+      <div className="split-view">
+        <div className="split-panel split-list">
+          <div className="split-panel__body">
+            <div className="split-panel__scroll table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Legislatura</th>
+                    <th>Cargos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((m) => (
+                    <tr
+                      key={m.id}
+                      className={selectedId === m.id ? 'row-selected' : ''}
+                      onClick={() => setSelectedId(m.id)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <td>{m.legislatura?.numero ?? '—'}ª</td>
+                      <td>{m.membros?.length ?? 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {filtered.length === 0 && (
+              <p className="split-panel__empty">
+                Nenhuma mesa para esta legislatura. Clique em &quot;Nova composição&quot;.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="split-panel split-detail">
+          <div className="split-panel__body">
+          {!detail ? (
+            <p className="split-panel__empty">
+              Selecione uma composição à esquerda para gerenciar Presidente, Secretários e
+              demais cargos (como no SIGL).
+            </p>
+          ) : (
+            <>
+              <h2 className="card-title">
+                Mesa — {detail.legislatura?.numero}ª legislatura
+              </h2>
+              {detail.mensagem && (
+                <p className="muted" style={{ fontSize: '0.9rem' }}>
+                  {detail.mensagem}
+                </p>
+              )}
+              <h3 className="detail-subtitle">Composição da mesa</h3>
+              <ColegiadoMembersPanel
+                entityLabel="mesa diretora"
+                membros={detail.membros}
+                addMembroUrl={`/mesa-diretora/${detail.id}/membros`}
+                removeMembroUrl={(membroId) =>
+                  `/mesa-diretora/${detail.id}/membros/${membroId}`
+                }
+                onChanged={refreshDetail}
+                requireCargo
+              />
+              <p className="muted" style={{ fontSize: '0.85rem', marginTop: '1rem' }}>
+                Depois da mesa definida, cadastre{' '}
+                <Link to={ROUTES.camara.autores}>autores</Link> e inicie{' '}
+                <Link to={ROUTES.materias}>matérias</Link>.
+              </p>
+            </>
+          )}
+          </div>
+        </div>
       </div>
+
       {open && (
         <Modal title="Nova mesa diretora" onClose={() => setOpen(false)}>
           <form onSubmit={handleCreate}>
-            <label>
-              Legislatura *
-              <select
-                value={legislaturaId}
-                onChange={(e) => setLegislaturaId(e.target.value)}
-                required
-              >
-                {legislaturas.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.numero}ª legislatura
-                  </option>
-                ))}
-              </select>
-            </label>
+            <p className="muted" style={{ fontSize: '0.9rem' }}>
+              Será criada para a legislatura{' '}
+              <strong>{legislaturaAtiva?.numero ?? '—'}ª</strong> (contexto atual).
+            </p>
             <div className="modal-actions">
               <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>
                 Cancelar
               </button>
               <button type="submit" className="btn btn-primary">
-                Salvar
+                Criar e compor membros
               </button>
             </div>
           </form>

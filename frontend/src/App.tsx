@@ -3,6 +3,7 @@ import { LEGACY_REDIRECTS } from './app/navigation';
 import { Layout } from './components/Layout';
 import { MasterRoute } from './components/MasterRoute';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AgendaPage } from './pages/AgendaPage';
 import { AtosPage } from './pages/AtosPage';
 import { AutoresPage } from './pages/AutoresPage';
 import { CamaraPage } from './pages/CamaraPage';
@@ -28,12 +29,13 @@ export default function App() {
           <Route index element={<DashboardPage />} />
           <Route path="materias" element={<MateriasPage />} />
           <Route path="sessoes" element={<SessoesPage />} />
+          <Route path="agenda" element={<AgendaPage />} />
           <Route path="relatorios" element={<RelatoriosPage />} />
           <Route path="normas-juridicas" element={<NormasPage />} />
           <Route path="atos-administrativos" element={<AtosPage />} />
 
           <Route path="camara" element={<CamaraPage />}>
-            <Route index element={<Navigate to="parlamentares" replace />} />
+            <Route index element={<Navigate to="legislaturas" replace />} />
             <Route path="parlamentares" element={<ParlamentaresPage />} />
             <Route path="comissoes" element={<ComissoesPage />} />
             <Route path="frentes" element={<FrentesPage />} />

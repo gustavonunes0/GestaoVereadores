@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -60,5 +61,16 @@ export class MesaDiretoraController {
     @Body() dto: AddMembroMesaDto,
   ) {
     return this.service.addMembro(tenantId, id, dto);
+  }
+
+  @UseGuards(TenantRolesGuard)
+  @TenantRoles(TenantUserRole.ADMIN, TenantUserRole.OWNER)
+  @Delete(':id/membros/:membroId')
+  removeMembro(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('membroId', ParseUUIDPipe) membroId: string,
+  ) {
+    return this.service.removeMembro(tenantId, id, membroId);
   }
 }

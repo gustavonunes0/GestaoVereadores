@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
@@ -8,7 +8,10 @@ import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
 import { SiglButton } from '../components/common/SiglButton';
 import { PageHeader } from '../components/PageHeader';
-import { PublicacaoFiltersBar } from '../components/publicacao/PublicacaoFiltersBar';
+import {
+  AtosPesquisaFilters,
+  type AtosFiltrosForm,
+} from '../components/publicacao/AtosPesquisaFilters';
 import { PublicacaoMetaGrid } from '../components/publicacao/PublicacaoMetaGrid';
 import { PublicacaoModuleIntro } from '../components/publicacao/PublicacaoModuleIntro';
 import { useAppToast } from '../hooks/useAppToast';
@@ -35,6 +38,28 @@ type AtoListItem = {
 
 type AtoDetail = AtoListItem;
 
+function emptyAtosFiltros(): AtosFiltrosForm {
+  return { tipoId: '', classificacaoId: '', numero: '', dataPubDe: '', dataPubAte: '' };
+}
+
+function atosFiltrosAtivos(f: AtosFiltrosForm) {
+  return Boolean(
+    f.tipoId || f.classificacaoId || f.numero.trim() || f.dataPubDe || f.dataPubAte,
+  );
+}
+
+function atosFiltrosToQuery(f: AtosFiltrosForm): Record<string, string | number | undefined> {
+  const params: Record<string, string | number | undefined> = { limit: 100 };
+  if (f.tipoId) params.tipoId = f.tipoId;
+  if (f.classificacaoId) params.classificacaoId = f.classificacaoId;
+  if (f.numero.trim()) params.numero = f.numero.trim();
+  if (f.dataPubDe) params.dataPublicacaoDe = new Date(f.dataPubDe).toISOString();
+  if (f.dataPubAte) {
+    params.dataPublicacaoAte = new Date(`${f.dataPubAte}T23:59:59.999`).toISOString();
+  }
+  return params;
+}
+
 export function AtosPage() {
   const { dominios } = useDominios();
   const { canWrite } = usePermissions();
@@ -42,8 +67,9 @@ export function AtosPage() {
 
   const [items, setItems] = useState<AtoListItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filtroTipoId, setFiltroTipoId] = useState<string | null>(null);
-  const [filtroClassificacaoId, setFiltroClassificacaoId] = useState<string | null>(null);
+  const [filtrosDraft, setFiltrosDraft] = useState<AtosFiltrosForm>(emptyAtosFiltros);
+  const [filtrosApplied, setFiltrosApplied] = useState<AtosFiltrosForm>(emptyAtosFiltros);
+  const [searchGeneration, setSearchGeneration] = useState(0);
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -55,22 +81,19 @@ export function AtosPage() {
   const [detail, setDetail] = useState<AtoDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  const hasFilters = Boolean(filtroTipoId || filtroClassificacaoId);
+  const hasFilters = atosFiltrosAtivos(filtrosApplied);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string | number | undefined> = { limit: 100 };
-      if (filtroTipoId) params.tipoId = filtroTipoId;
-      if (filtroClassificacaoId) params.classificacaoId = filtroClassificacaoId;
-      const response = await apiList<AtoListItem>('/atos', params);
+      const response = await apiList<AtoListItem>('/atos', atosFiltrosToQuery(filtrosApplied));
       setItems(response.data);
     } catch (err) {
       showApiError(err);
     } finally {
       setLoading(false);
     }
-  }, [filtroTipoId, filtroClassificacaoId, showApiError]);
+  }, [filtrosApplied, showApiError]);
 
   useEffect(() => {
     void load();
@@ -85,19 +108,16 @@ export function AtosPage() {
     }
   }, [dominios, tipoId, classificacaoId]);
 
-  const tipoOptions = useMemo(
-    () => [{ id: null, nome: 'Todos os tipos' }, ...(dominios?.tiposAto ?? [])],
-    [dominios],
-  );
-
-  const classificacaoOptions = useMemo(
-    () => [{ id: null, nome: 'Todas as classificações' }, ...(dominios?.classificacoesAto ?? [])],
-    [dominios],
-  );
+  function aplicarPesquisa() {
+    setFiltrosApplied({ ...filtrosDraft });
+    setSearchGeneration((g) => g + 1);
+  }
 
   function clearFilters() {
-    setFiltroTipoId(null);
-    setFiltroClassificacaoId(null);
+    const v = emptyAtosFiltros();
+    setFiltrosDraft(v);
+    setFiltrosApplied(v);
+    setSearchGeneration((g) => g + 1);
   }
 
   async function handleCreate() {
@@ -167,26 +187,17 @@ export function AtosPage() {
 
       <DocumentListPanel title={mod.listPanelTitle} description={mod.listPanelDesc}>
       {dominios && (
-        <PublicacaoFiltersBar showClear={hasFilters} onClear={clearFilters}>
-          <Dropdown
-            value={filtroTipoId}
-            options={tipoOptions}
-            optionLabel="nome"
-            optionValue="id"
-            onChange={(e) => setFiltroTipoId(e.value ?? null)}
-            placeholder="Tipo de ato"
-            className="publicacao-filter-field"
-          />
-          <Dropdown
-            value={filtroClassificacaoId}
-            options={classificacaoOptions}
-            optionLabel="nome"
-            optionValue="id"
-            onChange={(e) => setFiltroClassificacaoId(e.value ?? null)}
-            placeholder="Classificação / finalidade"
-            className="publicacao-filter-field"
-          />
-        </PublicacaoFiltersBar>
+        <AtosPesquisaFilters
+          filtros={filtrosDraft}
+          onChange={(patch) => setFiltrosDraft((f) => ({ ...f, ...patch }))}
+          tiposAto={dominios.tiposAto}
+          classificacoesAto={dominios.classificacoesAto}
+          onPesquisar={aplicarPesquisa}
+          onClear={clearFilters}
+          hasFilters={hasFilters}
+          resultCount={items.length}
+          searchGeneration={searchGeneration}
+        />
       )}
 
       {!loading && items.length === 0 ? (

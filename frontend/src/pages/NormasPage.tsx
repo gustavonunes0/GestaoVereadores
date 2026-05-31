@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
@@ -10,7 +10,10 @@ import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
 import { SiglButton } from '../components/common/SiglButton';
 import { PageHeader } from '../components/PageHeader';
-import { PublicacaoFiltersBar } from '../components/publicacao/PublicacaoFiltersBar';
+import {
+  NormasPesquisaFilters,
+  type NormasFiltrosForm,
+} from '../components/publicacao/NormasPesquisaFilters';
 import { PublicacaoMetaGrid } from '../components/publicacao/PublicacaoMetaGrid';
 import { PublicacaoModuleIntro } from '../components/publicacao/PublicacaoModuleIntro';
 import { useAppToast } from '../hooks/useAppToast';
@@ -49,6 +52,26 @@ type MateriaOption = {
   status?: MateriaStatus;
 };
 
+function emptyNormasFiltros(): NormasFiltrosForm {
+  return { tipoId: '', anoId: '', numero: '', dataPubDe: '', dataPubAte: '' };
+}
+
+function normasFiltrosAtivos(f: NormasFiltrosForm) {
+  return Boolean(f.tipoId || f.anoId || f.numero.trim() || f.dataPubDe || f.dataPubAte);
+}
+
+function normasFiltrosToQuery(f: NormasFiltrosForm): Record<string, string | number | undefined> {
+  const params: Record<string, string | number | undefined> = { limit: 100 };
+  if (f.tipoId) params.tipoId = f.tipoId;
+  if (f.anoId) params.anoId = f.anoId;
+  if (f.numero.trim()) params.numero = f.numero.trim();
+  if (f.dataPubDe) params.dataPublicacaoDe = new Date(f.dataPubDe).toISOString();
+  if (f.dataPubAte) {
+    params.dataPublicacaoAte = new Date(`${f.dataPubAte}T23:59:59.999`).toISOString();
+  }
+  return params;
+}
+
 export function NormasPage() {
   const { dominios } = useDominios();
   const { canWrite } = usePermissions();
@@ -56,9 +79,9 @@ export function NormasPage() {
 
   const [items, setItems] = useState<NormaListItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filtroTipoId, setFiltroTipoId] = useState<string | null>(null);
-  const [filtroAnoId, setFiltroAnoId] = useState<string | null>(null);
-  const [filtroNumero, setFiltroNumero] = useState('');
+  const [filtrosDraft, setFiltrosDraft] = useState<NormasFiltrosForm>(emptyNormasFiltros);
+  const [filtrosApplied, setFiltrosApplied] = useState<NormasFiltrosForm>(emptyNormasFiltros);
+  const [searchGeneration, setSearchGeneration] = useState(0);
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -72,23 +95,19 @@ export function NormasPage() {
   const [detail, setDetail] = useState<NormaDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  const hasFilters = Boolean(filtroTipoId || filtroAnoId || filtroNumero.trim());
+  const hasFilters = normasFiltrosAtivos(filtrosApplied);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string | number | undefined> = { limit: 100 };
-      if (filtroTipoId) params.tipoId = filtroTipoId;
-      if (filtroAnoId) params.anoId = filtroAnoId;
-      if (filtroNumero.trim()) params.numero = filtroNumero.trim();
-      const response = await apiList<NormaListItem>('/normas', params);
+      const response = await apiList<NormaListItem>('/normas', normasFiltrosToQuery(filtrosApplied));
       setItems(response.data);
     } catch (err) {
       showApiError(err);
     } finally {
       setLoading(false);
     }
-  }, [filtroTipoId, filtroAnoId, filtroNumero, showApiError]);
+  }, [filtrosApplied, showApiError]);
 
   useEffect(() => {
     void load();
@@ -98,23 +117,16 @@ export function NormasPage() {
     if (dominios?.tiposNorma[0] && !tipoId) setTipoId(dominios.tiposNorma[0].id);
   }, [dominios, tipoId]);
 
-  const tipoOptions = useMemo(
-    () => [{ id: null, nome: 'Todos os tipos' }, ...(dominios?.tiposNorma ?? [])],
-    [dominios],
-  );
-
-  const anoOptions = useMemo(
-    () => [
-      { id: null, nome: 'Todos os anos' },
-      ...(dominios?.anos ?? []).map((a) => ({ id: a.id, nome: String(a.valor) })),
-    ],
-    [dominios],
-  );
+  function aplicarPesquisa() {
+    setFiltrosApplied({ ...filtrosDraft });
+    setSearchGeneration((g) => g + 1);
+  }
 
   function clearFilters() {
-    setFiltroTipoId(null);
-    setFiltroAnoId(null);
-    setFiltroNumero('');
+    const v = emptyNormasFiltros();
+    setFiltrosDraft(v);
+    setFiltrosApplied(v);
+    setSearchGeneration((g) => g + 1);
   }
 
   async function openCreateDialog() {
@@ -216,32 +228,17 @@ export function NormasPage() {
 
       <DocumentListPanel title={mod.listPanelTitle} description={mod.listPanelDesc}>
       {dominios && (
-        <PublicacaoFiltersBar showClear={hasFilters} onClear={clearFilters}>
-          <Dropdown
-            value={filtroTipoId}
-            options={tipoOptions}
-            optionLabel="nome"
-            optionValue="id"
-            onChange={(e) => setFiltroTipoId(e.value ?? null)}
-            placeholder="Espécie normativa"
-            className="publicacao-filter-field"
-          />
-          <Dropdown
-            value={filtroAnoId}
-            options={anoOptions}
-            optionLabel="nome"
-            optionValue="id"
-            onChange={(e) => setFiltroAnoId(e.value ?? null)}
-            placeholder="Ano"
-            className="publicacao-filter-field"
-          />
-          <InputText
-            value={filtroNumero}
-            onChange={(e) => setFiltroNumero(e.target.value)}
-            placeholder="Buscar por número"
-            className="publicacao-filter-field publicacao-filter-field--search"
-          />
-        </PublicacaoFiltersBar>
+        <NormasPesquisaFilters
+          filtros={filtrosDraft}
+          onChange={(patch) => setFiltrosDraft((f) => ({ ...f, ...patch }))}
+          tiposNorma={dominios.tiposNorma}
+          anos={dominios.anos}
+          onPesquisar={aplicarPesquisa}
+          onClear={clearFilters}
+          hasFilters={hasFilters}
+          resultCount={items.length}
+          searchGeneration={searchGeneration}
+        />
       )}
 
       {!loading && items.length === 0 ? (

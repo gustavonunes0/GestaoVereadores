@@ -108,6 +108,7 @@ export type { AuthUser } from '../types/auth';
 export type Dominios = {
   anos: { id: string; valor: number }[];
   tiposMateria: { id: string; nome: string }[];
+  tiposComissao: { id: string; nome: string }[];
   tiposListagem: { id: string; nome: string }[];
   tematicas: { id: string; nome: string }[];
   origensMateria: { id: string; nome: string }[];

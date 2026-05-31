@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { toOptionalDate } from '../common/prisma/date-fields';
 import { paginatedQuery } from '../common/prisma/paginate';
 import { tenantWhere } from '../common/prisma/tenant-scope';
 import { membrosComParlamentar } from '../common/prisma/prisma-includes';
@@ -7,13 +8,46 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AddMembroComissaoDto, CreateComissaoDto } from './dto/create-comissao.dto';
 import { UpdateComissaoDto } from './dto/update-comissao.dto';
 
+const comissaoInclude = {
+  tipoComissao: true,
+  membros: membrosComParlamentar,
+} as const;
+
 @Injectable()
 export class ComissoesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private mapDto(dto: CreateComissaoDto | UpdateComissaoDto) {
+    const {
+      dataCriacao,
+      dataExtincao,
+      dataHoraReuniao,
+      dataInstalacao,
+      dataPrevistaTermino,
+      novoPrazo,
+      dataTermino,
+      sigla,
+      email,
+      ...rest
+    } = dto;
+    return {
+      ...rest,
+      sigla: sigla?.trim().toUpperCase() || undefined,
+      email: email?.trim() || undefined,
+      dataCriacao: toOptionalDate(dataCriacao),
+      dataExtincao: toOptionalDate(dataExtincao),
+      dataHoraReuniao: toOptionalDate(dataHoraReuniao),
+      dataInstalacao: toOptionalDate(dataInstalacao),
+      dataPrevistaTermino: toOptionalDate(dataPrevistaTermino),
+      novoPrazo: toOptionalDate(novoPrazo),
+      dataTermino: toOptionalDate(dataTermino),
+    };
+  }
+
   create(tenantId: string, dto: CreateComissaoDto) {
     return this.prisma.comissao.create({
-      data: { ...dto, tenantId },
+      data: { ...this.mapDto(dto), tenantId, nome: dto.nome.trim() },
+      include: comissaoInclude,
     });
   }
 
@@ -24,7 +58,7 @@ export class ComissoesService {
       (skip, take) =>
         this.prisma.comissao.findMany({
           where,
-          include: { membros: membrosComParlamentar },
+          include: comissaoInclude,
           orderBy: { nome: 'asc' },
           skip,
           take,
@@ -36,7 +70,7 @@ export class ComissoesService {
   async findOne(tenantId: string, id: string) {
     const item = await this.prisma.comissao.findFirst({
       where: { id, ...tenantWhere(tenantId) },
-      include: { membros: membrosComParlamentar },
+      include: comissaoInclude,
     });
     if (!item) throw new NotFoundException('Comissão não encontrada');
     return item;
@@ -44,7 +78,11 @@ export class ComissoesService {
 
   async update(tenantId: string, id: string, dto: UpdateComissaoDto) {
     await this.findOne(tenantId, id);
-    return this.prisma.comissao.update({ where: { id }, data: dto });
+    return this.prisma.comissao.update({
+      where: { id },
+      data: this.mapDto(dto),
+      include: comissaoInclude,
+    });
   }
 
   async remove(tenantId: string, id: string) {

@@ -1,6 +1,12 @@
 /** Includes Prisma reutilizados entre módulos legislativos. */
 export const parlamentarComPessoa = {
-  include: { pessoa: true },
+  include: {
+    pessoa: true,
+    mandatos: {
+      include: { legislatura: true },
+      orderBy: { legislatura: { numero: 'desc' as const } },
+    },
+  },
 } as const;
 
 export const membrosComParlamentar = {
@@ -12,6 +18,11 @@ export const materiaAutoresInclude = {
   orderBy: { ordem: 'asc' as const },
 } as const;
 
+export const materiaParlamentaresVinculoInclude = {
+  include: { parlamentar: parlamentarComPessoa },
+  orderBy: { ordem: 'asc' as const },
+} as const;
+
 export const materiaRelationsInclude = {
   tipo: true,
   ano: true,
@@ -19,10 +30,14 @@ export const materiaRelationsInclude = {
   origem: true,
   autor: true,
   materiaAutores: materiaAutoresInclude,
+  representantes: materiaParlamentaresVinculoInclude,
+  coautores: materiaParlamentaresVinculoInclude,
   primeiroAutor: parlamentarComPessoa,
   relator: parlamentarComPessoa,
   statusTramitacao: true,
   unidadeTramitacaoDestino: true,
+  localOrigemExterna: true,
+  tipoListagem: true,
 } as const;
 
 export const votacaoInclude = {

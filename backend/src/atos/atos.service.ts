@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { assertFound } from '../common/prisma/assert-found';
-import { toOptionalDate } from '../common/prisma/date-fields';
+import { buildDateRangeFilter, toOptionalDate } from '../common/prisma/date-fields';
 import { paginatedQuery } from '../common/prisma/paginate';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAtoDto, FilterAtoDto } from './dto/ato.dto';
@@ -26,6 +26,12 @@ export class AtosService {
     const where: Prisma.AtoWhereInput = {};
     if (filters.tipoId) where.tipoId = filters.tipoId;
     if (filters.classificacaoId) where.classificacaoId = filters.classificacaoId;
+    if (filters.numero) where.numero = { contains: filters.numero };
+    const pubRange = buildDateRangeFilter(
+      filters.dataPublicacaoDe,
+      filters.dataPublicacaoAte,
+    );
+    if (pubRange) where.dataPublicacaoInicio = pubRange;
 
     return paginatedQuery(
       () => this.prisma.ato.count({ where }),

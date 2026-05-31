@@ -12,6 +12,10 @@ export class DominiosService {
         where: { tenantId },
         orderBy: { nome: 'asc' },
       }),
+      this.prisma.tipoComissao.findMany({
+        where: { tenantId },
+        orderBy: { nome: 'asc' },
+      }),
       this.prisma.tipoListagem.findMany({ orderBy: { nome: 'asc' } }),
       this.prisma.tematica.findMany({ orderBy: { nome: 'asc' } }),
       this.prisma.origemMateria.findMany({ orderBy: { nome: 'asc' } }),
@@ -40,6 +44,7 @@ export class DominiosService {
       ([
         anos,
         tiposMateria,
+        tiposComissao,
         tiposListagem,
         tematicas,
         origensMateria,
@@ -58,6 +63,7 @@ export class DominiosService {
       ]) => ({
         anos,
         tiposMateria,
+        tiposComissao,
         tiposListagem,
         tematicas,
         origensMateria,

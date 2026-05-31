@@ -71,10 +71,12 @@ model Tenant {
   normas           Norma[]
   sessoesPlenarias SessaoPlenaria[]
   tiposMateria     TipoMateria[]
+  tiposComissao    TipoComissao[]
   tiposAutor       TipoAutor[]
   tiposSessao      TipoSessao[]
   cargosMesa       CargoMesa[]
   mesasDiretoras   MesaDiretora[]
+  agendasLegislativas AgendaLegislativa[]
 }
 
 model TenantUser {
@@ -302,29 +304,52 @@ model CargoMesa {
 // --- Cadastros estruturais ---
 
 model Pessoa {
-  id          String       @id @default(uuid())
-  nome        String
-  cpf         String?      @unique
-  email       String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  parlamentar Parlamentar?
+  id              String       @id @default(uuid())
+  nome            String
+  nomeParlamentar String?
+  cpf             String?      @unique
+  rg              String?
+  tituloEleitor   String?
+  dataNascimento  DateTime?
+  sexo            String?
+  email           String?
+  telefone        String?
+  celular         String?
+  cep             String?
+  logradouro      String?
+  numeroEndereco  String?
+  complemento     String?
+  bairro          String?
+  cidade          String?
+  uf              String?
+  site            String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  parlamentar     Parlamentar?
 }
 
 model Parlamentar {
-  id        String   @id @default(uuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  pessoaId  String   @unique
-  pessoa    Pessoa   @relation(fields: [pessoaId], references: [id], onDelete: Cascade)
-  ativo     Boolean  @default(true)
-  mensagem  String?
-  isRemoved Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  pessoaId        String   @unique
+  pessoa          Pessoa   @relation(fields: [pessoaId], references: [id], onDelete: Cascade)
+  partido         String?
+  profissao       String?
+  gabinete        String?
+  situacaoMilitar String?
+  nivelInstrucao  String?
+  fotoUrl         String?
+  biografia       String?  @db.Text
+  ativo           Boolean  @default(true)
+  mensagem        String?
+  isRemoved       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([tenantId])
 
+  mandatos              ParlamentarMandato[]
   autores              Autor[]
   materiasRelator      Materia[]           @relation("RelatorMateria")
   materiasPrimeiroAutor Materia[]           @relation("PrimeiroAutorMateria")
@@ -333,6 +358,8 @@ model Parlamentar {
   membrosFrente        FrenteMembro[]
   presencas            PresencaSessao[]
   votos                VotoParlamentar[]
+  representantesMateria MateriaRepresentante[]
+  coautoriasMateria     MateriaCoautor[]
 }
 
 model Autor {
@@ -353,18 +380,50 @@ model Autor {
   @@index([tenantId])
 }
 
-model Comissao {
-  id        String           @id @default(uuid())
+model TipoComissao {
+  id        String     @id @default(uuid())
   tenantId  String
-  tenant    Tenant           @relation(fields: [tenantId], references: [id])
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
   nome      String
-  mensagem  String?
-  ativa     Boolean          @default(true)
-  isRemoved Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  membros   ComissaoMembro[]
+  comissoes Comissao[]
 
+  @@unique([tenantId, nome])
+  @@index([tenantId])
+}
+
+model Comissao {
+  id             String           @id @default(uuid())
+  tenantId       String
+  tenant         Tenant           @relation(fields: [tenantId], references: [id])
+  nome           String
+  sigla          String?
+  tipoComissaoId String?
+  tipoComissao   TipoComissao?    @relation(fields: [tipoComissaoId], references: [id])
+  dataCriacao           DateTime?
+  dataExtincao          DateTime?
+  unidadeDeliberativa   Boolean          @default(false)
+  localReuniao          String?
+  dataHoraReuniao       DateTime?
+  telSalaReuniao        String?
+  enderecoSecretaria    String?
+  telSecretaria         String?
+  faxSecretaria         String?
+  secretario            String?
+  email                 String?
+  finalidade            String?          @db.Text
+  apelido               String?
+  dataInstalacao        DateTime?
+  dataPrevistaTermino   DateTime?
+  novoPrazo             DateTime?
+  dataTermino           DateTime?
+  mensagem              String?
+  ativa                 Boolean          @default(true)
+  isRemoved      Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  membros        ComissaoMembro[]
+
+  @@unique([tenantId, sigla])
   @@index([tenantId])
 }
 
@@ -379,16 +438,18 @@ model ComissaoMembro {
 }
 
 model FrenteParlamentar {
-  id        String         @id @default(uuid())
-  tenantId  String
-  tenant    Tenant         @relation(fields: [tenantId], references: [id])
-  nome      String
-  mensagem  String?
-  ativa     Boolean        @default(true)
-  isRemoved Boolean        @default(false)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  membros   FrenteMembro[]
+  id          String         @id @default(uuid())
+  tenantId    String
+  tenant      Tenant         @relation(fields: [tenantId], references: [id])
+  nome        String
+  mensagem    String?
+  dataEntrada DateTime?
+  dataSaida   DateTime?
+  ativa       Boolean        @default(true)
+  isRemoved   Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  membros     FrenteMembro[]
 
   @@index([tenantId])
 }
@@ -414,9 +475,26 @@ model Legislatura {
   updatedAt  DateTime          @updatedAt
   sessoesLegislativas SessaoLegislativa[]
   mesasDiretoras     MesaDiretora[]
+  mandatosParlamentares ParlamentarMandato[]
 
   @@unique([tenantId, numero])
   @@index([tenantId])
+}
+
+model ParlamentarMandato {
+  id                   String      @id @default(uuid())
+  parlamentarId        String
+  parlamentar          Parlamentar @relation(fields: [parlamentarId], references: [id], onDelete: Cascade)
+  legislaturaId        String
+  legislatura          Legislatura @relation(fields: [legislaturaId], references: [id], onDelete: Cascade)
+  titular              Boolean     @default(true)
+  dataPosse            DateTime?
+  dataFim              DateTime?
+  dataExpedicaoDiploma DateTime?
+  ativo                Boolean     @default(true)
+
+  @@unique([parlamentarId, legislaturaId])
+  @@index([legislaturaId])
 }
 
 model SessaoLegislativa {
@@ -524,6 +602,8 @@ model Materia {
   updatedAt                  DateTime           @updatedAt
   pautaItens                 PautaItem[]
   materiaAutores             MateriaAutor[]
+  representantes             MateriaRepresentante[]
+  coautores                  MateriaCoautor[]
   normas                     Norma[]
 
   @@unique([tenantId, tipoId, numero, anoId])
@@ -586,6 +666,48 @@ model MateriaAutor {
 
   @@unique([materiaId, autorId])
   @@unique([materiaId, ordem])
+}
+
+/** Representantes (vereadores) da proposição — ex.: vários na Moção (SIGL). */
+model MateriaRepresentante {
+  id            String      @id @default(uuid())
+  materiaId     String
+  materia       Materia     @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  parlamentarId String
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  ordem         Int
+
+  @@unique([materiaId, parlamentarId])
+  @@unique([materiaId, ordem])
+}
+
+/** Coautores de Projeto de Lei (vereadores). */
+model MateriaCoautor {
+  id            String      @id @default(uuid())
+  materiaId     String
+  materia       Materia     @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  parlamentarId String
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  ordem         Int
+
+  @@unique([materiaId, parlamentarId])
+  @@unique([materiaId, ordem])
+}
+
+model AgendaLegislativa {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  numero     String?
+  titulo     String?
+  dataInicio DateTime?
+  dataFim    DateTime?
+  mensagem   String?
+  isRemoved  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([tenantId])
 }
 
 model PautaItem {

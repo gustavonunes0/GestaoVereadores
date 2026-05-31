@@ -73,6 +73,9 @@ export class SessoesService {
     if (filters.sessaoLegislativaId) {
       where.sessaoLegislativaId = filters.sessaoLegislativaId;
     }
+    if (filters.legislaturaId) {
+      where.sessaoLegislativa = { legislaturaId: filters.legislaturaId };
+    }
     const range = buildDateRangeFilter(
       filters.dataInicioDe,
       filters.dataInicioAte,

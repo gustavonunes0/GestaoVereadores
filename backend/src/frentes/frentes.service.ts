@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { toOptionalDate } from '../common/prisma/date-fields';
 import { paginatedQuery } from '../common/prisma/paginate';
 import { tenantWhere } from '../common/prisma/tenant-scope';
 import { membrosComParlamentar } from '../common/prisma/prisma-includes';
@@ -12,8 +13,14 @@ export class FrentesService {
   constructor(private readonly prisma: PrismaService) {}
 
   create(tenantId: string, dto: CreateFrenteDto) {
+    const { dataEntrada, dataSaida, ...rest } = dto;
     return this.prisma.frenteParlamentar.create({
-      data: { ...dto, tenantId },
+      data: {
+        ...rest,
+        tenantId,
+        dataEntrada: toOptionalDate(dataEntrada),
+        dataSaida: toOptionalDate(dataSaida),
+      },
     });
   }
 
@@ -44,7 +51,15 @@ export class FrentesService {
 
   async update(tenantId: string, id: string, dto: UpdateFrenteDto) {
     await this.findOne(tenantId, id);
-    return this.prisma.frenteParlamentar.update({ where: { id }, data: dto });
+    const { dataEntrada, dataSaida, ...rest } = dto;
+    return this.prisma.frenteParlamentar.update({
+      where: { id },
+      data: {
+        ...rest,
+        dataEntrada: toOptionalDate(dataEntrada),
+        dataSaida: toOptionalDate(dataSaida),
+      },
+    });
   }
 
   async remove(tenantId: string, id: string) {

@@ -54,6 +54,63 @@ export class MateriasService {
     return lista as Prisma.InputJsonValue;
   }
 
+  private async assertParlamentaresDoTenant(
+    tenantId: string,
+    parlamentarIds: string[],
+  ) {
+    const count = await this.prisma.parlamentar.count({
+      where: {
+        id: { in: parlamentarIds },
+        ...tenantWhere(tenantId),
+      },
+    });
+    if (count !== parlamentarIds.length) {
+      throw new BadRequestException(
+        'Um ou mais representantes não pertencem a esta câmara',
+      );
+    }
+  }
+
+  private async syncRepresentantes(
+    tenantId: string,
+    materiaId: string,
+    representanteIds?: string[],
+  ) {
+    if (representanteIds === undefined) return;
+    await this.prisma.materiaRepresentante.deleteMany({ where: { materiaId } });
+    if (!representanteIds.length) return;
+
+    await this.assertParlamentaresDoTenant(tenantId, representanteIds);
+    await this.prisma.materiaRepresentante.createMany({
+      data: representanteIds.map((parlamentarId, index) => ({
+        materiaId,
+        parlamentarId,
+        ordem: index + 1,
+      })),
+    });
+  }
+
+  private async syncCoautores(
+    tenantId: string,
+    materiaId: string,
+    coautorIds?: string[],
+    autorParlamentarId?: string | null,
+  ) {
+    if (coautorIds === undefined) return;
+    await this.prisma.materiaCoautor.deleteMany({ where: { materiaId } });
+    const ids = coautorIds.filter((id) => id !== autorParlamentarId);
+    if (!ids.length) return;
+
+    await this.assertParlamentaresDoTenant(tenantId, ids);
+    await this.prisma.materiaCoautor.createMany({
+      data: ids.map((parlamentarId, index) => ({
+        materiaId,
+        parlamentarId,
+        ordem: index + 1,
+      })),
+    });
+  }
+
   private async assertNumeroUnico(
     tenantId: string,
     tipoId: string,
@@ -89,14 +146,20 @@ export class MateriasService {
       dataApresentacaoFim: _df,
       status: _status,
       emTramitacao: _em,
+      representanteIds,
+      coautorIds,
       ...rest
     } = dto;
     const { dataApresentacaoInicio, dataApresentacaoFim } =
       this.mapPresentationDates(dto);
 
-    return this.prisma.materia.create({
+    const primeiroAutorId =
+      representanteIds?.[0] ?? rest.primeiroAutorId;
+
+    const materia = await this.prisma.materia.create({
       data: {
         ...rest,
+        primeiroAutorId,
         tenantId,
         dataApresentacaoInicio,
         dataApresentacaoFim,
@@ -108,8 +171,16 @@ export class MateriasService {
           em: new Date().toISOString(),
         }),
       },
-      include: materiaRelationsInclude,
     });
+
+    await this.syncRepresentantes(tenantId, materia.id, representanteIds);
+    await this.syncCoautores(
+      tenantId,
+      materia.id,
+      coautorIds,
+      primeiroAutorId,
+    );
+    return this.findOne(tenantId, materia.id);
   }
 
   findAll(tenantId: string, filters: FilterMateriaDto) {
@@ -183,10 +254,17 @@ export class MateriasService {
       dataApresentacaoFim: _df,
       status: _status,
       emTramitacao: _em,
+      representanteIds,
+      coautorIds,
       ...rest
     } = dto;
     const { dataApresentacaoInicio, dataApresentacaoFim } =
       this.mapPresentationDates(dto);
+
+    let primeiroAutorId = rest.primeiroAutorId;
+    if (representanteIds !== undefined) {
+      primeiroAutorId = representanteIds.length > 0 ? representanteIds[0] : undefined;
+    }
 
     let status = atual.status;
     if (dto.status !== undefined) {
@@ -198,17 +276,26 @@ export class MateriasService {
         : StatusMateria.ARQUIVADA;
     }
 
-    return this.prisma.materia.update({
+    await this.prisma.materia.update({
       where: { id },
       data: {
         ...rest,
+        primeiroAutorId,
         dataApresentacaoInicio,
         dataApresentacaoFim,
         status,
         emTramitacao: syncEmTramitacaoFromStatus(status),
       },
-      include: materiaRelationsInclude,
     });
+
+    await this.syncRepresentantes(tenantId, id, representanteIds);
+    await this.syncCoautores(
+      tenantId,
+      id,
+      coautorIds,
+      primeiroAutorId ?? atual.primeiroAutorId,
+    );
+    return this.findOne(tenantId, id);
   }
 
   async alterarStatus(

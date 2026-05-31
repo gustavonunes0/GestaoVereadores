@@ -1,0 +1,16 @@
+-- AlterTable
+ALTER TABLE "Comissao" ADD COLUMN "unidadeDeliberativa" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "localReuniao" TEXT,
+ADD COLUMN "dataHoraReuniao" TIMESTAMP(3),
+ADD COLUMN "telSalaReuniao" TEXT,
+ADD COLUMN "enderecoSecretaria" TEXT,
+ADD COLUMN "telSecretaria" TEXT,
+ADD COLUMN "faxSecretaria" TEXT,
+ADD COLUMN "secretario" TEXT,
+ADD COLUMN "email" TEXT,
+ADD COLUMN "finalidade" TEXT,
+ADD COLUMN "apelido" TEXT,
+ADD COLUMN "dataInstalacao" TIMESTAMP(3),
+ADD COLUMN "dataPrevistaTermino" TIMESTAMP(3),
+ADD COLUMN "novoPrazo" TIMESTAMP(3),
+ADD COLUMN "dataTermino" TIMESTAMP(3);

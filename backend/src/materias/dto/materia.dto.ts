@@ -1,12 +1,14 @@
 import { StatusMateria } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   MinLength,
 } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination.dto';
@@ -84,6 +86,22 @@ export class CreateMateriaDto {
   @IsOptional()
   @IsEnum(StatusMateria)
   status?: StatusMateria;
+
+  @IsOptional()
+  @IsString()
+  mensagem?: string;
+
+  /** Vereadores representantes (Moção, Requerimento). */
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  representanteIds?: string[];
+
+  /** Coautores — Projeto de Lei (vereadores). */
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  coautorIds?: string[];
 }
 
 export class FilterMateriaDto extends PaginationQueryDto {

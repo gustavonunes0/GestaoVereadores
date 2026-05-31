@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateFrenteDto {
   @IsString()
@@ -8,6 +8,14 @@ export class CreateFrenteDto {
   @IsOptional()
   @IsString()
   mensagem?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dataEntrada?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dataSaida?: string;
 
   @IsOptional()
   @IsBoolean()

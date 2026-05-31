@@ -21,7 +21,7 @@ async function hashPasswordScrypt(value: string): Promise<string> {
 }
 
 async function upsertTenantLookup(
-  model: 'tipoMateria' | 'tipoAutor' | 'tipoSessao' | 'cargoMesa',
+  model: 'tipoMateria' | 'tipoAutor' | 'tipoSessao' | 'cargoMesa' | 'tipoComissao',
   nome: string,
 ) {
   const data = { tenantId: DEMO_TENANT_ID, nome };
@@ -35,6 +35,8 @@ async function upsertTenantLookup(
       return prisma.tipoSessao.upsert({ where, update: {}, create: data });
     case 'cargoMesa':
       return prisma.cargoMesa.upsert({ where, update: {}, create: data });
+    case 'tipoComissao':
+      return prisma.tipoComissao.upsert({ where, update: {}, create: data });
   }
 }
 
@@ -109,6 +111,49 @@ async function main() {
 
   for (const nome of ['Projeto de Lei', 'Requerimento', 'Indicação', 'Moção']) {
     await upsertTenantLookup('tipoMateria', nome);
+  }
+
+  for (const nome of ['Permanente', 'Temporária', 'Especial']) {
+    await upsertTenantLookup('tipoComissao', nome);
+  }
+
+  const tipoPermanente = await prisma.tipoComissao.findFirst({
+    where: { tenantId: DEMO_TENANT_ID, nome: 'Permanente' },
+  });
+
+  const finalidadeCdfo =
+    'Compete à Comissão de Finanças e Orçamento emitir parecer sobre proposta orçamentária, LDO, PPA, prestação de contas e matérias de impacto fiscal municipal (referência demo IntGest Baturité).';
+
+  const comissoesDemo = [
+    {
+      nome: 'Comissão de Finanças e Orçamento',
+      sigla: 'CDFO',
+      unidadeDeliberativa: true,
+      finalidade: finalidadeCdfo,
+    },
+    { nome: 'Comissão de Justiça e Redação', sigla: 'CDJR' },
+    { nome: 'Comissão de Ética', sigla: 'CDE', ativa: false },
+  ];
+  for (const c of comissoesDemo) {
+    await prisma.comissao.upsert({
+      where: {
+        tenantId_sigla: { tenantId: DEMO_TENANT_ID, sigla: c.sigla },
+      },
+      update: {
+        unidadeDeliberativa: c.unidadeDeliberativa,
+        finalidade: c.finalidade,
+      },
+      create: {
+        tenantId: DEMO_TENANT_ID,
+        nome: c.nome,
+        sigla: c.sigla,
+        tipoComissaoId: tipoPermanente?.id,
+        dataCriacao: new Date('2019-01-02'),
+        ativa: c.ativa ?? true,
+        unidadeDeliberativa: c.unidadeDeliberativa ?? false,
+        finalidade: c.finalidade,
+      },
+    });
   }
 
   const tiposListagem = ['Expediente', 'Ordem do Dia', 'Geral'];
@@ -225,7 +270,7 @@ async function main() {
     },
   });
 
-  await prisma.sessaoLegislativa.upsert({
+  const sessaoLeg = await prisma.sessaoLegislativa.upsert({
     where: {
       legislaturaId_numero: { legislaturaId: legislatura.id, numero: 1 },
     },
@@ -236,6 +281,126 @@ async function main() {
       dataInicio: new Date('2025-02-01'),
     },
   });
+
+  const tipoOrdinaria = await prisma.tipoSessao.findFirst({
+    where: { tenantId: DEMO_TENANT_ID, nome: 'Ordinária' },
+  });
+  const situacaoAgendada = await prisma.situacaoSessao.findFirst({
+    where: { codigo: 'AGENDADA' },
+  });
+  const situacaoEncerrada = await prisma.situacaoSessao.findFirst({
+    where: { codigo: 'ENCERRADA' },
+  });
+
+  if (tipoOrdinaria && situacaoAgendada) {
+    const sessoesDemo = [
+      {
+        dataInicio: new Date('2026-03-10T19:00:00'),
+        situacaoId: situacaoAgendada.id,
+        mensagem: 'Sessão ordinária agendada (demo pesquisar-sessao)',
+      },
+      {
+        dataInicio: new Date('2026-02-15T19:00:00'),
+        situacaoId: situacaoEncerrada?.id ?? situacaoAgendada.id,
+        mensagem: undefined as string | undefined,
+      },
+    ];
+    for (const s of sessoesDemo) {
+      const exists = await prisma.sessaoPlenaria.findFirst({
+        where: {
+          tenantId: DEMO_TENANT_ID,
+          dataInicio: s.dataInicio,
+        },
+      });
+      if (!exists) {
+        await prisma.sessaoPlenaria.create({
+          data: {
+            tenantId: DEMO_TENANT_ID,
+            sessaoLegislativaId: sessaoLeg.id,
+            tipoSessaoId: tipoOrdinaria.id,
+            ...s,
+          },
+        });
+      }
+    }
+  }
+
+  const vereadoresDemo = [
+    {
+      cpf: '11111111111',
+      nome: 'João da Silva Santos',
+      nomeParlamentar: 'João Silva',
+      partido: 'PT',
+      gabinete: '01',
+      email: 'joao.silva@camara.teste',
+    },
+    {
+      cpf: '22222222222',
+      nome: 'Maria Oliveira Costa',
+      nomeParlamentar: 'Maria Oliveira',
+      partido: 'PSDB',
+      gabinete: '02',
+      email: 'maria.oliveira@camara.teste',
+    },
+    {
+      cpf: '33333333333',
+      nome: 'Carlos Pereira Lima',
+      nomeParlamentar: 'Carlos Pereira',
+      partido: 'MDB',
+      gabinete: '03',
+      ativo: false,
+    },
+  ];
+
+  for (const v of vereadoresDemo) {
+    const pessoa = await prisma.pessoa.upsert({
+      where: { cpf: v.cpf },
+      update: {
+        nome: v.nome,
+        nomeParlamentar: v.nomeParlamentar,
+        email: v.email,
+      },
+      create: {
+        nome: v.nome,
+        nomeParlamentar: v.nomeParlamentar,
+        cpf: v.cpf,
+        email: v.email,
+      },
+    });
+
+    const parlamentar = await prisma.parlamentar.upsert({
+      where: { pessoaId: pessoa.id },
+      update: {
+        partido: v.partido,
+        gabinete: v.gabinete,
+        ativo: v.ativo ?? true,
+      },
+      create: {
+        tenantId: DEMO_TENANT_ID,
+        pessoaId: pessoa.id,
+        partido: v.partido,
+        gabinete: v.gabinete,
+        ativo: v.ativo ?? true,
+      },
+    });
+
+    await prisma.parlamentarMandato.upsert({
+      where: {
+        parlamentarId_legislaturaId: {
+          parlamentarId: parlamentar.id,
+          legislaturaId: legislatura.id,
+        },
+      },
+      update: { titular: true, ativo: true },
+      create: {
+        parlamentarId: parlamentar.id,
+        legislaturaId: legislatura.id,
+        titular: true,
+        dataPosse: new Date('2025-01-01'),
+        ativo: true,
+      },
+    });
+  }
 
   console.log('Seed concluído. Tenant demo:', DEMO_TENANT_ID, 'Ano:', ano2026.valor);
 }

@@ -44,6 +44,10 @@ export class FilterSessaoPlenariaDto extends PaginationQueryDto {
   sessaoLegislativaId?: string;
 
   @IsOptional()
+  @IsString()
+  legislaturaId?: string;
+
+  @IsOptional()
   @IsDateString()
   dataInicioDe?: string;
 

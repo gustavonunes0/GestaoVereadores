@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { toOptionalDate } from '../common/prisma/date-fields';
+import { buildDateRangeFilter, toOptionalDate } from '../common/prisma/date-fields';
 import { paginatedQuery } from '../common/prisma/paginate';
 import { tenantWhere } from '../common/prisma/tenant-scope';
 import { PrismaService } from '../prisma/prisma.service';
@@ -38,6 +38,16 @@ export class NormasService {
     if (filters.tipoId) where.tipoId = filters.tipoId;
     if (filters.anoId) where.anoId = filters.anoId;
     if (filters.numero) where.numero = { contains: filters.numero };
+    const pubRange = buildDateRangeFilter(
+      filters.dataPublicacaoDe,
+      filters.dataPublicacaoAte,
+    );
+    if (pubRange) {
+      where.OR = [
+        { dataPublicacaoInicio: pubRange },
+        { data: pubRange },
+      ];
+    }
 
     return paginatedQuery(
       () => this.prisma.norma.count({ where }),

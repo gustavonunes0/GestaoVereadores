@@ -18,6 +18,7 @@ import { SessoesModule } from './sessoes/sessoes.module';
 import { MateriasModule } from './materias/materias.module';
 import { NormasModule } from './normas/normas.module';
 import { AtosModule } from './atos/atos.module';
+import { AgendaModule } from './agenda/agenda.module';
 import { MesaDiretoraModule } from './mesa-diretora/mesa-diretora.module';
 import { RelatoriosModule } from './relatorios/relatorios.module';
 import { DominiosModule } from './dominios/dominios.module';
@@ -49,6 +50,7 @@ import { UsersModule } from './users/users.module';
     NormasModule,
     AtosModule,
     MesaDiretoraModule,
+    AgendaModule,
     RelatoriosModule,
     UsersModule,
     TenantsModule,

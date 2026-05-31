@@ -28,4 +28,16 @@ export class FilterAtoDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   classificacaoId?: string;
+
+  @IsOptional()
+  @IsString()
+  numero?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dataPublicacaoDe?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dataPublicacaoAte?: string;
 }
