@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { FooterBar } from '../components/FooterBar';
 import { SiglButton } from '../components/common/SiglButton';
 import { InputText } from 'primereact/inputtext';
 import { Message } from 'primereact/message';
@@ -139,6 +140,8 @@ export function LoginPage() {
           </TabPanel>
         </TabView>
       </div>
+
+      <FooterBar compact className="login-page__footer" />
     </div>
   );
 }

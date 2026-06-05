@@ -17,6 +17,7 @@ import { LegislaturaProvider } from '../contexts/LegislaturaContext';
 
 import { AppFeedbackProvider } from '../hooks/useAppToast';
 
+import { FooterBar } from './FooterBar';
 import { LegislaturaBar } from './LegislaturaBar';
 
 export function Layout() {
@@ -96,6 +97,8 @@ export function Layout() {
             <main className="content">
               <Outlet />
             </main>
+
+            <FooterBar />
           </div>
         </div>
       </AppFeedbackProvider>

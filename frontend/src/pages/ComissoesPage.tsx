@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
+import { NavDrawer } from '../components/NavDrawer';
 import { EmptyState } from '../components/common/EmptyState';
 import { IntGestMensagemField } from '../components/forms/IntGestMensagemField';
 import { PanelToolbar } from '../components/PanelToolbar';
@@ -209,6 +210,12 @@ export function ComissoesPage() {
     setSelectedId(id);
   }
 
+  function closeDrawer() {
+    setSelectedId(null);
+    setCreating(false);
+    setForm(emptyForm());
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!canWrite) return;
@@ -239,9 +246,7 @@ export function ComissoesPage() {
     if (!confirm('Excluir comissão?')) return;
     await api(`/comissoes/${id}`, { method: 'DELETE' });
     if (selectedId === id) {
-      setSelectedId(null);
-      setCreating(false);
-      setForm(emptyForm());
+      closeDrawer();
     }
     load();
   }
@@ -263,15 +268,13 @@ export function ComissoesPage() {
       />
 
       <p className="muted" style={{ margin: '0 0 0.75rem', fontSize: '0.9rem' }}>
-        Padrão SIGL IntGest: listagem à esquerda; à direita, dados básicos, complementares e
-        campos de comissão temporária.
+        Clique em uma comissão na tabela para abrir o cadastro no painel lateral.
       </p>
 
-      <div className="split-view">
-        <div className="split-panel split-list">
-          <div className="split-panel__body">
-            <div className="split-panel__scroll table-wrap">
-              <table>
+      <div className="list-panel">
+        <div className="list-panel__body">
+          <div className="list-panel__scroll table-wrap">
+            <table>
                 <thead>
                   <tr>
                     <th>Nome</th>
@@ -320,24 +323,19 @@ export function ComissoesPage() {
                 hint="Cadastre comissões como no IntGest (ex.: CDFO, CDJR)."
               />
             )}
-          </div>
         </div>
+      </div>
 
-        <div className="split-panel split-detail">
-          <div className="split-panel__body">
-            {!editing ? (
-              <p className="split-panel__empty">
-                Selecione uma comissão na lista ou clique em &quot;Adicionar comissão&quot; para
-                preencher dados básicos e complementares.
-              </p>
-            ) : (
-              <form onSubmit={handleSubmit} className="form-stack">
-                <h2 className="card-title">
-                  {creating
-                    ? 'Nova comissão'
-                    : `${form.sigla || '—'} — ${form.nome || 'Comissão'}`}
-                </h2>
-
+      <NavDrawer
+        visible={editing}
+        onHide={closeDrawer}
+        wide
+        title={
+          creating ? 'Nova comissão' : `${form.sigla || '—'} — ${form.nome || 'Comissão'}`
+        }
+        subtitle={creating ? 'Dados básicos, complementares e comissão temporária.' : undefined}
+      >
+        <form onSubmit={handleSubmit} className="form-stack">
                 <div className="form-section">
                   <p className="form-section__title">Dados básicos</p>
                   <label>
@@ -575,24 +573,14 @@ export function ComissoesPage() {
                       {saving ? 'Salvando…' : creating ? 'Criar comissão' : 'Salvar alterações'}
                     </button>
                     {creating && (
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => {
-                          setCreating(false);
-                          setForm(emptyForm());
-                        }}
-                      >
+                      <button type="button" className="btn btn-secondary" onClick={closeDrawer}>
                         Cancelar
                       </button>
                     )}
                   </div>
                 )}
-              </form>
-            )}
-          </div>
-        </div>
-      </div>
+        </form>
+      </NavDrawer>
     </>
   );
 }

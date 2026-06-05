@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { SiglButton } from '../components/common/SiglButton';
 import { api, apiList } from '../api/client';
 import { MODULE_ICONS, ROUTES } from '../app/navigation';
+import { NavDrawer } from '../components/NavDrawer';
 import { ContextBanner } from '../components/ContextBanner';
 import { IntGestMensagemField } from '../components/forms/IntGestMensagemField';
 import { Modal } from '../components/Modal';
@@ -237,9 +238,13 @@ export function SessoesPage() {
     setDetail(null);
   }
 
-  function novaPesquisa() {
+  function closeDrawer() {
     setSelectedId(null);
     setDetail(null);
+  }
+
+  function novaPesquisa() {
+    closeDrawer();
   }
 
   async function handleSaveDetail(e: FormEvent) {
@@ -361,11 +366,10 @@ export function SessoesPage() {
         />
       )}
 
-      <div className="split-view">
-        <div className="split-panel split-list">
-          <div className="split-panel__body">
-            <div className="split-panel__scroll table-wrap">
-              <table>
+      <div className="list-panel">
+        <div className="list-panel__body">
+          <div className="list-panel__scroll table-wrap">
+            <table>
                 <thead>
                   <tr>
                     <th>Data início</th>
@@ -398,53 +402,53 @@ export function SessoesPage() {
               </table>
             </div>
             {items.length === 0 && (
-              <p className="split-panel__empty">
+              <p className="table-empty-state">
                 {filterActive
                   ? 'Nenhuma sessão com os filtros aplicados.'
                   : 'Nenhuma sessão cadastrada. Clique em Adicionar sessão plenária.'}
               </p>
             )}
-          </div>
         </div>
+      </div>
 
-        <div className="split-panel split-detail">
-          {!detail ? (
-            <p className="split-panel__empty">
-              Selecione uma sessão na lista para editar dados e gerenciar pauta, presenças e
-              votações.
-            </p>
-          ) : (
-            <div className="split-panel__body">
-              <div className="detail-actions sigl-cluster" style={{ marginBottom: '0.75rem' }}>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={novaPesquisa}>
-                  Fazer nova pesquisa
-                </button>
-                {canWrite && (
-                  <SiglButton
-                    label="Incluir na pauta"
-                    icon="pi pi-list"
-                    disabled={!podeIncluirPauta}
-                    onClick={() => void openPautaModal()}
-                  />
-                )}
-                <Link to={ROUTES.materias}>
-                  <SiglButton
-                    label="Ver matérias"
-                    icon="pi pi-file"
-                    severity="secondary"
-                    outlined
-                  />
-                </Link>
-              </div>
+      <NavDrawer
+        visible={!!detail}
+        onHide={closeDrawer}
+        wide
+        title={
+          detail
+            ? `Sessão — ${new Date(detail.dataInicio).toLocaleString('pt-BR')}`
+            : 'Sessão plenária'
+        }
+        subtitle={detail?.situacao?.nome}
+      >
+        {detail && (
+          <>
+            <div className="detail-actions sigl-cluster" style={{ marginBottom: '0.75rem' }}>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={novaPesquisa}>
+                Fazer nova pesquisa
+              </button>
+              {canWrite && (
+                <SiglButton
+                  label="Incluir na pauta"
+                  icon="pi pi-list"
+                  disabled={!podeIncluirPauta}
+                  onClick={() => void openPautaModal()}
+                />
+              )}
+              <Link to={ROUTES.materias}>
+                <SiglButton
+                  label="Ver matérias"
+                  icon="pi pi-file"
+                  severity="secondary"
+                  outlined
+                />
+              </Link>
+            </div>
 
-              <form onSubmit={handleSaveDetail} className="form-stack">
-                <h2 className="card-title">
-                  Sessão — {new Date(detail.dataInicio).toLocaleString('pt-BR')}
-                  <span className="badge badge--inline">{detail.situacao?.nome}</span>
-                </h2>
-
-                <div className="form-section">
-                  <p className="form-section__title">Dados da sessão</p>
+            <form onSubmit={handleSaveDetail} className="form-stack">
+              <div className="form-section">
+                <p className="form-section__title">Dados da sessão</p>
                   <label>
                     Data início *
                     <input
@@ -519,20 +523,19 @@ export function SessoesPage() {
               </form>
 
               <h3 className="detail-subtitle">Pauta, presenças e votação</h3>
-              {selectedId && (
-                <SessaoDeliberacaoPanel
-                  sessaoId={selectedId}
-                  pautaItens={detail.pautaItens ?? []}
-                  presencas={detail.presencas ?? []}
-                  canWrite={canWrite}
-                  sessaoEmAndamento={sessaoEmAndamento}
-                  onUpdated={refreshDetail}
-                />
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+            {selectedId && (
+              <SessaoDeliberacaoPanel
+                sessaoId={selectedId}
+                pautaItens={detail.pautaItens ?? []}
+                presencas={detail.presencas ?? []}
+                canWrite={canWrite}
+                sessaoEmAndamento={sessaoEmAndamento}
+                onUpdated={refreshDetail}
+              />
+            )}
+          </>
+        )}
+      </NavDrawer>
 
       {open && dominios && (
         <Modal title="Adicionar sessão plenária" onClose={() => setOpen(false)}>

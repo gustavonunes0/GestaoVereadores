@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
+import { NavDrawer } from '../components/NavDrawer';
 import { EmptyState } from '../components/common/EmptyState';
 import { IntGestMensagemField } from '../components/forms/IntGestMensagemField';
 import { PanelToolbar } from '../components/PanelToolbar';
@@ -306,6 +307,12 @@ export function ParlamentaresPage() {
     setSelectedId(id);
   }
 
+  function closeDrawer() {
+    setSelectedId(null);
+    setCreating(false);
+    setForm(emptyForm());
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!canWrite || !form.nome.trim()) return;
@@ -344,9 +351,7 @@ export function ParlamentaresPage() {
     try {
       await api(`/parlamentares/${id}`, { method: 'DELETE' });
       if (selectedId === id) {
-        setSelectedId(null);
-        setCreating(false);
-        setForm(emptyForm());
+        closeDrawer();
       }
       showSuccess('Parlamentar removido.');
       await load();
@@ -396,15 +401,14 @@ export function ParlamentaresPage() {
       />
 
       <p className="muted" style={{ margin: '0 0 0.75rem', fontSize: '0.9rem' }}>
-        Cadastro no padrão SIGL: dados pessoais, complementares, mandato por legislatura e
-        situação na casa.
+        Clique em um parlamentar na tabela para abrir o cadastro no painel lateral. Dados
+        pessoais, mandatos e situação na casa.
       </p>
 
-      <div className="split-view">
-        <div className="split-panel split-list">
-          <div className="split-panel__body">
-            <div className="split-panel__scroll table-wrap">
-              <table>
+      <div className="list-panel">
+        <div className="list-panel__body">
+          <div className="list-panel__scroll table-wrap">
+            <table>
                 <thead>
                   <tr>
                     <th>Nome parlamentar</th>
@@ -455,24 +459,23 @@ export function ParlamentaresPage() {
                 hint="Cadastre vereadores e vincule mandatos à legislatura vigente."
               />
             )}
-          </div>
         </div>
+      </div>
 
-        <div className="split-panel split-detail">
-          <div className="split-panel__body">
-            {!editing ? (
-              <p className="split-panel__empty">
-                Selecione um parlamentar ou clique em &quot;Adicionar parlamentar&quot; para
-                abrir o cadastro completo.
-              </p>
-            ) : (
-              <form onSubmit={handleSubmit} className="form-stack">
-                <h2 className="card-title">
-                  {creating
-                    ? 'Novo parlamentar'
-                    : form.nomeParlamentar || form.nome || 'Parlamentar'}
-                </h2>
-
+      <NavDrawer
+        visible={editing}
+        onHide={closeDrawer}
+        wide
+        title={
+          creating
+            ? 'Novo parlamentar'
+            : form.nomeParlamentar || form.nome || 'Parlamentar'
+        }
+        subtitle={
+          creating ? 'Preencha os dados e vincule mandatos à legislatura.' : undefined
+        }
+      >
+        <form id="parlamentar-form" onSubmit={handleSubmit} className="form-stack">
                 <div className="form-section">
                   <p className="form-section__title">Identificação</p>
                   <label>
@@ -875,34 +878,24 @@ export function ParlamentaresPage() {
                   onChange={(v) => setForm({ ...form, mensagem: v })}
                 />
 
-                {canWrite && (
-                  <div className="detail-actions">
-                    <button type="submit" className="btn btn-primary" disabled={saving}>
-                      {saving
-                        ? 'Salvando…'
-                        : creating
-                          ? 'Criar parlamentar'
-                          : 'Salvar alterações'}
-                    </button>
-                    {creating && (
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => {
-                          setCreating(false);
-                          setForm(emptyForm());
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    )}
-                  </div>
-                )}
-              </form>
-            )}
-          </div>
-        </div>
-      </div>
+          {canWrite && (
+            <div className="detail-actions">
+              <button type="submit" className="btn btn-primary" disabled={saving}>
+                {saving
+                  ? 'Salvando…'
+                  : creating
+                    ? 'Criar parlamentar'
+                    : 'Salvar alterações'}
+              </button>
+              {creating && (
+                <button type="button" className="btn btn-secondary" onClick={closeDrawer}>
+                  Cancelar
+                </button>
+              )}
+            </div>
+          )}
+        </form>
+      </NavDrawer>
     </>
   );
 }

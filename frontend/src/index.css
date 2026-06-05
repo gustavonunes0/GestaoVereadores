@@ -479,15 +479,42 @@ textarea {
 
 .login-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--layout-gap-md);
+  padding: var(--layout-gap-lg);
   background: linear-gradient(
     135deg,
     var(--brand-night-blue) 0%,
     var(--brand-blue-iris) 55%,
     var(--brand-pale-purple) 100%
   );
+}
+
+.login-page__footer {
+  width: 100%;
+  max-width: 520px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.login-page__footer .footer-bar__platform strong,
+.login-page__footer .footer-bar__powered strong,
+.login-page__footer .footer-bar__powered a {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.login-page__footer .footer-bar__version,
+.login-page__footer .footer-bar__powered {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.login-page__footer .footer-bar__badge {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
 }
 
 .login-card {

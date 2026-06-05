@@ -4,6 +4,7 @@ import { ROUTES } from '../app/navigation';
 import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
 import { ColegiadoMembersPanel } from '../components/camara/ColegiadoMembersPanel';
+import { NavDrawer } from '../components/NavDrawer';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
 import { useLegislatura } from '../contexts/LegislaturaContext';
@@ -82,6 +83,11 @@ export function MesaDiretoraPage() {
     await load();
   }
 
+  function closeDrawer() {
+    setSelectedId(null);
+    setDetail(null);
+  }
+
   function refreshDetail() {
     if (!selectedId) return;
     api<MesaDetalhe>(`/mesa-diretora/${selectedId}`).then(setDetail);
@@ -114,11 +120,10 @@ export function MesaDiretoraPage() {
         </p>
       )}
 
-      <div className="split-view">
-        <div className="split-panel split-list">
-          <div className="split-panel__body">
-            <div className="split-panel__scroll table-wrap">
-              <table>
+      <div className="list-panel">
+        <div className="list-panel__body">
+          <div className="list-panel__scroll table-wrap">
+            <table>
                 <thead>
                   <tr>
                     <th>Legislatura</th>
@@ -141,51 +146,45 @@ export function MesaDiretoraPage() {
               </table>
             </div>
             {filtered.length === 0 && (
-              <p className="split-panel__empty">
+              <p className="table-empty-state">
                 Nenhuma mesa para esta legislatura. Clique em &quot;Nova composição&quot;.
               </p>
             )}
-          </div>
-        </div>
-
-        <div className="split-panel split-detail">
-          <div className="split-panel__body">
-          {!detail ? (
-            <p className="split-panel__empty">
-              Selecione uma composição à esquerda para gerenciar Presidente, Secretários e
-              demais cargos (como no SIGL).
-            </p>
-          ) : (
-            <>
-              <h2 className="card-title">
-                Mesa — {detail.legislatura?.numero}ª legislatura
-              </h2>
-              {detail.mensagem && (
-                <p className="muted" style={{ fontSize: '0.9rem' }}>
-                  {detail.mensagem}
-                </p>
-              )}
-              <h3 className="detail-subtitle">Composição da mesa</h3>
-              <ColegiadoMembersPanel
-                entityLabel="mesa diretora"
-                membros={detail.membros}
-                addMembroUrl={`/mesa-diretora/${detail.id}/membros`}
-                removeMembroUrl={(membroId) =>
-                  `/mesa-diretora/${detail.id}/membros/${membroId}`
-                }
-                onChanged={refreshDetail}
-                requireCargo
-              />
-              <p className="muted" style={{ fontSize: '0.85rem', marginTop: '1rem' }}>
-                Depois da mesa definida, cadastre{' '}
-                <Link to={ROUTES.camara.autores}>autores</Link> e inicie{' '}
-                <Link to={ROUTES.materias}>matérias</Link>.
-              </p>
-            </>
-          )}
-          </div>
         </div>
       </div>
+
+      <NavDrawer
+        visible={!!detail}
+        onHide={closeDrawer}
+        wide
+        title={`Mesa — ${detail?.legislatura?.numero ?? '—'}ª legislatura`}
+      >
+        {detail && (
+          <>
+            {detail.mensagem && (
+              <p className="muted" style={{ fontSize: '0.9rem' }}>
+                {detail.mensagem}
+              </p>
+            )}
+            <h3 className="detail-subtitle">Composição da mesa</h3>
+            <ColegiadoMembersPanel
+              entityLabel="mesa diretora"
+              membros={detail.membros}
+              addMembroUrl={`/mesa-diretora/${detail.id}/membros`}
+              removeMembroUrl={(membroId) =>
+                `/mesa-diretora/${detail.id}/membros/${membroId}`
+              }
+              onChanged={refreshDetail}
+              requireCargo
+            />
+            <p className="muted" style={{ fontSize: '0.85rem', marginTop: '1rem' }}>
+              Depois da mesa definida, cadastre{' '}
+              <Link to={ROUTES.camara.autores}>autores</Link> e inicie{' '}
+              <Link to={ROUTES.materias}>matérias</Link>.
+            </p>
+          </>
+        )}
+      </NavDrawer>
 
       {open && (
         <Modal title="Nova mesa diretora" onClose={() => setOpen(false)}>
