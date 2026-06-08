@@ -12,25 +12,25 @@ import { LoginDto } from './dto/login.dto';
 @SkipTenant()
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+    constructor(private readonly authService: AuthService) {}
 
-  @Public()
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
-  }
+    @Public()
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
+    @Post('login')
+    login(@Body() dto: LoginDto) {
+        return this.authService.login(dto);
+    }
 
-  @Public()
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  @Post('login-camara')
-  loginCamara(@Body() dto: LoginCamaraDto) {
-    return this.authService.loginCamara(dto);
-  }
+    @Public()
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
+    @Post('login-camara')
+    loginCamara(@Body() dto: LoginCamaraDto) {
+        return this.authService.loginCamara(dto);
+    }
 
-  @ApiBearerAuth()
-  @Get('me')
-  me(@Req() req: { user: AuthenticatedUser }) {
-    return this.authService.me(req.user);
-  }
+    @ApiBearerAuth()
+    @Get('me')
+    me(@Req() req: { user: AuthenticatedUser }) {
+        return this.authService.me(req.user);
+    }
 }

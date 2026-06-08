@@ -6,77 +6,85 @@
 */
 
 .p-component {
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-base);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
 }
 
 /* SIGL: all action buttons use small size by default */
 .p-button:not(.p-button-lg) {
-  border-radius: var(--layout-radius-sm);
-  font-family: var(--font-family-sans);
-  font-weight: var(--font-weight-semibold);
-  padding: 0.4375rem 0.875rem;
-  font-size: var(--font-size-sm);
+    border-radius: var(--layout-radius-sm);
+    font-family: var(--font-family-sans);
+    font-weight: var(--font-weight-semibold);
+    padding: 0.4375rem 0.875rem;
+    font-size: var(--font-size-sm);
 }
 
 .p-button.p-button-icon-only:not(.p-button-lg) {
-  width: 2rem;
-  height: 2rem;
-  padding: 0.4375rem;
+    width: 2rem;
+    height: 2rem;
+    padding: 0.4375rem;
 }
 
 .p-button:not(.p-button-lg) .p-button-icon {
-  font-size: 0.875rem;
+    font-size: 0.875rem;
 }
 
 .p-button.p-button-sm,
 .p-button[size='small'] {
-  padding: 0.4375rem 0.875rem;
-  font-size: 0.875rem;
+    padding: 0.4375rem 0.875rem;
+    font-size: 0.875rem;
 }
 
 .p-button.p-button-primary,
-.p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warning):not(.p-button-info) {
-  background: var(--brand-night-blue);
-  border-color: var(--brand-night-blue);
-  color: var(--text-inverse);
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+.p-button:not(.p-button-text):not(.p-button-outlined):not(
+        .p-button-secondary
+    ):not(.p-button-danger):not(.p-button-success):not(.p-button-warning):not(
+        .p-button-info
+    ) {
+    background: var(--brand-night-blue);
+    border-color: var(--brand-night-blue);
+    color: var(--text-inverse);
+    transition:
+        background var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
 }
 
 .p-button.p-button-primary:enabled:hover,
-.p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):not(.p-button-success):not(.p-button-warning):not(.p-button-info):enabled:hover {
-  background: var(--brand-blue-iris-soft);
-  border-color: var(--brand-blue-iris-soft);
+.p-button:not(.p-button-text):not(.p-button-outlined):not(
+        .p-button-secondary
+    ):not(.p-button-danger):not(.p-button-success):not(.p-button-warning):not(
+        .p-button-info
+    ):enabled:hover {
+    background: var(--brand-blue-iris-soft);
+    border-color: var(--brand-blue-iris-soft);
 }
 
 .p-button.p-button-secondary:enabled:hover,
 .p-button.p-button-outlined:enabled:hover {
-  background: var(--bg-soft);
-  border-color: var(--bg-border);
-  color: var(--text-primary);
+    background: var(--bg-soft);
+    border-color: var(--bg-border);
+    color: var(--text-primary);
 }
 
 .p-button:disabled {
-  opacity: 0.55;
+    opacity: 0.55;
 }
 
 .p-inputtext,
 .p-dropdown,
 .p-multiselect,
 .p-inputtextarea {
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-sm);
-  border-color: var(--bg-border);
-  transition:
-    border-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-sm);
+    border-color: var(--bg-border);
+    transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
 }
 
 .p-inputtext:enabled:hover {
-  border-color: var(--text-300);
+    border-color: var(--text-300);
 }
 
 .p-button:focus,
@@ -84,172 +92,172 @@
 .p-dropdown:not(.p-disabled).p-focus,
 .p-multiselect:not(.p-disabled).p-focus,
 .p-calendar:not(.p-disabled).p-focus {
-  box-shadow: 0 0 0 0.2rem var(--focus-ring-color);
+    box-shadow: 0 0 0 0.2rem var(--focus-ring-color);
 }
 
 .p-card {
-  border-radius: var(--layout-radius-md);
-  box-shadow: var(--layout-shadow-sm);
-  border: 1px solid var(--card-border-color);
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-sm);
+    border: 1px solid var(--card-border-color);
 }
 
 .p-dialog {
-  border-radius: var(--layout-radius-lg);
+    border-radius: var(--layout-radius-lg);
 }
 
 .p-dialog .p-dialog-header {
-  color: var(--text-primary);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  border-bottom: 1px solid var(--bg-border);
-  padding: var(--layout-gap-lg) var(--layout-gap-lg) var(--layout-gap-md);
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    border-bottom: 1px solid var(--bg-border);
+    padding: var(--layout-gap-lg) var(--layout-gap-lg) var(--layout-gap-md);
 }
 
 .p-dialog .p-dialog-content {
-  color: var(--text-800);
-  padding: var(--layout-gap-md) var(--layout-gap-lg);
+    color: var(--text-800);
+    padding: var(--layout-gap-md) var(--layout-gap-lg);
 }
 
 .p-dialog .p-dialog-footer {
-  padding: var(--layout-gap-md) var(--layout-gap-lg) var(--layout-gap-lg);
+    padding: var(--layout-gap-md) var(--layout-gap-lg) var(--layout-gap-lg);
 }
 
 .p-datatable .p-datatable-thead > tr > th {
-  color: var(--text-800);
-  background: var(--bg-soft);
-  border-color: var(--bg-border);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
-  padding: var(--space-table-cell-y) var(--space-table-cell-x);
+    color: var(--text-800);
+    background: var(--bg-soft);
+    border-color: var(--bg-border);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    padding: var(--space-table-cell-y) var(--space-table-cell-x);
 }
 
 .p-datatable .p-datatable-tbody > tr > td {
-  border-color: var(--bg-border);
-  color: var(--text-800);
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-normal);
-  padding: var(--space-table-cell-y) var(--space-table-cell-x);
+    border-color: var(--bg-border);
+    color: var(--text-800);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+    padding: var(--space-table-cell-y) var(--space-table-cell-x);
 }
 
 .p-paginator {
-  padding: var(--layout-gap-sm) var(--layout-gap-md);
-  gap: var(--layout-gap-xs);
+    padding: var(--layout-gap-sm) var(--layout-gap-md);
+    gap: var(--layout-gap-xs);
 }
 
 .p-tabview .p-tabview-nav {
-  gap: var(--layout-gap-xs);
+    gap: var(--layout-gap-xs);
 }
 
 .p-tabview .p-tabview-panels {
-  padding: var(--layout-gap-lg);
+    padding: var(--layout-gap-lg);
 }
 
 .p-datatable .p-datatable-tbody > tr {
-  transition: background var(--transition-fast);
+    transition: background var(--transition-fast);
 }
 
 .p-datatable .p-datatable-tbody > tr:hover {
-  background: var(--brand-blue-iris-muted);
+    background: var(--brand-blue-iris-muted);
 }
 
 .p-datatable .p-datatable-emptymessage > td {
-  text-align: center;
-  color: var(--text-600);
-  padding: var(--layout-gap-3xl, 2rem) var(--space-card) !important;
-  font-size: 0.9rem;
+    text-align: center;
+    color: var(--text-600);
+    padding: var(--layout-gap-3xl, 2rem) var(--space-card) !important;
+    font-size: 0.9rem;
 }
 
 .p-paginator {
-  background: var(--bg-subtle);
-  border-color: var(--bg-border);
+    background: var(--bg-subtle);
+    border-color: var(--bg-border);
 }
 
 .p-tag {
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 0.75rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.75rem;
 }
 
 .p-tag.p-tag-success {
-  background: var(--success-bg);
-  color: var(--success);
+    background: var(--success-bg);
+    color: var(--success);
 }
 
 .p-tag.p-tag-info {
-  background: var(--info-bg);
-  color: var(--info);
+    background: var(--info-bg);
+    color: var(--info);
 }
 
 .p-tag.p-tag-warning {
-  background: var(--warning-bg);
-  color: var(--warning);
+    background: var(--warning-bg);
+    color: var(--warning);
 }
 
 .p-tag.p-tag-danger {
-  background: var(--danger-bg);
-  color: var(--danger);
+    background: var(--danger-bg);
+    color: var(--danger);
 }
 
 .p-tag.p-tag-secondary {
-  background: var(--bg-soft);
-  color: var(--text-600);
+    background: var(--bg-soft);
+    color: var(--text-600);
 }
 
 .page {
-  color: var(--text-primary);
+    color: var(--text-primary);
 }
 
 .page-card {
-  background: var(--bg-card);
-  border: 1px solid var(--card-border-color);
-  border-radius: var(--layout-radius-md);
-  box-shadow: var(--layout-shadow-sm);
+    background: var(--bg-card);
+    border: 1px solid var(--card-border-color);
+    border-radius: var(--layout-radius-md);
+    box-shadow: var(--layout-shadow-sm);
 }
 
 .text-muted {
-  color: var(--text-600);
+    color: var(--text-600);
 }
 
 /* SelectButton: separated pills with gap (not joined segment control) */
 .p-selectbutton,
 .p-selectbutton.sigl-selectbutton {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--layout-gap-sm);
-  background: transparent;
-  border: none;
-  box-shadow: none;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--layout-gap-sm);
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 .p-selectbutton .p-button {
-  margin: 0 !important;
-  border-radius: var(--layout-radius-sm) !important;
-  border: 1px solid var(--bg-border) !important;
-  background: var(--bg-card) !important;
-  color: var(--text-800) !important;
+    margin: 0 !important;
+    border-radius: var(--layout-radius-sm) !important;
+    border: 1px solid var(--bg-border) !important;
+    background: var(--bg-card) !important;
+    color: var(--text-800) !important;
 }
 
 .p-selectbutton .p-button + .p-button {
-  border-left: 1px solid var(--bg-border) !important;
+    border-left: 1px solid var(--bg-border) !important;
 }
 
 .p-selectbutton .p-button.p-highlight,
 .p-selectbutton .p-button:focus.p-highlight {
-  background: var(--brand-night-blue) !important;
-  border-color: var(--brand-night-blue) !important;
-  color: var(--text-inverse) !important;
+    background: var(--brand-night-blue) !important;
+    border-color: var(--brand-night-blue) !important;
+    color: var(--text-inverse) !important;
 }
 
 .p-selectbutton .p-button:not(.p-disabled):not(.p-highlight):hover {
-  background: var(--bg-soft) !important;
-  border-color: var(--bg-border) !important;
-  color: var(--text-primary) !important;
+    background: var(--bg-soft) !important;
+    border-color: var(--bg-border) !important;
+    color: var(--text-primary) !important;
 }
 
 .p-dialog .p-dialog-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--layout-gap-sm);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--layout-gap-sm);
 }

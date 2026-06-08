@@ -4,19 +4,19 @@
 */
 
 :root {
-  --layout-gap-2xl: 1.5rem;
-  --layout-gap-3xl: 2rem;
+    --layout-gap-2xl: 1.5rem;
+    --layout-gap-3xl: 2rem;
 
-  /* Fluid page shell */
-  --space-page-x: clamp(1rem, 3vw, 1.5rem);
-  --space-page-y: clamp(1rem, 2.5vw, 1.5rem);
-  --space-section: clamp(1rem, 2vw, 1.25rem);
-  --space-stack: clamp(0.75rem, 1.5vw, 1rem);
+    /* Fluid page shell */
+    --space-page-x: clamp(1rem, 3vw, 1.5rem);
+    --space-page-y: clamp(1rem, 2.5vw, 1.5rem);
+    --space-section: clamp(1rem, 2vw, 1.25rem);
+    --space-stack: clamp(0.75rem, 1.5vw, 1rem);
 
-  /* Component internals */
-  --space-card: clamp(1rem, 2vw, 1.25rem);
-  --space-input-y: 0.4375rem;
-  --space-input-x: 0.65rem;
-  --space-table-cell-y: 0.625rem;
-  --space-table-cell-x: 0.75rem;
+    /* Component internals */
+    --space-card: clamp(1rem, 2vw, 1.25rem);
+    --space-input-y: 0.4375rem;
+    --space-input-x: 0.65rem;
+    --space-table-cell-y: 0.625rem;
+    --space-table-cell-x: 0.75rem;
 }

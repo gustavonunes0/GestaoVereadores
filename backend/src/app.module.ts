@@ -6,55 +6,33 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { TenantGuard } from './common/guards/tenant.guard';
-import { AutoresModule } from './autores/autores.module';
 import { CommonModule } from './common/common.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { ParlamentaresModule } from './parlamentares/parlamentares.module';
-import { ComissoesModule } from './comissoes/comissoes.module';
-import { FrentesModule } from './frentes/frentes.module';
-import { LegislaturasModule } from './legislaturas/legislaturas.module';
-import { SessoesModule } from './sessoes/sessoes.module';
-import { MateriasModule } from './materias/materias.module';
-import { NormasModule } from './normas/normas.module';
-import { AtosModule } from './atos/atos.module';
-import { AgendaModule } from './agenda/agenda.module';
-import { MesaDiretoraModule } from './mesa-diretora/mesa-diretora.module';
+import { ControleJuridicoModule } from './controle-juridico/controle-juridico.module';
+import { AtosAdministrativosModule } from './atos-administrativos/atos-administrativos.module';
 import { RelatoriosModule } from './relatorios/relatorios.module';
-import { DominiosModule } from './dominios/dominios.module';
-import { TenantsModule } from './tenants/tenants.module';
-import { TenantUsersModule } from './tenant-users/tenant-users.module';
-import { UsersModule } from './users/users.module';
+import { IdentidadeModule } from './identidade/identidade.module';
+import { LegislativoModule } from './legislativo/legislativo.module';
 
 @Module({
-  providers: [
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
-    { provide: APP_GUARD, useClass: TenantGuard },
-    { provide: APP_GUARD, useClass: RolesGuard },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
-  ],
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    CommonModule,
-    AuthModule,
-    HealthModule,
-    PrismaModule,
-    AutoresModule,
-    DominiosModule,
-    ParlamentaresModule,
-    ComissoesModule,
-    FrentesModule,
-    LegislaturasModule,
-    SessoesModule,
-    MateriasModule,
-    NormasModule,
-    AtosModule,
-    MesaDiretoraModule,
-    AgendaModule,
-    RelatoriosModule,
-    UsersModule,
-    TenantsModule,
-    TenantUsersModule,
-  ],
+    providers: [
+        { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: TenantGuard },
+        { provide: APP_GUARD, useClass: RolesGuard },
+        { provide: APP_GUARD, useClass: ThrottlerGuard },
+    ],
+    imports: [
+        ConfigModule.forRoot({ isGlobal: true }),
+        CommonModule,
+        AuthModule,
+        HealthModule,
+        PrismaModule,
+        ControleJuridicoModule,
+        AtosAdministrativosModule,
+        RelatoriosModule,
+        IdentidadeModule,
+        LegislativoModule,
+    ],
 })
 export class AppModule {}

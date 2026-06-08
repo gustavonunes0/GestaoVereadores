@@ -1,0 +1,4 @@
+export const BOARD_REPOSITORY = Symbol('BOARD_REPOSITORY');
+
+/** @deprecated use BOARD_REPOSITORY */
+export const MESA_DIRETORA_REPOSITORY = BOARD_REPOSITORY;

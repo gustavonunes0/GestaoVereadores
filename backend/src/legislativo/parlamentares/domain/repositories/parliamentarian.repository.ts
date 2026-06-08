@@ -1,0 +1,86 @@
+import { PaginatedResult } from '../../../../common/dto/pagination.dto';
+import { ParliamentarianStatus } from '../enums/parliamentarian-status.enum';
+import { ParliamentarianEntity } from '../entities/parliamentarian.entity';
+
+export type ParliamentarianUserSummary = {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+};
+
+export type ParliamentarianPartySummary = {
+    id: string;
+    name: string;
+    acronym: string;
+    flagUrl: string | null;
+};
+
+export type ParliamentarianWithRelations = {
+    entity: ParliamentarianEntity;
+    /** Dados básicos do User resolvidos via TenantUser (nunca userId direto). */
+    user: ParliamentarianUserSummary;
+    politicalParty: ParliamentarianPartySummary | null;
+    activeMandatesCount?: number;
+};
+
+export type CreateParliamentarianRepositoryInput = {
+    tenantId: string;
+    tenantUserId: string;
+    politicalPartyId?: string | null;
+    parliamentaryName: string;
+    officeNumber?: string | null;
+    photoUrl?: string | null;
+    biography?: string | null;
+};
+
+export type UpdateParliamentarianRepositoryInput = {
+    politicalPartyId?: string | null;
+    parliamentaryName?: string;
+    officeNumber?: string | null;
+    photoUrl?: string | null;
+    biography?: string | null;
+    status?: ParliamentarianStatus;
+};
+
+export type ListParliamentariansRepositoryQuery = {
+    search?: string;
+    status?: ParliamentarianStatus;
+    politicalPartyId?: string;
+    page?: number;
+    limit?: number;
+};
+
+export abstract class ParliamentarianRepository {
+    abstract create(
+        data: CreateParliamentarianRepositoryInput,
+    ): Promise<ParliamentarianWithRelations>;
+    abstract findMany(
+        tenantId: string,
+        query: ListParliamentariansRepositoryQuery,
+    ): Promise<PaginatedResult<ParliamentarianWithRelations>>;
+    abstract findById(
+        tenantId: string,
+        id: string,
+    ): Promise<ParliamentarianWithRelations | null>;
+    abstract existsByTenantUserId(
+        tenantId: string,
+        tenantUserId: string,
+        ignoreId?: string,
+    ): Promise<boolean>;
+    abstract findRemovedByTenantUserId(
+        tenantId: string,
+        tenantUserId: string,
+    ): Promise<ParliamentarianWithRelations | null>;
+    abstract reactivate(
+        tenantId: string,
+        id: string,
+        data: CreateParliamentarianRepositoryInput,
+    ): Promise<ParliamentarianWithRelations>;
+    abstract update(
+        tenantId: string,
+        id: string,
+        data: UpdateParliamentarianRepositoryInput,
+    ): Promise<ParliamentarianWithRelations>;
+    abstract softDelete(tenantId: string, id: string): Promise<void>;
+}

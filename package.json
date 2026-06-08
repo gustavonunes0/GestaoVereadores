@@ -1,0 +1,12 @@
+{
+    "name": "gestao-vereadores",
+    "private": true,
+    "scripts": {
+        "format": "prettier --write \"frontend/src/**/*.{ts,tsx,css,html}\" \"frontend/*.{ts,json,html}\" \"backend/src/**/*.ts\" \"backend/prisma/**/*.{ts,prisma}\" \"backend/test/**/*.{ts,json}\" \"backend/*.{json,ts}\" \"docs/**/*.md\" \"frontend/docs/**/*.md\" \".prettierrc.json\"",
+        "format:check": "prettier --check \"frontend/src/**/*.{ts,tsx,css,html}\" \"frontend/*.{ts,json,html}\" \"backend/src/**/*.ts\" \"backend/prisma/**/*.{ts,prisma}\" \"backend/test/**/*.{ts,json}\" \"backend/*.{json,ts}\" \"docs/**/*.md\" \"frontend/docs/**/*.md\" \".prettierrc.json\""
+    },
+    "devDependencies": {
+        "prettier": "^3.5.3",
+        "prettier-plugin-prisma": "^5.0.0"
+    }
+}

@@ -1,0 +1,1 @@
+export const VOTACAO_REPOSITORY = Symbol('VOTACAO_REPOSITORY');

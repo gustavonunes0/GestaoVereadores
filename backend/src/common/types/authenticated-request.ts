@@ -1,23 +1,23 @@
-import { RoleUsuario, TenantUserRole } from '@prisma/client';
-import { Request } from 'express';
+import { RoleUsuario } from '@prisma/client';
 
 export type AuthType = 'sigl' | 'camara';
 
 export type AuthenticatedUser = {
-  id: string;
-  authType: AuthType;
-  /** Preenchido para operações da câmara (claim JWT `tid`). */
-  tenantId?: string;
-  tenantRole?: TenantUserRole;
-  isAdmin?: boolean;
-  /** Login SIGL (Usuario). */
-  username?: string;
-  nome?: string;
-  role?: RoleUsuario;
-  email?: string;
+    id: string;
+    authType: AuthType;
+    tenantId?: string;
+    isTenantAdmin?: boolean;
+    isTenantStaff?: boolean;
+    isParliamentarian?: boolean;
+    /** @deprecated use isTenantAdmin */
+    isAdmin?: boolean;
+    username?: string;
+    nome?: string;
+    email?: string;
+    role?: RoleUsuario;
 };
 
-export type RequestWithTenant = Request & {
-  user: AuthenticatedUser;
-  tenantId: string;
+export type RequestWithTenant = {
+    tenantId?: string;
+    user?: AuthenticatedUser;
 };

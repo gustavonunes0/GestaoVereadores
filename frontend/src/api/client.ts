@@ -3,129 +3,130 @@ import type { AuthUser, LoginResponse } from '../types/auth';
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
 export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-  ) {
-    super(message);
-  }
+    constructor(
+        message: string,
+        public status: number,
+    ) {
+        super(message);
+    }
 }
 
 function getToken(): string | null {
-  return localStorage.getItem('access_token');
+    return localStorage.getItem('access_token');
 }
 
 export type PaginatedMeta = {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
 };
 
 export type PaginatedResponse<T> = {
-  data: T[];
-  meta: PaginatedMeta;
+    data: T[];
+    meta: PaginatedMeta;
 };
 
 export async function api<T>(
-  path: string,
-  options: RequestInit = {},
+    path: string,
+    options: RequestInit = {},
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
-  const token = getToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(options.headers as Record<string, string>),
+    };
+    const token = getToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
-  if (res.status === 401) {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
-    if (!window.location.pathname.startsWith('/login')) {
-      window.location.href = '/login';
+    if (res.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        if (!window.location.pathname.startsWith('/login')) {
+            window.location.href = '/login';
+        }
+        throw new ApiError('Não autorizado', 401);
     }
-    throw new ApiError('Não autorizado', 401);
-  }
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    const msg =
-      (body as { message?: string | string[] }).message ??
-      `Erro ${res.status}`;
-    throw new ApiError(
-      Array.isArray(msg) ? msg.join(', ') : String(msg),
-      res.status,
-    );
-  }
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const msg =
+            (body as { message?: string | string[] }).message ??
+            `Erro ${res.status}`;
+        throw new ApiError(
+            Array.isArray(msg) ? msg.join(', ') : String(msg),
+            res.status,
+        );
+    }
 
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+    if (res.status === 204) return undefined as T;
+    return res.json() as Promise<T>;
 }
 
 /** Lista paginada da API (padrão limit=100). */
 export async function apiList<T>(
-  path: string,
-  params?: Record<string, string | number | boolean | undefined>,
+    path: string,
+    params?: Record<string, string | number | boolean | undefined>,
 ): Promise<PaginatedResponse<T>> {
-  const qs = new URLSearchParams();
-  qs.set('limit', String(params?.limit ?? 100));
-  if (params?.page) qs.set('page', String(params.page));
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      if (key === 'limit' || key === 'page' || value === undefined) continue;
-      qs.set(key, String(value));
+    const qs = new URLSearchParams();
+    qs.set('limit', String(params?.limit ?? 100));
+    if (params?.page) qs.set('page', String(params.page));
+    if (params) {
+        for (const [key, value] of Object.entries(params)) {
+            if (key === 'limit' || key === 'page' || value === undefined)
+                continue;
+            qs.set(key, String(value));
+        }
     }
-  }
-  const sep = path.includes('?') ? '&' : '?';
-  return api<PaginatedResponse<T>>(`${path}${sep}${qs.toString()}`);
+    const sep = path.includes('?') ? '&' : '?';
+    return api<PaginatedResponse<T>>(`${path}${sep}${qs.toString()}`);
 }
 
 export async function apiTotal(path: string): Promise<number> {
-  const res = await apiList<unknown>(path, { limit: 1, page: 1 });
-  return res.meta.total;
+    const res = await apiList<unknown>(path, { limit: 1, page: 1 });
+    return res.meta.total;
 }
 
 export const authApi = {
-  login: (username: string, password: string, tenantId?: string) =>
-    api<LoginResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password, tenantId }),
-    }),
+    login: (username: string, password: string, tenantId?: string) =>
+        api<LoginResponse>('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password, tenantId }),
+        }),
 
-  loginCamara: (email: string, password: string, tenantCnpj: string) =>
-    api<LoginResponse>('/auth/login-camara', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, tenantCnpj }),
-    }),
+    loginCamara: (email: string, password: string, tenantCnpj: string) =>
+        api<LoginResponse>('/auth/login-camara', {
+            method: 'POST',
+            body: JSON.stringify({ email, password, tenantCnpj }),
+        }),
 
-  me: () => api<AuthUser>('/auth/me'),
+    me: () => api<AuthUser>('/auth/me'),
 };
 
 export type { AuthUser } from '../types/auth';
 
 export type Dominios = {
-  anos: { id: string; valor: number }[];
-  tiposMateria: { id: string; nome: string }[];
-  tiposComissao: { id: string; nome: string }[];
-  tiposListagem: { id: string; nome: string }[];
-  tematicas: { id: string; nome: string }[];
-  origensMateria: { id: string; nome: string }[];
-  locaisOrigemExterna: { id: string; nome: string }[];
-  tiposNorma: { id: string; nome: string }[];
-  esferasFederacao: { id: string; nome: string }[];
-  identificadoresNorma: { id: string; nome: string }[];
-  tiposSessao: { id: string; nome: string }[];
-  situacoesSessao: { id: string; nome: string; codigo?: string }[];
-  tiposAutor: { id: string; nome: string }[];
-  statusTramitacao: { id: string; nome: string }[];
-  unidadesTramitacao: { id: string; nome: string }[];
-  cargosMesa: { id: string; nome: string }[];
-  tiposAto: { id: string; nome: string }[];
-  classificacoesAto: { id: string; nome: string }[];
+    anos: { id: string; valor: number }[];
+    tiposMateria: { id: string; nome: string }[];
+    tiposComissao: { id: string; nome: string }[];
+    tiposListagem: { id: string; nome: string }[];
+    tematicas: { id: string; nome: string }[];
+    origensMateria: { id: string; nome: string }[];
+    locaisOrigemExterna: { id: string; nome: string }[];
+    tiposNorma: { id: string; nome: string }[];
+    esferasFederacao: { id: string; nome: string }[];
+    identificadoresNorma: { id: string; nome: string }[];
+    tiposSessao: { id: string; nome: string }[];
+    situacoesSessao: { id: string; nome: string; codigo?: string }[];
+    tiposAutor: { id: string; nome: string }[];
+    statusTramitacao: { id: string; nome: string }[];
+    unidadesTramitacao: { id: string; nome: string }[];
+    cargosMesa: { id: string; nome: string }[];
+    tiposAto: { id: string; nome: string }[];
+    classificacoesAto: { id: string; nome: string }[];
 };
 
 export const dominiosApi = {
-  list: () => api<Dominios>('/dominios'),
+    list: () => api<Dominios>('/dominios'),
 };

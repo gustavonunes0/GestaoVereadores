@@ -1,0 +1,94 @@
+import {
+    AddPautaItemDto,
+    CreateSessaoPlenariaDto,
+    FilterSessaoPlenariaDto,
+    RegistrarPresencaDto,
+    RegistrarResultadoPautaDto,
+} from '../../application/dto/sessao.dto';
+import {
+    FilterPresencaDto,
+    UpdatePresencaDto,
+} from '../../application/dto/presenca.dto';
+import { FilterPautaDto, UpdatePautaItemDto } from '../../application/dto/pauta.dto';
+import { UpdateSessaoPlenariaDto } from '../../application/dto/update-sessao.dto';
+import { ExecutarCicloVidaSessaoDto } from '../../application/dto/session-lifecycle.dto';
+
+export abstract class SessaoPlenariaRepository {
+    abstract create(
+        tenantId: string,
+        dto: CreateSessaoPlenariaDto,
+    ): Promise<unknown>;
+    abstract findAll(
+        tenantId: string,
+        filters: FilterSessaoPlenariaDto,
+    ): Promise<unknown>;
+    abstract findOne(tenantId: string, id: string): Promise<unknown>;
+    abstract update(
+        tenantId: string,
+        id: string,
+        dto: UpdateSessaoPlenariaDto,
+    ): Promise<unknown>;
+    abstract executarCicloVida(
+        tenantId: string,
+        id: string,
+        dto: ExecutarCicloVidaSessaoDto,
+    ): Promise<unknown>;
+    abstract listLifecycleActions(
+        tenantId: string,
+        id: string,
+    ): Promise<unknown>;
+    abstract remove(tenantId: string, id: string): Promise<unknown>;
+    abstract addPautaItem(
+        tenantId: string,
+        sessaoId: string,
+        dto: AddPautaItemDto,
+    ): Promise<unknown>;
+    abstract listPautaItens(
+        tenantId: string,
+        sessaoId: string,
+        filters: FilterPautaDto,
+    ): Promise<unknown>;
+    abstract getPautaItemById(
+        tenantId: string,
+        sessaoId: string,
+        pautaItemId: string,
+    ): Promise<unknown>;
+    abstract updatePautaItem(
+        tenantId: string,
+        sessaoId: string,
+        pautaItemId: string,
+        dto: UpdatePautaItemDto,
+    ): Promise<unknown>;
+    abstract removerPautaItem(
+        tenantId: string,
+        sessaoId: string,
+        pautaItemId: string,
+    ): Promise<unknown>;
+    abstract registrarResultadoPauta(
+        tenantId: string,
+        sessaoId: string,
+        pautaItemId: string,
+        dto: RegistrarResultadoPautaDto,
+    ): Promise<unknown>;
+    abstract listPresencas(
+        tenantId: string,
+        sessaoId: string,
+        filters: FilterPresencaDto,
+    ): Promise<unknown>;
+    abstract getPresencaById(
+        tenantId: string,
+        sessaoId: string,
+        presencaId: string,
+    ): Promise<unknown>;
+    abstract registrarPresenca(
+        tenantId: string,
+        sessaoId: string,
+        dto: RegistrarPresencaDto,
+    ): Promise<unknown>;
+    abstract updatePresenca(
+        tenantId: string,
+        sessaoId: string,
+        presencaId: string,
+        dto: UpdatePresencaDto,
+    ): Promise<unknown>;
+}

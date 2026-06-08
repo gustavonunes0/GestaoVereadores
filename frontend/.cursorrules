@@ -26,6 +26,8 @@ Always include loading, error, empty state and success feedback when creating sc
 
 Use the project color tokens from src/styles/prime-theme-tokens.css.
 
+Use 4-space indentation (Prettier + .editorconfig at repo root).
+
 Do not invent loose colors in components.
 
 Do not mix Material UI, Ant Design, Chakra or another UI library unless explicitly requested.

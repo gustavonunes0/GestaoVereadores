@@ -1,243 +1,487 @@
-# Backend — Portal Legislativo Multi-Tenant
-# Fonte canônica de negócio: `../.cursorrules` (raiz do repositório)
-# Stack real deste pacote: NestJS 11, Prisma 6, PostgreSQL, Node 20
+# Project Rules
 
-## Identidade
+## Core Principles
 
-SaaS multi-tenant para Câmaras Municipais brasileiras. Cada **Tenant** = uma Câmara.
-Todo dado legislativo pertence a um `tenantId` e **nunca** pode vazar entre tenants.
+This backend must be built as a modular monolith using DDD-inspired organization.
 
-Dois planos de autenticação (não misturar):
+The system must be separated by **Module / Bounded Context / Domain Context**.
 
-| Plano | Modelo | Rotas | JWT |
-|-------|--------|-------|-----|
-| **Plataforma** | `User`, `Tenant`, `TenantUser` | `/users`, `/tenants`, `/tenant-users` | futuro: sem `tid` ou `tid` opcional; hoje `MasterOnly` via `Usuario.MASTER` |
-| **Câmara (SIGL)** | `Usuario` + domínio legislativo | `/parlamentares`, `/materias`, … | **obrigatório** `tid` (tenantId) + `role` (`TenantUserRole`) |
+Each business capability must live inside its own context folder.
 
-Ao evoluir auth: unificar em JWT com payload da raiz (`sub`, `tid`, `role`, `isAdmin`).
+Examples:
+
+```txt
+src/courses/
+src/users/
+src/auth/
+src/tenants/
+src/enrollments/
+src/certificates/
+```
+
+Do not organize the backend by technical layers globally, such as:
+
+```txt
+src/controllers/
+src/services/
+src/repositories/
+src/dto/
+```
+
+Instead, keep all files related to a business capability inside its own module/context.
+
+## Why separate by Module / Bounded Context / Domain Context?
+
+The project must be separated this way because:
+
+1. It improves maintenance.
+2. It makes debugging easier.
+3. It keeps business rules isolated.
+4. It reduces coupling between unrelated features.
+5. It makes the system easier to scale.
+6. It allows future extraction from modular monolith to microservices with less refactoring.
+
+A bounded context must be treated as a potential future microservice boundary.
+
+Code inside one context should not directly depend on implementation details from another context.
+
+When interaction between contexts is required, prefer explicit contracts, use cases, domain events, facades, or integration services.
 
 ---
 
-## Convenções de código
+## Standard Module Structure
 
-- **Idioma**: inglês em código (arquivos, classes, métodos, variáveis).
-- **Mensagens ao usuário** e comentários de negócio: português brasileiro.
-- **Validação**: `class-validator` + `class-transformer` em todos os DTOs de entrada.
-- **Formatação**: Prettier + `.editorconfig` da raiz — sem estilo ad hoc.
-- **Prefixo global**: `/api` (`main.ts`).
-- **Soft delete**: nunca `prisma.*.delete()` em entidades de negócio; usar `isRemoved: true`.
-- **Swagger**: `@ApiTags`, `@ApiBearerAuth`, `@ApiProperty` em DTOs expostos.
+Every business bounded context must follow this structure:
+
+```txt
+src/<bounded-context>/
+├── <bounded-context>.module.ts
+├── application/
+│   ├── controllers/
+│   ├── dto/
+│   ├── use-cases/
+│   └── view-models/
+├── domain/
+│   ├── entities/
+│   ├── enums/
+│   ├── repositories/
+│   ├── services/
+│   ├── factories/
+│   ├── builders/
+│   └── facades/
+└── infra/
+    ├── prisma/
+    ├── repositories/
+    └── integrations/
+```
+
+Folders that are not needed for a specific context may be omitted.
+
+Do not create unnecessary abstractions.
+
+Use `factories`, `builders`, `services`, and `facades` only when they are useful for the business logic.
 
 ---
 
-## Regra #1 — Multi-tenancy (obrigatória)
+## Application Layer
 
-> **NUNCA** consultar ou alterar dado legislativo sem filtrar por `tenantId`.
-> **NUNCA** aceitar `tenantId` do body, query ou param para autorização — só do JWT (`tid`).
+The `application` layer contains orchestration code.
 
-### Implementar / usar
+Allowed responsibilities:
 
+- Controllers
+- DTOs
+- View Models
+- Use Cases
+- Request validation
+- Response mapping
+- Calling domain services and repositories
+
+Controllers must be thin.
+
+Controllers must not contain business rules.
+
+Use cases must represent application actions.
+
+Use case naming convention:
+
+```txt
+create-<entity>.use-case.ts
+list-<entities>.use-case.ts
+get-<entity>-by-id.use-case.ts
+update-<entity>.use-case.ts
+remove-<entity>.use-case.ts
 ```
-src/common/guards/tenant.guard.ts      → extrai tid, valida tenant ACTIVE, seta req.tenantId
-src/common/decorators/tenant-id.decorator.ts → @TenantId() tenantId: string
-src/common/interceptors/tenant.interceptor.ts → injeta tenantId em CREATE (quando aplicável)
+
+Class naming convention:
+
+```ts
+CreateCourseUseCase
+ListCoursesUseCase
+GetCourseByIdUseCase
+UpdateCourseUseCase
+RemoveCourseUseCase
 ```
 
-### Controllers de negócio (padrão alvo)
+---
 
-```typescript
-@Controller('parlamentares')
+## Domain Layer
+
+The `domain` layer contains business rules and contracts.
+
+Allowed responsibilities:
+
+- Entities
+- Enums
+- Value objects when needed
+- Repository contracts
+- Domain services
+- Factories
+- Builders
+- Facades
+
+The domain layer must not depend on Prisma, HTTP, NestJS decorators, external APIs, or infrastructure details.
+
+Repository interfaces or abstract classes belong to the domain layer.
+
+Example:
+
+```txt
+src/courses/domain/repositories/course.repository.ts
+```
+
+---
+
+## Infra Layer
+
+The `infra` layer contains technical implementations.
+
+Allowed responsibilities:
+
+- Prisma repositories
+- ORM mapping
+- External integrations
+- API clients
+- File storage integrations
+- Email providers
+- Payment providers
+
+Concrete repository implementations belong to the infra layer.
+
+Example:
+
+```txt
+src/courses/infra/prisma/prisma-course.repository.ts
+```
+
+---
+
+## Bounded Context Communication
+
+A bounded context must not import internal implementation details from another context.
+
+Avoid this:
+
+```ts
+import { PrismaCourseRepository } from '@/courses/infra/prisma/prisma-course.repository';
+```
+
+Prefer this:
+
+```ts
+import { CourseRepository } from '@/courses/domain/repositories/course.repository';
+```
+
+When one context needs another context, use one of these options:
+
+1. Application use case
+2. Public facade
+3. Domain event
+4. Integration service
+5. Explicit contract
+
+Do not create circular dependencies between modules.
+
+---
+
+## Multi-Tenancy
+
+All business data must be isolated by `tenantId`.
+
+Rules:
+
+- Never accept `tenantId` from request body.
+- Never accept `tenantId` from query params.
+- Never accept `tenantId` from route params.
+- Always get `tenantId` from the authenticated JWT/session context.
+- Every repository query for tenant-owned data must filter by `tenantId`.
+
+Example:
+
+```ts
+where: {
+    id,
+    tenantId,
+    isRemoved: false,
+}
+```
+
+Never search tenant-owned entities only by `id`.
+
+---
+
+## Soft Delete
+
+Business entities must use soft delete.
+
+Do not use:
+
+```ts
+prisma.<entity>.delete()
+```
+
+Use:
+
+```ts
+data: {
+    isRemoved: true,
+    removedAt: new Date(),
+}
+```
+
+Every list and get query must ignore removed records:
+
+```ts
+where: {
+    tenantId,
+    isRemoved: false,
+}
+```
+
+---
+
+## Security
+
+Use authentication and tenant guards for tenant-owned routes.
+
+Expected pattern:
+
+```ts
 @UseGuards(JwtAuthGuard, TenantGuard)
-@ApiBearerAuth()
-export class ParlamentarController {
-  @Get()
-  findAll(@TenantId() tenantId: string, @Query() q: PaginationDto) {
-    return this.svc.findAll(tenantId, q);
-  }
+```
 
-  @Post()
-  @Roles(TenantUserRole.ADMIN, TenantUserRole.OPERATOR)
-  create(@TenantId() tenantId: string, @Body() dto: CreateParlamentarDto) {
-    return this.svc.create(tenantId, dto);
-  }
+Use role decorators when the route requires authorization.
+
+Example:
+
+```ts
+@Roles(TenantUserRole.ADMIN, TenantUserRole.OPERATOR)
+```
+
+Do not trust client-provided identity, role, or tenant information.
+
+---
+
+## DTOs and Validation
+
+All request input must use DTOs.
+
+Use:
+
+- `class-validator`
+- `class-transformer`
+- Swagger decorators
+
+Do not use raw request bodies directly inside use cases.
+
+DTOs belong to:
+
+```txt
+src/<bounded-context>/application/dto/
+```
+
+---
+
+## View Models
+
+Use View Models to control HTTP responses.
+
+View Models belong to:
+
+```txt
+src/<bounded-context>/application/view-models/
+```
+
+Do not expose internal fields such as:
+
+```txt
+tenantId
+isRemoved
+removedAt
+passwordHash
+internalSettings
+```
+
+---
+
+## Prisma
+
+Prisma models must support multi-tenancy and soft delete for tenant-owned business entities.
+
+Recommended base fields:
+
+```prisma
+id        String   @id @default(uuid())
+tenantId  String
+isRemoved Boolean  @default(false)
+removedAt DateTime?
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+```
+
+Recommended indexes:
+
+```prisma
+@@index([tenantId, isRemoved])
+```
+
+Use compound unique constraints when uniqueness is tenant-scoped.
+
+Example:
+
+```prisma
+@@unique([tenantId, slug])
+```
+
+---
+
+## Code Style
+
+Code must be written in English.
+
+Error messages must be written in Brazilian Portuguese.
+
+Example:
+
+```ts
+throw new NotFoundException('Curso não encontrado');
+```
+
+Do not use Portuguese names for files, classes, methods, variables, or database fields.
+
+---
+
+## Documentation Rules
+
+Architecture documentation must live in:
+
+```txt
+docs/architecture/
+```
+
+Feature specifications must live in:
+
+```txt
+docs/specs/
+```
+
+Each bounded context should have its own specs folder.
+
+Example:
+
+```txt
+docs/specs/courses/
+docs/specs/enrollments/
+docs/specs/certificates/
+```
+
+The `.cursorrules` file must contain global project rules only.
+
+Do not place full feature specs inside `.cursorrules`.
+
+Feature-specific details such as routes, DTOs, Prisma models, use cases, and business rules must go inside `docs/specs/<context>/`.
+
+---
+
+## Specs Format
+
+Each spec should follow this format:
+
+```md
+# SPEC-<number>-<title>
+
+## Background
+
+## Requirements
+
+## Method
+
+## Implementation
+
+## Milestones
+
+## Gathering Results
+```
+
+Use PlantUML diagrams when they help explain architecture, flows, or dependencies.
+
+---
+
+## NestJS Module Rules
+
+Each bounded context must have its own NestJS module.
+
+Example:
+
+```txt
+src/courses/courses.module.ts
+```
+
+The module should register:
+
+- Controllers
+- Use cases
+- Repository providers
+- Infra services required by the context
+
+Example provider binding:
+
+```ts
+{
+    provide: CourseRepository,
+    useClass: PrismaCourseRepository,
 }
 ```
 
-### Services — sempre
+---
 
-```typescript
-async findOne(tenantId: string, id: string) {
-  const record = await this.prisma.parlamentar.findFirst({
-    where: { id, tenantId, isRemoved: false },
-  });
-  if (!record) throw new NotFoundException('Parlamentar não encontrado');
-  return record;
-}
-```
+## Testing
 
-### Rotas de plataforma (exceção)
+Each bounded context should include tests for:
 
-`tenants`, `users`, `tenant-users`: **sem** `TenantGuard`; proteção `MasterOnly` / roles de plataforma.
-Módulos em `src/tenants`, `src/users`, `src/tenant-users` — arquitetura use-case + repository.
+- Use cases
+- Repository behavior
+- Multi-tenant isolation
+- Soft delete behavior
+- Authorization when applicable
+
+Tests must verify that one tenant cannot access another tenant's data.
 
 ---
 
-## Estrutura de pastas
+## Migration Path to Microservices
 
-```
-src/
-├── common/          guards, decorators, filters, dto, base/
-├── prisma/          PrismaModule, PrismaService
-├── auth/            login JWT (Usuario SIGL hoje)
-├── tenants/         plataforma
-├── users/
-├── tenant-users/
-├── parlamentares/   … módulos legislativos (service ou use-case)
-├── materias/
-├── sessoes/
-├── normas/
-└── relatorios/
-```
+The backend starts as a modular monolith.
 
-Novo módulo legislativo: `src/<nome>/` com `*.module.ts`, `*.controller.ts`, `*.service.ts`, `dto/`.
-Refatorações grandes: `domain/`, `application/use-cases/`, `infra/` (como em `users/`).
+When a context grows enough to become independent, it may be extracted to a microservice.
 
----
+To make future extraction easier:
 
-## Schema Prisma (alvo — alinhar migrações)
+- Keep contexts isolated.
+- Avoid shared database logic across contexts.
+- Avoid direct imports from another context's infra layer.
+- Prefer contracts and facades.
+- Keep business logic inside the owning context.
+- Document context boundaries in `docs/architecture/`.
 
-Seguir modelos e enums do `../.cursorrules` (Camadas 1–7). Pontos críticos:
-
-- `tenantId` em: Legislatura, SessaoLegislativa, Parlamentar, Comissao, TipoMateria, TipoAutor, Materia, SessaoPlenaria, Norma, CargoMesa, TipoSessao, etc.
-- `@@unique([tenantId, …])` onde indicado na raiz.
-- `TenantUser`: `@@unique([tenantId, userId])`, roles `ADMIN | OPERATOR | VIEWER`.
-- `MateriaAutor`, `Votacao`, `VotoParlamentar`, `PresencaSessao` conforme diagrama em `docs/multitenant_camara_flow.html`.
-
-Ao alterar `prisma/schema.prisma`: gerar migration nomeada; atualizar seed se necessário.
-
----
-
-## Fluxo de negócio (ordem de implementação)
-
-```
-Tenant criado
-  └─ Tipos (TipoMateria, TipoAutor, TipoSessao, CargoMesa)
-       └─ Legislatura
-            ├─ SessaoLegislativa
-            │    └─ MesaDiretora + MesaDiretoraMembro
-            ├─ Parlamentares → Comissões → Autores (PARLAMENTAR)
-            └─ Materias → MateriaAutor → tramitação
-                 └─ SessaoPlenaria → PautaItem
-                      ├─ PresencaSessao
-                      ├─ Votacao + VotoParlamentar
-                      └─ Norma (se aprovada)
-```
-
-### Regras críticas (validar no **service**, não no controller)
-
-**Matéria**
-
-- Unicidade: `tenantId + tipoMateriaId + numero + ano`.
-- Só entra em pauta se `status === EM_TRAMITACAO`.
-- Aprovada em votação → `APROVADA`; rejeitada → `REJEITADA`.
-
-**Sessão plenária**
-
-- `PautaItem` só se `status === EM_ANDAMENTO`.
-- Se `TipoSessao.requerQuorum`: validar % presentes antes de abrir votação.
-- Ao encerrar: persistir resultados de votações pendentes.
-
-**Votação**
-
-- `VotoParlamentar` só se `PresencaSessao.situacao === PRESENTE`.
-- Resultado: `votosSim > votosNao` → `APROVADO`.
-- `tipoVotacao === SECRETA`: não expor votos individuais em APIs públicas.
-
-**Mesa diretora**
-
-- `CargoMesa.isUnique`: um parlamentar por cargo na mesa.
-
-**Norma**
-
-- Só de `Materia` com `status === APROVADA`.
-- Unicidade: `tenantId + tipo + numero + ano`.
-
-**Autor**
-
-- `origem = PARLAMENTAR` → exige `parlamentarId`.
-- `origem = EXTERNO` → exige `nomeExterno`.
-
----
-
-## Relatórios (`src/relatorios/`)
-
-Sempre `tenantId` do JWT. Query params: `ano`, `legislaturaId`, `sessaoLegislativaId`, `parlamentarId`.
-
-| Método | Rota |
-|--------|------|
-| GET | `/relatorios/atividade-legislativa` |
-| GET | `/relatorios/atividade-legislativa/completa` |
-| GET | `/relatorios/presenca` |
-| GET | `/relatorios/presenca/analitico` |
-| GET | `/relatorios/estatistico-anual` |
-
----
-
-## JWT (alvo)
-
-```typescript
-interface JwtPayload {
-  sub: string;   // userId
-  tid: string;   // tenantId — obrigatório em token de câmara
-  role: TenantUserRole;
-  isAdmin: boolean;
-}
-```
-
-Access + refresh via `@nestjs/jwt`. Strategy em `auth/strategies/`.
-
----
-
-## Erros
-
-`PrismaExceptionFilter` global (`common/filters/`):
-
-- `P2002` → 409 Conflict (campo legível)
-- `P2025` → 404 Not Found
-- `P2003` → 400 Bad Request (FK)
-
-Erros de domínio: classes em `application/errors/`, mapeados no controller para HTTP.
-
----
-
-## Segurança
-
-- `@nestjs/throttler` já no `AppModule`.
-- Helmet e CORS por tenant (`settingsJson`) — quando implementar.
-- Audit log (`userId`, `tenantId`, action, resource) — interceptor futuro.
-- Não retornar `passwordHash`, `isRemoved`, `settingsJson` cru em responses públicas.
-
----
-
-## O que NÃO fazer
-
-- Query legislativa sem `tenantId` no `where`.
-- `prisma.*.delete()` em entidades de negócio.
-- Lógica de negócio no controller.
-- `tenantId` vindo do cliente para autorização.
-- Hardcode de tenant.
-- Norma sem matéria aprovada.
-- Pauta em sessão não `EM_ANDAMENTO`.
-- Expor votos de votação `SECRETA`.
-
----
-
-## Comandos úteis
-
-```bash
-cd backend
-npm run start:dev
-npx prisma migrate dev
-npx prisma generate
-npm test
-```
+A bounded context should be treated as a deployment boundary candidate.

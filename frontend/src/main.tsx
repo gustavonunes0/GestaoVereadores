@@ -16,13 +16,13 @@ import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <PrimeReactProvider value={{ ripple: true }}>
-      <BrowserRouter>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </BrowserRouter>
-    </PrimeReactProvider>
-  </StrictMode>,
+    <StrictMode>
+        <PrimeReactProvider value={{ ripple: true }}>
+            <BrowserRouter>
+                <AuthProvider>
+                    <App />
+                </AuthProvider>
+            </BrowserRouter>
+        </PrimeReactProvider>
+    </StrictMode>,
 );

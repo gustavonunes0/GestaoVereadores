@@ -79,11 +79,11 @@ import './index.css';
 import App from './App';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <PrimeReactProvider value={{ ripple: true }}>
-      <App />
-    </PrimeReactProvider>
-  </React.StrictMode>
+    <React.StrictMode>
+        <PrimeReactProvider value={{ ripple: true }}>
+            <App />
+        </PrimeReactProvider>
+    </React.StrictMode>,
 );
 ```
 
@@ -111,35 +111,35 @@ Não inventar cores soltas no código.
 
 ```css
 :root {
-  /* Brand */
-  --brand-blue-iris: #377EF2;
-  --brand-safety-orange: #FF8465;
-  --brand-pale-purple: #D3D2FD;
-  --brand-night-blue: #0E1E46;
+    /* Brand */
+    --brand-blue-iris: #377ef2;
+    --brand-safety-orange: #ff8465;
+    --brand-pale-purple: #d3d2fd;
+    --brand-night-blue: #0e1e46;
 
-  /* Text / neutral scale */
-  --text-primary: #0E0D35;
-  --text-900: #27264A;
-  --text-800: #3E3D5D;
-  --text-700: #575672;
-  --text-600: #6E6E86;
-  --text-500: #868599;
-  --text-400: #9F9EAE;
-  --text-300: #B7B7C3;
-  --text-200: #CFCFD7;
-  --text-inverse: #FFFFFF;
+    /* Text / neutral scale */
+    --text-primary: #0e0d35;
+    --text-900: #27264a;
+    --text-800: #3e3d5d;
+    --text-700: #575672;
+    --text-600: #6e6e86;
+    --text-500: #868599;
+    --text-400: #9f9eae;
+    --text-300: #b7b7c3;
+    --text-200: #cfcfd7;
+    --text-inverse: #ffffff;
 
-  /* Background */
-  --bg-app: #F9FAFE;
-  --bg-soft: #F5F6F9;
-  --bg-border: #E6E9F5;
-  --bg-card: #FFFFFF;
+    /* Background */
+    --bg-app: #f9fafe;
+    --bg-soft: #f5f6f9;
+    --bg-border: #e6e9f5;
+    --bg-card: #ffffff;
 
-  /* System */
-  --info: #2C65DA;
-  --danger: #EB4F46;
-  --success: #65BE58;
-  --warning: #F2B04F;
+    /* System */
+    --info: #2c65da;
+    --danger: #eb4f46;
+    --success: #65be58;
+    --warning: #f2b04f;
 }
 ```
 
@@ -261,11 +261,11 @@ Modelo alvo de usuário autenticado:
 
 ```ts
 type AuthUser = {
-  id: string;
-  nome: string;
-  role: 'ADMIN' | 'OPERATOR' | 'VIEWER' | 'MASTER';
-  tenantId?: string;
-  isAdmin?: boolean;
+    id: string;
+    nome: string;
+    role: 'ADMIN' | 'OPERATOR' | 'VIEWER' | 'MASTER';
+    tenantId?: string;
+    isAdmin?: boolean;
 };
 ```
 
@@ -306,7 +306,7 @@ import { api, apiList } from '@/api/client';
 Não fazer:
 
 ```ts
-fetch('/algum-endpoint')
+fetch('/algum-endpoint');
 ```
 
 Sempre que criar tela de listagem:
@@ -347,16 +347,16 @@ Filtros permitidos:
 
 ## 11. Regras de negócio que a UI deve refletir
 
-| Ação | Condição esperada na UI |
-|---|---|
-| Incluir matéria na pauta | Matéria em tramitação e sessão apta a receber pauta |
-| Registrar presença | Sessão existente e parlamentar ativo |
-| Registrar voto | Parlamentar presente na sessão |
-| Criar norma | Matéria aprovada/formalizada |
-| Exibir votos nominais | Apenas se votação não for secreta |
-| Encerrar sessão | Confirmar e avisar sobre pendências |
-| Cargo único na mesa | Não permitir duplicidade para cargo marcado como único |
-| Relatórios | Sempre respeitar filtros de período, parlamentar, tipo e legislatura |
+| Ação                     | Condição esperada na UI                                              |
+| ------------------------ | -------------------------------------------------------------------- |
+| Incluir matéria na pauta | Matéria em tramitação e sessão apta a receber pauta                  |
+| Registrar presença       | Sessão existente e parlamentar ativo                                 |
+| Registrar voto           | Parlamentar presente na sessão                                       |
+| Criar norma              | Matéria aprovada/formalizada                                         |
+| Exibir votos nominais    | Apenas se votação não for secreta                                    |
+| Encerrar sessão          | Confirmar e avisar sobre pendências                                  |
+| Cargo único na mesa      | Não permitir duplicidade para cargo marcado como único               |
+| Relatórios               | Sempre respeitar filtros de período, parlamentar, tipo e legislatura |
 
 Regras negativas importantes:
 
@@ -404,76 +404,76 @@ import { Toast } from 'primereact/toast';
 import { apiList } from '@/api/client';
 
 type Item = {
-  id: string;
-  nome: string;
-  status: string;
+    id: string;
+    nome: string;
+    status: string;
 };
 
 export function ExamplePage() {
-  const toastRef = useRef<Toast>(null);
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+    const toastRef = useRef<Toast>(null);
+    const [items, setItems] = useState<Item[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [open, setOpen] = useState(false);
 
-  async function load() {
-    setLoading(true);
+    async function load() {
+        setLoading(true);
 
-    try {
-      const response = await apiList<Item>('/recurso', { limit: 100 });
-      setItems(response.data);
-    } catch {
-      toastRef.current?.show({
-        severity: 'error',
-        summary: 'Erro',
-        detail: 'Não foi possível carregar os registros.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-  }, []);
-
-  return (
-    <section className="page">
-      <Toast ref={toastRef} />
-
-      <PageHeader
-        title="Título da tela"
-        subtitle="Descrição objetiva da funcionalidade."
-        actions={
-          <Button
-            label="Novo"
-            icon="pi pi-plus"
-            onClick={() => setOpen(true)}
-          />
+        try {
+            const response = await apiList<Item>('/recurso', { limit: 100 });
+            setItems(response.data);
+        } catch {
+            toastRef.current?.show({
+                severity: 'error',
+                summary: 'Erro',
+                detail: 'Não foi possível carregar os registros.',
+            });
+        } finally {
+            setLoading(false);
         }
-      />
+    }
 
-      <DataTable
-        value={items}
-        loading={loading}
-        dataKey="id"
-        paginator
-        rows={10}
-        emptyMessage="Nenhum registro encontrado."
-      >
-        <Column field="nome" header="Nome" sortable />
-        <Column field="status" header="Situação" />
-      </DataTable>
+    useEffect(() => {
+        void load();
+    }, []);
 
-      <Dialog
-        header="Novo registro"
-        visible={open}
-        onHide={() => setOpen(false)}
-        modal
-      >
-        {/* formulário */}
-      </Dialog>
-    </section>
-  );
+    return (
+        <section className="page">
+            <Toast ref={toastRef} />
+
+            <PageHeader
+                title="Título da tela"
+                subtitle="Descrição objetiva da funcionalidade."
+                actions={
+                    <Button
+                        label="Novo"
+                        icon="pi pi-plus"
+                        onClick={() => setOpen(true)}
+                    />
+                }
+            />
+
+            <DataTable
+                value={items}
+                loading={loading}
+                dataKey="id"
+                paginator
+                rows={10}
+                emptyMessage="Nenhum registro encontrado."
+            >
+                <Column field="nome" header="Nome" sortable />
+                <Column field="status" header="Situação" />
+            </DataTable>
+
+            <Dialog
+                header="Novo registro"
+                visible={open}
+                onHide={() => setOpen(false)}
+                modal
+            >
+                {/* formulário */}
+            </Dialog>
+        </section>
+    );
 }
 ```
 
@@ -573,15 +573,15 @@ npm run build
 
 ### Infraestrutura (implementado)
 
-| Item | Caminho |
-|------|---------|
-| Tipos de auth | `src/types/auth.ts` |
-| Regras legislativas (UI) | `src/types/legislative.ts` |
-| Mensagens de erro HTTP | `src/utils/apiErrorMessage.ts` |
-| CPF/CNPJ só dígitos | `src/utils/normalizeDocument.ts` |
-| Permissões de escrita/leitura | `src/hooks/usePermissions.ts` |
-| Toast + ConfirmDialog global | `src/hooks/useAppToast.tsx` → `Layout` |
-| Alias `@/` | `vite.config.ts`, `tsconfig.json` |
+| Item                          | Caminho                                |
+| ----------------------------- | -------------------------------------- |
+| Tipos de auth                 | `src/types/auth.ts`                    |
+| Regras legislativas (UI)      | `src/types/legislative.ts`             |
+| Mensagens de erro HTTP        | `src/utils/apiErrorMessage.ts`         |
+| CPF/CNPJ só dígitos           | `src/utils/normalizeDocument.ts`       |
+| Permissões de escrita/leitura | `src/hooks/usePermissions.ts`          |
+| Toast + ConfirmDialog global  | `src/hooks/useAppToast.tsx` → `Layout` |
+| Alias `@/`                    | `vite.config.ts`, `tsconfig.json`      |
 
 ### Autenticação (implementado)
 
@@ -592,13 +592,13 @@ npm run build
 
 ### Telas migradas para PrimeReact (piloto + fluxo)
 
-| Tela | PrimeReact | Regras de negócio na UI |
-|------|------------|-------------------------|
-| Login | Sim | Erros por status HTTP |
-| Parlamentares | Sim | `canWrite`, confirmação de exclusão |
-| Matérias | Sim | Filtro `EM_TRAMITACAO`, status na tabela |
-| Normas | Sim | Só matérias `APROVADA` no vínculo |
-| Sessões | Parcial | Pauta só `EM_ANDAMENTO` + matérias em tramitação |
+| Tela          | PrimeReact | Regras de negócio na UI                          |
+| ------------- | ---------- | ------------------------------------------------ |
+| Login         | Sim        | Erros por status HTTP                            |
+| Parlamentares | Sim        | `canWrite`, confirmação de exclusão              |
+| Matérias      | Sim        | Filtro `EM_TRAMITACAO`, status na tabela         |
+| Normas        | Sim        | Só matérias `APROVADA` no vínculo                |
+| Sessões       | Parcial    | Pauta só `EM_ANDAMENTO` + matérias em tramitação |
 
 ### Pendente (próximas iterações)
 

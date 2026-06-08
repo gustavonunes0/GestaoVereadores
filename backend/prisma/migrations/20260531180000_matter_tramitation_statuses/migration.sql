@@ -1,0 +1,8 @@
+-- Task 21: status expandidos para tramitação básica de matéria
+
+ALTER TYPE "StatusMateria" ADD VALUE IF NOT EXISTS 'DRAFT';
+ALTER TYPE "StatusMateria" ADD VALUE IF NOT EXISTS 'PROTOCOLADA';
+ALTER TYPE "StatusMateria" ADD VALUE IF NOT EXISTS 'EM_PAUTA';
+ALTER TYPE "StatusMateria" ADD VALUE IF NOT EXISTS 'TRANSFORMADA_EM_NORMA';
+
+ALTER TABLE "Materia" ALTER COLUMN "status" SET DEFAULT 'DRAFT';

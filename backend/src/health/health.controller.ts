@@ -9,21 +9,25 @@ import { PrismaService } from '../prisma/prisma.service';
 @SkipTenant()
 @Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService) {}
 
-  @SkipThrottle()
-  @Public()
-  @Get()
-  async check() {
-    try {
-      await this.prisma.$queryRaw`SELECT 1`;
-      return { status: 'ok', database: 'up', timestamp: new Date().toISOString() };
-    } catch {
-      return {
-        status: 'degraded',
-        database: 'down',
-        timestamp: new Date().toISOString(),
-      };
+    @SkipThrottle()
+    @Public()
+    @Get()
+    async check() {
+        try {
+            await this.prisma.$queryRaw`SELECT 1`;
+            return {
+                status: 'ok',
+                database: 'up',
+                timestamp: new Date().toISOString(),
+            };
+        } catch {
+            return {
+                status: 'degraded',
+                database: 'down',
+                timestamp: new Date().toISOString(),
+            };
+        }
     }
-  }
 }

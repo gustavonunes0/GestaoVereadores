@@ -4,12 +4,12 @@
 */
 
 html {
-  font-size: 100%;
+    font-size: 100%;
 }
 
 #root,
 .p-component {
-  font-family: var(--font-family-sans);
+    font-family: var(--font-family-sans);
 }
 
 h1,
@@ -18,118 +18,118 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-family-sans);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-tight);
-  color: var(--text-primary);
+    font-family: var(--font-family-sans);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+    color: var(--text-primary);
 }
 
 /* Títulos de página */
 .page-header .page-title,
 h1.module-title.page-title {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: -0.01em;
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.01em;
 }
 
 .page-subtitle,
 .tab-panel-title + .page-subtitle {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-relaxed);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-relaxed);
 }
 
 h2.module-title.tab-panel-title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
 }
 
 /* Sidebar e navegação */
 .nav-link {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
 }
 
 .nav-link.active {
-  font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold);
 }
 
 .nav-section {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--letter-spacing-label);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--letter-spacing-label);
 }
 
 .sidebar-brand p {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
 }
 
 .sidebar-brand__title {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
 }
 
 /* Painéis e cards */
 .page-panel__title {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
 }
 
 .page-panel__desc {
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-relaxed);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-relaxed);
 }
 
 .card-title,
 .sigl-action-card__title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
 }
 
 /* Formulários e auxiliares */
 label,
 .field-required {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
 }
 
 .field-hint,
 .form-section__title,
 .ui-empty-state__hint {
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-relaxed);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-relaxed);
 }
 
 .ui-empty-state__title {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
 }
 
 /* Contexto e badges de pipeline */
 .pipeline-step-badge {
-  font-size: var(--font-size-sm);
+    font-size: var(--font-size-sm);
 }
 
 .publicacao-module-intro__title {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--letter-spacing-label);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--letter-spacing-label);
 }
 
 .publicacao-module-intro__text,
 .publicacao-module-intro__rule {
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-relaxed);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-relaxed);
 }
 
 .publicacao-meta-grid__item dt {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--letter-spacing-label);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--letter-spacing-label);
 }
 
 .publicacao-meta-grid__item dd {
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-normal);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
 }

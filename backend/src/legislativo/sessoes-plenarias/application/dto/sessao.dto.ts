@@ -1,0 +1,104 @@
+import { FasePauta, ResultadoPauta, SituacaoPresenca } from '@prisma/client';
+import { Type } from 'class-transformer';
+import {
+    IsBoolean,
+    IsDateString,
+    IsEnum,
+    IsInt,
+    IsOptional,
+    IsString,
+    IsUUID,
+    Min,
+} from 'class-validator';
+import { PaginationQueryDto } from '../../../../common/dto/pagination.dto';
+
+export class CreateSessaoPlenariaDto {
+    @IsDateString()
+    dataInicio: string;
+
+    @IsOptional()
+    @IsDateString()
+    dataFim?: string;
+
+    @IsString()
+    tipoSessaoId: string;
+
+    @IsOptional()
+    @IsString()
+    sessaoLegislativaId?: string;
+
+    @IsOptional()
+    @IsString()
+    mensagem?: string;
+}
+
+export class FilterSessaoPlenariaDto extends PaginationQueryDto {
+    @IsOptional()
+    @IsString()
+    tipoSessaoId?: string;
+
+    @IsOptional()
+    @IsString()
+    situacaoId?: string;
+
+    @IsOptional()
+    @IsString()
+    sessaoLegislativaId?: string;
+
+    @IsOptional()
+    @IsString()
+    legislaturaId?: string;
+
+    @IsOptional()
+    @IsDateString()
+    dataInicioDe?: string;
+
+    @IsOptional()
+    @IsDateString()
+    dataInicioAte?: string;
+}
+
+export class AddPautaItemDto {
+    @IsString()
+    materiaId: string;
+
+    @IsInt()
+    @Min(1)
+    @Type(() => Number)
+    ordem: number;
+
+    @IsOptional()
+    @IsEnum(FasePauta)
+    fase?: FasePauta;
+}
+
+export class RegistrarPresencaDto {
+    @IsString()
+    parlamentarId: string;
+
+    /** Perfil DDD (Parliamentarian); quando informado com legislatureProfileId, valida mandato ativo. */
+    @IsOptional()
+    @IsUUID()
+    parliamentarianProfileId?: string;
+
+    @IsOptional()
+    @IsUUID()
+    legislatureProfileId?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    presente?: boolean;
+
+    @IsOptional()
+    @IsEnum(SituacaoPresenca)
+    situacao?: SituacaoPresenca;
+
+    @IsOptional()
+    @IsString()
+    justificativa?: string;
+}
+
+export class RegistrarResultadoPautaDto {
+    @IsEnum(ResultadoPauta)
+    resultado: ResultadoPauta;
+}

@@ -3,31 +3,33 @@ import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as {
-  version: string;
+const pkg = JSON.parse(
+    readFileSync(new URL('./package.json', import.meta.url), 'utf-8'),
+) as {
+    version: string;
 };
 
 export default defineConfig({
-  plugins: [react()],
-  define: {
-    'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
+    plugins: [react()],
+    define: {
+        'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
     },
-  },
-  optimizeDeps: {
-    // primeicons is CSS/fonts only — do not pre-bundle as JS (no package entry).
-    include: ['primereact/api'],
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, 'src'),
+        },
     },
-  },
+    optimizeDeps: {
+        // primeicons is CSS/fonts only — do not pre-bundle as JS (no package entry).
+        include: ['primereact/api'],
+    },
+    server: {
+        port: 5173,
+        proxy: {
+            '/api': {
+                target: 'http://localhost:3000',
+                changeOrigin: true,
+            },
+        },
+    },
 });
