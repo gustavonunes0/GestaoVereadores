@@ -425,6 +425,19 @@ async function main() {
         },
     });
 
+    await prisma.legislature.upsert({
+        where: {
+            tenantId_number: { tenantId: DEMO_TENANT_ID, number: 20 },
+        },
+        update: { isCurrent: true },
+        create: {
+            tenantId: DEMO_TENANT_ID,
+            number: 20,
+            startDate: new Date('2025-01-01'),
+            isCurrent: true,
+        },
+    });
+
     const sessaoLeg = await prisma.sessaoLegislativa.upsert({
         where: {
             legislaturaId_numero: { legislaturaId: legislatura.id, numero: 1 },

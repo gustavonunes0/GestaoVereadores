@@ -65,6 +65,7 @@ export function Layout() {
                                 user?.role === 'MASTER' &&
                                 user?.authType !== 'camara'
                             }
+                            showAdministrativo={user?.authType !== 'camara'}
                             adminItems={ADMIN_NAV}
                         />
                     </aside>

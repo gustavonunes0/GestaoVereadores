@@ -27,9 +27,14 @@ function groupHasActivePath(group: NavGroup, pathname: string) {
 type Props = {
     adminItems?: typeof import('../app/navigation').ADMIN_NAV;
     showAdmin?: boolean;
+    showAdministrativo?: boolean;
 };
 
-export function SidebarNav({ adminItems, showAdmin }: Props) {
+export function SidebarNav({
+    adminItems,
+    showAdmin,
+    showAdministrativo = true,
+}: Props) {
     const { pathname } = useLocation();
     const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
         () => {
@@ -140,24 +145,28 @@ export function SidebarNav({ adminItems, showAdmin }: Props) {
                 );
             })}
 
-            <div className="nav-section">Outros</div>
-            {ADMINISTRATIVO_NAV.map((item) => (
-                <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className={() =>
-                        `nav-link${item.match(pathname) ? ' active' : ''}`
-                    }
-                >
-                    <ModuleTitle
-                        icon={item.icon}
-                        as="span"
-                        className="nav-link__label"
-                    >
-                        {item.label}
-                    </ModuleTitle>
-                </NavLink>
-            ))}
+            {showAdministrativo && (
+                <>
+                    <div className="nav-section">Outros</div>
+                    {ADMINISTRATIVO_NAV.map((item) => (
+                        <NavLink
+                            key={item.to}
+                            to={item.to}
+                            className={() =>
+                                `nav-link${item.match(pathname) ? ' active' : ''}`
+                            }
+                        >
+                            <ModuleTitle
+                                icon={item.icon}
+                                as="span"
+                                className="nav-link__label"
+                            >
+                                {item.label}
+                            </ModuleTitle>
+                        </NavLink>
+                    ))}
+                </>
+            )}
 
             {showAdmin && adminItems && (
                 <>

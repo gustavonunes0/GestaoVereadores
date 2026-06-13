@@ -13,10 +13,38 @@ import {
 export class RelatoriosService {
     constructor(private readonly prisma: PrismaService) {}
 
+    /** Aceita ID da tabela `legislatures` (API nova) ou `Legislatura` (legado). */
+    private async resolveLegislaturaId(
+        tenantId: string,
+        legislaturaId: string,
+    ): Promise<string> {
+        const legacy = await this.prisma.legislatura.findFirst({
+            where: { id: legislaturaId, ...tenantWhere(tenantId) },
+            select: { id: true },
+        });
+        if (legacy) return legacy.id;
+
+        const legislature = await this.prisma.legislature.findFirst({
+            where: { id: legislaturaId, tenantId, isRemoved: false },
+            select: { number: true },
+        });
+        if (!legislature) return legislaturaId;
+
+        const matched = await this.prisma.legislatura.findFirst({
+            where: { tenantId, numero: legislature.number },
+            select: { id: true },
+        });
+        return matched?.id ?? legislaturaId;
+    }
+
     async atividadeCompleto(
         tenantId: string,
         dto: RelatorioAtividadeCompletoDto,
     ) {
+        const legislaturaId = await this.resolveLegislaturaId(
+            tenantId,
+            dto.legislaturaId,
+        );
         const range = buildDateRangeFilter(dto.dataInicioDe, dto.dataInicioAte);
         const materias = await this.prisma.materia.findMany({
             where: {
@@ -26,7 +54,7 @@ export class RelatoriosService {
                         sessao: {
                             sessaoLegislativaId: dto.sessaoLegislativaId,
                             sessaoLegislativa: {
-                                legislaturaId: dto.legislaturaId,
+                                legislaturaId,
                             },
                             ...(range && { dataInicio: range }),
                         },
@@ -48,8 +76,12 @@ export class RelatoriosService {
     }
 
     async atividadeGeral(tenantId: string, dto: RelatorioAtividadeGeralDto) {
+        const legislaturaId = await this.resolveLegislaturaId(
+            tenantId,
+            dto.legislaturaId,
+        );
         const legislatura = await this.prisma.legislatura.findFirst({
-            where: { id: dto.legislaturaId, ...tenantWhere(tenantId) },
+            where: { id: legislaturaId, ...tenantWhere(tenantId) },
         });
 
         const apresentacaoRange = buildDateRangeFilter(
@@ -75,7 +107,7 @@ export class RelatoriosService {
                                 some: {
                                     sessao: {
                                         sessaoLegislativa: {
-                                            legislaturaId: dto.legislaturaId,
+                                            legislaturaId,
                                         },
                                     },
                                 },
@@ -102,12 +134,16 @@ export class RelatoriosService {
     }
 
     async presenca(tenantId: string, dto: RelatorioPresencaDto) {
+        const legislaturaId = await this.resolveLegislaturaId(
+            tenantId,
+            dto.legislaturaId,
+        );
         const range = buildDateRangeFilter(dto.dataInicioDe, dto.dataInicioAte);
         const sessoes = await this.prisma.sessaoPlenaria.findMany({
             where: {
                 ...tenantWhere(tenantId),
                 sessaoLegislativaId: dto.sessaoLegislativaId,
-                sessaoLegislativa: { legislaturaId: dto.legislaturaId },
+                sessaoLegislativa: { legislaturaId },
                 ...(dto.tipoSessaoId && { tipoSessaoId: dto.tipoSessaoId }),
                 ...(dto.sessaoPlenariaId && { id: dto.sessaoPlenariaId }),
                 ...(range && { dataInicio: range }),

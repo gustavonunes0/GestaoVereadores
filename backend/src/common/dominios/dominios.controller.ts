@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ReadRoles } from '../decorators/api-roles.decorator';
+import { TenantMaintainer } from '../decorators/tenant-maintainer.decorator';
 import { TenantId } from '../decorators/tenant-id.decorator';
 import { DominiosService } from './dominios.service';
 
@@ -10,7 +10,7 @@ import { DominiosService } from './dominios.service';
 export class DominiosController {
     constructor(private readonly dominiosService: DominiosService) {}
 
-    @ReadRoles()
+    @TenantMaintainer()
     @Get()
     list(@TenantId() tenantId: string) {
         return this.dominiosService.listForTenant(tenantId);
