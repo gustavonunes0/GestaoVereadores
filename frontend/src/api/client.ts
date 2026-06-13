@@ -1,4 +1,5 @@
 import type { AuthUser, LoginResponse } from '../types/auth';
+import { API_PATHS } from './paths';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
@@ -90,43 +91,18 @@ export async function apiTotal(path: string): Promise<number> {
 
 export const authApi = {
     login: (username: string, password: string, tenantId?: string) =>
-        api<LoginResponse>('/auth/login', {
+        api<LoginResponse>(API_PATHS.auth.login, {
             method: 'POST',
             body: JSON.stringify({ username, password, tenantId }),
         }),
 
     loginCamara: (email: string, password: string, tenantCnpj: string) =>
-        api<LoginResponse>('/auth/login-camara', {
+        api<LoginResponse>(API_PATHS.auth.loginCamara, {
             method: 'POST',
             body: JSON.stringify({ email, password, tenantCnpj }),
         }),
 
-    me: () => api<AuthUser>('/auth/me'),
+    me: () => api<AuthUser>(API_PATHS.auth.me),
 };
 
 export type { AuthUser } from '../types/auth';
-
-export type Dominios = {
-    anos: { id: string; valor: number }[];
-    tiposMateria: { id: string; nome: string }[];
-    tiposComissao: { id: string; nome: string }[];
-    tiposListagem: { id: string; nome: string }[];
-    tematicas: { id: string; nome: string }[];
-    origensMateria: { id: string; nome: string }[];
-    locaisOrigemExterna: { id: string; nome: string }[];
-    tiposNorma: { id: string; nome: string }[];
-    esferasFederacao: { id: string; nome: string }[];
-    identificadoresNorma: { id: string; nome: string }[];
-    tiposSessao: { id: string; nome: string }[];
-    situacoesSessao: { id: string; nome: string; codigo?: string }[];
-    tiposAutor: { id: string; nome: string }[];
-    statusTramitacao: { id: string; nome: string }[];
-    unidadesTramitacao: { id: string; nome: string }[];
-    cargosMesa: { id: string; nome: string }[];
-    tiposAto: { id: string; nome: string }[];
-    classificacoesAto: { id: string; nome: string }[];
-};
-
-export const dominiosApi = {
-    list: () => api<Dominios>('/dominios'),
-};

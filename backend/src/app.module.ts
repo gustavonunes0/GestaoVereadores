@@ -14,6 +14,7 @@ import { AtosAdministrativosModule } from './atos-administrativos/atos-administr
 import { RelatoriosModule } from './relatorios/relatorios.module';
 import { IdentidadeModule } from './identidade/identidade.module';
 import { LegislativoModule } from './legislativo/legislativo.module';
+import { DominiosModule } from './common/dominios/dominios.module';
 
 @Module({
     providers: [
@@ -33,6 +34,7 @@ import { LegislativoModule } from './legislativo/legislativo.module';
         RelatoriosModule,
         IdentidadeModule,
         LegislativoModule,
+        DominiosModule,
     ],
 })
 export class AppModule {}

@@ -41,11 +41,3 @@ export function isTipoProjetoLei(
 export function nomeEhProjetoLei(nomeTipo: string): boolean {
     return combinaPadroes(normalizarNomeTipo(nomeTipo), TIPOS_PROJETO_LEI);
 }
-
-/** @deprecated Use tipoPermiteMultiplosRepresentantes */
-export function isTipoMocao(
-    tipoId: string,
-    tiposMateria: { id: string; nome: string }[],
-): boolean {
-    return tipoPermiteMultiplosRepresentantes(tipoId, tiposMateria);
-}

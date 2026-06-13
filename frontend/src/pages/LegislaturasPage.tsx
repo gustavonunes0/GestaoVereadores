@@ -1,28 +1,25 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { MODULE_ICONS } from '../app/navigation';
-import { api, apiList } from '../api/client';
+import {
+    legislaturasApi,
+    type Legislature,
+} from '../api/legislative/legislaturas.api';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
 import { usePermissions } from '../hooks/usePermissions';
 import { useLegislatura } from '../contexts/LegislaturaContext';
 
-type Legislatura = {
-    id: string;
-    numero: number;
-    dataInicio: string;
-    sessoesLegislativas?: { id: string; numero: number }[];
-};
-
 export function LegislaturasPage() {
     const { canWrite } = usePermissions();
     const { refresh } = useLegislatura();
-    const [items, setItems] = useState<Legislatura[]>([]);
+    const [items, setItems] = useState<Legislature[]>([]);
     const [open, setOpen] = useState(false);
-    const [numero, setNumero] = useState('20');
-    const [dataInicio, setDataInicio] = useState('2025-01-01');
+    const [number, setNumber] = useState('20');
+    const [startDate, setStartDate] = useState('2025-01-01');
+    const [isCurrent, setIsCurrent] = useState(true);
 
     function load() {
-        apiList<Legislatura>('/legislaturas').then((r) => setItems(r.data));
+        legislaturasApi.list({ limit: 50 }).then((r) => setItems(r.data));
     }
 
     useEffect(() => {
@@ -31,12 +28,10 @@ export function LegislaturasPage() {
 
     async function handleCreate(e: FormEvent) {
         e.preventDefault();
-        await api('/legislaturas', {
-            method: 'POST',
-            body: JSON.stringify({
-                numero: Number(numero),
-                dataInicio: new Date(dataInicio).toISOString(),
-            }),
+        await legislaturasApi.create({
+            number: Number(number),
+            startDate: new Date(startDate).toISOString(),
+            isCurrent,
         });
         setOpen(false);
         await refresh();
@@ -44,7 +39,7 @@ export function LegislaturasPage() {
     }
 
     return (
-        <>
+        <div className="page">
             <PanelToolbar
                 icon={MODULE_ICONS.legislaturas}
                 title="Legislaturas"
@@ -66,19 +61,27 @@ export function LegislaturasPage() {
                         <tr>
                             <th>Número</th>
                             <th>Início</th>
-                            <th>Sessões legislativas</th>
+                            <th>Fim</th>
+                            <th>Atual</th>
                         </tr>
                     </thead>
                     <tbody>
                         {items.map((l) => (
                             <tr key={l.id}>
-                                <td>{l.numero}ª</td>
+                                <td>{l.number}ª</td>
                                 <td>
-                                    {new Date(l.dataInicio).toLocaleDateString(
+                                    {new Date(l.startDate).toLocaleDateString(
                                         'pt-BR',
                                     )}
                                 </td>
-                                <td>{l.sessoesLegislativas?.length ?? 0}</td>
+                                <td>
+                                    {l.endDate
+                                        ? new Date(l.endDate).toLocaleDateString(
+                                              'pt-BR',
+                                          )
+                                        : '—'}
+                                </td>
+                                <td>{l.isCurrent ? 'Sim' : 'Não'}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -92,8 +95,8 @@ export function LegislaturasPage() {
                                 Número *
                                 <input
                                     type="number"
-                                    value={numero}
-                                    onChange={(e) => setNumero(e.target.value)}
+                                    value={number}
+                                    onChange={(e) => setNumber(e.target.value)}
                                     required
                                 />
                             </label>
@@ -101,14 +104,29 @@ export function LegislaturasPage() {
                                 Data início *
                                 <input
                                     type="date"
-                                    value={dataInicio}
+                                    value={startDate}
                                     onChange={(e) =>
-                                        setDataInicio(e.target.value)
+                                        setStartDate(e.target.value)
                                     }
                                     required
                                 />
                             </label>
                         </div>
+                        <label
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                marginTop: '0.75rem',
+                            }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={isCurrent}
+                                onChange={(e) => setIsCurrent(e.target.checked)}
+                            />
+                            Legislatura em exercício
+                        </label>
                         <div className="modal-actions">
                             <button
                                 type="button"
@@ -124,6 +142,6 @@ export function LegislaturasPage() {
                     </form>
                 </Modal>
             )}
-        </>
+        </div>
     );
 }

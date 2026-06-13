@@ -1,61 +1,51 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { MODULE_ICONS } from '../app/navigation';
-import { api, apiList } from '../api/client';
+import { guestUsersApi, type GuestUser } from '../api/guest-users.api';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
 import { usePermissions } from '../hooks/usePermissions';
-import { useDominios } from '../hooks/useDominios';
-
-type Autor = {
-    id: string;
-    nome: string;
-    tipoAutor?: { nome: string };
-};
 
 export function AutoresPage() {
     const { canWrite } = usePermissions();
-    const { dominios } = useDominios();
-    const [items, setItems] = useState<Autor[]>([]);
+    const [items, setItems] = useState<GuestUser[]>([]);
     const [open, setOpen] = useState(false);
-    const [nome, setNome] = useState('');
-    const [tipoAutorId, setTipoAutorId] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [organizationName, setOrganizationName] = useState('');
 
     function load() {
-        apiList<Autor>('/autores').then((r) => setItems(r.data));
+        guestUsersApi.list({ limit: 100 }).then((r) => setItems(r.data));
     }
 
     useEffect(() => {
         load();
     }, []);
 
-    useEffect(() => {
-        if (dominios?.tiposAutor[0] && !tipoAutorId) {
-            setTipoAutorId(dominios.tiposAutor[0].id);
-        }
-    }, [dominios, tipoAutorId]);
-
     async function handleCreate(e: FormEvent) {
         e.preventDefault();
-        await api('/autores', {
-            method: 'POST',
-            body: JSON.stringify({ nome, tipoAutorId }),
+        await guestUsersApi.create({
+            fullName: fullName.trim(),
+            email: email.trim() || undefined,
+            organizationName: organizationName.trim() || undefined,
         });
         setOpen(false);
-        setNome('');
+        setFullName('');
+        setEmail('');
+        setOrganizationName('');
         load();
     }
 
     async function remove(id: string) {
-        if (!confirm('Excluir autor?')) return;
-        await api(`/autores/${id}`, { method: 'DELETE' });
+        if (!confirm('Excluir autor convidado?')) return;
+        await guestUsersApi.remove(id);
         load();
     }
 
     return (
-        <>
+        <div className="page">
             <PanelToolbar
                 icon={MODULE_ICONS.autores}
-                title="Autores"
+                title="Autores convidados"
                 actions={
                     canWrite ? (
                         <button
@@ -68,28 +58,36 @@ export function AutoresPage() {
                     ) : undefined
                 }
             />
+            <p className="muted" style={{ margin: '0 0 0.75rem', fontSize: '0.9rem' }}>
+                Pessoas externas à casa que podem ser vinculadas como autores em
+                matérias (API <code>guest-users</code>).
+            </p>
             <div className="card table-wrap">
                 <table>
                     <thead>
                         <tr>
                             <th>Nome</th>
-                            <th>Tipo</th>
+                            <th>E-mail</th>
+                            <th>Organização</th>
                             <th />
                         </tr>
                     </thead>
                     <tbody>
                         {items.map((a) => (
                             <tr key={a.id}>
-                                <td>{a.nome}</td>
-                                <td>{a.tipoAutor?.nome ?? '—'}</td>
+                                <td>{a.fullName}</td>
+                                <td>{a.email ?? '—'}</td>
+                                <td>{a.organizationName ?? '—'}</td>
                                 <td>
-                                    <button
-                                        type="button"
-                                        className="btn btn-danger btn-sm"
-                                        onClick={() => remove(a.id)}
-                                    >
-                                        Excluir
-                                    </button>
+                                    {canWrite && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() => remove(a.id)}
+                                        >
+                                            Excluir
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}
@@ -97,29 +95,32 @@ export function AutoresPage() {
                 </table>
             </div>
             {open && (
-                <Modal title="Novo autor" onClose={() => setOpen(false)}>
+                <Modal title="Novo autor convidado" onClose={() => setOpen(false)}>
                     <form onSubmit={handleCreate}>
                         <label>
-                            Nome *
+                            Nome completo *
                             <input
-                                value={nome}
-                                onChange={(e) => setNome(e.target.value)}
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
                                 required
                             />
                         </label>
                         <label>
-                            Tipo *
-                            <select
-                                value={tipoAutorId}
-                                onChange={(e) => setTipoAutorId(e.target.value)}
-                                required
-                            >
-                                {dominios?.tiposAutor.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                        {t.nome}
-                                    </option>
-                                ))}
-                            </select>
+                            E-mail
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </label>
+                        <label>
+                            Organização
+                            <input
+                                value={organizationName}
+                                onChange={(e) =>
+                                    setOrganizationName(e.target.value)
+                                }
+                            />
                         </label>
                         <div className="modal-actions">
                             <button
@@ -136,6 +137,6 @@ export function AutoresPage() {
                     </form>
                 </Modal>
             )}
-        </>
+        </div>
     );
 }

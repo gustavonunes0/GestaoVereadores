@@ -1,8 +1,10 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ROUTES } from '../app/navigation';
-import { MODULE_ICONS } from '../app/navigation';
-import { api, apiList } from '../api/client';
+import { ROUTES, MODULE_ICONS } from '../app/navigation';
+import {
+    mesaDiretoraApi,
+    type Board,
+} from '../api/legislative/mesa-diretora.api';
 import { ColegiadoMembersPanel } from '../components/camara/ColegiadoMembersPanel';
 import { NavDrawer } from '../components/NavDrawer';
 import { Modal } from '../components/Modal';
@@ -10,56 +12,31 @@ import { PanelToolbar } from '../components/PanelToolbar';
 import { useLegislatura } from '../contexts/LegislaturaContext';
 import { usePermissions } from '../hooks/usePermissions';
 
-type MesaResumo = {
-    id: string;
-    legislaturaId?: string;
-    legislatura?: { id?: string; numero: number };
-    sessao?: { dataInicio?: string };
-    membros?: { id: string; cargo?: { id: string; nome: string } }[];
-};
-
-type MesaDetalhe = {
-    id: string;
-    legislatura?: { numero: number };
-    sessao?: { id: string; dataInicio?: string };
-    mensagem?: string;
-    membros: {
-        id: string;
-        parlamentar?: { pessoa?: { nome: string } };
-        cargo?: { nome: string };
-    }[];
-};
-
 export function MesaDiretoraPage() {
     const { canWrite } = usePermissions();
     const { legislaturaId, legislaturaAtiva } = useLegislatura();
-    const [items, setItems] = useState<MesaResumo[]>([]);
+    const [items, setItems] = useState<Board[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [detail, setDetail] = useState<MesaDetalhe | null>(null);
+    const [detail, setDetail] = useState<Board | null>(null);
     const [open, setOpen] = useState(false);
+    const [name, setName] = useState('');
 
     const filtered = useMemo(
         () =>
             legislaturaId
-                ? items.filter(
-                      (m) =>
-                          m.legislaturaId === legislaturaId ||
-                          m.legislatura?.id === legislaturaId,
-                  )
+                ? items.filter((m) => m.legislatureId === legislaturaId)
                 : items,
         [items, legislaturaId],
     );
 
     const load = useCallback(() => {
-        return apiList<MesaResumo>('/mesa-diretora', { limit: 100 }).then(
-            (r) => {
-                setItems(r.data);
-                if (selectedId && !r.data.some((m) => m.id === selectedId)) {
-                    setSelectedId(null);
-                    setDetail(null);
-                }
-            },
-        );
+        return mesaDiretoraApi.list({ limit: 100 }).then((r) => {
+            setItems(r.data);
+            if (selectedId && !r.data.some((m) => m.id === selectedId)) {
+                setSelectedId(null);
+                setDetail(null);
+            }
+        });
     }, [selectedId]);
 
     useEffect(() => {
@@ -71,18 +48,21 @@ export function MesaDiretoraPage() {
             setDetail(null);
             return;
         }
-        api<MesaDetalhe>(`/mesa-diretora/${selectedId}`).then(setDetail);
+        mesaDiretoraApi.getById(selectedId).then(setDetail);
     }, [selectedId]);
 
     async function handleCreate(e: FormEvent) {
         e.preventDefault();
         if (!legislaturaId) return;
-        await api('/mesa-diretora', {
-            method: 'POST',
-            body: JSON.stringify({ legislaturaId }),
+        const created = await mesaDiretoraApi.create({
+            name: name.trim() || `Mesa Diretora ${legislaturaAtiva?.numero ?? ''}ª`,
+            legislatureId: legislaturaId,
+            startDate: new Date().toISOString(),
         });
         setOpen(false);
+        setName('');
         await load();
+        setSelectedId(created.id);
     }
 
     function closeDrawer() {
@@ -92,12 +72,12 @@ export function MesaDiretoraPage() {
 
     function refreshDetail() {
         if (!selectedId) return;
-        api<MesaDetalhe>(`/mesa-diretora/${selectedId}`).then(setDetail);
+        mesaDiretoraApi.getById(selectedId).then(setDetail);
         load();
     }
 
     return (
-        <>
+        <div className="page">
             <PanelToolbar
                 icon={MODULE_ICONS.mesaDiretora}
                 title="Mesa diretora"
@@ -128,8 +108,9 @@ export function MesaDiretoraPage() {
                         <table>
                             <thead>
                                 <tr>
+                                    <th>Nome</th>
                                     <th>Legislatura</th>
-                                    <th>Cargos</th>
+                                    <th>Membros</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -144,8 +125,14 @@ export function MesaDiretoraPage() {
                                         onClick={() => setSelectedId(m.id)}
                                         style={{ cursor: 'pointer' }}
                                     >
-                                        <td>{m.legislatura?.numero ?? '—'}ª</td>
-                                        <td>{m.membros?.length ?? 0}</td>
+                                        <td>{m.name}</td>
+                                        <td>
+                                            {m.legislature?.number ??
+                                                legislaturaAtiva?.numero ??
+                                                '—'}
+                                            ª
+                                        </td>
+                                        <td>{m.members?.length ?? 0}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -153,8 +140,7 @@ export function MesaDiretoraPage() {
                     </div>
                     {filtered.length === 0 && (
                         <p className="table-empty-state">
-                            Nenhuma mesa para esta legislatura. Clique em
-                            &quot;Nova composição&quot;.
+                            Nenhuma mesa para esta legislatura.
                         </p>
                     )}
                 </div>
@@ -164,34 +150,17 @@ export function MesaDiretoraPage() {
                 visible={!!detail}
                 onHide={closeDrawer}
                 wide
-                title={`Mesa — ${detail?.legislatura?.numero ?? '—'}ª legislatura`}
+                title={detail?.name ?? 'Mesa diretora'}
             >
                 {detail && (
                     <>
-                        {detail.mensagem && (
-                            <p className="muted" style={{ fontSize: '0.9rem' }}>
-                                {detail.mensagem}
-                            </p>
-                        )}
                         <h3 className="detail-subtitle">Composição da mesa</h3>
                         <ColegiadoMembersPanel
                             entityLabel="mesa diretora"
-                            membros={detail.membros}
-                            addMembroUrl={`/mesa-diretora/${detail.id}/membros`}
-                            removeMembroUrl={(membroId) =>
-                                `/mesa-diretora/${detail.id}/membros/${membroId}`
-                            }
+                            membros={detail.members}
+                            boardId={detail.id}
                             onChanged={refreshDetail}
-                            requireCargo
                         />
-                        <p
-                            className="muted"
-                            style={{ fontSize: '0.85rem', marginTop: '1rem' }}
-                        >
-                            Depois da mesa definida, cadastre{' '}
-                            <Link to={ROUTES.camara.autores}>autores</Link> e
-                            inicie <Link to={ROUTES.materias}>matérias</Link>.
-                        </p>
                     </>
                 )}
             </NavDrawer>
@@ -202,11 +171,14 @@ export function MesaDiretoraPage() {
                     onClose={() => setOpen(false)}
                 >
                     <form onSubmit={handleCreate}>
-                        <p className="muted" style={{ fontSize: '0.9rem' }}>
-                            Será criada para a legislatura{' '}
-                            <strong>{legislaturaAtiva?.numero ?? '—'}ª</strong>{' '}
-                            (contexto atual).
-                        </p>
+                        <label>
+                            Nome
+                            <input
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder={`Mesa ${legislaturaAtiva?.numero ?? ''}ª legislatura`}
+                            />
+                        </label>
                         <div className="modal-actions">
                             <button
                                 type="button"
@@ -216,12 +188,12 @@ export function MesaDiretoraPage() {
                                 Cancelar
                             </button>
                             <button type="submit" className="btn btn-primary">
-                                Criar e compor membros
+                                Criar
                             </button>
                         </div>
                     </form>
                 </Modal>
             )}
-        </>
+        </div>
     );
 }

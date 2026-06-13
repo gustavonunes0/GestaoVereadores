@@ -1,7 +1,8 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SiglButton } from '../components/common/SiglButton';
-import { api, apiList } from '../api/client';
+import { materiasApi } from '../api/legislative/materias.api';
+import { sessoesApi } from '../api/legislative/sessoes.api';
 import { MODULE_ICONS, ROUTES } from '../app/navigation';
 import { NavDrawer } from '../components/NavDrawer';
 import { ContextBanner } from '../components/ContextBanner';
@@ -31,7 +32,7 @@ import { buildSessaoDataRange } from '../utils/sessaoPesquisa';
 type Sessao = {
     id: string;
     dataInicio: string;
-    tipoSessao?: { nome: string };
+    tipo?: { id?: string; nome: string; label?: string };
     situacao?: { nome: string; codigo?: string };
     mensagem?: string;
     sessaoLegislativaId?: string | null;
@@ -119,17 +120,11 @@ export function SessoesPage() {
     const { dominios } = useDominios();
     const { canWrite } = usePermissions();
     const { showApiError, showSuccess } = useAppToast();
-    const {
-        legislaturaId,
-        sessaoLegislativaId,
-        legislaturaAtiva,
-        legislaturas,
-        refresh,
-    } = useLegislatura();
+    const { legislaturaId, legislaturas, refresh } = useLegislatura();
 
     const baselineFiltros = useMemo(
-        () => defaultFiltros(legislaturaId, sessaoLegislativaId),
-        [legislaturaId, sessaoLegislativaId],
+        () => defaultFiltros(legislaturaId, ''),
+        [legislaturaId],
     );
 
     const [filtrosDraft, setFiltrosDraft] =
@@ -172,10 +167,11 @@ export function SessoesPage() {
     }, [refresh]);
 
     const load = useCallback(() => {
-        return apiList<Sessao>('/sessoes', filtrosToQuery(filtrosApplied)).then(
+        return sessoesApi.list(filtrosToQuery(filtrosApplied)).then(
             (r) => {
-                setItems(r.data);
-                if (selectedId && !r.data.some((s) => s.id === selectedId)) {
+                const rows = r.data as Sessao[];
+                setItems(rows);
+                if (selectedId && !rows.some((s) => s.id === selectedId)) {
                     setSelectedId(null);
                     setDetail(null);
                 }
@@ -192,19 +188,19 @@ export function SessoesPage() {
             setDetail(null);
             return;
         }
-        api<Sessao>(`/sessoes/${selectedId}`).then((d) => {
+        sessoesApi.getById(selectedId).then((raw) => {
+            const d = raw as Sessao;
             setDetail(d);
             setEditDataInicio(toDateTimeLocal(d.dataInicio));
             setEditMensagem(d.mensagem ?? '');
             setEditSessaoLegislativaId(
                 d.sessaoLegislativaId ??
                     d.sessaoLegislativa?.id ??
-                    sessaoLegislativaId ??
                     '',
             );
             if (dominios) {
                 const tipo = dominios.tiposSessao.find(
-                    (t) => t.nome === d.tipoSessao?.nome,
+                    (t) => t.nome === d.tipo?.nome,
                 );
                 const sit = dominios.situacoesSessao.find(
                     (s) => s.nome === d.situacao?.nome,
@@ -217,7 +213,7 @@ export function SessoesPage() {
                 );
             }
         });
-    }, [selectedId, dominios, sessaoLegislativaId]);
+    }, [selectedId, dominios]);
 
     useEffect(() => {
         if (dominios && open) {
@@ -244,24 +240,12 @@ export function SessoesPage() {
         [sessaoEmAndamento, canWrite],
     );
 
-    const sessoesLegislativasEdit = useMemo(() => {
-        const legId = filtrosApplied.legislaturaId || legislaturaId;
-        const leg = legislaturasList.find((l) => l.id === legId);
-        return (
-            leg?.sessoesLegislativas ??
-            legislaturaAtiva?.sessoesLegislativas ??
-            []
-        );
-    }, [
-        filtrosApplied.legislaturaId,
-        legislaturaId,
-        legislaturasList,
-        legislaturaAtiva,
-    ]);
+    /** Sessões legislativas legadas — sem endpoint no modelo novo de legislaturas. */
+    const sessoesLegislativasEdit = useMemo(() => [] as { id: string; numero: number }[], []);
 
     function refreshDetail() {
         if (!selectedId) return;
-        api<Sessao>(`/sessoes/${selectedId}`).then(setDetail);
+        sessoesApi.getById(selectedId).then((d) => setDetail(d as Sessao));
         void load();
     }
 
@@ -294,15 +278,12 @@ export function SessoesPage() {
         if (!selectedId || !canWrite) return;
         setSavingDetail(true);
         try {
-            await api(`/sessoes/${selectedId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({
-                    dataInicio: new Date(editDataInicio).toISOString(),
-                    tipoSessaoId: editTipoSessaoId,
-                    situacaoId: editSituacaoId,
-                    sessaoLegislativaId: editSessaoLegislativaId || undefined,
-                    mensagem: editMensagem.trim() || undefined,
-                }),
+            await sessoesApi.update(selectedId, {
+                dataInicio: new Date(editDataInicio).toISOString(),
+                tipoSessaoId: editTipoSessaoId,
+                situacaoId: editSituacaoId,
+                sessaoLegislativaId: editSessaoLegislativaId || undefined,
+                mensagem: editMensagem.trim() || undefined,
             });
             showSuccess('Sessão atualizada.');
             refreshDetail();
@@ -316,18 +297,13 @@ export function SessoesPage() {
     async function handleCreate(e: FormEvent) {
         e.preventDefault();
         try {
-            await api('/sessoes', {
-                method: 'POST',
-                body: JSON.stringify({
-                    dataInicio: new Date(createDataInicio).toISOString(),
-                    tipoSessaoId: createTipoSessaoId,
-                    situacaoId: createSituacaoId,
-                    sessaoLegislativaId:
-                        filtrosApplied.sessaoLegislativaId ||
-                        sessaoLegislativaId ||
-                        undefined,
-                    mensagem: createMensagem.trim() || undefined,
-                }),
+            await sessoesApi.create({
+                dataInicio: new Date(createDataInicio).toISOString(),
+                tipoSessaoId: createTipoSessaoId,
+                situacaoId: createSituacaoId,
+                sessaoLegislativaId:
+                    filtrosApplied.sessaoLegislativaId || undefined,
+                mensagem: createMensagem.trim() || undefined,
             });
             setOpen(false);
             setCreateMensagem('');
@@ -342,9 +318,9 @@ export function SessoesPage() {
         e.preventDefault();
         if (!selectedId || !podeIncluirPauta) return;
         try {
-            await api(`/sessoes/${selectedId}/pauta`, {
-                method: 'POST',
-                body: JSON.stringify({ materiaId, ordem: ordemPauta }),
+            await sessoesApi.addPautaItem(selectedId, {
+                materiaId,
+                ordem: ordemPauta,
             });
             setPautaOpen(false);
             showSuccess('Matéria incluída na pauta.');
@@ -357,13 +333,12 @@ export function SessoesPage() {
     async function openPautaModal() {
         if (!podeIncluirPauta) return;
         try {
-            const response = await apiList<Materia>('/materias', {
+            const response = await materiasApi.list({
                 limit: 100,
                 status: MATERIA_STATUS.EM_TRAMITACAO,
             });
-            const elegiveis = response.data.filter((m) =>
-                canAddMateriaToPauta(m),
-            );
+            const lista = response.data as Materia[];
+            const elegiveis = lista.filter((m) => canAddMateriaToPauta(m));
             setMaterias(elegiveis);
             if (elegiveis[0]) setMateriaId(elegiveis[0].id);
             setOrdemPauta((detail?.pautaItens?.length ?? 0) + 1);
@@ -453,7 +428,7 @@ export function SessoesPage() {
                                                 s.dataInicio,
                                             ).toLocaleString('pt-BR')}
                                         </td>
-                                        <td>{s.tipoSessao?.nome ?? '—'}</td>
+                                        <td>{s.tipo?.nome ?? '—'}</td>
                                         <td>{s.situacao?.nome ?? '—'}</td>
                                         <td>
                                             {s.sessaoLegislativa?.legislatura

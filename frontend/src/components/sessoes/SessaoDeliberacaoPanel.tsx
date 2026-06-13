@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { SiglButton } from '../common/SiglButton';
-import { api, apiList } from '../../api/client';
+import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
+import { sessoesApi } from '../../api/legislative/sessoes.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { Modal } from '../Modal';
 import {
@@ -94,8 +95,22 @@ export function SessaoDeliberacaoPanel({
     const podeDeliberar = canWrite && sessaoEmAndamento;
 
     useEffect(() => {
-        apiList<ParlamentarOption>('/parlamentares', { limit: 200 })
-            .then((r) => setParlamentares(r.data.filter((p) => p.ativo)))
+        parlamentaresApi.list({ limit: 200 })
+            .then((r) =>
+                setParlamentares(
+                    r.data
+                        .filter((p) => p.status === 'ACTIVE')
+                        .map((p) => ({
+                            id: p.id,
+                            ativo: p.status === 'ACTIVE',
+                            pessoa: {
+                                nome:
+                                    p.parliamentaryName ||
+                                    `${p.user.firstName} ${p.user.lastName}`.trim(),
+                            },
+                        })),
+                ),
+            )
             .catch(() => setParlamentares([]));
     }, []);
 
@@ -113,13 +128,10 @@ export function SessaoDeliberacaoPanel({
         if (!parlamentarPresencaId) return;
         setBusy(true);
         try {
-            await api(`/sessoes/${sessaoId}/presencas`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    parlamentarId: parlamentarPresencaId,
-                    presente,
-                    situacao: presente ? 'PRESENTE' : 'AUSENTE',
-                }),
+            await sessoesApi.registrarPresenca(sessaoId, {
+                parlamentarId: parlamentarPresencaId,
+                presente,
+                situacao: presente ? 'PRESENTE' : 'AUSENTE',
             });
             setPresencaOpen(false);
             showSuccess('Presença registrada.');
@@ -134,9 +146,8 @@ export function SessaoDeliberacaoPanel({
     async function handleAbrirVotacao(pautaItemId: string) {
         setBusy(true);
         try {
-            await api(`/sessoes/${sessaoId}/pauta/${pautaItemId}/votacao`, {
-                method: 'POST',
-                body: JSON.stringify({ tipoVotacao }),
+            await sessoesApi.abrirVotacao(sessaoId, pautaItemId, {
+                tipoVotacao,
             });
             setAbrirVotacaoItemId(null);
             showSuccess('Votação aberta.');
@@ -152,16 +163,10 @@ export function SessaoDeliberacaoPanel({
         if (!votoParlamentarId) return;
         setBusy(true);
         try {
-            await api(
-                `/sessoes/${sessaoId}/pauta/${pautaItemId}/votacao/votos`,
-                {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        parlamentarId: votoParlamentarId,
-                        voto: votoValor,
-                    }),
-                },
-            );
+            await sessoesApi.registrarVoto(sessaoId, pautaItemId, {
+                parlamentarId: votoParlamentarId,
+                voto: votoValor,
+            });
             showSuccess('Voto registrado.');
             onUpdated();
         } catch (err) {
@@ -183,13 +188,7 @@ export function SessaoDeliberacaoPanel({
             body.abstencoes = abstencoes;
         }
         try {
-            await api(
-                `/sessoes/${sessaoId}/pauta/${pautaItemId}/votacao/finalizar`,
-                {
-                    method: 'PATCH',
-                    body: JSON.stringify(body),
-                },
-            );
+            await sessoesApi.finalizarVotacao(sessaoId, pautaItemId, body);
             showSuccess(
                 'Votação finalizada. Resultado aplicado à pauta e à matéria quando aplicável.',
             );

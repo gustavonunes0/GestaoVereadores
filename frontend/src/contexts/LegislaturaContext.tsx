@@ -7,26 +7,32 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import { apiList } from '../api/client';
+import { legislaturasApi, type Legislature } from '../api/legislative/legislaturas.api';
 
-export type SessaoLegislativaRef = { id: string; numero: number };
 export type LegislaturaRef = {
     id: string;
     numero: number;
-    dataInicio?: string;
+    dataInicio: string;
     dataFim?: string;
-    sessoesLegislativas?: SessaoLegislativaRef[];
+    isCurrent: boolean;
 };
+
+function mapLegislature(l: Legislature): LegislaturaRef {
+    return {
+        id: l.id,
+        numero: l.number,
+        dataInicio: l.startDate,
+        dataFim: l.endDate,
+        isCurrent: l.isCurrent,
+    };
+}
 
 type LegislaturaContextValue = {
     legislaturas: LegislaturaRef[];
     legislaturaId: string;
-    sessaoLegislativaId: string;
     legislaturaAtiva: LegislaturaRef | null;
-    sessaoLegislativaAtiva: SessaoLegislativaRef | null;
     loading: boolean;
     setLegislaturaId: (id: string) => void;
-    setSessaoLegislativaId: (id: string) => void;
     refresh: () => Promise<LegislaturaRef[]>;
 };
 
@@ -34,18 +40,14 @@ const STORAGE_KEY = 'sigl_legislatura_ctx';
 
 const LegislaturaContext = createContext<LegislaturaContextValue | null>(null);
 
-function loadStored(): { legislaturaId: string; sessaoLegislativaId: string } {
+function loadStored(): { legislaturaId: string } {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw)
-            return JSON.parse(raw) as {
-                legislaturaId: string;
-                sessaoLegislativaId: string;
-            };
+        if (raw) return JSON.parse(raw) as { legislaturaId: string };
     } catch {
         /* ignore */
     }
-    return { legislaturaId: '', sessaoLegislativaId: '' };
+    return { legislaturaId: '' };
 }
 
 export function LegislaturaProvider({ children }: { children: ReactNode }) {
@@ -54,16 +56,12 @@ export function LegislaturaProvider({ children }: { children: ReactNode }) {
     const [legislaturaId, setLegislaturaIdState] = useState(
         () => loadStored().legislaturaId,
     );
-    const [sessaoLegislativaId, setSessaoLegislativaIdState] = useState(
-        () => loadStored().sessaoLegislativaId,
-    );
 
     const refresh = useCallback(async () => {
-        const res = await apiList<LegislaturaRef>('/legislaturas', {
-            limit: 20,
-        });
-        setLegislaturas(res.data);
-        return res.data;
+        const res = await legislaturasApi.list({ limit: 50 });
+        const list = res.data.map(mapLegislature);
+        setLegislaturas(list);
+        return list;
     }, []);
 
     useEffect(() => {
@@ -71,20 +69,13 @@ export function LegislaturaProvider({ children }: { children: ReactNode }) {
             .then((list) => {
                 if (!list.length) return;
                 const stored = loadStored();
-                let legId =
+                const current = list.find((l) => l.isCurrent);
+                const legId =
                     stored.legislaturaId &&
                     list.some((l) => l.id === stored.legislaturaId)
                         ? stored.legislaturaId
-                        : list[0].id;
-                const leg = list.find((l) => l.id === legId)!;
-                const sessoes = leg.sessoesLegislativas ?? [];
-                const sessId =
-                    stored.sessaoLegislativaId &&
-                    sessoes.some((s) => s.id === stored.sessaoLegislativaId)
-                        ? stored.sessaoLegislativaId
-                        : (sessoes[0]?.id ?? '');
+                        : (current?.id ?? list[0].id);
                 setLegislaturaIdState(legId);
-                setSessaoLegislativaIdState(sessId);
             })
             .finally(() => setLoading(false));
     }, [refresh]);
@@ -93,23 +84,13 @@ export function LegislaturaProvider({ children }: { children: ReactNode }) {
         if (legislaturaId) {
             localStorage.setItem(
                 STORAGE_KEY,
-                JSON.stringify({ legislaturaId, sessaoLegislativaId }),
+                JSON.stringify({ legislaturaId }),
             );
         }
-    }, [legislaturaId, sessaoLegislativaId]);
+    }, [legislaturaId]);
 
-    const setLegislaturaId = useCallback(
-        (id: string) => {
-            setLegislaturaIdState(id);
-            const leg = legislaturas.find((l) => l.id === id);
-            const primeira = leg?.sessoesLegislativas?.[0];
-            setSessaoLegislativaIdState(primeira?.id ?? '');
-        },
-        [legislaturas],
-    );
-
-    const setSessaoLegislativaId = useCallback((id: string) => {
-        setSessaoLegislativaIdState(id);
+    const setLegislaturaId = useCallback((id: string) => {
+        setLegislaturaIdState(id);
     }, []);
 
     const legislaturaAtiva = useMemo(
@@ -117,35 +98,21 @@ export function LegislaturaProvider({ children }: { children: ReactNode }) {
         [legislaturas, legislaturaId],
     );
 
-    const sessaoLegislativaAtiva = useMemo(
-        () =>
-            legislaturaAtiva?.sessoesLegislativas?.find(
-                (s) => s.id === sessaoLegislativaId,
-            ) ?? null,
-        [legislaturaAtiva, sessaoLegislativaId],
-    );
-
     const value = useMemo(
         () => ({
             legislaturas,
             legislaturaId,
-            sessaoLegislativaId,
             legislaturaAtiva,
-            sessaoLegislativaAtiva,
             loading,
             setLegislaturaId,
-            setSessaoLegislativaId,
             refresh,
         }),
         [
             legislaturas,
             legislaturaId,
-            sessaoLegislativaId,
             legislaturaAtiva,
-            sessaoLegislativaAtiva,
             loading,
             setLegislaturaId,
-            setSessaoLegislativaId,
             refresh,
         ],
     );
