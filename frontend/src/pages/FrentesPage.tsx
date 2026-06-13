@@ -1,37 +1,36 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { MODULE_ICONS } from '../app/navigation';
-import { api, apiList } from '../api/client';
-import { IntGestMensagemField } from '../components/forms/IntGestMensagemField';
+import {
+    frentesApi,
+    type ParliamentaryFront,
+} from '../api/legislative/frentes.api';
 import { Modal } from '../components/Modal';
 import { PanelToolbar } from '../components/PanelToolbar';
 import { usePermissions } from '../hooks/usePermissions';
-
-type Frente = {
-    id: string;
-    nome: string;
-    ativa: boolean;
-    dataEntrada?: string;
-    dataSaida?: string;
-};
 
 function formatDate(iso?: string) {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('pt-BR');
 }
 
+const STATUS_LABEL: Record<string, string> = {
+    ACTIVE: 'Ativa',
+    INACTIVE: 'Inativa',
+    FINISHED: 'Encerrada',
+};
+
 export function FrentesPage() {
     const { canWrite } = usePermissions();
-    const [items, setItems] = useState<Frente[]>([]);
+    const [items, setItems] = useState<ParliamentaryFront[]>([]);
     const [open, setOpen] = useState(false);
-    const [nome, setNome] = useState('');
-    const [mensagem, setMensagem] = useState('');
-    const [dataEntrada, setDataEntrada] = useState('');
-    const [dataSaida, setDataSaida] = useState('');
+    const [name, setName] = useState('');
+    const [theme, setTheme] = useState('');
+    const [description, setDescription] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     function load() {
-        apiList<Frente>('/frentes', { limit: 100 }).then((r) =>
-            setItems(r.data),
-        );
+        frentesApi.list({ limit: 100 }).then((r) => setItems(r.data));
     }
 
     useEffect(() => {
@@ -40,29 +39,26 @@ export function FrentesPage() {
 
     async function handleCreate(e: FormEvent) {
         e.preventDefault();
-        await api('/frentes', {
-            method: 'POST',
-            body: JSON.stringify({
-                nome,
-                mensagem: mensagem.trim() || undefined,
-                dataEntrada: dataEntrada
-                    ? new Date(dataEntrada).toISOString()
-                    : undefined,
-                dataSaida: dataSaida
-                    ? new Date(dataSaida).toISOString()
-                    : undefined,
-            }),
+        await frentesApi.create({
+            name: name.trim(),
+            theme: theme.trim(),
+            description: description.trim() || undefined,
+            startDate: startDate
+                ? new Date(startDate).toISOString()
+                : undefined,
+            endDate: endDate ? new Date(endDate).toISOString() : undefined,
         });
         setOpen(false);
-        setNome('');
-        setMensagem('');
-        setDataEntrada('');
-        setDataSaida('');
+        setName('');
+        setTheme('');
+        setDescription('');
+        setStartDate('');
+        setEndDate('');
         load();
     }
 
     return (
-        <>
+        <div className="page">
             <PanelToolbar
                 icon={MODULE_ICONS.frentes}
                 title="Frentes parlamentares"
@@ -83,18 +79,22 @@ export function FrentesPage() {
                     <thead>
                         <tr>
                             <th>Nome</th>
-                            <th>Data entrada</th>
-                            <th>Data saída</th>
-                            <th>Ativa</th>
+                            <th>Tema</th>
+                            <th>Início</th>
+                            <th>Fim</th>
+                            <th>Situação</th>
                         </tr>
                     </thead>
                     <tbody>
                         {items.map((f) => (
                             <tr key={f.id}>
-                                <td>{f.nome}</td>
-                                <td>{formatDate(f.dataEntrada)}</td>
-                                <td>{formatDate(f.dataSaida)}</td>
-                                <td>{f.ativa ? 'Sim' : 'Não'}</td>
+                                <td>{f.name}</td>
+                                <td>{f.theme}</td>
+                                <td>{formatDate(f.startDate)}</td>
+                                <td>{formatDate(f.endDate)}</td>
+                                <td>
+                                    {STATUS_LABEL[f.status] ?? f.status}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -106,37 +106,49 @@ export function FrentesPage() {
                         <label>
                             Nome *
                             <input
-                                value={nome}
-                                onChange={(e) => setNome(e.target.value)}
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
                                 required
+                            />
+                        </label>
+                        <label>
+                            Tema *
+                            <input
+                                value={theme}
+                                onChange={(e) => setTheme(e.target.value)}
+                                required
+                            />
+                        </label>
+                        <label>
+                            Descrição
+                            <textarea
+                                value={description}
+                                onChange={(e) =>
+                                    setDescription(e.target.value)
+                                }
+                                rows={3}
                             />
                         </label>
                         <div className="form-grid-2">
                             <label>
-                                Data de entrada
+                                Data de início
                                 <input
                                     type="date"
-                                    value={dataEntrada}
+                                    value={startDate}
                                     onChange={(e) =>
-                                        setDataEntrada(e.target.value)
+                                        setStartDate(e.target.value)
                                     }
                                 />
                             </label>
                             <label>
-                                Data de saída
+                                Data de fim
                                 <input
                                     type="date"
-                                    value={dataSaida}
-                                    onChange={(e) =>
-                                        setDataSaida(e.target.value)
-                                    }
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
                                 />
                             </label>
                         </div>
-                        <IntGestMensagemField
-                            value={mensagem}
-                            onChange={setMensagem}
-                        />
                         <div className="modal-actions">
                             <button
                                 type="button"
@@ -152,6 +164,6 @@ export function FrentesPage() {
                     </form>
                 </Modal>
             )}
-        </>
+        </div>
     );
 }

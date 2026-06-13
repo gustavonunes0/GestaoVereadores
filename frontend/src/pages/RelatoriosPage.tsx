@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api } from '../api/client';
+import { API_PATHS } from '../api/paths';
 import { ActionCard } from '../components/common/ActionCard';
 import { SiglButton } from '../components/common/SiglButton';
 import { MODULE_ICONS } from '../app/navigation';
@@ -16,31 +17,27 @@ type RelatorioResult = {
 };
 
 export function RelatoriosPage() {
-    const {
-        legislaturaId,
-        sessaoLegislativaId,
-        legislaturaAtiva,
-        sessaoLegislativaAtiva,
-    } = useLegislatura();
+    const { legislaturaId, legislaturaAtiva } = useLegislatura();
     const { showSuccess, showApiError } = useAppToast();
     const [result, setResult] = useState<RelatorioResult | null>(null);
+    const [sessaoLegislativaId, setSessaoLegislativaId] = useState('');
     const [loadingAtividade, setLoadingAtividade] = useState(false);
     const [loadingPresenca, setLoadingPresenca] = useState(false);
 
-    const contextReady = Boolean(legislaturaId && sessaoLegislativaId);
+    const contextReady = Boolean(legislaturaId && sessaoLegislativaId.trim());
     const loading = loadingAtividade || loadingPresenca;
 
     async function gerarAtividadeCompleto() {
-        if (!legislaturaId || !sessaoLegislativaId) return;
+        if (!legislaturaId || !sessaoLegislativaId.trim()) return;
         setLoadingAtividade(true);
         try {
             const data = await api<RelatorioResult>(
-                '/relatorios/atividade-legislativa/completo',
+                API_PATHS.relatorios.atividadeCompleto,
                 {
                     method: 'POST',
                     body: JSON.stringify({
                         legislaturaId,
-                        sessaoLegislativaId,
+                        sessaoLegislativaId: sessaoLegislativaId.trim(),
                     }),
                 },
             );
@@ -54,13 +51,19 @@ export function RelatoriosPage() {
     }
 
     async function gerarPresenca() {
-        if (!legislaturaId || !sessaoLegislativaId) return;
+        if (!legislaturaId || !sessaoLegislativaId.trim()) return;
         setLoadingPresenca(true);
         try {
-            const data = await api<RelatorioResult>('/relatorios/presenca', {
-                method: 'POST',
-                body: JSON.stringify({ legislaturaId, sessaoLegislativaId }),
-            });
+            const data = await api<RelatorioResult>(
+                API_PATHS.relatorios.presenca,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        legislaturaId,
+                        sessaoLegislativaId: sessaoLegislativaId.trim(),
+                    }),
+                },
+            );
             setResult(data);
             showSuccess('Relatório de presença gerado.');
         } catch (err) {
@@ -75,21 +78,28 @@ export function RelatoriosPage() {
             <PageHeader
                 icon={MODULE_ICONS.relatorios}
                 title="Relatórios"
-                subtitle="Indicadores da legislatura e sessão legislativa selecionadas no topo."
+                subtitle="Indicadores por legislatura. Informe o ID da sessão legislativa legada quando necessário."
             />
 
             <ContextBanner
                 step="Análise"
-                hint="Usa o mesmo contexto de matérias e sessões."
+                hint="Relatórios completos ainda usam o modelo legado de sessão legislativa."
             />
 
             {legislaturaAtiva && (
                 <p className="text-muted page-context">
-                    Contexto: Legislatura {legislaturaAtiva.numero}
-                    {sessaoLegislativaAtiva &&
-                        ` · Sessão legislativa ${sessaoLegislativaAtiva.numero}`}
+                    Contexto: Legislatura {legislaturaAtiva.numero}ª
                 </p>
             )}
+
+            <label style={{ maxWidth: '28rem', display: 'block' }}>
+                ID da sessão legislativa (legado)
+                <input
+                    value={sessaoLegislativaId}
+                    onChange={(e) => setSessaoLegislativaId(e.target.value)}
+                    placeholder="UUID da sessão legislativa"
+                />
+            </label>
 
             <div className="sigl-card-grid">
                 <ActionCard

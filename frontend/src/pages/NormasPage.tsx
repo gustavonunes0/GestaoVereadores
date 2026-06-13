@@ -146,7 +146,9 @@ export function NormasPage() {
 
     async function openCreateDialog() {
         try {
-            const response = await apiList<MateriaOption>('/materias', {
+            const response = await apiList<MateriaOption>(
+                '/legislative/materias',
+                {
                 limit: 100,
                 status: MATERIA_STATUS.APROVADA,
             });

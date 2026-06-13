@@ -1,96 +1,90 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { api, apiList } from '../../api/client';
+import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
+import { mesaDiretoraApi, type BoardRole } from '../../api/legislative/mesa-diretora.api';
 import { Modal } from '../Modal';
-import { useDominios } from '../../hooks/useDominios';
 import { usePermissions } from '../../hooks/usePermissions';
 
 export type MembroLinha = {
     id: string;
-    parlamentar?: { id?: string; pessoa?: { nome: string } };
-    cargo?: { id?: string; nome: string };
-    titular?: boolean;
-};
-
-type ParlamentarOption = {
-    id: string;
-    pessoa: { nome: string };
+    parliamentarian?: {
+        id?: string;
+        parliamentaryName?: string;
+    };
+    boardRole?: { id?: string; name: string };
 };
 
 type Props = {
     entityLabel: string;
     membros: MembroLinha[];
-    addMembroUrl: string;
-    removeMembroUrl: (membroId: string) => string;
+    boardId: string;
     onChanged: () => void;
-    /** Comissões: titular/suplente */
-    showTitular?: boolean;
-    /** Mesa: cargo obrigatório via domínios */
-    requireCargo?: boolean;
 };
 
 export function ColegiadoMembersPanel({
     entityLabel,
     membros,
-    addMembroUrl,
-    removeMembroUrl,
+    boardId,
     onChanged,
-    showTitular = false,
-    requireCargo = false,
 }: Props) {
     const { canWrite } = usePermissions();
-    const { dominios } = useDominios();
     const [open, setOpen] = useState(false);
-    const [parlamentares, setParlamentares] = useState<ParlamentarOption[]>([]);
-    const [loadingParlamentares, setLoadingParlamentares] = useState(false);
+    const [parlamentares, setParlamentares] = useState<
+        { id: string; parliamentaryName: string }[]
+    >([]);
+    const [cargos, setCargos] = useState<BoardRole[]>([]);
+    const [loading, setLoading] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const [parlamentarId, setParlamentarId] = useState('');
-    const [cargoId, setCargoId] = useState('');
-    const [titular, setTitular] = useState(true);
+    const [parliamentarianId, setParliamentarianId] = useState('');
+    const [boardRoleId, setBoardRoleId] = useState('');
 
     useEffect(() => {
         if (!open) return;
-        setLoadingParlamentares(true);
+        setLoading(true);
         setLoadError(null);
-        apiList<ParlamentarOption>('/parlamentares', { limit: 100 })
-            .then((r) => {
-                const lista = r.data ?? [];
+        Promise.all([
+            parlamentaresApi.list({ limit: 100 }),
+            mesaDiretoraApi.listCargos(),
+        ])
+            .then(([parlRes, cargosRes]) => {
+                const lista = parlRes.data.map((p) => ({
+                    id: p.id,
+                    parliamentaryName: p.parliamentaryName,
+                }));
                 setParlamentares(lista);
-                setParlamentarId(lista[0]?.id ?? '');
+                setParliamentarianId(lista[0]?.id ?? '');
+                setCargos(cargosRes);
+                setBoardRoleId(cargosRes[0]?.id ?? '');
             })
             .catch((err: unknown) => {
-                setParlamentares([]);
-                setParlamentarId('');
                 setLoadError(
                     err instanceof Error
                         ? err.message
-                        : 'Não foi possível carregar parlamentares.',
+                        : 'Não foi possível carregar dados.',
                 );
             })
-            .finally(() => setLoadingParlamentares(false));
-        if (requireCargo && dominios?.cargosMesa[0]) {
-            setCargoId(dominios.cargosMesa[0].id);
-        }
-    }, [open, requireCargo, dominios]);
+            .finally(() => setLoading(false));
+    }, [open]);
 
     async function handleAdd(e: FormEvent) {
         e.preventDefault();
-        const body: Record<string, unknown> = { parlamentarId };
-        if (requireCargo) body.cargoId = cargoId;
-        if (showTitular) body.titular = titular;
-        await api(addMembroUrl, { method: 'POST', body: JSON.stringify(body) });
+        await mesaDiretoraApi.addMembro(boardId, {
+            parliamentarianId,
+            boardRoleId,
+        });
         setOpen(false);
         onChanged();
     }
 
     async function handleRemove(membro: MembroLinha) {
-        const nome = membro.parlamentar?.pessoa?.nome ?? 'este parlamentar';
+        const nome =
+            membro.parliamentarian?.parliamentaryName ?? 'este parlamentar';
         if (!confirm(`Remover ${nome} da ${entityLabel}?`)) return;
-        await api(removeMembroUrl(membro.id), { method: 'DELETE' });
+        await mesaDiretoraApi.removeMembro(boardId, membro.id);
         onChanged();
     }
 
     const cargosOcupados = new Set(
-        membros.map((m) => m.cargo?.id).filter(Boolean) as string[],
+        membros.map((m) => m.boardRole?.id).filter(Boolean) as string[],
     );
 
     return (
@@ -109,28 +103,17 @@ export function ColegiadoMembersPanel({
 
             {membros.length === 0 ? (
                 <p className="muted">
-                    Nenhum membro na composição. Adicione parlamentares e
-                    cargos.
+                    Nenhum membro na composição. Adicione parlamentares e cargos.
                 </p>
             ) : (
                 <ul className="membros-mesa-list">
                     {membros.map((m) => (
                         <li key={m.id} className="membro-mesa-item">
                             <div>
-                                <strong>{m.cargo?.nome ?? 'Membro'}</strong>
+                                <strong>{m.boardRole?.name ?? 'Membro'}</strong>
                                 <span>
-                                    {m.parlamentar?.pessoa?.nome ?? '—'}
+                                    {m.parliamentarian?.parliamentaryName ?? '—'}
                                 </span>
-                                {showTitular && (
-                                    <span
-                                        className="badge badge-muted"
-                                        style={{ marginLeft: '0.35rem' }}
-                                    >
-                                        {m.titular !== false
-                                            ? 'Titular'
-                                            : 'Suplente'}
-                                    </span>
-                                )}
                             </div>
                             {canWrite && (
                                 <button
@@ -155,91 +138,53 @@ export function ColegiadoMembersPanel({
                         <label>
                             Parlamentar *
                             <select
-                                value={parlamentarId}
+                                value={parliamentarianId}
                                 onChange={(e) =>
-                                    setParlamentarId(e.target.value)
+                                    setParliamentarianId(e.target.value)
                                 }
                                 required
-                                disabled={
-                                    loadingParlamentares ||
-                                    parlamentares.length === 0
-                                }
+                                disabled={loading || parlamentares.length === 0}
                             >
                                 {parlamentares.length === 0 ? (
                                     <option value="">
-                                        {loadingParlamentares
+                                        {loading
                                             ? 'Carregando...'
-                                            : 'Nenhum parlamentar cadastrado'}
+                                            : 'Nenhum parlamentar'}
                                     </option>
                                 ) : (
                                     parlamentares.map((p) => (
                                         <option key={p.id} value={p.id}>
-                                            {p.pessoa?.nome ?? 'Sem nome'}
+                                            {p.parliamentaryName}
                                         </option>
                                     ))
                                 )}
                             </select>
                         </label>
                         {loadError && (
-                            <p
-                                className="alert alert-warn"
-                                style={{ marginTop: '0.5rem' }}
+                            <p className="alert alert-warn">{loadError}</p>
+                        )}
+                        <label>
+                            Cargo na mesa *
+                            <select
+                                value={boardRoleId}
+                                onChange={(e) => setBoardRoleId(e.target.value)}
+                                required
+                                disabled={loading || cargos.length === 0}
                             >
-                                {loadError}
-                            </p>
-                        )}
-                        {!loadError &&
-                            !loadingParlamentares &&
-                            parlamentares.length === 0 && (
-                                <p
-                                    className="muted"
-                                    style={{ fontSize: '0.85rem' }}
-                                >
-                                    Cadastre vereadores em Estrutura da Câmara →
-                                    Parlamentares.
-                                </p>
-                            )}
-                        {requireCargo && dominios && (
-                            <label>
-                                Cargo na mesa *
-                                <select
-                                    value={cargoId}
-                                    onChange={(e) => setCargoId(e.target.value)}
-                                    required
-                                >
-                                    {dominios.cargosMesa.map((c) => (
-                                        <option
-                                            key={c.id}
-                                            value={c.id}
-                                            disabled={cargosOcupados.has(c.id)}
-                                        >
-                                            {c.nome}
-                                            {cargosOcupados.has(c.id)
-                                                ? ' (ocupado)'
-                                                : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-                        )}
-                        {showTitular && (
-                            <label
-                                style={{
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                }}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={titular}
-                                    onChange={(e) =>
-                                        setTitular(e.target.checked)
-                                    }
-                                />
-                                Titular
-                            </label>
-                        )}
+                                {cargos.map((c) => (
+                                    <option
+                                        key={c.id}
+                                        value={c.id}
+                                        disabled={cargosOcupados.has(c.id)}
+                                    >
+                                        {c.name}
+                                        {cargosOcupados.has(c.id)
+                                            ? ' (ocupado)'
+                                            : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
                         <div className="modal-actions">
                             <button
                                 type="button"
@@ -252,9 +197,9 @@ export function ColegiadoMembersPanel({
                                 type="submit"
                                 className="btn btn-primary"
                                 disabled={
-                                    loadingParlamentares ||
-                                    parlamentares.length === 0 ||
-                                    (requireCargo && !cargoId)
+                                    loading ||
+                                    !parliamentarianId ||
+                                    !boardRoleId
                                 }
                             >
                                 Salvar

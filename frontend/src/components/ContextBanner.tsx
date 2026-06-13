@@ -7,8 +7,7 @@ type Props = {
 };
 
 export function ContextBanner({ step, hint }: Props) {
-    const { legislaturaAtiva, sessaoLegislativaAtiva, loading } =
-        useLegislatura();
+    const { legislaturaAtiva, loading } = useLegislatura();
 
     if (loading || !legislaturaAtiva) return null;
 
@@ -21,13 +20,8 @@ export function ContextBanner({ step, hint }: Props) {
                     </span>
                 )}
                 <span>
-                    <strong>Legislatura {legislaturaAtiva.numero}</strong>
-                    {sessaoLegislativaAtiva && (
-                        <>
-                            {' '}
-                            · Sessão legislativa {sessaoLegislativaAtiva.numero}
-                        </>
-                    )}
+                    <strong>Legislatura {legislaturaAtiva.numero}ª</strong>
+                    {legislaturaAtiva.isCurrent && ' · em exercício'}
                 </span>
                 {hint && <span className="context-hint">{hint}</span>}
             </div>

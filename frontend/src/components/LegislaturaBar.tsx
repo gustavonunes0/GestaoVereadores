@@ -2,15 +2,8 @@ import { Link } from 'react-router-dom';
 import { useLegislatura } from '../contexts/LegislaturaContext';
 
 export function LegislaturaBar() {
-    const {
-        legislaturas,
-        legislaturaId,
-        sessaoLegislativaId,
-        legislaturaAtiva,
-        loading,
-        setLegislaturaId,
-        setSessaoLegislativaId,
-    } = useLegislatura();
+    const { legislaturas, legislaturaId, loading, setLegislaturaId } =
+        useLegislatura();
 
     if (loading) {
         return (
@@ -28,14 +21,10 @@ export function LegislaturaBar() {
         );
     }
 
-    const sessoes = legislaturaAtiva?.sessoesLegislativas ?? [];
-
     return (
         <div className="legislatura-bar">
             <label className="legislatura-bar-field">
-                <span className="legislatura-bar-field__label">
-                    Legislatura
-                </span>
+                <span className="legislatura-bar-field__label">Legislatura</span>
                 <select
                     value={legislaturaId}
                     onChange={(e) => setLegislaturaId(e.target.value)}
@@ -43,29 +32,11 @@ export function LegislaturaBar() {
                 >
                     {legislaturas.map((l) => (
                         <option key={l.id} value={l.id}>
-                            Legislatura {l.numero}
+                            {l.numero}ª{l.isCurrent ? ' (atual)' : ''}
                         </option>
                     ))}
                 </select>
             </label>
-            {sessoes.length > 0 && (
-                <label className="legislatura-bar-field">
-                    <span className="legislatura-bar-field__label">
-                        Sessão legislativa
-                    </span>
-                    <select
-                        value={sessaoLegislativaId}
-                        onChange={(e) => setSessaoLegislativaId(e.target.value)}
-                        aria-label="Sessão legislativa"
-                    >
-                        {sessoes.map((s) => (
-                            <option key={s.id} value={s.id}>
-                                Sessão leg. {s.numero}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-            )}
         </div>
     );
 }

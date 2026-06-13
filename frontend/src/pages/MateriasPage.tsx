@@ -10,7 +10,9 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { MultiSelect } from 'primereact/multiselect';
 import { SelectButton } from 'primereact/selectbutton';
 import { Tag } from 'primereact/tag';
-import { api, apiList } from '../api/client';
+import { guestUsersApi } from '../api/guest-users.api';
+import { materiasApi } from '../api/legislative/materias.api';
+import { parlamentaresApi } from '../api/legislative/parlamentares.api';
 import { MODULE_ICONS } from '../app/navigation';
 import { ContextBanner } from '../components/ContextBanner';
 import { IntGestMensagemField } from '../components/forms/IntGestMensagemField';
@@ -128,8 +130,8 @@ export function MateriasPage() {
             params.emTramitacao = false;
         }
         try {
-            const response = await apiList<Materia>('/materias', params);
-            setItems(response.data);
+            const response = await materiasApi.list(params);
+            setItems(response.data as Materia[]);
         } catch (err) {
             showApiError(err);
         } finally {
@@ -149,15 +151,22 @@ export function MateriasPage() {
 
     useEffect(() => {
         if (!open) return;
-        apiList<ParlamentarOpt>('/parlamentares', { limit: 100 }).then((r) =>
-            setParlamentares(r.data),
+        parlamentaresApi.list({ limit: 100 }).then((r) =>
+            setParlamentares(
+                r.data.map((p) => ({
+                    id: p.id,
+                    pessoa: {
+                        nome: `${p.user.firstName} ${p.user.lastName}`.trim(),
+                        nomeParlamentar: p.parliamentaryName,
+                    },
+                })),
+            ),
         );
-        apiList<{ id: string; nome: string }>('/autores', { limit: 100 }).then(
-            (r) => {
-                setAutores(r.data);
-                if (r.data[0] && !autorId) setAutorId(r.data[0].id);
-            },
-        );
+        guestUsersApi.list({ limit: 100 }).then((r) => {
+            const lista = r.data.map((g) => ({ id: g.id, nome: g.fullName }));
+            setAutores(lista);
+            if (lista[0] && !autorId) setAutorId(lista[0].id);
+        });
     }, [open, autorId]);
 
     function resetForm() {
@@ -218,28 +227,25 @@ export function MateriasPage() {
                 emTramitacao: true,
             };
 
-            await api('/materias', {
-                method: 'POST',
-                body: JSON.stringify(
-                    isProjetoLei
-                        ? {
-                              ...base,
-                              primeiroAutorId: autorParlamentarId,
-                              coautorIds: coautorIds.length
-                                  ? coautorIds
-                                  : undefined,
-                              relatorId: relatorId || undefined,
-                          }
-                        : {
-                              ...base,
-                              autorId: autorId || undefined,
-                              relatorId: relatorId || undefined,
-                              representanteIds: representanteIds.length
-                                  ? representanteIds
-                                  : undefined,
-                          },
-                ),
-            });
+            await materiasApi.create(
+                isProjetoLei
+                    ? {
+                          ...base,
+                          primeiroAutorId: autorParlamentarId,
+                          coautorIds: coautorIds.length
+                              ? coautorIds
+                              : undefined,
+                          relatorId: relatorId || undefined,
+                      }
+                    : {
+                          ...base,
+                          autorId: autorId || undefined,
+                          relatorId: relatorId || undefined,
+                          representanteIds: representanteIds.length
+                              ? representanteIds
+                              : undefined,
+                      },
+            );
             setOpen(false);
             resetForm();
             showSuccess(

@@ -40,8 +40,6 @@ export const MODULE_ICONS = {
     usuarios: 'pi pi-shield',
 } as const;
 
-export type ModuleIconKey = keyof typeof MODULE_ICONS;
-
 export const ROUTES = {
     login: '/login',
 
@@ -242,7 +240,7 @@ export const SIDEBAR_NAV_GROUPS: readonly NavGroup[] = [
             {
                 to: ROUTES.camara.autores,
 
-                label: 'Autores',
+                label: 'Autores convidados',
 
                 icon: MODULE_ICONS.autores,
 
@@ -251,10 +249,6 @@ export const SIDEBAR_NAV_GROUPS: readonly NavGroup[] = [
         ],
     },
 ] as const;
-
-/** @deprecated Lista plana — preferir SIDEBAR_NAV_GROUPS */
-
-export const LEGISLATIVO_NAV = SIDEBAR_NAV_GROUPS.flatMap((g) => g.items);
 
 export const ADMINISTRATIVO_NAV: readonly NavItem[] = [
     {
@@ -267,86 +261,6 @@ export const ADMINISTRATIVO_NAV: readonly NavItem[] = [
         match: (path) => path.startsWith(ROUTES.atosAdministrativos),
     },
 ];
-
-export const WORKFLOW_NAV = [
-    { ...DASHBOARD_NAV, pipelineStep: 1 },
-
-    {
-        to: ROUTES.materias,
-
-        label: 'Matérias',
-
-        icon: MODULE_ICONS.materias,
-
-        pipelineStep: 2,
-
-        match: (p: string) => p.startsWith(ROUTES.materias),
-    },
-
-    {
-        to: ROUTES.sessoes,
-
-        label: 'Sessões',
-
-        icon: MODULE_ICONS.sessoes,
-
-        pipelineStep: 3,
-
-        match: (p: string) => p.startsWith(ROUTES.sessoes),
-    },
-
-    {
-        to: ROUTES.normasJuridicas,
-
-        label: 'Normas jurídicas',
-
-        icon: MODULE_ICONS.normas,
-
-        pipelineStep: 4,
-
-        pipelineBridge: 'Documentos oficiais',
-
-        match: (p: string) => p.startsWith(ROUTES.normasJuridicas),
-    },
-
-    {
-        to: ROUTES.atosAdministrativos,
-
-        label: 'Atos administrativos',
-
-        icon: MODULE_ICONS.atos,
-
-        pipelineStep: 5,
-
-        match: (p: string) => p.startsWith(ROUTES.atosAdministrativos),
-    },
-
-    {
-        to: ROUTES.relatorios,
-
-        label: 'Relatórios',
-
-        icon: MODULE_ICONS.relatorios,
-
-        pipelineStep: 6,
-
-        pipelineBridge: 'Consolidação',
-
-        match: (p: string) => p.startsWith(ROUTES.relatorios),
-    },
-] as const;
-
-export const INSTITUTIONAL_NAV = [
-    {
-        to: ROUTES.camara.legislaturas,
-
-        label: 'Estrutura da Câmara',
-
-        icon: MODULE_ICONS.camara,
-
-        match: (path: string) => path.startsWith(ROUTES.camara.root),
-    },
-] as const;
 
 export const ADMIN_NAV = [
     {

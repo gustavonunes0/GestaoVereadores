@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { MODULE_ICONS } from '../app/navigation';
-import { api, apiList } from '../api/client';
+import { agendaApi } from '../api/legislative/agenda.api';
 import { IntGestMensagemField } from '../components/forms/IntGestMensagemField';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
@@ -27,8 +27,8 @@ export function AgendaPage() {
     const [mensagem, setMensagem] = useState('');
 
     function load() {
-        apiList<Agenda>('/agenda', { limit: 100 }).then((r) =>
-            setItems(r.data),
+        agendaApi.list({ limit: 100 }).then((r) =>
+            setItems(r.data as Agenda[]),
         );
     }
 
@@ -38,17 +38,14 @@ export function AgendaPage() {
 
     async function handleCreate(e: FormEvent) {
         e.preventDefault();
-        await api('/agenda', {
-            method: 'POST',
-            body: JSON.stringify({
-                numero: numero.trim() || undefined,
-                titulo: titulo.trim() || undefined,
-                dataInicio: dataInicio
-                    ? new Date(dataInicio).toISOString()
-                    : undefined,
-                dataFim: dataFim ? new Date(dataFim).toISOString() : undefined,
-                mensagem: mensagem.trim() || undefined,
-            }),
+        await agendaApi.create({
+            numero: numero.trim() || undefined,
+            titulo: titulo.trim() || undefined,
+            dataInicio: dataInicio
+                ? new Date(dataInicio).toISOString()
+                : undefined,
+            dataFim: dataFim ? new Date(dataFim).toISOString() : undefined,
+            mensagem: mensagem.trim() || undefined,
         });
         setOpen(false);
         setNumero('');
@@ -61,7 +58,7 @@ export function AgendaPage() {
 
     async function remove(id: string) {
         if (!confirm('Excluir item da agenda?')) return;
-        await api(`/agenda/${id}`, { method: 'DELETE' });
+        await agendaApi.remove(id);
         load();
     }
 
@@ -73,8 +70,7 @@ export function AgendaPage() {
                 subtitle="Compromissos e eventos — campos alinhados ao SIGL (número, período, mensagem)."
             />
             <PanelToolbar
-                icon={MODULE_ICONS.agenda}
-                title="Pesquisar agenda"
+                title="Agenda"
                 actions={
                     canWrite ? (
                         <button

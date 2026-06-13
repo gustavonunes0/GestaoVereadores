@@ -146,45 +146,6 @@ async function main() {
         await upsertTenantLookup('tipoComissao', nome);
     }
 
-    const tipoPermanente = await prisma.tipoComissao.findFirst({
-        where: { tenantId: DEMO_TENANT_ID, nome: 'Permanente' },
-    });
-
-    const finalidadeCdfo =
-        'Compete à Comissão de Finanças e Orçamento emitir parecer sobre proposta orçamentária, LDO, PPA, prestação de contas e matérias de impacto fiscal municipal (referência demo IntGest Baturité).';
-
-    const comissoesDemo = [
-        {
-            nome: 'Comissão de Finanças e Orçamento',
-            sigla: 'CDFO',
-            unidadeDeliberativa: true,
-            finalidade: finalidadeCdfo,
-        },
-        { nome: 'Comissão de Justiça e Redação', sigla: 'CDJR' },
-        { nome: 'Comissão de Ética', sigla: 'CDE', ativa: false },
-    ];
-    for (const c of comissoesDemo) {
-        await prisma.comissao.upsert({
-            where: {
-                tenantId_sigla: { tenantId: DEMO_TENANT_ID, sigla: c.sigla },
-            },
-            update: {
-                unidadeDeliberativa: c.unidadeDeliberativa,
-                finalidade: c.finalidade,
-            },
-            create: {
-                tenantId: DEMO_TENANT_ID,
-                nome: c.nome,
-                sigla: c.sigla,
-                tipoComissaoId: tipoPermanente?.id,
-                dataCriacao: new Date('2019-01-02'),
-                ativa: c.ativa ?? true,
-                unidadeDeliberativa: c.unidadeDeliberativa ?? false,
-                finalidade: c.finalidade,
-            },
-        });
-    }
-
     const tiposListagem = ['Expediente', 'Ordem do Dia', 'Geral'];
     for (const nome of tiposListagem) {
         await prisma.tipoListagem.upsert({
@@ -350,6 +311,19 @@ async function main() {
                 'Compete analisar proposta orçamentária, LDO, PPA e matérias de impacto fiscal municipal.',
         },
         {
+            name: 'Comissão de Justiça e Redação',
+            acronym: 'CDJR',
+            type: 'PERMANENT' as const,
+            purpose: 'Análise jurídica e redação final de matérias legislativas.',
+        },
+        {
+            name: 'Comissão de Ética',
+            acronym: 'CDE',
+            type: 'PERMANENT' as const,
+            purpose: 'Apuração de conduta parlamentar.',
+            status: 'INACTIVE' as const,
+        },
+        {
             name: 'Comissão Especial de CPI Demo',
             acronym: 'CECD',
             type: 'TEMPORARY' as const,
@@ -370,6 +344,7 @@ async function main() {
                 name: c.name,
                 type: c.type,
                 purpose: c.purpose,
+                status: c.status ?? 'ACTIVE',
                 startDate: c.startDate ?? null,
                 endDate: c.endDate ?? null,
                 isRemoved: false,
@@ -380,6 +355,7 @@ async function main() {
                 acronym: c.acronym,
                 type: c.type,
                 purpose: c.purpose,
+                status: c.status ?? 'ACTIVE',
                 startDate: c.startDate ?? null,
                 endDate: c.endDate ?? null,
             },

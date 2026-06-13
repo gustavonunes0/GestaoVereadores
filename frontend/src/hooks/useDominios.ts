@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { dominiosApi, type Dominios } from '../api/client';
+import { dominiosApi, type Dominios } from '../api/dominios.api';
 
 export function useDominios() {
     const [dominios, setDominios] = useState<Dominios | null>(null);

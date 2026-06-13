@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MODULE_ICONS, ROUTES } from '../app/navigation';
 import { apiList, apiTotal } from '../api/client';
+import { API_PATHS } from '../api/paths';
 import { ContextBanner } from '../components/ContextBanner';
 import { PageHeader } from '../components/PageHeader';
 import { useLegislatura } from '../contexts/LegislaturaContext';
@@ -47,7 +48,7 @@ const pipeline = [
 ];
 
 export function DashboardPage() {
-    const { legislaturaAtiva, sessaoLegislativaAtiva } = useLegislatura();
+    const { legislaturaAtiva } = useLegislatura();
     const [stats, setStats] = useState({
         parlamentares: 0,
         materias: 0,
@@ -58,13 +59,13 @@ export function DashboardPage() {
 
     useEffect(() => {
         Promise.all([
-            apiTotal('/parlamentares'),
-            apiTotal('/materias'),
-            apiList<MateriaResumo>('/materias', {
+            apiTotal(API_PATHS.legislative.parlamentares),
+            apiTotal(API_PATHS.legislative.materias),
+            apiList<MateriaResumo>(API_PATHS.legislative.materias, {
                 limit: 5,
                 emTramitacao: true,
             }),
-            apiTotal('/sessoes'),
+            apiTotal(API_PATHS.legislative.sessoes),
         ]).then(([parlamentares, materias, tram, sessoes]) => {
             setStats({
                 parlamentares,
@@ -135,11 +136,9 @@ export function DashboardPage() {
                                 <strong>{legislaturaAtiva.numero}ª</strong>
                             </li>
                             <li>
-                                <span>Sessão legislativa</span>
+                                <span>Em exercício</span>
                                 <strong>
-                                    {sessaoLegislativaAtiva
-                                        ? `${sessaoLegislativaAtiva.numero}ª`
-                                        : '—'}
+                                    {legislaturaAtiva.isCurrent ? 'Sim' : 'Não'}
                                 </strong>
                             </li>
                         </ul>
