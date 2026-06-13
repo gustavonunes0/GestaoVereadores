@@ -341,7 +341,7 @@ async function main() {
         });
     }
 
-    const comissoesDemo = [
+    const committeesDemo = [
         {
             name: 'Comissão de Finanças e Orçamento',
             acronym: 'CDFO',
@@ -358,7 +358,7 @@ async function main() {
             endDate: new Date('2025-09-30'),
         },
     ];
-    for (const c of comissoesDemo) {
+    for (const c of committeesDemo) {
         await prisma.committee.upsert({
             where: {
                 tenantId_acronym: {

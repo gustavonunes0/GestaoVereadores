@@ -7,7 +7,7 @@ import {
     BadRequestException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { Response } from 'express';
+import { FastifyReply } from 'fastify';
 
 @Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaExceptionFilter implements ExceptionFilter {
@@ -15,10 +15,10 @@ export class PrismaExceptionFilter implements ExceptionFilter {
         exception: Prisma.PrismaClientKnownRequestError,
         host: ArgumentsHost,
     ) {
-        const response = host.switchToHttp().getResponse<Response>();
+        const response = host.switchToHttp().getResponse<FastifyReply>();
 
         const mapped = this.mapPrismaError(exception);
-        response.status(mapped.getStatus()).json({
+        void response.status(mapped.getStatus()).send({
             statusCode: mapped.getStatus(),
             message: mapped.message,
             error: mapped.name,

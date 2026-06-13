@@ -1,5 +1,5 @@
 import { RoleUsuario } from '@prisma/client';
-import { AuthType } from '../common/types/authenticated-request';
+import { AuthType } from '../../../common/types/authenticated-request';
 
 export type JwtPayload = {
     sub: string;

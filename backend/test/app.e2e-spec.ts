@@ -1,5 +1,9 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import {
+    FastifyAdapter,
+    NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 
@@ -10,12 +14,15 @@ describe('App (e2e)', () => {
         const moduleRef = await Test.createTestingModule({
             imports: [AppModule],
         }).compile();
-        app = moduleRef.createNestApplication();
+        app = moduleRef.createNestApplication<NestFastifyApplication>(
+            new FastifyAdapter(),
+        );
         app.setGlobalPrefix('api');
         app.useGlobalPipes(
             new ValidationPipe({ whitelist: true, transform: true }),
         );
         await app.init();
+        await app.getHttpAdapter().getInstance().ready();
     });
 
     afterAll(async () => {

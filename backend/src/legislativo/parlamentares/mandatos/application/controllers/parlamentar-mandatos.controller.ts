@@ -41,16 +41,20 @@ export class ParlamentarMandatosController {
     ) {}
 
     @Get()
-    list(
+    async list(
         @TenantId() tenantId: string,
         @Param('parliamentarianId', ParseUUIDPipe) parliamentarianId: string,
         @Query() query: ListParlamentarMandatosQueryDto,
     ) {
-        return this.listParlamentarMandatosUseCase.execute(
-            tenantId,
-            parliamentarianId,
-            query,
-        );
+        try {
+            return await this.listParlamentarMandatosUseCase.execute(
+                tenantId,
+                parliamentarianId,
+                query,
+            );
+        } catch (error) {
+            this.handleError(error);
+        }
     }
 
     @TenantMaintainer()

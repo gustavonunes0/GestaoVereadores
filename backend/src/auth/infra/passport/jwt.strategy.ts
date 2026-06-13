@@ -2,15 +2,17 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthenticatedUser } from '../common/types/authenticated-request';
-import { PrismaService } from '../prisma/prisma.service';
-import { JwtPayload } from './jwt-payload';
+import { AuthenticatedUser } from '../../../common/types/authenticated-request';
+import { CamaraAuthRepository } from '../../domain/repositories/camara-auth.repository';
+import { SiglUserRepository } from '../../domain/repositories/sigl-user.repository';
+import { JwtPayload } from '../../domain/types/jwt-payload.type';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
         config: ConfigService,
-        private readonly prisma: PrismaService,
+        private readonly siglUsers: SiglUserRepository,
+        private readonly camaraAuth: CamaraAuthRepository,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -32,10 +34,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private async validateSiglUser(
         payload: JwtPayload,
     ): Promise<AuthenticatedUser> {
-        const user = await this.prisma.usuario.findUnique({
-            where: { id: payload.sub },
-        });
-        if (!user || !user.ativo) {
+        const user = await this.siglUsers.findById(payload.sub);
+        if (!user || !user.isActive()) {
             throw new UnauthorizedException();
         }
         return {
@@ -51,9 +51,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private async validateCamaraUser(
         payload: JwtPayload,
     ): Promise<AuthenticatedUser> {
-        const user = await this.prisma.user.findFirst({
-            where: { id: payload.sub, isRemoved: false },
-        });
+        const user = await this.camaraAuth.findProfileById(payload.sub);
         if (!user) {
             throw new UnauthorizedException();
         }
