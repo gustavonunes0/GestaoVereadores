@@ -30,6 +30,8 @@ export function AutoresPage() {
     const [filtrosApplied, setFiltrosApplied] = useState<AutorExternoFiltros>({});
 
     const [nomeFiltro, setNomeFiltro] = useState('');
+    const [cargoFiltro, setCargoFiltro] = useState('');
+    const [instituicaoFiltro, setInstituicaoFiltro] = useState('');
 
     const [dialogCriar, setDialogCriar] = useState(false);
     const [dialogVer, setDialogVer] = useState<AutorExterno | null>(null);
@@ -55,12 +57,19 @@ export function AutoresPage() {
 
     function aplicarFiltros() {
         setPage(1);
-        setFiltrosApplied({ ...filtros, nome: nomeFiltro || undefined });
+        setFiltrosApplied({
+            ...filtros,
+            nome: nomeFiltro || undefined,
+            cargo: cargoFiltro || undefined,
+            instituicao: instituicaoFiltro || undefined,
+        });
     }
 
     function limparFiltros() {
         setFiltros({});
         setNomeFiltro('');
+        setCargoFiltro('');
+        setInstituicaoFiltro('');
         setFiltrosApplied({});
         setPage(1);
     }
@@ -90,7 +99,7 @@ export function AutoresPage() {
     );
 
     return (
-        <section className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.autores}
                 title="Autores externos"
@@ -126,6 +135,24 @@ export function AutoresPage() {
                         value={nomeFiltro}
                         onChange={(e) => setNomeFiltro(e.target.value)}
                         placeholder="Nome do autor"
+                    />
+                </div>
+                <div className="col-12 md:col-6 lg:col-3">
+                    <label htmlFor="af-cargo">Cargo / função</label>
+                    <InputText
+                        id="af-cargo"
+                        value={cargoFiltro}
+                        onChange={(e) => setCargoFiltro(e.target.value)}
+                        placeholder="Cargo ou função"
+                    />
+                </div>
+                <div className="col-12 md:col-6 lg:col-3">
+                    <label htmlFor="af-inst">Instituição</label>
+                    <InputText
+                        id="af-inst"
+                        value={instituicaoFiltro}
+                        onChange={(e) => setInstituicaoFiltro(e.target.value)}
+                        placeholder="Instituição"
                     />
                 </div>
             </FiltroLayout>
@@ -177,6 +204,6 @@ export function AutoresPage() {
                     }}
                 />
             )}
-        </section>
+        </main>
     );
 }

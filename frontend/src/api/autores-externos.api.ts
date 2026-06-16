@@ -32,6 +32,8 @@ export interface CreateAutorExternoDto {
 export interface AutorExternoFiltros {
     tipoAutorId?: string;
     nome?: string;
+    cargo?: string;
+    instituicao?: string;
     page?: number;
     limit?: number;
 }
@@ -51,4 +53,9 @@ export const autoresExternosApi = {
 
     remove: (id: string) =>
         api<void>(`${API_PATHS.autoresExternos}/${id}`, { method: 'DELETE' }),
+
+    listMaterias: (id: string) =>
+        apiList<{ id: string; identificacao: string; status: string }>(
+            `${API_PATHS.autoresExternos}/${id}/materias`,
+        ),
 };

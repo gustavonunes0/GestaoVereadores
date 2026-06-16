@@ -209,6 +209,21 @@ export function AgendaPage() {
                 style={{ width: '10rem' }}
             />
             <Column
+                header="Sessão"
+                body={(row: AgendaItem) =>
+                    row.sessaoPlenariaId ? (
+                        <a
+                            href={`/sessoes?id=${row.sessaoPlenariaId}`}
+                            aria-label="Ver sessão vinculada"
+                            className="text-primary"
+                        >
+                            Ver sessão
+                        </a>
+                    ) : '—'
+                }
+                style={{ width: '8rem' }}
+            />
+            <Column
                 header="Público"
                 body={(row: AgendaItem) =>
                     row.publicoExterno ? (

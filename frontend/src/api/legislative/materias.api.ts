@@ -4,11 +4,10 @@ import type { MateriaStatus } from '../../types/legislative';
 
 export interface AutorMateria {
     id: string;
-    tipo: 'parlamentar' | 'externo' | 'guestUser';
+    tipo: 'parlamentar' | 'externo';
     nome: string;
     parlamentarId?: string;
     autorExternoId?: string;
-    guestUserId?: string;
 }
 
 export interface TramitacaoItem {
