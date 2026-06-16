@@ -39,9 +39,18 @@ export class LoginCamaraUseCase {
         private readonly tokenIssuer: TokenIssuer,
     ) {}
 
+    private normalizeCpf(value: string): string {
+        return value.replace(/\D/g, '');
+    }
+
     async execute(dto: LoginCamaraDto) {
-        const email = dto.email.trim().toLowerCase();
-        const user = await this.camaraAuth.findUserByEmail(email);
+        const email = dto.email?.trim().toLowerCase();
+        const cpf = dto.cpf ? this.normalizeCpf(dto.cpf) : undefined;
+        const user = email
+            ? await this.camaraAuth.findUserByEmail(email)
+            : cpf
+              ? await this.camaraAuth.findUserByCpf(cpf)
+              : null;
 
         try {
             this.domainService.assertCamaraUserExists(user);
@@ -66,27 +75,44 @@ export class LoginCamaraUseCase {
             throw error;
         }
 
+        let tenantUser;
         let tenant;
-        try {
-            tenant = await this.tenantResolution.resolveCamaraTenant(
-                dto.tenantId,
-                dto.tenantCnpj,
-                this.tenants,
-            );
-        } catch (error) {
-            if (error instanceof TenantNotFoundDomainError) {
-                throw new InvalidTenantError(error.message);
-            }
-            if (error instanceof TenantResolutionRequiredDomainError) {
-                throw new TenantResolutionRequiredError();
-            }
-            throw error;
-        }
 
-        const tenantUser = await this.camaraAuth.findActiveTenantUser(
-            user.id,
-            tenant.id,
-        );
+        if (dto.tenantId || dto.tenantCnpj) {
+            try {
+                tenant = await this.tenantResolution.resolveCamaraTenant(
+                    dto.tenantId,
+                    dto.tenantCnpj,
+                    this.tenants,
+                );
+            } catch (error) {
+                if (error instanceof TenantNotFoundDomainError) {
+                    throw new InvalidTenantError(error.message);
+                }
+                if (error instanceof TenantResolutionRequiredDomainError) {
+                    throw new TenantResolutionRequiredError();
+                }
+                throw error;
+            }
+
+            tenantUser = await this.camaraAuth.findActiveTenantUser(
+                user.id,
+                tenant.id,
+            );
+        } else {
+            tenantUser = await this.camaraAuth.findFirstActiveTenantUser(
+                user.id,
+            );
+
+            if (!tenantUser) {
+                throw new TenantMembershipRequiredError();
+            }
+
+            tenant = await this.tenants.findActiveById(tenantUser.tenantId);
+            if (!tenant) {
+                throw new InvalidTenantError('Câmara inválida ou inativa');
+            }
+        }
 
         try {
             this.domainService.assertActiveTenantMembership(tenantUser);

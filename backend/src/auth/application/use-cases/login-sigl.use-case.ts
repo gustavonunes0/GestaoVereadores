@@ -34,6 +34,9 @@ export class LoginSiglUseCase {
     ) {}
 
     async execute(dto: LoginDto) {
+        if (!dto.username) {
+            throw new InvalidCredentialsError();
+        }
         const user = await this.siglUsers.findByUsername(dto.username);
 
         try {

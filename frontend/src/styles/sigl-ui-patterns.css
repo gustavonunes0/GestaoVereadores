@@ -796,6 +796,32 @@ textarea:not(:disabled):focus {
     line-height: 1.4;
 }
 
+/* ——— Filtros em grid ——— */
+.sigl-filtro-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    grid-column: span 4;
+}
+
+.sigl-filtro-campo label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-600);
+}
+
+@media (max-width: 1024px) {
+    .sigl-filtro-campo { grid-column: span 6; }
+}
+
+@media (max-width: 640px) {
+    .sigl-filtro-campo { grid-column: span 12; }
+}
+
+.sigl-filtro-card .p-card-body {
+    padding: 1rem;
+}
+
 @media (max-width: 768px) {
     .legislatura-bar {
         width: 100%;

@@ -31,7 +31,7 @@ export function RelatoriosPage() {
         setLoadingAtividade(true);
         try {
             const data = await api<RelatorioResult>(
-                API_PATHS.relatorios.atividadeCompleto,
+                API_PATHS.relatorioAtividade,
                 {
                     method: 'POST',
                     body: JSON.stringify({
@@ -54,7 +54,7 @@ export function RelatoriosPage() {
         setLoadingPresenca(true);
         try {
             const data = await api<RelatorioResult>(
-                API_PATHS.relatorios.presenca,
+                API_PATHS.relatorioPresenca,
                 {
                     method: 'POST',
                     body: JSON.stringify({

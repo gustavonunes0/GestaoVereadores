@@ -1,45 +1,69 @@
-/** Rotas da API — espelham os controllers do backend NestJS. */
+/** Rotas da API — fonte única de verdade. Espelham os controllers do backend NestJS. */
 export const API_PATHS = {
-    auth: {
-        login: '/auth/login',
-        me: '/auth/me',
-    },
-    dominios: '/dominios',
-    usuarios: '/usuarios',
-    guestUsers: '/guest-users',
-    autoresExternos: '/identidade/autores-externos',
-    normas: '/legislative/normas',
-    atos: '/atos',
-    relatorios: {
-        atividadeCompleto: '/relatorios/atividade-legislativa/completo',
-        presenca: '/relatorios/presenca',
-    },
-    legislative: {
-        legislaturas: '/legislative/legislaturas',
-        parlamentares: '/legislative/parlamentares',
-        partidos: '/legislative/partidos-politicos',
-        comissoes: '/legislative/comissoes',
-        frentes: '/legislative/frentes-parlamentares',
-        mesaDiretora: '/legislative/mesa-diretora',
-        materias: '/legislative/materias',
-        materiasAutoresExternos: '/legislative/materias/autores-externos',
-        sessoes: '/legislative/sessoes-plenarias',
-        agenda: '/legislative/agenda-legislativa',
-        votacoes: '/legislative/votacoes',
-    },
-    materiasTramitar: (id: string) => `/legislative/materias/${id}/tramitar`,
-    materiasAutores: (id: string) => `/legislative/materias/${id}/autores`,
+    // ── Auth ──────────────────────────────────────────────────────────────
+    authLogin:   '/auth/login',
+    authMe:      '/auth/me',
+
+    // ── Domínios (lookups) ────────────────────────────────────────────────
+    dominios:    '/dominios',
+
+    // ── Identidade ────────────────────────────────────────────────────────
+    usuarios:           '/identidade/usuarios',
+    autoresExternos:    '/identidade/autores-externos',
+
+    // ── Legislativo — base ────────────────────────────────────────────────
+    legislaturas:       '/legislative/legislaturas',
+    parlamentares:      '/legislative/parlamentares',
+    partidosPoliticos:  '/legislative/partidos-politicos',
+    comissoes:          '/legislative/comissoes',
+    frentes:            '/legislative/frentes-parlamentares',
+    mesaDiretora:       '/legislative/mesa-diretora',
+
+    // ── Matérias ──────────────────────────────────────────────────────────
+    materias:            '/legislative/materias',
+    materiasTramitar:    (id: string) => `/legislative/materias/${id}/tramitar`,
+    materiasAutores:     (id: string) => `/legislative/materias/${id}/autores`,
+    materiasAutor:       (id: string, autorId: string) => `/legislative/materias/${id}/autores/${autorId}`,
     materiasPublicacoes: (id: string) => `/legislative/materias/${id}/publicacoes`,
-    sessoesAbrir: (id: string) => `/legislative/sessoes-plenarias/${id}/abrir`,
-    sessoesSuspender: (id: string) => `/legislative/sessoes-plenarias/${id}/suspender`,
-    sessoesEncerrar: (id: string) => `/legislative/sessoes-plenarias/${id}/encerrar`,
-    sessoesCancelar: (id: string) => `/legislative/sessoes-plenarias/${id}/cancelar`,
-    sessoesQuorum: (id: string) => `/legislative/sessoes-plenarias/${id}/quorum`,
-    normasSancao: (id: string) => `/legislative/normas/${id}/sancao`,
-    normasVeto: (id: string) => `/legislative/normas/${id}/veto`,
-    normasPromulgacao: (id: string) => `/legislative/normas/${id}/promulgacao`,
-    normasPublicacao: (id: string) => `/legislative/normas/${id}/publicacao`,
-    normasRevogar: (id: string) => `/legislative/normas/${id}/revogar`,
-    votacoesVotos: (id: string) => `/legislative/votacoes/${id}/votos`,
-    votacoesEncerrar: (id: string) => `/legislative/votacoes/${id}/encerrar`,
+    materiasTramitacao:  (id: string) => `/legislative/materias/${id}/tramitacao`,
+
+    // ── Sessões Plenárias ─────────────────────────────────────────────────
+    sessoes:             '/legislative/sessoes-plenarias',
+    sessoesAbrir:        (id: string) => `/legislative/sessoes-plenarias/${id}/abrir`,
+    sessoesSuspender:    (id: string) => `/legislative/sessoes-plenarias/${id}/suspender`,
+    sessoesEncerrar:     (id: string) => `/legislative/sessoes-plenarias/${id}/encerrar`,
+    sessoesCancelar:     (id: string) => `/legislative/sessoes-plenarias/${id}/cancelar`,
+    sessoesQuorum:       (id: string) => `/legislative/sessoes-plenarias/${id}/quorum`,
+    sessoesPauta:        (id: string) => `/legislative/sessoes-plenarias/${id}/pauta`,
+    sessoesPautaPublicar:(id: string) => `/legislative/sessoes-plenarias/${id}/pauta/publicar`,
+    sessoesPresencas:    (id: string) => `/legislative/sessoes-plenarias/${id}/presencas`,
+
+    // ── Votações ──────────────────────────────────────────────────────────
+    votacoes:            '/legislative/votacoes',
+    votacoesVotos:       (id: string) => `/legislative/votacoes/${id}/votos`,
+    votacoesEncerrar:    (id: string) => `/legislative/votacoes/${id}/encerrar`,
+
+    // ── Agenda ────────────────────────────────────────────────────────────
+    agenda:              '/legislative/agenda-legislativa',
+    agendaVincularSessao:(id: string) => `/legislative/agenda-legislativa/${id}/vincular-sessao`,
+
+    // ── Normas Jurídicas (controller: controle-juridico/normas → /api/normas) ──
+    normas:              '/normas',
+    normaPublica:        '/normas/public',
+    normasSancao:        (id: string) => `/normas/${id}/sancao`,
+    normasVeto:          (id: string) => `/normas/${id}/veto`,
+    normasPromulgacao:   (id: string) => `/normas/${id}/promulgacao`,
+    normasPublicacao:    (id: string) => `/normas/${id}/publicacao`,
+    normasRevogar:       (id: string) => `/normas/${id}/revogacao`,
+
+    // ── Atos Administrativos ─────────────────────────────────────────────
+    atos:               '/atos',
+
+    // ── Relatórios ────────────────────────────────────────────────────────
+    relatorioAtividade: '/relatorios/atividade-legislativa/completo',
+    relatorioPresenca:  '/relatorios/presenca',
+
+    // ── Público (sem auth) ────────────────────────────────────────────────
+    publicAgenda:       '/public/agenda',
+    publicNormas:       '/normas/public',
 } as const;

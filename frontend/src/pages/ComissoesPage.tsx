@@ -1,4 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { Button } from 'primereact/button';
 import { MODULE_ICONS } from '../app/navigation';
 import {
     comissoesApi,
@@ -9,7 +10,7 @@ import {
 } from '../api/legislative/comissoes.api';
 import { NavDrawer } from '../components/NavDrawer';
 import { EmptyState } from '../components/common/EmptyState';
-import { PanelToolbar } from '../components/PanelToolbar';
+import { PageHeader } from '../components/PageHeader';
 import { usePermissions } from '../hooks/usePermissions';
 
 const TYPE_OPTIONS: { value: CommitteeType; label: string }[] = [
@@ -148,18 +149,17 @@ export function ComissoesPage() {
 
     return (
         <div className="page">
-            <PanelToolbar
+            <PageHeader
                 icon={MODULE_ICONS.comissoes}
                 title="Comissões"
+                subtitle="Comissões permanentes e temporárias da casa legislativa."
                 actions={
                     canWrite ? (
-                        <button
-                            type="button"
-                            className="btn btn-primary"
+                        <Button
+                            label="Adicionar comissão"
+                            icon="pi pi-plus"
                             onClick={startCreate}
-                        >
-                            Adicionar comissão
-                        </button>
+                        />
                     ) : undefined
                 }
             />

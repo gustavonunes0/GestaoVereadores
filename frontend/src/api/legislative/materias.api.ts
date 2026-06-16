@@ -68,13 +68,13 @@ export interface MateriaFiltros {
 
 export const materiasApi = {
     list: (filtros?: MateriaFiltros) =>
-        apiList<Materia>(API_PATHS.legislative.materias, filtros as Record<string, string | number | boolean | undefined>),
+        apiList<Materia>(API_PATHS.materias, filtros as Record<string, string | number | boolean | undefined>),
 
     getById: (id: string) =>
-        api<Materia>(`${API_PATHS.legislative.materias}/${id}`),
+        api<Materia>(`${API_PATHS.materias}/${id}`),
 
     create: (dto: CreateMateriaDto | Record<string, unknown>) =>
-        api<Materia>(API_PATHS.legislative.materias, { method: 'POST', body: JSON.stringify(dto) }),
+        api<Materia>(API_PATHS.materias, { method: 'POST', body: JSON.stringify(dto) }),
 
     createComTexto: (dto: CreateMateriaDto & { textoOriginal?: File }) => {
         const { textoOriginal, ...rest } = dto;
@@ -83,14 +83,14 @@ export const materiasApi = {
             if (value !== undefined) fd.append(key, String(value));
         }
         if (textoOriginal) fd.append('textoOriginal', textoOriginal);
-        return apiFormData<Materia>(API_PATHS.legislative.materias, fd, 'POST');
+        return apiFormData<Materia>(API_PATHS.materias, fd, 'POST');
     },
 
     update: (id: string, dto: Partial<CreateMateriaDto>) =>
-        api<Materia>(`${API_PATHS.legislative.materias}/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
+        api<Materia>(`${API_PATHS.materias}/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
 
     remove: (id: string) =>
-        api<void>(`${API_PATHS.legislative.materias}/${id}`, { method: 'DELETE' }),
+        api<void>(`${API_PATHS.materias}/${id}`, { method: 'DELETE' }),
 
     tramitar: (id: string, dto: { statusNovo: MateriaStatus; descricao?: string }) =>
         api<Materia>(API_PATHS.materiasTramitar(id), { method: 'POST', body: JSON.stringify(dto) }),

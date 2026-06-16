@@ -11,11 +11,7 @@ import { DataTableLayout } from '../components/common/DataTableLayout';
 import { DeleteDialog } from '../components/common/DeleteDialog';
 import { AtoVerDialog } from '../components/atos/AtoVerDialog';
 import { AtoCreateDialog } from '../components/atos/AtoCreateDialog';
-import { PublicacaoModuleIntro } from '../components/publicacao/PublicacaoModuleIntro';
 import { ModulePipelineFooter } from '../components/workflow/ModulePipelineFooter';
-import { PipelineStepBadge } from '../components/workflow/PipelineStepBadge';
-import { PUBLICACAO_MODULES } from '../app/publicacao';
-import { WORKFLOW_PIPELINE_TOTAL } from '../app/navigation';
 import { useAppToast } from '../hooks/useAppToast';
 import { useDominios } from '../hooks/useDominios';
 import { usePermissions } from '../hooks/usePermissions';
@@ -104,17 +100,8 @@ export function AtosPage() {
         </>
     );
 
-    const mod = PUBLICACAO_MODULES.atos;
-
     return (
         <section className="page page--atos">
-            <PipelineStepBadge
-                step={mod.pipelineStep}
-                total={WORKFLOW_PIPELINE_TOTAL}
-                label={mod.title}
-                domain="administrative"
-            />
-
             <PageHeader
                 icon={MODULE_ICONS.atos}
                 title="Atos administrativos"
@@ -130,10 +117,8 @@ export function AtosPage() {
                 }
             />
 
-            <PublicacaoModuleIntro moduleId="atos" />
-
             <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
-                <div className="col-12 md:col-4 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="af-tipo">Tipo</label>
                     <Dropdown
                         id="af-tipo"
@@ -144,7 +129,8 @@ export function AtosPage() {
                         onChange={(e) => setFiltros((f) => ({ ...f, tipoId: e.value || undefined }))}
                     />
                 </div>
-                <div className="col-12 md:col-4 lg:col-3">
+
+                <div className="sigl-filtro-campo">
                     <label htmlFor="af-numero">Número</label>
                     <InputText
                         id="af-numero"
@@ -153,7 +139,7 @@ export function AtosPage() {
                         placeholder="Número do ato"
                     />
                 </div>
-                <div className="col-12 md:col-4 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="af-ementa">Ementa</label>
                     <InputText
                         id="af-ementa"

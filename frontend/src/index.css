@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
     /* Bridge legacy layout vars → SIGL tokens (prime-theme-tokens.css) */
     --bg: var(--bg-app);
@@ -69,11 +71,12 @@ textarea {
 
 .sidebar-brand {
     margin: 0 var(--layout-gap-md) var(--layout-gap-lg);
-    padding: var(--layout-gap-md) var(--layout-gap-lg);
+    padding: var(--layout-gap-lg) var(--layout-gap-md);
     border-radius: var(--layout-radius-md);
     background: var(--sidebar-brand-surface);
     border: 1px solid var(--sidebar-border);
     box-shadow: var(--layout-shadow-sm);
+    text-align: center;
 }
 
 .sidebar-brand h1 {
@@ -110,6 +113,15 @@ textarea {
 h1.module-title.page-title,
 h2.module-title.tab-panel-title {
     display: inline-flex;
+}
+
+/* Reset para botões que usam a classe nav-link (accordion da sidebar) */
+button.nav-link {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    width: calc(100% - 2 * var(--layout-gap-md));
+    text-align: left;
 }
 
 .nav-link {
@@ -210,6 +222,25 @@ h2.module-title.tab-panel-title {
 
 .nav-link__label {
     width: 100%;
+}
+
+.sidebar-brand__heading {
+    margin: 0;
+    line-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sidebar-brand__logo {
+    display: block;
+    width: 100%;
+    max-width: 15rem;
+    height: auto;
+    max-height: 4.5rem;
+    margin-inline: auto;
+    object-fit: contain;
+    object-position: center;
 }
 
 .sidebar-brand__title {

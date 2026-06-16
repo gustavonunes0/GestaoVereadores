@@ -1,335 +1,238 @@
-import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { MODULE_ICONS } from '../app/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { Button } from 'primereact/button';
+import { Column } from 'primereact/column';
+import { Dropdown } from 'primereact/dropdown';
+import { InputText } from 'primereact/inputtext';
+import { Tag } from 'primereact/tag';
+import { apiList } from '../api/client';
+import { API_PATHS } from '../api/paths';
 import {
     parlamentaresApi,
     type Parliamentarian,
-    type CreateParliamentarianInput,
 } from '../api/legislative/parlamentares.api';
-import { apiList } from '../api/client';
-import { API_PATHS } from '../api/paths';
-import { NavDrawer } from '../components/NavDrawer';
-import { EmptyState } from '../components/common/EmptyState';
-import { PanelToolbar } from '../components/PanelToolbar';
+import { MODULE_ICONS } from '../app/navigation';
+import { DataTableLayout } from '../components/common/DataTableLayout';
+import { DeleteDialog } from '../components/common/DeleteDialog';
+import { FiltroLayout } from '../components/common/FiltroLayout';
+import { PageHeader } from '../components/PageHeader';
+import { ParlamentarCreateDialog } from '../components/parlamentares/ParlamentarCreateDialog';
+import { ParlamentarEditDialog } from '../components/parlamentares/ParlamentarEditDialog';
 import { useAppToast } from '../hooks/useAppToast';
 import { usePermissions } from '../hooks/usePermissions';
 
-type PoliticalParty = { id: string; name: string; acronym: string };
+type Partido = { id: string; name: string; acronym: string };
+type PartidoOption = { id: string; label: string };
 
-type FormState = {
-    tenantUserId: string;
-    parliamentaryName: string;
-    politicalPartyId: string;
-    officeNumber: string;
-    biography: string;
-};
-
-const emptyForm = (): FormState => ({
-    tenantUserId: '',
-    parliamentaryName: '',
-    politicalPartyId: '',
-    officeNumber: '',
-    biography: '',
-});
+const STATUS_OPTIONS = [
+    { label: 'Todos', value: '' },
+    { label: 'Ativo', value: 'ACTIVE' },
+    { label: 'Inativo', value: 'INACTIVE' },
+];
 
 const STATUS_LABEL: Record<string, string> = {
     ACTIVE: 'Ativo',
     INACTIVE: 'Inativo',
 };
 
+type StatusSeverity = 'success' | 'secondary' | 'danger' | 'info' | 'warning';
+const STATUS_SEVERITY: Record<string, StatusSeverity> = {
+    ACTIVE: 'success',
+    INACTIVE: 'secondary',
+};
+
+const EMPTY_FILTROS = { search: '', politicalPartyId: '', status: '' };
+
 export function ParlamentaresPage() {
-    const { canWrite } = usePermissions();
-    const { showApiError, showSuccess } = useAppToast();
+    const { canWrite, canEdit, canDelete } = usePermissions();
+    const { showApiError } = useAppToast();
+
     const [items, setItems] = useState<Parliamentarian[]>([]);
-    const [partidos, setPartidos] = useState<PoliticalParty[]>([]);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [creating, setCreating] = useState(false);
-    const [form, setForm] = useState<FormState>(emptyForm);
-    const [saving, setSaving] = useState(false);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(1);
 
-    const load = useCallback(() => {
-        return parlamentaresApi.list({ limit: 100 }).then((r) => {
-            setItems(r.data);
-            if (selectedId && !r.data.some((p) => p.id === selectedId)) {
-                setSelectedId(null);
-                setCreating(false);
-            }
-        });
-    }, [selectedId]);
+    const [partidoOptions, setPartidoOptions] = useState<PartidoOption[]>([]);
+    const [filtros, setFiltros] = useState({ ...EMPTY_FILTROS });
+    const [filtrosApplied, setFiltrosApplied] = useState<Record<string, string>>({});
 
-    useEffect(() => {
-        load();
-        apiList<PoliticalParty>(API_PATHS.legislative.partidos, { limit: 50 })
-            .then((r) => setPartidos(r.data))
-            .catch(() => setPartidos([]));
-    }, [load]);
+    const [dialogCriar, setDialogCriar] = useState(false);
+    const [dialogEditar, setDialogEditar] = useState<Parliamentarian | null>(null);
+    const [dialogDeletar, setDialogDeletar] = useState<Parliamentarian | null>(null);
 
-    useEffect(() => {
-        if (creating || !selectedId) return;
-        parlamentaresApi.getById(selectedId).then((p) => {
-            setForm({
-                tenantUserId: p.tenantUserId,
-                parliamentaryName: p.parliamentaryName,
-                politicalPartyId: p.politicalParty?.id ?? '',
-                officeNumber: p.officeNumber ?? '',
-                biography: p.biography ?? '',
-            });
-        });
-    }, [selectedId, creating]);
-
-    function startCreate() {
-        setSelectedId(null);
-        setCreating(true);
-        setForm(emptyForm());
-    }
-
-    function closeDrawer() {
-        setSelectedId(null);
-        setCreating(false);
-        setForm(emptyForm());
-    }
-
-    async function handleSubmit(e: FormEvent) {
-        e.preventDefault();
-        if (!canWrite) return;
-        setSaving(true);
+    const buscar = useCallback(async () => {
+        setLoading(true);
         try {
-            const body: CreateParliamentarianInput = {
-                tenantUserId: form.tenantUserId.trim(),
-                parliamentaryName: form.parliamentaryName.trim(),
-                politicalPartyId: form.politicalPartyId || undefined,
-                officeNumber: form.officeNumber.trim() || undefined,
-                biography: form.biography.trim() || undefined,
-            };
-            if (creating) {
-                const created = await parlamentaresApi.create(body);
-                setCreating(false);
-                setSelectedId(created.id);
-                showSuccess('Parlamentar cadastrado.');
-            } else if (selectedId) {
-                await parlamentaresApi.update(selectedId, {
-                    parliamentaryName: body.parliamentaryName,
-                    politicalPartyId: body.politicalPartyId,
-                    officeNumber: body.officeNumber,
-                    biography: body.biography,
-                });
-                showSuccess('Parlamentar atualizado.');
-            }
-            await load();
+            const res = await parlamentaresApi.list({ ...filtrosApplied, page, limit: 20 });
+            setItems(res.data);
+            setTotal(res.meta.total);
         } catch (err) {
             showApiError(err);
         } finally {
-            setSaving(false);
+            setLoading(false);
         }
+    }, [filtrosApplied, page, showApiError]);
+
+    useEffect(() => { void buscar(); }, [buscar]);
+
+    useEffect(() => {
+        apiList<Partido>(API_PATHS.partidosPoliticos, { limit: 50 })
+            .then((r) =>
+                setPartidoOptions([
+                    { id: '', label: 'Todos' },
+                    ...r.data.map((p) => ({ id: p.id, label: `${p.acronym} — ${p.name}` })),
+                ]),
+            )
+            .catch(() => setPartidoOptions([]));
+    }, []);
+
+    function aplicarFiltros() {
+        const params: Record<string, string> = {};
+        if (filtros.search.trim()) params.search = filtros.search.trim();
+        if (filtros.politicalPartyId) params.politicalPartyId = filtros.politicalPartyId;
+        if (filtros.status) params.status = filtros.status;
+        setPage(1);
+        setFiltrosApplied(params);
     }
 
-    async function remove(id: string) {
-        if (!confirm('Excluir parlamentar?')) return;
-        try {
-            await parlamentaresApi.remove(id);
-            if (selectedId === id) closeDrawer();
-            await load();
-            showSuccess('Parlamentar removido.');
-        } catch (err) {
-            showApiError(err);
-        }
+    function limparFiltros() {
+        setFiltros({ ...EMPTY_FILTROS });
+        setFiltrosApplied({});
+        setPage(1);
     }
 
-    const editing = creating || !!selectedId;
+    const columns = (
+        <>
+            <Column
+                header="Nome parlamentar"
+                body={(row: Parliamentarian) => (
+                    <span className="font-semibold">{row.parliamentaryName}</span>
+                )}
+                style={{ minWidth: '12rem' }}
+            />
+            <Column
+                header="Usuário"
+                body={(row: Parliamentarian) =>
+                    `${row.user.firstName} ${row.user.lastName}`
+                }
+                style={{ width: '12rem' }}
+            />
+            <Column
+                header="Partido"
+                body={(row: Parliamentarian) =>
+                    row.politicalParty ? (
+                        <Tag value={row.politicalParty.acronym} severity="secondary" />
+                    ) : (
+                        <span className="text-muted">—</span>
+                    )
+                }
+                style={{ width: '7rem' }}
+            />
+            <Column
+                header="Gabinete"
+                body={(row: Parliamentarian) => row.officeNumber ?? '—'}
+                style={{ width: '8rem' }}
+            />
+            <Column
+                header="Status"
+                body={(row: Parliamentarian) => (
+                    <Tag
+                        value={STATUS_LABEL[row.status] ?? row.status}
+                        severity={STATUS_SEVERITY[row.status] ?? 'secondary'}
+                    />
+                )}
+                style={{ width: '6rem' }}
+            />
+        </>
+    );
 
     return (
-        <div className="page">
-            <PanelToolbar
+        <section className="page">
+            <PageHeader
                 icon={MODULE_ICONS.parlamentares}
                 title="Parlamentares"
+                subtitle="Vereadores e deputados vinculados ao tenant."
                 actions={
                     canWrite ? (
-                        <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={startCreate}
-                        >
-                            Adicionar parlamentar
-                        </button>
+                        <Button
+                            label="Novo Parlamentar"
+                            icon="pi pi-plus"
+                            onClick={() => setDialogCriar(true)}
+                        />
                     ) : undefined
                 }
             />
 
-            <p className="muted" style={{ margin: '0 0 0.75rem', fontSize: '0.9rem' }}>
-                Cadastro vinculado a usuário do tenant (
-                <code>tenantUserId</code>). O usuário deve existir em Identidade
-                com perfil parlamentar.
-            </p>
-
-            <div className="split-view">
-                <div className="split-panel split-list">
-                    <div className="split-panel__body">
-                        <div className="split-panel__scroll table-wrap">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Nome parlamentar</th>
-                                        <th>Usuário</th>
-                                        <th>Partido</th>
-                                        <th>Situação</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {items.map((p) => (
-                                        <tr
-                                            key={p.id}
-                                            className={
-                                                selectedId === p.id
-                                                    ? 'row-selected'
-                                                    : ''
-                                            }
-                                            onClick={() => {
-                                                setCreating(false);
-                                                setSelectedId(p.id);
-                                            }}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <td>{p.parliamentaryName}</td>
-                                            <td>
-                                                {p.user.firstName}{' '}
-                                                {p.user.lastName}
-                                            </td>
-                                            <td>
-                                                {p.politicalParty?.acronym ??
-                                                    '—'}
-                                            </td>
-                                            <td>
-                                                {STATUS_LABEL[p.status] ??
-                                                    p.status}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        {items.length === 0 && (
-                            <EmptyState
-                                icon="pi pi-users"
-                                title="Nenhum parlamentar"
-                                hint="Cadastre o primeiro vereador da casa."
-                            />
-                        )}
-                    </div>
+            <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+                <div className="sigl-filtro-campo">
+                    <label htmlFor="pf-search">Nome / busca</label>
+                    <InputText
+                        id="pf-search"
+                        value={filtros.search}
+                        onChange={(e) => setFiltros((f) => ({ ...f, search: e.target.value }))}
+                        placeholder="Nome parlamentar"
+                    />
                 </div>
+                <div className="sigl-filtro-campo">
+                    <label htmlFor="pf-partido">Partido</label>
+                    <Dropdown
+                        id="pf-partido"
+                        value={filtros.politicalPartyId}
+                        options={partidoOptions}
+                        optionLabel="label"
+                        optionValue="id"
+                        onChange={(e) => setFiltros((f) => ({ ...f, politicalPartyId: e.value }))}
+                    />
+                </div>
+                <div className="sigl-filtro-campo">
+                    <label htmlFor="pf-status">Status</label>
+                    <Dropdown
+                        id="pf-status"
+                        value={filtros.status}
+                        options={STATUS_OPTIONS}
+                        optionLabel="label"
+                        optionValue="value"
+                        onChange={(e) => setFiltros((f) => ({ ...f, status: e.value }))}
+                    />
+                </div>
+            </FiltroLayout>
 
-                <NavDrawer
-                    visible={editing}
-                    onHide={closeDrawer}
-                    wide
-                    title={
-                        creating
-                            ? 'Novo parlamentar'
-                            : form.parliamentaryName || 'Parlamentar'
-                    }
-                >
-                    <form onSubmit={handleSubmit} className="form-stack">
-                        {creating && (
-                            <label>
-                                ID do usuário do tenant *
-                                <input
-                                    value={form.tenantUserId}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            tenantUserId: e.target.value,
-                                        }))
-                                    }
-                                    placeholder="UUID do TenantUser"
-                                    required
-                                />
-                            </label>
-                        )}
-                        <label>
-                            Nome parlamentar *
-                            <input
-                                value={form.parliamentaryName}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        parliamentaryName: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
-                        </label>
-                        <label>
-                            Partido
-                            <select
-                                value={form.politicalPartyId}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        politicalPartyId: e.target.value,
-                                    }))
-                                }
-                            >
-                                <option value="">—</option>
-                                {partidos.map((pt) => (
-                                    <option key={pt.id} value={pt.id}>
-                                        {pt.acronym} — {pt.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                        <label>
-                            Gabinete / sala
-                            <input
-                                value={form.officeNumber}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        officeNumber: e.target.value,
-                                    }))
-                                }
-                            />
-                        </label>
-                        <label>
-                            Biografia
-                            <textarea
-                                value={form.biography}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        biography: e.target.value,
-                                    }))
-                                }
-                                rows={4}
-                            />
-                        </label>
-                        <div className="modal-actions">
-                            {!creating && selectedId && canWrite && (
-                                <button
-                                    type="button"
-                                    className="btn btn-danger"
-                                    onClick={() => remove(selectedId)}
-                                >
-                                    Excluir
-                                </button>
-                            )}
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={closeDrawer}
-                            >
-                                Fechar
-                            </button>
-                            {canWrite && (
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    disabled={saving}
-                                >
-                                    {saving ? 'Salvando…' : 'Salvar'}
-                                </button>
-                            )}
-                        </div>
-                    </form>
-                </NavDrawer>
-            </div>
-        </div>
+            <DataTableLayout<Parliamentarian>
+                items={items}
+                total={total}
+                loading={loading}
+                page={page}
+                onPageChange={setPage}
+                columns={columns}
+                canWrite={canEdit}
+                onEditar={canEdit ? setDialogEditar : undefined}
+                onDeletar={canDelete ? setDialogDeletar : undefined}
+            />
+
+            {dialogCriar && (
+                <ParlamentarCreateDialog
+                    onClose={() => setDialogCriar(false)}
+                    onSaved={() => void buscar()}
+                />
+            )}
+            {dialogEditar && (
+                <ParlamentarEditDialog
+                    parlamentar={dialogEditar}
+                    onClose={() => setDialogEditar(null)}
+                    onSaved={() => void buscar()}
+                />
+            )}
+            {dialogDeletar && (
+                <DeleteDialog
+                    visible
+                    title="Excluir parlamentar"
+                    message={`Deseja excluir "${dialogDeletar.parliamentaryName}"? Esta ação não pode ser desfeita.`}
+                    onConfirm={() => parlamentaresApi.remove(dialogDeletar.id)}
+                    onClose={() => {
+                        setDialogDeletar(null);
+                        void buscar();
+                    }}
+                />
+            )}
+        </section>
     );
 }

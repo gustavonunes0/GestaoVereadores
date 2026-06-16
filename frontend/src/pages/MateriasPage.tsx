@@ -151,7 +151,7 @@ export function MateriasPage() {
 
             <section aria-label="Filtros de pesquisa">
                 <FiltroLayout onBuscar={() => { setPage(1); void buscar(); }} onLimpar={limparFiltros} loading={loading}>
-                    <div className="col-12 md:col-6 lg:col-4">
+                    <div className="sigl-filtro-campo">
                         <label htmlFor="f-tipo">Tipo de Matéria</label>
                         <Dropdown
                             id="f-tipo"
@@ -162,7 +162,7 @@ export function MateriasPage() {
                             onChange={(e) => setFiltros((f) => ({ ...f, tipoId: e.value }))}
                         />
                     </div>
-                    <div className="col-12 md:col-6 lg:col-4">
+                    <div className="sigl-filtro-campo">
                         <label htmlFor="f-ementa">Ementa contém</label>
                         <InputText
                             id="f-ementa"
@@ -170,7 +170,7 @@ export function MateriasPage() {
                             onChange={(e) => setFiltros((f) => ({ ...f, ementa: e.target.value }))}
                         />
                     </div>
-                    <div className="col-12 md:col-6 lg:col-4">
+                    <div className="sigl-filtro-campo">
                         <label htmlFor="f-protocolo">Nº Protocolo</label>
                         <InputText
                             id="f-protocolo"
@@ -178,7 +178,7 @@ export function MateriasPage() {
                             onChange={(e) => setFiltros((f) => ({ ...f, numeroProtocolo: e.target.value }))}
                         />
                     </div>
-                    <div className="col-12 md:col-6 lg:col-4">
+                    <div className="sigl-filtro-campo">
                         <label htmlFor="f-ano">Ano</label>
                         <Dropdown
                             id="f-ano"
@@ -189,7 +189,7 @@ export function MateriasPage() {
                             onChange={(e) => setFiltros((f) => ({ ...f, anoId: e.value }))}
                         />
                     </div>
-                    <div className="col-12 md:col-6 lg:col-4">
+                    <div className="sigl-filtro-campo">
                         <label htmlFor="f-tipo-autor">Tipo de Autor</label>
                         <Dropdown
                             id="f-tipo-autor"
@@ -200,7 +200,7 @@ export function MateriasPage() {
                             onChange={(e) => setFiltros((f) => ({ ...f, tipoAutorId: e.value }))}
                         />
                     </div>
-                    <div className="col-12 md:col-6 lg:col-4">
+                    <div className="sigl-filtro-campo">
                         <label htmlFor="f-data-ap">Data Apresentação</label>
                         <Calendar
                             id="f-data-ap"
@@ -212,7 +212,7 @@ export function MateriasPage() {
                             showButtonBar
                         />
                     </div>
-                    <div className="col-12 md:col-6 lg:col-4">
+                    <div className="sigl-filtro-campo">
                         <label htmlFor="f-data-pub">Data Publicação</label>
                         <Calendar
                             id="f-data-pub"

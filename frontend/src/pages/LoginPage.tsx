@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { InputMask } from 'primereact/inputmask';
-import { Password } from 'primereact/password';
 import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
+import { ROUTES } from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { FooterBar } from '../components/FooterBar';
@@ -19,7 +19,12 @@ export function LoginPage() {
     const [loading, setLoading] = useState(false);
 
     if (user) {
-        return <Navigate to={user.role === 'PARLIAMENTARIAN' ? '/parlamentar/perfil' : '/'} replace />;
+        return (
+            <Navigate
+                to={user.role === 'PARLIAMENTARIAN' ? ROUTES.parlamentar.perfil : ROUTES.dashboard}
+                replace
+            />
+        );
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -42,9 +47,9 @@ export function LoginPage() {
             const stored = localStorage.getItem('user');
             const u: AuthUser | null = stored ? (JSON.parse(stored) as AuthUser) : null;
             if (u?.role === 'PARLIAMENTARIAN') {
-                navigate('/parlamentar/perfil', { replace: true });
+                navigate(ROUTES.parlamentar.perfil, { replace: true });
             } else {
-                navigate('/', { replace: true });
+                navigate(ROUTES.dashboard, { replace: true });
             }
         } catch (err) {
             setError(getApiErrorMessage(err) || 'CPF ou senha incorretos.');
@@ -74,20 +79,16 @@ export function LoginPage() {
                             className="w-full"
                         />
                     </div>
-
-                    <div className="field">
+                    <div className="field" >
                         <label htmlFor="senha">Senha</label>
-                        <Password
-                            id="senha"
+                        <input
+                            type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            feedback={false}
-                            toggleMask
-                            placeholder="••••••••"
                             className="w-full"
-                            inputClassName="w-full"
                             autoComplete="current-password"
-                        />
+                            placeholder="••••••••"
+                        /> 
                     </div>
 
                     {error && (
@@ -99,7 +100,7 @@ export function LoginPage() {
                         label="Entrar"
                         icon="pi pi-sign-in"
                         loading={loading}
-                        className="w-full"
+                        className="w-full mt-4"
                     />
                 </form>
             </div>

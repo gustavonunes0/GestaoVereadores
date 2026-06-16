@@ -10,12 +10,16 @@ export type CamaraUserProfile = {
 
 export abstract class CamaraAuthRepository {
     abstract findUserByEmail(email: string): Promise<CamaraUserEntity | null>;
+    abstract findUserByCpf(cpf: string): Promise<CamaraUserEntity | null>;
 
     abstract findProfileById(id: string): Promise<CamaraUserProfile | null>;
 
     abstract findActiveTenantUser(
         userId: string,
         tenantId: string,
+    ): Promise<TenantUserAccessEntity | null>;
+    abstract findFirstActiveTenantUser(
+        userId: string,
     ): Promise<TenantUserAccessEntity | null>;
 
     abstract touchLastAccess(tenantUserId: string): Promise<void>;

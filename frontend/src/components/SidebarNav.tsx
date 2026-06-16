@@ -1,189 +1,88 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import {
-    SIDEBAR_NAV_GROUPS,
-    ADMINISTRATIVO_NAV,
-    ADMIN_NAV,
-    DASHBOARD_NAV,
-    type NavGroup,
-} from '../app/navigation';
+import { STAFF_NAV_GROUPS, type NavItemDef } from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
-import { ModuleTitle } from './common/ModuleTitle';
 
-const STORAGE_KEY = 'sigl_sidebar_groups';
-
-function loadOpenGroups(): Record<string, boolean> {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) return JSON.parse(raw) as Record<string, boolean>;
-    } catch {
-        /* ignore */
-    }
-    return {};
-}
-
-function groupHasActivePath(group: NavGroup, pathname: string) {
-    return group.items.some((item) => item.match(pathname));
-}
-
-type Props = {
-    showAdmin?: boolean;
-};
-
-export function SidebarNav({ showAdmin = false }: Props) {
+export function SidebarNav() {
     const { pathname } = useLocation();
     const { isAdminStaff } = useAuth();
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
-        () => {
-            const stored = loadOpenGroups();
-            const initial: Record<string, boolean> = {};
-            for (const g of SIDEBAR_NAV_GROUPS) {
-                initial[g.id] =
-                    stored[g.id] ??
-                    g.defaultOpen ??
-                    groupHasActivePath(g, pathname);
-            }
-            return initial;
-        },
-    );
-
-    useEffect(() => {
-        setOpenGroups((prev) => {
-            const next = { ...prev };
-            for (const g of SIDEBAR_NAV_GROUPS) {
-                if (groupHasActivePath(g, pathname)) {
-                    next[g.id] = true;
-                }
-            }
+    function toggleGroup(label: string) {
+        setExpandedGroups((prev) => {
+            const next = new Set(prev);
+            next.has(label) ? next.delete(label) : next.add(label);
             return next;
         });
-    }, [pathname]);
+    }
 
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(openGroups));
-    }, [openGroups]);
+    function isRouteActive(route: string) {
+        if (route === '/') return pathname === '/';
+        return pathname.startsWith(route);
+    }
 
-    function toggleGroup(id: string) {
-        setOpenGroups((prev) => ({ ...prev, [id]: !prev[id] }));
+    function renderItem(item: NavItemDef, nested = false): React.ReactNode {
+        if (item.adminOnly && !isAdminStaff) return null;
+
+        if (item.children) {
+            const isExpanded = expandedGroups.has(item.label);
+            const hasActiveChild = item.children.some(
+                (c) => c.route && isRouteActive(c.route),
+            );
+            return (
+                <div key={item.label} className={`nav-group${hasActiveChild ? ' nav-group--active' : ''}`}>
+                    <button
+                        type="button"
+                        className="nav-link w-full text-left"
+                        onClick={() => toggleGroup(item.label)}
+                        aria-expanded={isExpanded}
+                    >
+                        <span className="nav-link__label flex items-center justify-between">
+                            <span className="flex items-center gap-2">
+                                <i className={`pi ${item.icon} module-title__icon`} aria-hidden="true" />
+                                <span>{item.label}</span>
+                            </span>
+                            <i
+                                className={`pi ${isExpanded ? 'pi-chevron-up' : 'pi-chevron-down'} text-xs opacity-50`}
+                                aria-hidden="true"
+                            />
+                        </span>
+                    </button>
+                    {isExpanded && (
+                        <div role="group" className="nav-group__items">
+                            {item.children
+                                .filter((child) => !child.adminOnly || isAdminStaff)
+                                .map((child) => renderItem(child, true))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        if (!item.route) return null;
+        const active = isRouteActive(item.route);
+
+        return (
+            <NavLink
+                key={item.route}
+                to={item.route}
+                end={item.route === '/'}
+                className={() =>
+                    `nav-link${nested ? ' nav-link--nested' : ''}${active ? ' active' : ''}`
+                }
+                aria-current={active ? 'page' : undefined}
+            >
+                <span className="nav-link__label flex items-center gap-2">
+                    <i className={`pi ${item.icon} module-title__icon`} aria-hidden="true" />
+                    <span>{item.label}</span>
+                </span>
+            </NavLink>
+        );
     }
 
     return (
-        <nav className="sidebar-nav" aria-label="Menu principal">
-            <NavLink
-                to={DASHBOARD_NAV.to}
-                end={DASHBOARD_NAV.end}
-                className={() =>
-                    `nav-link nav-link--top${DASHBOARD_NAV.match(pathname) ? ' active' : ''}`
-                }
-            >
-                <ModuleTitle
-                    icon={DASHBOARD_NAV.icon}
-                    as="span"
-                    className="nav-link__label"
-                >
-                    {DASHBOARD_NAV.label}
-                </ModuleTitle>
-            </NavLink>
-
-            {SIDEBAR_NAV_GROUPS.map((group) => {
-                const isOpen = openGroups[group.id] ?? false;
-                const activeInGroup = groupHasActivePath(group, pathname);
-                return (
-                    <div
-                        key={group.id}
-                        className={`nav-group${isOpen ? ' nav-group--open' : ''}${activeInGroup ? ' nav-group--active' : ''}`}
-                    >
-                        <button
-                            type="button"
-                            className="nav-group__trigger"
-                            aria-expanded={isOpen}
-                            onClick={() => toggleGroup(group.id)}
-                        >
-                            <span className="nav-group__label">
-                                {group.label}
-                            </span>
-                            <span className="nav-group__meta">
-                                <span className="nav-group__count">
-                                    {group.items.length}
-                                </span>
-                                <i
-                                    className={`pi ${isOpen ? 'pi-chevron-up' : 'pi-chevron-down'} nav-group__chevron`}
-                                    aria-hidden
-                                />
-                            </span>
-                        </button>
-                        {isOpen && (
-                            <div className="nav-group__items">
-                                {group.items
-                                    .filter(
-                                        (item) => item.to !== DASHBOARD_NAV.to,
-                                    )
-                                    .map((item) => (
-                                        <NavLink
-                                            key={item.to}
-                                            to={item.to}
-                                            end={item.end}
-                                            className={() =>
-                                                `nav-link nav-link--nested${item.match(pathname) ? ' active' : ''}`
-                                            }
-                                        >
-                                            <ModuleTitle
-                                                icon={item.icon}
-                                                as="span"
-                                                className="nav-link__label"
-                                            >
-                                                {item.label}
-                                            </ModuleTitle>
-                                        </NavLink>
-                                    ))}
-                            </div>
-                        )}
-                    </div>
-                );
-            })}
-
-            <div className="nav-section">Outros</div>
-            {ADMINISTRATIVO_NAV.map((item) => (
-                <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className={() =>
-                        `nav-link${item.match(pathname) ? ' active' : ''}`
-                    }
-                >
-                    <ModuleTitle
-                        icon={item.icon}
-                        as="span"
-                        className="nav-link__label"
-                    >
-                        {item.label}
-                    </ModuleTitle>
-                </NavLink>
-            ))}
-
-            {(showAdmin || isAdminStaff) && (
-                <>
-                    <div className="nav-section">Gestão</div>
-                    {ADMIN_NAV.map((item) => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            className={() =>
-                                `nav-link${item.match(pathname) ? ' active' : ''}`
-                            }
-                        >
-                            <ModuleTitle
-                                icon={item.icon}
-                                as="span"
-                                className="nav-link__label"
-                            >
-                                {item.label}
-                            </ModuleTitle>
-                        </NavLink>
-                    ))}
-                </>
-            )}
+        <nav className="sidebar-nav" aria-label="Navegação principal">
+            {STAFF_NAV_GROUPS.map((item) => renderItem(item))}
         </nav>
     );
 }

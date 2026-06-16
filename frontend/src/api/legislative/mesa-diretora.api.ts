@@ -36,32 +36,32 @@ export type CreateBoardInput = {
 
 export const mesaDiretoraApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
-        apiList<Board>(API_PATHS.legislative.mesaDiretora, params),
+        apiList<Board>(API_PATHS.mesaDiretora, params),
 
     getById: (id: string) =>
-        api<Board>(`${API_PATHS.legislative.mesaDiretora}/${id}`),
+        api<Board>(`${API_PATHS.mesaDiretora}/${id}`),
 
     create: (body: CreateBoardInput) =>
-        api<Board>(API_PATHS.legislative.mesaDiretora, {
+        api<Board>(API_PATHS.mesaDiretora, {
             method: 'POST',
             body: JSON.stringify(body),
         }),
 
     listCargos: () =>
-        api<BoardRole[]>(`${API_PATHS.legislative.mesaDiretora}/cargos`),
+        api<BoardRole[]>(`${API_PATHS.mesaDiretora}/cargos`),
 
     addMembro: (
         boardId: string,
         body: { parliamentarianId: string; boardRoleId: string },
     ) =>
-        api(`${API_PATHS.legislative.mesaDiretora}/${boardId}/membros`, {
+        api(`${API_PATHS.mesaDiretora}/${boardId}/membros`, {
             method: 'POST',
             body: JSON.stringify(body),
         }),
 
     removeMembro: (boardId: string, membroId: string) =>
         api(
-            `${API_PATHS.legislative.mesaDiretora}/${boardId}/membros/${membroId}`,
+            `${API_PATHS.mesaDiretora}/${boardId}/membros/${membroId}`,
             { method: 'DELETE' },
         ),
 };

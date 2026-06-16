@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { Button } from 'primereact/button';
 import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
@@ -118,13 +119,11 @@ export function UsuariosPage() {
                 icon={MODULE_ICONS.usuarios}
                 title="Usuários do sistema"
                 actions={
-                    <button
-                        type="button"
-                        className="btn btn-primary"
+                    <Button
+                        label="Novo usuário"
+                        icon="pi pi-plus"
                         onClick={() => { resetForm(); setCreateOpen(true); }}
-                    >
-                        Novo usuário
-                    </button>
+                    />
                 }
             />
 

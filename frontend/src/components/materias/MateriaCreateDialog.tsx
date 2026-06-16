@@ -107,7 +107,7 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
             const file = fileRef.current?.files?.[0];
             if (file) fd.append('textoOriginal', file);
 
-            await apiFormData<Materia>(API_PATHS.legislative.materias, fd);
+            await apiFormData<Materia>(API_PATHS.materias, fd);
             showSuccess('Matéria criada com sucesso.');
             onSaved();
             onClose();

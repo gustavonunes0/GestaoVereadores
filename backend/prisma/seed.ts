@@ -3,6 +3,7 @@ import {
     CodigoTipoSessao,
     RoleUsuario,
     TenantStatus,
+    TenantUserRole,
     TenantUserStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -74,6 +75,7 @@ async function main() {
             },
         },
         update: {
+            role: TenantUserRole.ADMIN_STAFF,
             isTenantAdmin: true,
             isTenantStaff: true,
             isParliamentarian: false,
@@ -83,6 +85,7 @@ async function main() {
         create: {
             tenantId: DEMO_TENANT_ID,
             userId: camaraUser.id,
+            role: TenantUserRole.ADMIN_STAFF,
             isTenantAdmin: true,
             isTenantStaff: true,
             isParliamentarian: false,
@@ -92,6 +95,53 @@ async function main() {
     console.log(
         'Usuário câmara: admin@camara.teste / camara123 (CNPJ 00.000.000/0001-91)',
     );
+
+    // --- Conta ADMIN_STAFF adicional (CPF + senha) ---
+    const adminStaffPasswordHash = await hashPasswordScrypt('admin123');
+    const adminStaffUser = await prisma.user.upsert({
+        where: { email: 'admin.staff@camara.teste' },
+        update: {
+            firstName: 'Admin',
+            lastName: 'Staff',
+            cpf: '99999999999',
+            passwordHash: adminStaffPasswordHash,
+            isRemoved: false,
+        },
+        create: {
+            firstName: 'Admin',
+            lastName: 'Staff',
+            cpf: '99999999999',
+            email: 'admin.staff@camara.teste',
+            passwordHash: adminStaffPasswordHash,
+        },
+    });
+
+    await prisma.tenantUser.upsert({
+        where: {
+            tenantId_userId: {
+                tenantId: DEMO_TENANT_ID,
+                userId: adminStaffUser.id,
+            },
+        },
+        update: {
+            role: TenantUserRole.ADMIN_STAFF,
+            isTenantAdmin: true,
+            isTenantStaff: true,
+            isParliamentarian: false,
+            status: TenantUserStatus.ACTIVE,
+            isRemoved: false,
+        },
+        create: {
+            tenantId: DEMO_TENANT_ID,
+            userId: adminStaffUser.id,
+            role: TenantUserRole.ADMIN_STAFF,
+            isTenantAdmin: true,
+            isTenantStaff: true,
+            isParliamentarian: false,
+            status: TenantUserStatus.ACTIVE,
+        },
+    });
+    console.log('Usuário ADMIN_STAFF: CPF 99999999999 / senha admin123');
 
     // --- Ano ---
     const ano2026 = await prisma.ano.upsert({

@@ -1,5 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Button } from 'primereact/button';
 import { ROUTES, MODULE_ICONS } from '../app/navigation';
 import {
     mesaDiretoraApi,
@@ -8,7 +9,7 @@ import {
 import { ColegiadoMembersPanel } from '../components/camara/ColegiadoMembersPanel';
 import { NavDrawer } from '../components/NavDrawer';
 import { Modal } from '../components/Modal';
-import { PanelToolbar } from '../components/PanelToolbar';
+import { PageHeader } from '../components/PageHeader';
 import { useLegislatura } from '../contexts/LegislaturaContext';
 import { usePermissions } from '../hooks/usePermissions';
 
@@ -78,19 +79,18 @@ export function MesaDiretoraPage() {
 
     return (
         <div className="page">
-            <PanelToolbar
+            <PageHeader
                 icon={MODULE_ICONS.mesaDiretora}
                 title="Mesa diretora"
+                subtitle="Composição e membros da mesa diretora por legislatura."
                 actions={
                     canWrite ? (
-                        <button
-                            type="button"
-                            className="btn btn-primary"
+                        <Button
+                            label="Nova composição"
+                            icon="pi pi-plus"
                             onClick={() => setOpen(true)}
                             disabled={!legislaturaId}
-                        >
-                            Nova composição
-                        </button>
+                        />
                     ) : undefined
                 }
             />

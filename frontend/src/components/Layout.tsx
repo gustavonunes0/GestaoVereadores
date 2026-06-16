@@ -4,14 +4,14 @@ import { Tag } from 'primereact/tag';
 import { useAuth } from '../contexts/AuthContext';
 import { LegislaturaProvider } from '../contexts/LegislaturaContext';
 import { AppFeedbackProvider } from '../hooks/useAppToast';
-import { ModuleTitle } from './common/ModuleTitle';
 import { SiglButton } from './common/SiglButton';
 import { SidebarNav } from './SidebarNav';
 import { FooterBar } from './FooterBar';
 import { LegislaturaBar } from './LegislaturaBar';
+import logoSrc from '../../assets/logo.png';
 
 export function Layout() {
-    const { user, logout, isAdminStaff } = useAuth();
+    const { user, logout } = useAuth();
     const { pathname } = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -38,19 +38,17 @@ export function Layout() {
 
                     <aside className="sidebar" id="app-sidebar">
                         <div className="sidebar-brand">
-                            <h1>
-                                <ModuleTitle
-                                    icon="pi pi-building"
-                                    as="span"
-                                    className="sidebar-brand__title"
-                                >
-                                    SIGL
-                                </ModuleTitle>
+                            <h1 className="sidebar-brand__heading">
+                                <img
+                                    src={logoSrc}
+                                    alt="SIGL"
+                                    className="sidebar-brand__logo"
+                                />
                             </h1>
-                            <p>Atividade legislativa</p>
+                            
                         </div>
 
-                        <SidebarNav showAdmin={isAdminStaff} />
+                        <SidebarNav />
                     </aside>
 
                     <div className="main">

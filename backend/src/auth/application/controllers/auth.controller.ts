@@ -39,6 +39,13 @@ export class AuthController {
     @Post('login')
     async login(@Body() dto: LoginDto) {
         try {
+            if (dto.cpf) {
+                return await this.loginCamara.execute({
+                    cpf: dto.cpf,
+                    password: dto.password,
+                    tenantId: dto.tenantId,
+                });
+            }
             return await this.loginSigl.execute(dto);
         } catch (error) {
             this.handleError(error);

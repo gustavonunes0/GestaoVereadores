@@ -1,11 +1,12 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { Button } from 'primereact/button';
 import { MODULE_ICONS } from '../app/navigation';
 import {
     legislaturasApi,
     type Legislature,
 } from '../api/legislative/legislaturas.api';
 import { Modal } from '../components/Modal';
-import { PanelToolbar } from '../components/PanelToolbar';
+import { PageHeader } from '../components/PageHeader';
 import { usePermissions } from '../hooks/usePermissions';
 import { useLegislatura } from '../contexts/LegislaturaContext';
 
@@ -40,18 +41,17 @@ export function LegislaturasPage() {
 
     return (
         <div className="page">
-            <PanelToolbar
+            <PageHeader
                 icon={MODULE_ICONS.legislaturas}
                 title="Legislaturas"
+                subtitle="Períodos legislativos e legislatura vigente da câmara."
                 actions={
                     canWrite ? (
-                        <button
-                            type="button"
-                            className="btn btn-primary"
+                        <Button
+                            label="Nova legislatura"
+                            icon="pi pi-plus"
                             onClick={() => setOpen(true)}
-                        >
-                            Nova legislatura
-                        </button>
+                        />
                     ) : undefined
                 }
             />

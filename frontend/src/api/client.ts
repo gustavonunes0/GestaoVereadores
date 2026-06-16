@@ -75,7 +75,7 @@ export async function apiList<T>(
     if (params?.page) qs.set('page', String(params.page));
     if (params) {
         for (const [key, value] of Object.entries(params)) {
-            if (key === 'limit' || key === 'page' || value === undefined)
+            if (key === 'limit' || key === 'page' || value === undefined || value === '')
                 continue;
             qs.set(key, String(value));
         }
@@ -125,12 +125,12 @@ export async function apiFormData<T>(
 
 export const authApi = {
     login: (dto: LoginRequest): Promise<LoginResponse> =>
-        api(API_PATHS.auth.login, {
+        api(API_PATHS.authLogin, {
             method: 'POST',
             body: JSON.stringify(dto),
         }),
 
-    me: (): Promise<AuthUser> => api(API_PATHS.auth.me),
+    me: (): Promise<AuthUser> => api(API_PATHS.authMe),
 };
 
 export type { AuthUser } from '../types/auth';

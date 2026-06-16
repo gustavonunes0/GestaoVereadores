@@ -41,25 +41,25 @@ export type CommitteeInput = {
 
 export const comissoesApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
-        apiList<Committee>(API_PATHS.legislative.comissoes, params),
+        apiList<Committee>(API_PATHS.comissoes, params),
 
     getById: (id: string) =>
-        api<Committee>(`${API_PATHS.legislative.comissoes}/${id}`),
+        api<Committee>(`${API_PATHS.comissoes}/${id}`),
 
     create: (body: CommitteeInput) =>
-        api<Committee>(API_PATHS.legislative.comissoes, {
+        api<Committee>(API_PATHS.comissoes, {
             method: 'POST',
             body: JSON.stringify(body),
         }),
 
     update: (id: string, body: Partial<CommitteeInput>) =>
-        api<Committee>(`${API_PATHS.legislative.comissoes}/${id}`, {
+        api<Committee>(`${API_PATHS.comissoes}/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(body),
         }),
 
     remove: (id: string) =>
-        api<void>(`${API_PATHS.legislative.comissoes}/${id}`, {
+        api<void>(`${API_PATHS.comissoes}/${id}`, {
             method: 'DELETE',
         }),
 };

@@ -39,28 +39,28 @@ export type UpdateParliamentarianInput = Partial<
 
 export const parlamentaresApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
-        apiList<Parliamentarian>(API_PATHS.legislative.parlamentares, params),
+        apiList<Parliamentarian>(API_PATHS.parlamentares, params),
 
     getById: (id: string) =>
-        api<Parliamentarian>(`${API_PATHS.legislative.parlamentares}/${id}`),
+        api<Parliamentarian>(`${API_PATHS.parlamentares}/${id}`),
 
     create: (body: CreateParliamentarianInput) =>
-        api<Parliamentarian>(API_PATHS.legislative.parlamentares, {
+        api<Parliamentarian>(API_PATHS.parlamentares, {
             method: 'POST',
             body: JSON.stringify(body),
         }),
 
     update: (id: string, body: UpdateParliamentarianInput) =>
-        api<Parliamentarian>(`${API_PATHS.legislative.parlamentares}/${id}`, {
+        api<Parliamentarian>(`${API_PATHS.parlamentares}/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(body),
         }),
 
     remove: (id: string) =>
-        api<void>(`${API_PATHS.legislative.parlamentares}/${id}`, {
+        api<void>(`${API_PATHS.parlamentares}/${id}`, {
             method: 'DELETE',
         }),
 
     getMandatos: (id: string) =>
-        api<unknown[]>(`${API_PATHS.legislative.parlamentares}/${id}/mandates`),
+        api<unknown[]>(`${API_PATHS.parlamentares}/${id}/mandates`),
 };

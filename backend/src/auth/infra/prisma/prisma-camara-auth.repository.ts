@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { TenantUserStatus } from '@prisma/client';
+import { TenantStatus, TenantUserStatus } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CamaraUserEntity } from '../../domain/entities/camara-user.entity';
 import { TenantUserAccessEntity } from '../../domain/entities/tenant-access.entity';
@@ -17,6 +17,21 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
     async findUserByEmail(email: string): Promise<CamaraUserEntity | null> {
         const row = await this.prisma.user.findFirst({
             where: { email, isRemoved: false },
+        });
+        if (!row) return null;
+
+        return new CamaraUserEntity({
+            id: row.id,
+            email: row.email,
+            firstName: row.firstName,
+            lastName: row.lastName,
+            passwordHash: row.passwordHash,
+        });
+    }
+
+    async findUserByCpf(cpf: string): Promise<CamaraUserEntity | null> {
+        const row = await this.prisma.user.findFirst({
+            where: { cpf, isRemoved: false },
         });
         if (!row) return null;
 
@@ -55,6 +70,35 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
             include: {
                 parliamentarian: { select: { id: true } },
             },
+        });
+        if (!row) return null;
+
+        return new TenantUserAccessEntity({
+            id: row.id,
+            tenantId: row.tenantId,
+            userId: row.userId,
+            role: row.role,
+            parliamentarianId: row.parliamentarian?.id,
+            isTenantAdmin: row.isTenantAdmin,
+            isTenantStaff: row.isTenantStaff,
+            isParliamentarian: row.isParliamentarian,
+        });
+    }
+
+    async findFirstActiveTenantUser(
+        userId: string,
+    ): Promise<TenantUserAccessEntity | null> {
+        const row = await this.prisma.tenantUser.findFirst({
+            where: {
+                userId,
+                isRemoved: false,
+                status: TenantUserStatus.ACTIVE,
+                tenant: { isRemoved: false, status: TenantStatus.ACTIVE },
+            },
+            include: {
+                parliamentarian: { select: { id: true } },
+            },
+            orderBy: { createdAt: 'asc' },
         });
         if (!row) return null;
 

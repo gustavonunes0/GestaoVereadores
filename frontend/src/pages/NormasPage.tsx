@@ -12,11 +12,7 @@ import { DeleteDialog } from '../components/common/DeleteDialog';
 import { NormaStatusBadge } from '../components/normas/NormaStatusBadge';
 import { NormaVerDialog } from '../components/normas/NormaVerDialog';
 import { NormaCreateDialog } from '../components/normas/NormaCreateDialog';
-import { PublicacaoModuleIntro } from '../components/publicacao/PublicacaoModuleIntro';
 import { ModulePipelineFooter } from '../components/workflow/ModulePipelineFooter';
-import { PipelineStepBadge } from '../components/workflow/PipelineStepBadge';
-import { PUBLICACAO_MODULES } from '../app/publicacao';
-import { WORKFLOW_PIPELINE_TOTAL } from '../app/navigation';
 import { useAppToast } from '../hooks/useAppToast';
 import { useDominios } from '../hooks/useDominios';
 import { usePermissions } from '../hooks/usePermissions';
@@ -105,17 +101,8 @@ export function NormasPage() {
         </>
     );
 
-    const mod = PUBLICACAO_MODULES.normas;
-
     return (
         <section className="page page--normas">
-            <PipelineStepBadge
-                step={mod.pipelineStep}
-                total={WORKFLOW_PIPELINE_TOTAL}
-                label={mod.title}
-                domain="normative"
-            />
-
             <PageHeader
                 icon={MODULE_ICONS.normas}
                 title="Normas jurídicas"
@@ -131,21 +118,19 @@ export function NormasPage() {
                 }
             />
 
-            <PublicacaoModuleIntro moduleId="normas" />
-
             <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
-                <div className="col-12 md:col-4 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="nf-tipo">Espécie</label>
                     <Dropdown
                         id="nf-tipo"
                         value={filtros.tipoId ?? ''}
                         options={[{ id: '', nome: 'Todos' }, ...tiposNorma]}
                         optionLabel="nome"
-                        optionValue="id"
+                        optionValue="id"                    
                         onChange={(e) => setFiltros((f) => ({ ...f, tipoId: e.value || undefined }))}
                     />
                 </div>
-                <div className="col-12 md:col-4 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="nf-numero">Número</label>
                     <InputText
                         id="nf-numero"
@@ -154,7 +139,7 @@ export function NormasPage() {
                         placeholder="Número da norma"
                     />
                 </div>
-                <div className="col-12 md:col-4 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="nf-ementa">Ementa</label>
                     <InputText
                         id="nf-ementa"
@@ -163,7 +148,7 @@ export function NormasPage() {
                         placeholder="Texto da ementa"
                     />
                 </div>
-                <div className="col-12 md:col-4 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="nf-ano">Ano</label>
                     <Dropdown
                         id="nf-ano"

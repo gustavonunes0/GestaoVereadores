@@ -19,10 +19,10 @@ export type CreateLegislatureInput = {
 
 export const legislaturasApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
-        apiList<Legislature>(API_PATHS.legislative.legislaturas, params),
+        apiList<Legislature>(API_PATHS.legislaturas, params),
 
     create: (body: CreateLegislatureInput) =>
-        api<Legislature>(API_PATHS.legislative.legislaturas, {
+        api<Legislature>(API_PATHS.legislaturas, {
             method: 'POST',
             body: JSON.stringify(body),
         }),

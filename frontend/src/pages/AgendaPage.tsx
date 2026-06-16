@@ -262,7 +262,7 @@ export function AgendaPage() {
             />
 
             <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
-                <div className="col-12 md:col-6 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="ag-tipo">Tipo de evento</label>
                     <Dropdown
                         id="ag-tipo"
@@ -273,7 +273,7 @@ export function AgendaPage() {
                         onChange={(e) => setFiltroTipo(e.value)}
                     />
                 </div>
-                <div className="col-12 md:col-6 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="ag-data">Período</label>
                     <Calendar
                         id="ag-data"
@@ -285,8 +285,8 @@ export function AgendaPage() {
                         readOnlyInput
                     />
                 </div>
-                <div className="col-12 md:col-6 lg:col-3 flex align-items-end">
-                    <div className="flex align-items-center gap-2">
+                <div className="sigl-filtro-campo flex items-end">
+                    <div className="flex items-center gap-2">
                         <Checkbox
                             inputId="ag-pub"
                             checked={filtroPublico}

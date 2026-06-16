@@ -58,13 +58,13 @@ export function DashboardPage() {
 
     useEffect(() => {
         Promise.all([
-            apiTotal(API_PATHS.legislative.parlamentares),
-            apiTotal(API_PATHS.legislative.materias),
-            apiList<MateriaResumo>(API_PATHS.legislative.materias, {
+            apiTotal(API_PATHS.parlamentares),
+            apiTotal(API_PATHS.materias),
+            apiList<MateriaResumo>(API_PATHS.materias, {
                 limit: 5,
                 emTramitacao: true,
             }),
-            apiTotal(API_PATHS.legislative.sessoes),
+            apiTotal(API_PATHS.sessoes),
         ]).then(([parlamentares, materias, tram, sessoes]) => {
             setStats({
                 parlamentares,
