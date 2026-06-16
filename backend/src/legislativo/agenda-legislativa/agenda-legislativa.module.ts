@@ -6,8 +6,10 @@ import { CreateAgendaUseCase } from './application/use-cases/create-agenda.use-c
 import { GetAgendaByIdUseCase } from './application/use-cases/get-agenda-by-id.use-case';
 import { ListAgendaTiposUseCase } from './application/use-cases/list-agenda-tipos.use-case';
 import { ListAgendasUseCase } from './application/use-cases/list-agendas.use-case';
+import { ListPublicAgendaUseCase } from './application/use-cases/list-public-agenda.use-case';
 import { RemoveAgendaUseCase } from './application/use-cases/remove-agenda.use-case';
 import { UpdateAgendaUseCase } from './application/use-cases/update-agenda.use-case';
+import { VincularSessaoUseCase } from './application/use-cases/vincular-sessao.use-case';
 import { PrismaAgendaLegislativaRepository } from './infra/prisma/prisma-agenda-legislativa.repository';
 
 @Module({
@@ -20,6 +22,8 @@ import { PrismaAgendaLegislativaRepository } from './infra/prisma/prisma-agenda-
         GetAgendaByIdUseCase,
         UpdateAgendaUseCase,
         RemoveAgendaUseCase,
+        VincularSessaoUseCase,
+        ListPublicAgendaUseCase,
         PrismaAgendaLegislativaRepository,
         {
             provide: AGENDA_LEGISLATIVA_REPOSITORY,

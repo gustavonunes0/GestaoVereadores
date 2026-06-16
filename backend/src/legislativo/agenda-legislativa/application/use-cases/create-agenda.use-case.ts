@@ -37,6 +37,13 @@ export class CreateAgendaUseCase {
             mensagem: dto.mensagem ?? null,
             dataInicio,
             dataFim,
+            local: dto.local ?? null,
+            descricao: dto.descricao ?? null,
+            sessaoPlenariaId: dto.sessaoPlenariaId ?? null,
+            publicoExterno: dto.publicoExterno ?? false,
+            linkTransmissao: dto.linkTransmissao ?? null,
+            recorrencia: dto.recorrencia ?? null,
+            recorrenciaPaiId: dto.recorrenciaPaiId ?? null,
         });
 
         return AgendaViewModel.toHttp(saved);

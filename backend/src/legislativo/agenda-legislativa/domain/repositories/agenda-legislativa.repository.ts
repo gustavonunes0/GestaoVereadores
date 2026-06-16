@@ -10,6 +10,13 @@ export type CreateAgendaLegislativaInput = {
     mensagem?: string | null;
     dataInicio?: Date | null;
     dataFim?: Date | null;
+    local?: string | null;
+    descricao?: string | null;
+    sessaoPlenariaId?: string | null;
+    publicoExterno?: boolean;
+    linkTransmissao?: string | null;
+    recorrencia?: string | null;
+    recorrenciaPaiId?: string | null;
 };
 
 export type UpdateAgendaLegislativaInput = {
@@ -19,6 +26,13 @@ export type UpdateAgendaLegislativaInput = {
     mensagem?: string | null;
     dataInicio?: Date | null;
     dataFim?: Date | null;
+    local?: string | null;
+    descricao?: string | null;
+    sessaoPlenariaId?: string | null;
+    publicoExterno?: boolean;
+    linkTransmissao?: string | null;
+    recorrencia?: string | null;
+    recorrenciaPaiId?: string | null;
 };
 
 export type ListAgendasLegislativasQuery = {
@@ -39,6 +53,10 @@ export abstract class AgendaLegislativaRepository {
         query: ListAgendasLegislativasQuery,
     ): Promise<PaginatedResult<AgendaLegislativaEntity>>;
 
+    abstract findPublic(
+        query: ListAgendasLegislativasQuery,
+    ): Promise<PaginatedResult<AgendaLegislativaEntity>>;
+
     abstract findOne(
         tenantId: string,
         id: string,
@@ -48,6 +66,12 @@ export abstract class AgendaLegislativaRepository {
         tenantId: string,
         id: string,
         data: UpdateAgendaLegislativaInput,
+    ): Promise<AgendaLegislativaEntity>;
+
+    abstract vincularSessao(
+        tenantId: string,
+        id: string,
+        sessaoPlenariaId: string | null,
     ): Promise<AgendaLegislativaEntity>;
 
     abstract remove(

@@ -7,6 +7,19 @@ import {
     RegistrarVotoDto,
     UpdateVotoDto,
 } from '../../application/dto/voto.dto';
+import { VotacaoEntity, ResultadoVotacaoEnum } from '../entities/votacao.entity';
+import { ContagemVotos } from '../services/contagem-votos.service';
+
+export type EncerrarVotacaoDados = {
+    votosSim: number;
+    votosNao: number;
+    abstencoes: number;
+    resultado: ResultadoVotacaoEnum;
+    responsavelId: string;
+    quorumVotacao?: number;
+    motivoEmpate?: string;
+    observacoes?: string;
+};
 
 export abstract class VotacaoRepository {
     abstract abrirVotacao(
@@ -65,4 +78,15 @@ export abstract class VotacaoRepository {
         pautaItemId: string,
         dto: FinalizarVotacaoDto,
     ): Promise<unknown>;
+
+    // Novos métodos DDD (M5)
+    abstract findVotacaoById(id: string): Promise<VotacaoEntity | null>;
+    abstract calcularContagem(votacaoId: string): Promise<ContagemVotos>;
+    abstract encerrar(
+        votacaoId: string,
+        pautaItemId: string,
+        tenantId: string,
+        materiaId: string,
+        dados: EncerrarVotacaoDados,
+    ): Promise<void>;
 }

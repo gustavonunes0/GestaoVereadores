@@ -11,10 +11,18 @@ import {
     Patch,
     Post,
     Query,
+    Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { TenantMaintainer } from '../../../../common/decorators/tenant-maintainer.decorator';
+import { TenantRoles } from '../../../../common/decorators/tenant-roles.decorator';
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
+import {
+    ADMIN_ONLY,
+    PARLIAMENTARIAN_ONLY,
+    STAFF_AND_ABOVE,
+} from '../../../../auth/guards/guard-combos';
 import {
     AddPautaItemDto,
     CreateSessaoPlenariaDto,
@@ -125,6 +133,16 @@ import {
     ListSessionStatusesUseCase,
 } from '../use-cases/session-lifecycle.use-case';
 import { UpdateSessaoPlenariaUseCase } from '../use-cases/update-sessao-plenaria.use-case';
+import { AbrirSessaoUseCase } from '../use-cases/abrir-sessao.use-case';
+import { SuspenderSessaoUseCase } from '../use-cases/suspender-sessao.use-case';
+import { EncerrarSessaoUseCase } from '../use-cases/encerrar-sessao.use-case';
+import { CancelarSessaoUseCase } from '../use-cases/cancelar-sessao.use-case';
+import { PublicarPautaUseCase } from '../use-cases/publicar-pauta.use-case';
+import { CalcularQuorumUseCase } from '../use-cases/calcular-quorum.use-case';
+import { AbrirSessaoDto } from '../dto/abrir-sessao.dto';
+import { SuspenderSessaoDto } from '../dto/suspender-sessao.dto';
+import { EncerrarSessaoDto } from '../dto/encerrar-sessao.dto';
+import { CancelarSessaoDto } from '../dto/cancelar-sessao.dto';
 
 @ApiTags('sessoes')
 @ApiBearerAuth()
@@ -160,6 +178,12 @@ export class SessoesController {
         private readonly updateVoto: UpdateVotoUseCase,
         private readonly previewResultadoVotacao: PreviewResultadoVotacaoUseCase,
         private readonly finalizarVotacao: FinalizarVotacaoUseCase,
+        private readonly abrirSessao: AbrirSessaoUseCase,
+        private readonly suspenderSessao: SuspenderSessaoUseCase,
+        private readonly encerrarSessao: EncerrarSessaoUseCase,
+        private readonly cancelarSessao: CancelarSessaoUseCase,
+        private readonly publicarPauta: PublicarPautaUseCase,
+        private readonly calcularQuorum: CalcularQuorumUseCase,
     ) {}
 
     @Get('pauta/fases')
@@ -221,7 +245,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Post()
     async create(
         @TenantId() tenantId: string,
@@ -234,7 +258,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Patch(':id')
     async update(
         @TenantId() tenantId: string,
@@ -248,7 +272,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/ciclo-vida')
     async executarCicloVida(
         @TenantId() tenantId: string,
@@ -262,7 +286,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Delete(':id')
     remove(
         @TenantId() tenantId: string,
@@ -301,7 +325,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/pauta')
     async addPauta(
         @TenantId() tenantId: string,
@@ -315,7 +339,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Patch(':id/pauta/:pautaItemId')
     async updatePautaItemHandler(
         @TenantId() tenantId: string,
@@ -335,7 +359,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Delete(':id/pauta/:pautaItemId')
     async removerPauta(
         @TenantId() tenantId: string,
@@ -353,7 +377,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Patch(':id/pauta/:pautaItemId/resultado')
     registrarResultadoPautaHandler(
         @TenantId() tenantId: string,
@@ -369,7 +393,7 @@ export class SessoesController {
         );
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/presencas')
     async registrarPresencaHandler(
         @TenantId() tenantId: string,
@@ -409,7 +433,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Patch(':id/presencas/:presencaId')
     async updatePresencaHandler(
         @TenantId() tenantId: string,
@@ -442,7 +466,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/pauta/:pautaItemId/votacao')
     async abrirVotacaoHandler(
         @TenantId() tenantId: string,
@@ -500,7 +524,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...PARLIAMENTARIAN_ONLY)
     @Post(':id/pauta/:pautaItemId/votacao/votos')
     async registrarVotoHandler(
         @TenantId() tenantId: string,
@@ -520,7 +544,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Patch(':id/pauta/:pautaItemId/votacao/votos/:votoId')
     async updateVotoHandler(
         @TenantId() tenantId: string,
@@ -561,7 +585,7 @@ export class SessoesController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Patch(':id/pauta/:pautaItemId/votacao/finalizar')
     async finalizarVotacaoHandler(
         @TenantId() tenantId: string,
@@ -579,6 +603,71 @@ export class SessoesController {
         } catch (error) {
             this.handleError(error);
         }
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/abrir')
+    abrirSessaoHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: AbrirSessaoDto,
+        @Req() req: Request,
+    ) {
+        const responsavelId = (req.user as { id?: string })?.id ?? 'system';
+        return this.abrirSessao.execute(tenantId, id, dto, responsavelId);
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/suspender')
+    suspenderSessaoHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: SuspenderSessaoDto,
+        @Req() req: Request,
+    ) {
+        const responsavelId = (req.user as { id?: string })?.id ?? 'system';
+        return this.suspenderSessao.execute(tenantId, id, dto, responsavelId);
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/encerrar')
+    encerrarSessaoHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: EncerrarSessaoDto,
+        @Req() req: Request,
+    ) {
+        const responsavelId = (req.user as { id?: string })?.id ?? 'system';
+        return this.encerrarSessao.execute(tenantId, id, dto, responsavelId);
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/cancelar')
+    cancelarSessaoHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: CancelarSessaoDto,
+        @Req() req: Request,
+    ) {
+        const responsavelId = (req.user as { id?: string })?.id ?? 'system';
+        return this.cancelarSessao.execute(tenantId, id, dto, responsavelId);
+    }
+
+    @Get(':id/quorum')
+    calcularQuorumHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+    ) {
+        return this.calcularQuorum.execute(tenantId, id);
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Patch(':id/pauta/publicar')
+    publicarPautaHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+    ) {
+        return this.publicarPauta.execute(tenantId, id);
     }
 
     private handleError(error: unknown): never {

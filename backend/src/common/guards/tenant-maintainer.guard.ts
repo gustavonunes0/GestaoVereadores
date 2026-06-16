@@ -4,7 +4,7 @@ import {
     ForbiddenException,
     Injectable,
 } from '@nestjs/common';
-import { RoleUsuario } from '@prisma/client';
+import { RoleUsuario, TenantUserRole } from '@prisma/client';
 import { isTenantMaintainer } from '../auth/tenant-maintainer';
 import { AuthenticatedUser } from '../types/authenticated-request';
 
@@ -12,6 +12,11 @@ const SIGL_WRITE_ROLES: RoleUsuario[] = [
     RoleUsuario.MASTER,
     RoleUsuario.ADMIN,
     RoleUsuario.OPERADOR,
+];
+
+const MAINTAINER_ROLES: TenantUserRole[] = [
+    TenantUserRole.ADMIN_STAFF,
+    TenantUserRole.STAFF,
 ];
 
 @Injectable()
@@ -30,8 +35,12 @@ export class TenantMaintainerGuard implements CanActivate {
                 return true;
             }
             throw new ForbiddenException(
-                'Sem permissão para manter dados da Câmara',
+                'Você não tem permissão para realizar esta ação',
             );
+        }
+
+        if (user.tenantUserRole && MAINTAINER_ROLES.includes(user.tenantUserRole)) {
+            return true;
         }
 
         if (
@@ -44,7 +53,7 @@ export class TenantMaintainerGuard implements CanActivate {
         }
 
         throw new ForbiddenException(
-            'Sem permissão para manter dados da Câmara',
+            'Você não tem permissão para realizar esta ação',
         );
     }
 }

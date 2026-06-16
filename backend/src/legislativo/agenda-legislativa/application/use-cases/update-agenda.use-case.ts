@@ -48,15 +48,20 @@ export class UpdateAgendaUseCase {
                 : {}),
             ...(dto.numero !== undefined ? { numero: dto.numero ?? null } : {}),
             ...(dto.titulo !== undefined ? { titulo: dto.titulo ?? null } : {}),
-            ...(dto.mensagem !== undefined
-                ? { mensagem: dto.mensagem ?? null }
-                : {}),
+            ...(dto.mensagem !== undefined ? { mensagem: dto.mensagem ?? null } : {}),
             ...(dto.dataInicio !== undefined
                 ? { dataInicio: toOptionalDate(dto.dataInicio) ?? null }
                 : {}),
             ...(dto.dataFim !== undefined
                 ? { dataFim: toOptionalDate(dto.dataFim) ?? null }
                 : {}),
+            ...(dto.local !== undefined ? { local: dto.local ?? null } : {}),
+            ...(dto.descricao !== undefined ? { descricao: dto.descricao ?? null } : {}),
+            ...(dto.sessaoPlenariaId !== undefined ? { sessaoPlenariaId: dto.sessaoPlenariaId ?? null } : {}),
+            ...(dto.publicoExterno !== undefined ? { publicoExterno: dto.publicoExterno } : {}),
+            ...(dto.linkTransmissao !== undefined ? { linkTransmissao: dto.linkTransmissao ?? null } : {}),
+            ...(dto.recorrencia !== undefined ? { recorrencia: dto.recorrencia ?? null } : {}),
+            ...(dto.recorrenciaPaiId !== undefined ? { recorrenciaPaiId: dto.recorrenciaPaiId ?? null } : {}),
         });
 
         return AgendaViewModel.toHttp(updated);

@@ -8,6 +8,11 @@ export type AtoHttp = {
     dataPublicacaoInicio?: Date;
     dataPublicacaoFim?: Date;
     mensagem?: string;
+    ementa?: string;
+    dataAto?: Date;
+    anexoUrl?: string;
+    textoUrl?: string;
+    identificadorId?: string;
     tipo: {
         id: string;
         nome: string;
@@ -28,13 +33,14 @@ export class AtoViewModel {
             numero: p.numero,
             ...(p.dataInicio ? { dataInicio: p.dataInicio } : {}),
             ...(p.dataFim ? { dataFim: p.dataFim } : {}),
-            ...(p.dataPublicacaoInicio
-                ? { dataPublicacaoInicio: p.dataPublicacaoInicio }
-                : {}),
-            ...(p.dataPublicacaoFim
-                ? { dataPublicacaoFim: p.dataPublicacaoFim }
-                : {}),
+            ...(p.dataPublicacaoInicio ? { dataPublicacaoInicio: p.dataPublicacaoInicio } : {}),
+            ...(p.dataPublicacaoFim ? { dataPublicacaoFim: p.dataPublicacaoFim } : {}),
             ...(p.mensagem ? { mensagem: p.mensagem } : {}),
+            ...(p.ementa ? { ementa: p.ementa } : {}),
+            ...(p.dataAto ? { dataAto: p.dataAto } : {}),
+            ...(p.anexoUrl ? { anexoUrl: p.anexoUrl } : {}),
+            ...(p.textoUrl ? { textoUrl: p.textoUrl } : {}),
+            ...(p.identificadorId ? { identificadorId: p.identificadorId } : {}),
             tipo: p.tipo,
             classificacao: p.classificacao,
             createdAt: p.createdAt,

@@ -5,7 +5,6 @@ import { materiasApi } from '../api/legislative/materias.api';
 import { sessoesApi } from '../api/legislative/sessoes.api';
 import { MODULE_ICONS, ROUTES } from '../app/navigation';
 import { NavDrawer } from '../components/NavDrawer';
-import { ContextBanner } from '../components/ContextBanner';
 import { IntGestMensagemField } from '../components/forms/IntGestMensagemField';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
@@ -17,6 +16,9 @@ import {
     SessaoDeliberacaoPanel,
     type PautaItemDeliberacao,
 } from '../components/sessoes/SessaoDeliberacaoPanel';
+import { SessaoStatusBadge } from '../components/sessoes/SessaoStatusBadge';
+import { AbrirSessaoDialog } from '../components/sessoes/AbrirSessaoDialog';
+import { EncerrarSessaoDialog } from '../components/sessoes/EncerrarSessaoDialog';
 import { useLegislatura } from '../contexts/LegislaturaContext';
 import type { LegislaturaRef } from '../contexts/LegislaturaContext';
 import { useAppToast } from '../hooks/useAppToast';
@@ -24,8 +26,8 @@ import { useDominios } from '../hooks/useDominios';
 import { usePermissions } from '../hooks/usePermissions';
 import {
     canAddMateriaToPauta,
-    MATERIA_STATUS,
     type MateriaStatus,
+    type SessaoStatus,
 } from '../types/legislative';
 import { buildSessaoDataRange } from '../utils/sessaoPesquisa';
 
@@ -34,6 +36,7 @@ type Sessao = {
     dataInicio: string;
     tipo?: { id?: string; nome: string; label?: string };
     situacao?: { nome: string; codigo?: string };
+    statusSessao?: SessaoStatus;
     mensagem?: string;
     sessaoLegislativaId?: string | null;
     sessaoLegislativa?: {
@@ -118,7 +121,7 @@ function hasActiveFilters(f: SessaoFiltrosForm, baseline: SessaoFiltrosForm) {
 
 export function SessoesPage() {
     const { dominios } = useDominios();
-    const { canWrite } = usePermissions();
+    const { canWrite, canManageSessao, canVotar } = usePermissions();
     const { showApiError, showSuccess } = useAppToast();
     const { legislaturaId, legislaturas, refresh } = useLegislatura();
 
@@ -156,6 +159,9 @@ export function SessoesPage() {
     const [materiaId, setMateriaId] = useState('');
     const [ordemPauta, setOrdemPauta] = useState(1);
     const [searchGeneration, setSearchGeneration] = useState(0);
+    const [dialogAbrir, setDialogAbrir] = useState(false);
+    const [dialogEncerrar, setDialogEncerrar] = useState(false);
+    const [lifecycleBusy, setLifecycleBusy] = useState(false);
 
     useEffect(() => {
         setFiltrosDraft(baselineFiltros);
@@ -169,7 +175,7 @@ export function SessoesPage() {
     const load = useCallback(() => {
         return sessoesApi.list(filtrosToQuery(filtrosApplied)).then(
             (r) => {
-                const rows = r.data as Sessao[];
+                const rows = r.data as unknown as Sessao[];
                 setItems(rows);
                 if (selectedId && !rows.some((s) => s.id === selectedId)) {
                     setSelectedId(null);
@@ -189,7 +195,7 @@ export function SessoesPage() {
             return;
         }
         sessoesApi.getById(selectedId).then((raw) => {
-            const d = raw as Sessao;
+            const d = raw as unknown as Sessao;
             setDetail(d);
             setEditDataInicio(toDateTimeLocal(d.dataInicio));
             setEditMensagem(d.mensagem ?? '');
@@ -243,9 +249,24 @@ export function SessoesPage() {
     /** Sessões legislativas legadas — sem endpoint no modelo novo de legislaturas. */
     const sessoesLegislativasEdit = useMemo(() => [] as { id: string; numero: number }[], []);
 
+    async function handleLifecycle(action: 'suspender' | 'cancelar') {
+        if (!selectedId) return;
+        setLifecycleBusy(true);
+        try {
+            await sessoesApi[action](selectedId);
+            const labels = { suspender: 'Sessão suspensa.', cancelar: 'Sessão cancelada.' };
+            showSuccess(labels[action]);
+            refreshDetail();
+        } catch (err) {
+            showApiError(err);
+        } finally {
+            setLifecycleBusy(false);
+        }
+    }
+
     function refreshDetail() {
         if (!selectedId) return;
-        sessoesApi.getById(selectedId).then((d) => setDetail(d as Sessao));
+        sessoesApi.getById(selectedId).then((d) => setDetail(d as unknown as Sessao));
         void load();
     }
 
@@ -335,9 +356,9 @@ export function SessoesPage() {
         try {
             const response = await materiasApi.list({
                 limit: 100,
-                status: MATERIA_STATUS.EM_TRAMITACAO,
+                status: 'EM_TRAMITACAO',
             });
-            const lista = response.data as Materia[];
+            const lista = response.data as unknown as Materia[];
             const elegiveis = lista.filter((m) => canAddMateriaToPauta(m));
             setMaterias(elegiveis);
             if (elegiveis[0]) setMateriaId(elegiveis[0].id);
@@ -372,10 +393,7 @@ export function SessoesPage() {
                 }
             />
 
-            <ContextBanner
-                step="Etapa 3"
-                hint="Use os filtros como em pesquisar-sessao no IntGest; depois abra a sessão para pauta e presenças."
-            />
+
 
             {dominios && (
                 <SessaoPesquisaFilters
@@ -429,7 +447,13 @@ export function SessoesPage() {
                                             ).toLocaleString('pt-BR')}
                                         </td>
                                         <td>{s.tipo?.nome ?? '—'}</td>
-                                        <td>{s.situacao?.nome ?? '—'}</td>
+                                        <td>
+                                            {s.statusSessao ? (
+                                                <SessaoStatusBadge status={s.statusSessao} />
+                                            ) : (
+                                                s.situacao?.nome ?? '—'
+                                            )}
+                                        </td>
                                         <td>
                                             {s.sessaoLegislativa?.legislatura
                                                 ?.numero
@@ -493,6 +517,65 @@ export function SessoesPage() {
                                 />
                             </Link>
                         </div>
+
+                        {canManageSessao && detail.statusSessao && (
+                            <div className="sigl-cluster" style={{ marginBottom: '0.75rem' }}>
+                                {detail.statusSessao === 'AGENDADA' && (
+                                    <>
+                                        <SiglButton
+                                            label="Abrir sessão"
+                                            icon="pi pi-play"
+                                            onClick={() => setDialogAbrir(true)}
+                                            disabled={lifecycleBusy}
+                                        />
+                                        <SiglButton
+                                            label="Cancelar sessão"
+                                            icon="pi pi-times"
+                                            severity="danger"
+                                            outlined
+                                            onClick={() => void handleLifecycle('cancelar')}
+                                            disabled={lifecycleBusy}
+                                        />
+                                    </>
+                                )}
+                                {detail.statusSessao === 'ABERTA' && (
+                                    <>
+                                        <SiglButton
+                                            label="Suspender"
+                                            icon="pi pi-pause"
+                                            severity="secondary"
+                                            outlined
+                                            onClick={() => void handleLifecycle('suspender')}
+                                            disabled={lifecycleBusy}
+                                        />
+                                        <SiglButton
+                                            label="Encerrar sessão"
+                                            icon="pi pi-stop"
+                                            severity="warning"
+                                            onClick={() => setDialogEncerrar(true)}
+                                            disabled={lifecycleBusy}
+                                        />
+                                    </>
+                                )}
+                                {detail.statusSessao === 'SUSPENSA' && (
+                                    <>
+                                        <SiglButton
+                                            label="Retomar"
+                                            icon="pi pi-play"
+                                            onClick={() => setDialogAbrir(true)}
+                                            disabled={lifecycleBusy}
+                                        />
+                                        <SiglButton
+                                            label="Encerrar sessão"
+                                            icon="pi pi-stop"
+                                            severity="warning"
+                                            onClick={() => setDialogEncerrar(true)}
+                                            disabled={lifecycleBusy}
+                                        />
+                                    </>
+                                )}
+                            </div>
+                        )}
 
                         <form
                             onSubmit={handleSaveDetail}
@@ -605,6 +688,8 @@ export function SessoesPage() {
                                 pautaItens={detail.pautaItens ?? []}
                                 presencas={detail.presencas ?? []}
                                 canWrite={canWrite}
+                                canManageSessao={canManageSessao}
+                                canVotar={canVotar}
                                 sessaoEmAndamento={sessaoEmAndamento}
                                 onUpdated={refreshDetail}
                             />
@@ -736,6 +821,22 @@ export function SessoesPage() {
                         </div>
                     </form>
                 </Modal>
+            )}
+
+            {dialogAbrir && selectedId && (
+                <AbrirSessaoDialog
+                    sessaoId={selectedId}
+                    onClose={() => setDialogAbrir(false)}
+                    onSaved={refreshDetail}
+                />
+            )}
+
+            {dialogEncerrar && selectedId && (
+                <EncerrarSessaoDialog
+                    sessaoId={selectedId}
+                    onClose={() => setDialogEncerrar(false)}
+                    onSaved={refreshDetail}
+                />
             )}
         </section>
     );

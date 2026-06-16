@@ -5,11 +5,7 @@ import {
     Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RoleUsuario } from '@prisma/client';
-import {
-    LegacyTenantRole,
-    matchesLegacyTenantRole,
-} from '../auth/legacy-tenant-role';
+import { RoleUsuario, TenantUserRole } from '@prisma/client';
 import { TENANT_ROLES_KEY } from '../decorators/tenant-roles.decorator';
 import { AuthenticatedUser } from '../types/authenticated-request';
 
@@ -24,7 +20,7 @@ export class TenantRolesGuard implements CanActivate {
     constructor(private readonly reflector: Reflector) {}
 
     canActivate(context: ExecutionContext): boolean {
-        const required = this.reflector.getAllAndOverride<LegacyTenantRole[]>(
+        const required = this.reflector.getAllAndOverride<TenantUserRole[]>(
             TENANT_ROLES_KEY,
             [context.getHandler(), context.getClass()],
         );
@@ -41,22 +37,13 @@ export class TenantRolesGuard implements CanActivate {
             if (user.role && SIGL_WRITE_ROLES.includes(user.role)) {
                 return true;
             }
-            throw new ForbiddenException('Sem permissão para esta operação');
+            throw new ForbiddenException('Você não tem permissão para realizar esta ação');
         }
 
-        const flags = {
-            isTenantAdmin: user.isTenantAdmin ?? user.isAdmin,
-            isTenantStaff: user.isTenantStaff,
-            isParliamentarian: user.isParliamentarian,
-        };
+        if (!user.tenantUserRole || !required.includes(user.tenantUserRole)) {
+            throw new ForbiddenException('Você não tem permissão para realizar esta ação');
+        }
 
-        if (flags.isTenantAdmin) return true;
-
-        const allowed = required.some((role) =>
-            matchesLegacyTenantRole(role, flags),
-        );
-        if (allowed) return true;
-
-        throw new ForbiddenException('Sem permissão para esta operação');
+        return true;
     }
 }

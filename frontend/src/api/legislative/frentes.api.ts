@@ -32,4 +32,15 @@ export const frentesApi = {
             method: 'POST',
             body: JSON.stringify(body),
         }),
+
+    update: (id: string, body: Partial<CreateFrontInput>) =>
+        api<ParliamentaryFront>(`${API_PATHS.legislative.frentes}/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+        }),
+
+    remove: (id: string) =>
+        api<void>(`${API_PATHS.legislative.frentes}/${id}`, {
+            method: 'DELETE',
+        }),
 };

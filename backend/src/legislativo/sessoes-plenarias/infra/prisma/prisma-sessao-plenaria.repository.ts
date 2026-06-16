@@ -9,7 +9,15 @@ import {
     CodigoSituacaoSessao,
     ResultadoPauta,
     StatusMateria,
+    StatusSessao as PrismaStatusSessao,
+    StatusPautaItem as PrismaStatusPautaItem,
 } from '@prisma/client';
+import { SessaoPlenariaEntity } from '../../domain/entities/sessao-plenaria.entity';
+import { StatusSessao } from '../../domain/enums/status-sessao.enum';
+import {
+    QuorumInfo,
+    TransicionarStatusDados,
+} from '../../domain/repositories/sessao-plenaria.repository';
 import { toOptionalDate } from '../../../../common/prisma/date-fields';
 import { buildDateRangeFilter } from '../../../../common/prisma/date-fields';
 import { paginatedQuery } from '../../../../common/prisma/paginate';
@@ -702,5 +710,121 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             legislatureProfileId,
         );
         assertParliamentarianHasActiveMandate(hasActiveMandate);
+    }
+
+    // ─── Novos métodos DDD (M4) ────────────────────────────────────────────
+
+    async findSessaoById(id: string, tenantId: string): Promise<SessaoPlenariaEntity | null> {
+        const raw = await this.prisma.sessaoPlenaria.findFirst({
+            where: { id, tenantId, isRemoved: false },
+        });
+        if (!raw) return null;
+
+        const entity = new SessaoPlenariaEntity();
+        entity.id = raw.id;
+        entity.tenantId = raw.tenantId;
+        entity.tipoSessaoId = raw.tipoSessaoId;
+        entity.sessaoLegislativaId = raw.sessaoLegislativaId;
+        entity.dataInicio = raw.dataInicio;
+        entity.dataFim = raw.dataFim;
+        entity.statusSessao = raw.statusSessao as unknown as StatusSessao;
+        entity.dataAbertura = raw.dataAbertura;
+        entity.dataSuspensao = raw.dataSuspensao;
+        entity.dataEncerramento = raw.dataEncerramento;
+        entity.quorumMinimo = raw.quorumMinimo;
+        entity.quorumPresente = raw.quorumPresente;
+        entity.responsavelAberturaId = raw.responsavelAberturaId;
+        entity.observacoes = raw.observacoes;
+        entity.isRemoved = raw.isRemoved;
+        entity.createdAt = raw.createdAt;
+        entity.updatedAt = raw.updatedAt;
+        return entity;
+    }
+
+    async transicionarStatus(
+        id: string,
+        tenantId: string,
+        dados: TransicionarStatusDados,
+    ): Promise<void> {
+        const agora = new Date();
+        const dataFields: Partial<{
+            dataAbertura: Date;
+            dataSuspensao: Date;
+            dataEncerramento: Date;
+            responsavelAberturaId: string;
+            quorumPresente: number;
+            observacoes: string;
+        }> = {};
+
+        if (dados.novoStatus === StatusSessao.ABERTA) {
+            dataFields.dataAbertura = agora;
+            dataFields.responsavelAberturaId = dados.responsavelId;
+            if (dados.quorumPresente !== undefined) {
+                dataFields.quorumPresente = dados.quorumPresente;
+            }
+        } else if (dados.novoStatus === StatusSessao.SUSPENSA) {
+            dataFields.dataSuspensao = agora;
+        } else if (dados.novoStatus === StatusSessao.ENCERRADA) {
+            dataFields.dataEncerramento = agora;
+        }
+
+        if (dados.observacao) {
+            dataFields.observacoes = dados.observacao;
+        }
+
+        await this.prisma.sessaoPlenaria.update({
+            where: { id, tenantId, isRemoved: false },
+            data: {
+                statusSessao: dados.novoStatus as unknown as PrismaStatusSessao,
+                ...dataFields,
+            },
+        });
+    }
+
+    async calcularQuorum(sessaoId: string, tenantId: string): Promise<QuorumInfo> {
+        const sessao = await this.prisma.sessaoPlenaria.findFirst({
+            where: { id: sessaoId, tenantId, isRemoved: false },
+            include: {
+                sessaoLegislativa: { include: { legislatura: true } },
+                presencas: { where: { situacao: 'PRESENTE' } },
+            },
+        });
+        if (!sessao) throw new Error('Sessão não encontrada');
+
+        const legislaturaId = sessao.sessaoLegislativa?.legislaturaId;
+        const totalParlamentares = await this.prisma.parlamentarMandato.count({
+            where: {
+                ativo: true,
+                parlamentar: { tenantId },
+                ...(legislaturaId ? { legislaturaId } : {}),
+            },
+        });
+
+        const quorumMinimo = Math.ceil(totalParlamentares / 2) + 1;
+        const quorumPresente = sessao.presencas.length;
+
+        return {
+            quorumMinimo,
+            quorumPresente,
+            temQuorum: quorumPresente >= quorumMinimo,
+        };
+    }
+
+    async publicarPauta(sessaoId: string, tenantId: string): Promise<void> {
+        await this.prisma.sessaoPlenaria.findFirstOrThrow({
+            where: { id: sessaoId, tenantId, isRemoved: false },
+        });
+
+        await this.prisma.pautaItem.updateMany({
+            where: {
+                sessaoId,
+                isRemoved: false,
+                statusPauta: PrismaStatusPautaItem.RASCUNHO,
+            },
+            data: {
+                statusPauta: PrismaStatusPautaItem.PUBLICADA,
+                publicadaEm: new Date(),
+            },
+        });
     }
 }

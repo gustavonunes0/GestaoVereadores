@@ -89,6 +89,40 @@ export async function apiTotal(path: string): Promise<number> {
     return res.meta.total;
 }
 
+export async function apiFormData<T>(
+    path: string,
+    formData: FormData,
+    method: 'POST' | 'PATCH' = 'POST',
+): Promise<T> {
+    const token = getToken();
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}${path}`, { method, headers, body: formData });
+
+    if (res.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        if (!window.location.pathname.startsWith('/login')) {
+            window.location.href = '/login';
+        }
+        throw new ApiError('Não autorizado', 401);
+    }
+
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const msg =
+            (body as { message?: string | string[] }).message ?? `Erro ${res.status}`;
+        throw new ApiError(
+            Array.isArray(msg) ? msg.join(', ') : String(msg),
+            res.status,
+        );
+    }
+
+    if (res.status === 204) return undefined as T;
+    return res.json() as Promise<T>;
+}
+
 export const authApi = {
     login: (username: string, password: string, tenantId?: string) =>
         api<LoginResponse>(API_PATHS.auth.login, {

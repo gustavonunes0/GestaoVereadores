@@ -24,7 +24,11 @@ import { UpdateMateriaDto } from '../../application/dto/update-materia.dto';
 import { MatterAuthorshipPayload } from '../../application/view-models/matter-authorship.view-model';
 import { MatterStatus } from '../../domain/enums/matter-status.enum';
 import { MatterTramitationDomainService } from '../../domain/services/matter-tramitation-domain.service';
-import { MateriaRepository } from '../../domain/repositories/materia.repository';
+import {
+    AutorExternoListItem,
+    MateriaRepository,
+    TramitarMateriaData,
+} from '../../domain/repositories/materia.repository';
 import {
     assertTransicaoStatusPermitida,
     syncEmTramitacaoFromStatus,
@@ -683,5 +687,115 @@ export class PrismaMateriaRepository implements MateriaRepository {
         });
 
         return this.findAutoriaOrThrow(tenantId, matterId);
+    }
+
+    // ── Métodos novos (clean DDD) ──────────────────────────────────────────
+
+    async proximoNumero(
+        tenantId: string,
+        tipoId: string,
+        anoId: string,
+    ): Promise<number> {
+        const result = await this.prisma.$queryRaw<[{ proximo: bigint }]>`
+            SELECT COALESCE(MAX(numero), 0) + 1 AS proximo
+            FROM materias
+            WHERE tenant_id = ${tenantId}
+              AND tipo_id = ${tipoId}
+              AND ano_id = ${anoId}
+              AND is_removed = false
+            FOR UPDATE
+        `;
+        return Number(result[0].proximo);
+    }
+
+    async tramitar(
+        id: string,
+        tenantId: string,
+        dados: TramitarMateriaData,
+    ): Promise<void> {
+        await this.prisma.$transaction([
+            this.prisma.materia.update({
+                where: { id },
+                data: {
+                    status: dados.novoStatus as StatusMateria,
+                    emTramitacao: syncEmTramitacaoFromStatus(
+                        dados.novoStatus as StatusMateria,
+                    ),
+                },
+            }),
+            this.prisma.tramitacaoHistorico.create({
+                data: {
+                    materiaId: id,
+                    statusAnterior: dados.statusAnterior as StatusMateria | null,
+                    statusNovo: dados.novoStatus as StatusMateria,
+                    responsavelId: dados.responsavelId ?? null,
+                    despacho: dados.despacho ?? null,
+                    observacao: dados.observacao ?? null,
+                    unidadeOrigemId: dados.unidadeOrigemId ?? null,
+                    unidadeDestinoId: dados.unidadeDestinoId ?? null,
+                },
+            }),
+        ]);
+    }
+
+    async listAutoresExternos(
+        tenantId: string,
+        tipoAutorId?: string,
+    ): Promise<AutorExternoListItem[]> {
+        const rows = await this.prisma.autorExterno.findMany({
+            where: {
+                tenantId,
+                isRemoved: false,
+                ...(tipoAutorId ? { tipoAutorId } : {}),
+            },
+            include: { tipoAutor: true },
+            orderBy: { nome: 'asc' },
+        });
+
+        return rows.map((r) => ({
+            id: r.id,
+            nome: r.nome,
+            cargo: r.cargo,
+            instituicao: r.instituicao,
+            registro: r.registro,
+            partido: r.partido,
+            uf: r.uf,
+            tipoAutor: {
+                id: r.tipoAutor.id,
+                nome: r.tipoAutor.nome,
+                idNegocio: r.tipoAutor.idNegocio,
+            },
+        }));
+    }
+
+    async addPublicacao(
+        tenantId: string,
+        materiaId: string,
+        data: {
+            dataPublicacao: Date;
+            veiculo: string;
+            paginaInicio?: number;
+            paginaFim?: number;
+            identificador?: string;
+            urlExterna?: string;
+            textoIntegral?: string;
+        },
+    ): Promise<{ id: string; dataPublicacao: Date; veiculo: string }> {
+        await this.findOne(tenantId, materiaId);
+
+        return this.prisma.publicacaoOficial.create({
+            data: {
+                tenantId,
+                materiaId,
+                dataPublicacao: data.dataPublicacao,
+                veiculo: data.veiculo,
+                paginaInicio: data.paginaInicio ?? null,
+                paginaFim: data.paginaFim ?? null,
+                identificador: data.identificador ?? null,
+                urlExterna: data.urlExterna ?? null,
+                textoIntegral: data.textoIntegral ?? null,
+            },
+            select: { id: true, dataPublicacao: true, veiculo: true },
+        });
     }
 }

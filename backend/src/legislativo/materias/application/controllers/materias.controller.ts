@@ -14,8 +14,15 @@ import {
     Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { TenantMaintainer } from '../../../../common/decorators/tenant-maintainer.decorator';
+import { TenantRoles } from '../../../../common/decorators/tenant-roles.decorator';
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
+import { CurrentUser } from '../../../../auth/decorators/current-user.decorator';
+import {
+    ADMIN_ONLY,
+    ALL_AUTHENTICATED,
+    STAFF_AND_ABOVE,
+} from '../../../../auth/guards/guard-combos';
+import { AuthenticatedUser } from '../../../../common/types/authenticated-request';
 import { AdicionarMateriaAutorDto } from '../dto/materia-autor.dto';
 import { CreateMateriaDto, FilterMateriaDto } from '../dto/materia.dto';
 import {
@@ -59,6 +66,14 @@ import { RemoveMateriaAutorUseCase } from '../use-cases/remove-materia-autor.use
 import { RemoveMateriaUseCase } from '../use-cases/remove-materia.use-case';
 import { UpdateMateriaUseCase } from '../use-cases/update-materia.use-case';
 import { ExecutarTramitacaoMateriaDto } from '../dto/matter-tramitation.dto';
+import { TramitarMateriaDto } from '../dto/tramitar-materia.dto';
+import { CreatePublicacaoDto } from '../dto/create-publicacao.dto';
+import { TramitarMateriaUseCase } from '../use-cases/tramitar-materia.use-case';
+import { AddPublicacaoMateriaUseCase } from '../use-cases/add-publicacao-materia.use-case';
+import { ListAutoresExternosUseCase } from '../use-cases/list-autores-externos.use-case';
+import { Req } from '@nestjs/common';
+import { Request } from 'express';
+import { RequestWithTenant } from '../../../../common/types/authenticated-request';
 
 @ApiTags('legislative-materias')
 @ApiBearerAuth()
@@ -83,6 +98,9 @@ export class MateriasController {
         private readonly addCoautor: AddMatterCoauthorUseCase,
         private readonly removeCoautor: RemoveMatterCoauthorUseCase,
         private readonly setRelator: SetMatterRelatorUseCase,
+        private readonly tramitarMateria: TramitarMateriaUseCase,
+        private readonly addPublicacao: AddPublicacaoMateriaUseCase,
+        private readonly listAutoresExternos: ListAutoresExternosUseCase,
     ) {}
 
     @Get('status')
@@ -119,7 +137,7 @@ export class MateriasController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Put(':id/autoria/autor-parlamentar')
     async definirAutorParlamentar(
         @TenantId() tenantId: string,
@@ -133,7 +151,7 @@ export class MateriasController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Put(':id/autoria/autor-externo')
     async definirAutorExterno(
         @TenantId() tenantId: string,
@@ -147,7 +165,7 @@ export class MateriasController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/autoria/coautores')
     async adicionarCoautor(
         @TenantId() tenantId: string,
@@ -161,7 +179,7 @@ export class MateriasController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Delete(':id/autoria/coautores/:coauthorId')
     async removerCoautor(
         @TenantId() tenantId: string,
@@ -179,7 +197,7 @@ export class MateriasController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Put(':id/autoria/relator')
     async definirRelator(
         @TenantId() tenantId: string,
@@ -217,20 +235,21 @@ export class MateriasController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...ALL_AUTHENTICATED)
     @Post()
     async create(
         @TenantId() tenantId: string,
         @Body() dto: CreateMateriaDto,
+        @CurrentUser() user: AuthenticatedUser,
     ) {
         try {
-            return await this.createMateria.execute(tenantId, dto);
+            return await this.createMateria.execute(tenantId, dto, user);
         } catch (error) {
             this.handleError(error);
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Patch(':id')
     async update(
         @TenantId() tenantId: string,
@@ -244,7 +263,6 @@ export class MateriasController {
         }
     }
 
-    @TenantMaintainer()
     @Get(':id/autores')
     listarAutores(
         @TenantId() tenantId: string,
@@ -253,7 +271,7 @@ export class MateriasController {
         return this.listMateriaAutores.execute(tenantId, id);
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/autores')
     adicionarAutor(
         @TenantId() tenantId: string,
@@ -263,7 +281,7 @@ export class MateriasController {
         return this.addMateriaAutor.execute(tenantId, id, dto);
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Delete(':id/autores/:materiaAutorId')
     removerAutor(
         @TenantId() tenantId: string,
@@ -273,7 +291,7 @@ export class MateriasController {
         return this.removeMateriaAutor.execute(tenantId, id, materiaAutorId);
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/tramitacao')
     async executarTramitacao(
         @TenantId() tenantId: string,
@@ -287,13 +305,72 @@ export class MateriasController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Delete(':id')
     remove(
         @TenantId() tenantId: string,
         @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.removeMateria.execute(tenantId, id);
+    }
+
+    // ── Novos endpoints (SPEC-001 / PROMPTS SESSÃO 2) ─────────────────────
+
+    @Get('autores-externos')
+    listarAutoresExternos(
+        @TenantId() tenantId: string,
+        @Query('tipoAutorId') tipoAutorId?: string,
+    ) {
+        return this.listAutoresExternos.execute(tenantId, tipoAutorId);
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/tramitar')
+    async tramitar(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: TramitarMateriaDto,
+        @Req() req: Request & RequestWithTenant,
+    ) {
+        try {
+            return await this.tramitarMateria.execute(
+                tenantId,
+                id,
+                dto,
+                req.user?.id,
+            );
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    @Get(':id/tramitacao')
+    async listarHistoricoTramitacao(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+    ) {
+        try {
+            const materia = (await this.getMateriaById.execute(tenantId, id)) as {
+                id: string;
+            };
+            return materia;
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/publicacoes')
+    async adicionarPublicacao(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: CreatePublicacaoDto,
+    ) {
+        try {
+            return await this.addPublicacao.execute(tenantId, id, dto);
+        } catch (error) {
+            this.handleError(error);
+        }
     }
 
     private handleError(error: unknown): never {

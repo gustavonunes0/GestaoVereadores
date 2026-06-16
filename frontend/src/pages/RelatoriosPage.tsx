@@ -4,7 +4,6 @@ import { API_PATHS } from '../api/paths';
 import { ActionCard } from '../components/common/ActionCard';
 import { SiglButton } from '../components/common/SiglButton';
 import { MODULE_ICONS } from '../app/navigation';
-import { ContextBanner } from '../components/ContextBanner';
 import { PageHeader } from '../components/PageHeader';
 import { useLegislatura } from '../contexts/LegislaturaContext';
 import { useAppToast } from '../hooks/useAppToast';
@@ -81,10 +80,6 @@ export function RelatoriosPage() {
                 subtitle="Indicadores por legislatura. Informe o ID da sessão legislativa legada quando necessário."
             />
 
-            <ContextBanner
-                step="Análise"
-                hint="Relatórios completos ainda usam o modelo legado de sessão legislativa."
-            />
 
             {legislaturaAtiva && (
                 <p className="text-muted page-context">

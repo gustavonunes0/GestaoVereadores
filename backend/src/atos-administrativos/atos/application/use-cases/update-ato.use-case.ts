@@ -20,8 +20,8 @@ export class UpdateAtoUseCase {
 
     constructor(private readonly atoRepository: AtoRepository) {}
 
-    async execute(id: string, dto: UpdateAtoDto) {
-        const existing = await this.atoRepository.findById(id);
+    async execute(tenantId: string, id: string, dto: UpdateAtoDto) {
+        const existing = await this.atoRepository.findById(tenantId, id);
         if (!existing) throw new AtoNotFoundError();
 
         if (dto.tipoId !== undefined) {
@@ -34,10 +34,7 @@ export class UpdateAtoUseCase {
         }
 
         if (dto.classificacaoId !== undefined) {
-            const classificacaoExists =
-                await this.atoRepository.existsClassificacaoAto(
-                    dto.classificacaoId,
-                );
+            const classificacaoExists = await this.atoRepository.existsClassificacaoAto(dto.classificacaoId);
             try {
                 this.domainService.assertClassificacaoExists(classificacaoExists);
             } catch {
@@ -46,10 +43,7 @@ export class UpdateAtoUseCase {
         }
 
         if (dto.numero !== undefined) {
-            const numeroExists = await this.atoRepository.existsByNumero(
-                dto.numero,
-                id,
-            );
+            const numeroExists = await this.atoRepository.existsByNumero(tenantId, dto.numero, id);
             try {
                 this.domainService.assertNumeroAvailable(numeroExists);
             } catch {
@@ -60,27 +54,22 @@ export class UpdateAtoUseCase {
         const resolvedDates = this.resolveDates(existing, dto);
         this.assertDateRanges(resolvedDates);
 
-        const updated = await this.atoRepository.update(id, {
+        const updated = await this.atoRepository.update(tenantId, id, {
             tipoId: dto.tipoId,
             classificacaoId: dto.classificacaoId,
             numero: dto.numero,
-            dataInicio:
-                dto.dataInicio !== undefined
-                    ? (toOptionalDate(dto.dataInicio) ?? null)
-                    : undefined,
-            dataFim:
-                dto.dataFim !== undefined
-                    ? (toOptionalDate(dto.dataFim) ?? null)
-                    : undefined,
-            dataPublicacaoInicio:
-                dto.dataPublicacaoInicio !== undefined
-                    ? (toOptionalDate(dto.dataPublicacaoInicio) ?? null)
-                    : undefined,
-            dataPublicacaoFim:
-                dto.dataPublicacaoFim !== undefined
-                    ? (toOptionalDate(dto.dataPublicacaoFim) ?? null)
-                    : undefined,
+            dataInicio: dto.dataInicio !== undefined ? (toOptionalDate(dto.dataInicio) ?? null) : undefined,
+            dataFim: dto.dataFim !== undefined ? (toOptionalDate(dto.dataFim) ?? null) : undefined,
+            dataPublicacaoInicio: dto.dataPublicacaoInicio !== undefined ? (toOptionalDate(dto.dataPublicacaoInicio) ?? null) : undefined,
+            dataPublicacaoFim: dto.dataPublicacaoFim !== undefined ? (toOptionalDate(dto.dataPublicacaoFim) ?? null) : undefined,
             mensagem: dto.mensagem,
+            ementa: (dto as UpdateAtoDto & { ementa?: string }).ementa,
+            dataAto: (dto as UpdateAtoDto & { dataAto?: string }).dataAto !== undefined
+                ? (toOptionalDate((dto as UpdateAtoDto & { dataAto?: string }).dataAto) ?? null)
+                : undefined,
+            anexoUrl: (dto as UpdateAtoDto & { anexoUrl?: string }).anexoUrl,
+            textoUrl: (dto as UpdateAtoDto & { textoUrl?: string }).textoUrl,
+            identificadorId: (dto as UpdateAtoDto & { identificadorId?: string }).identificadorId,
         });
 
         return AtoViewModel.toHttp(updated);
@@ -90,13 +79,9 @@ export class UpdateAtoUseCase {
         const current = existing.toPrimitives();
         return {
             dataInicio:
-                dto.dataInicio !== undefined
-                    ? (toOptionalDate(dto.dataInicio) ?? null)
-                    : current.dataInicio,
+                dto.dataInicio !== undefined ? (toOptionalDate(dto.dataInicio) ?? null) : current.dataInicio,
             dataFim:
-                dto.dataFim !== undefined
-                    ? (toOptionalDate(dto.dataFim) ?? null)
-                    : current.dataFim,
+                dto.dataFim !== undefined ? (toOptionalDate(dto.dataFim) ?? null) : current.dataFim,
             dataPublicacaoInicio:
                 dto.dataPublicacaoInicio !== undefined
                     ? (toOptionalDate(dto.dataPublicacaoInicio) ?? null)
@@ -115,19 +100,13 @@ export class UpdateAtoUseCase {
         dataPublicacaoFim: Date | null;
     }) {
         try {
-            this.domainService.assertVigenciaDates(
-                dates.dataInicio,
-                dates.dataFim,
-            );
+            this.domainService.assertVigenciaDates(dates.dataInicio, dates.dataFim);
         } catch {
             throw new AtoDataFinalAnteriorInicialError();
         }
 
         try {
-            this.domainService.assertPublicacaoDates(
-                dates.dataPublicacaoInicio,
-                dates.dataPublicacaoFim,
-            );
+            this.domainService.assertPublicacaoDates(dates.dataPublicacaoInicio, dates.dataPublicacaoFim);
         } catch {
             throw new AtoDataPublicacaoFinalAnteriorInicialError();
         }

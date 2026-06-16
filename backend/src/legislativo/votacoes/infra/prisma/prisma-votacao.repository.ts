@@ -32,7 +32,12 @@ import {
     RegistrarVotoDto,
     UpdateVotoDto,
 } from '../../application/dto/voto.dto';
-import { VotacaoRepository } from '../../domain/repositories/votacao.repository';
+import {
+    VotacaoRepository,
+    EncerrarVotacaoDados,
+} from '../../domain/repositories/votacao.repository';
+import { VotacaoEntity, TipoVotacaoEnum, ResultadoVotacaoEnum } from '../../domain/entities/votacao.entity';
+import { ContagemVotos, ContagemVotosService } from '../../domain/services/contagem-votos.service';
 import {
     assertPresencaQuandoExigida,
     assertVotoNaoDuplicado,
@@ -582,5 +587,92 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             where: { id: votacao.id },
             include: votacaoInclude.include,
         });
+    }
+
+    // ─── Novos métodos DDD (M5) ────────────────────────────────────────────
+
+    private readonly contagemService = new ContagemVotosService();
+
+    async findVotacaoById(id: string): Promise<VotacaoEntity | null> {
+        const raw = await this.prisma.votacao.findUnique({ where: { id } });
+        if (!raw) return null;
+
+        const entity = new VotacaoEntity();
+        entity.id = raw.id;
+        entity.pautaItemId = raw.pautaItemId;
+        entity.tipoVotacao = raw.tipoVotacao as unknown as TipoVotacaoEnum;
+        entity.exigePresenca = raw.exigePresenca;
+        entity.votosSim = raw.votosSim;
+        entity.votosNao = raw.votosNao;
+        entity.abstencoes = raw.abstencoes;
+        entity.resultado = raw.resultado as unknown as ResultadoVotacaoEnum | null;
+        entity.realizadaAt = raw.realizadaAt;
+        entity.encerradaAt = raw.encerradaAt;
+        entity.responsavelId = raw.responsavelId;
+        entity.quorumVotacao = raw.quorumVotacao;
+        entity.motivoEmpate = raw.motivoEmpate;
+        entity.observacoes = raw.observacoes;
+        entity.createdAt = raw.createdAt;
+        return entity;
+    }
+
+    async calcularContagem(votacaoId: string): Promise<ContagemVotos> {
+        const groupByResult = await this.prisma.votoParlamentar.groupBy({
+            by: ['voto'],
+            where: { votacaoId },
+            _count: { voto: true },
+        });
+
+        return this.contagemService.calcularDeGroupBy(groupByResult);
+    }
+
+    async encerrar(
+        votacaoId: string,
+        pautaItemId: string,
+        tenantId: string,
+        materiaId: string,
+        dados: EncerrarVotacaoDados,
+    ): Promise<void> {
+        const resultadoPauta =
+            dados.resultado === ResultadoVotacaoEnum.APROVADO
+                ? ResultadoPauta.APROVADO
+                : dados.resultado === ResultadoVotacaoEnum.REJEITADO
+                  ? ResultadoPauta.REJEITADO
+                  : null;
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.votacao.update({
+                where: { id: votacaoId },
+                data: {
+                    votosSim: dados.votosSim,
+                    votosNao: dados.votosNao,
+                    abstencoes: dados.abstencoes,
+                    resultado: dados.resultado as unknown as ResultadoVotacao,
+                    encerradaAt: new Date(),
+                    responsavelId: dados.responsavelId,
+                    quorumVotacao: dados.quorumVotacao,
+                    motivoEmpate: dados.motivoEmpate,
+                    observacoes: dados.observacoes,
+                    realizadaAt: new Date(),
+                },
+            });
+
+            if (resultadoPauta) {
+                await tx.pautaItem.update({
+                    where: { id: pautaItemId },
+                    data: { resultado: resultadoPauta },
+                });
+            }
+        });
+
+        if (
+            dados.resultado === ResultadoVotacaoEnum.APROVADO ||
+            dados.resultado === ResultadoVotacaoEnum.REJEITADO
+        ) {
+            await this.materiaRepository.tramitarMateria(tenantId, materiaId, {
+                action: this.mapResultadoParaAcao(dados.resultado as 'APROVADO' | 'REJEITADO'),
+                observacao: `Resultado da votação: ${dados.resultado}`,
+            });
+        }
     }
 }

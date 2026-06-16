@@ -1,190 +1,108 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
-import { DataTable } from 'primereact/datatable';
-import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
+import { Button } from 'primereact/button';
 import { MODULE_ICONS } from '../app/navigation';
-import { api, apiList } from '../api/client';
-import { SiglButton } from '../components/common/SiglButton';
+import { atosApi, type Ato, type AtoFiltros } from '../api/atos.api';
 import { PageHeader } from '../components/PageHeader';
-import {
-    AtosPesquisaFilters,
-    type AtosFiltrosForm,
-} from '../components/publicacao/AtosPesquisaFilters';
-import { PublicacaoMetaGrid } from '../components/publicacao/PublicacaoMetaGrid';
+import { FiltroLayout } from '../components/common/FiltroLayout';
+import { DataTableLayout } from '../components/common/DataTableLayout';
+import { DeleteDialog } from '../components/common/DeleteDialog';
+import { AtoVerDialog } from '../components/atos/AtoVerDialog';
+import { AtoCreateDialog } from '../components/atos/AtoCreateDialog';
 import { PublicacaoModuleIntro } from '../components/publicacao/PublicacaoModuleIntro';
-import { useAppToast } from '../hooks/useAppToast';
-import { useDominios } from '../hooks/useDominios';
-import { PUBLICACAO_MODULES } from '../app/publicacao';
-import { WORKFLOW_PIPELINE_TOTAL } from '../app/navigation';
-import { EmptyState } from '../components/common/EmptyState';
-import { DocumentListPanel } from '../components/workflow/DocumentListPanel';
 import { ModulePipelineFooter } from '../components/workflow/ModulePipelineFooter';
 import { PipelineStepBadge } from '../components/workflow/PipelineStepBadge';
+import { PUBLICACAO_MODULES } from '../app/publicacao';
+import { WORKFLOW_PIPELINE_TOTAL } from '../app/navigation';
+import { useAppToast } from '../hooks/useAppToast';
+import { useDominios } from '../hooks/useDominios';
 import { usePermissions } from '../hooks/usePermissions';
 import { formatDatePt } from '../utils/formatDate';
 
-type AtoListItem = {
-    id: string;
-    numero: string;
-    dataInicio?: string | null;
-    dataFim?: string | null;
-    dataPublicacaoInicio?: string | null;
-    tipo?: { nome: string };
-    classificacao?: { nome: string };
-    mensagem?: string | null;
-};
-
-type AtoDetail = AtoListItem;
-
-function emptyAtosFiltros(): AtosFiltrosForm {
-    return {
-        tipoId: '',
-        classificacaoId: '',
-        numero: '',
-        dataPubDe: '',
-        dataPubAte: '',
-    };
-}
-
-function atosFiltrosAtivos(f: AtosFiltrosForm) {
-    return Boolean(
-        f.tipoId ||
-        f.classificacaoId ||
-        f.numero.trim() ||
-        f.dataPubDe ||
-        f.dataPubAte,
-    );
-}
-
-function atosFiltrosToQuery(
-    f: AtosFiltrosForm,
-): Record<string, string | number | undefined> {
-    const params: Record<string, string | number | undefined> = { limit: 100 };
-    if (f.tipoId) params.tipoId = f.tipoId;
-    if (f.classificacaoId) params.classificacaoId = f.classificacaoId;
-    if (f.numero.trim()) params.numero = f.numero.trim();
-    if (f.dataPubDe)
-        params.dataPublicacaoDe = new Date(f.dataPubDe).toISOString();
-    if (f.dataPubAte) {
-        params.dataPublicacaoAte = new Date(
-            `${f.dataPubAte}T23:59:59.999`,
-        ).toISOString();
-    }
-    return params;
-}
-
 export function AtosPage() {
-    const { dominios } = useDominios();
-    const { canWrite } = usePermissions();
-    const { showSuccess, showApiError } = useAppToast();
+    const { canWrite, canDelete } = usePermissions();
+    const { showApiError } = useAppToast();
+    const { tiposAto } = useDominios();
 
-    const [items, setItems] = useState<AtoListItem[]>([]);
+    const [items, setItems] = useState<Ato[]>([]);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
-    const [filtrosDraft, setFiltrosDraft] =
-        useState<AtosFiltrosForm>(emptyAtosFiltros);
-    const [filtrosApplied, setFiltrosApplied] =
-        useState<AtosFiltrosForm>(emptyAtosFiltros);
-    const [searchGeneration, setSearchGeneration] = useState(0);
+    const [page, setPage] = useState(1);
 
-    const [open, setOpen] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [numero, setNumero] = useState('');
-    const [tipoId, setTipoId] = useState('');
-    const [classificacaoId, setClassificacaoId] = useState('');
+    const [filtros, setFiltros] = useState<AtoFiltros>({});
+    const [filtrosApplied, setFiltrosApplied] = useState<AtoFiltros>({});
 
-    const [detailOpen, setDetailOpen] = useState(false);
-    const [detail, setDetail] = useState<AtoDetail | null>(null);
-    const [detailLoading, setDetailLoading] = useState(false);
+    const [dialogCriar, setDialogCriar] = useState(false);
+    const [dialogVer, setDialogVer] = useState<Ato | null>(null);
+    const [dialogDeletar, setDialogDeletar] = useState<Ato | null>(null);
 
-    const hasFilters = atosFiltrosAtivos(filtrosApplied);
-
-    const load = useCallback(async () => {
+    const buscar = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await apiList<AtoListItem>(
-                '/atos',
-                atosFiltrosToQuery(filtrosApplied),
-            );
-            setItems(response.data);
+            const res = await atosApi.list({ ...filtrosApplied, page, limit: 20 });
+            setItems(res.data);
+            setTotal(res.meta.total);
         } catch (err) {
             showApiError(err);
         } finally {
             setLoading(false);
         }
-    }, [filtrosApplied, showApiError]);
+    }, [filtrosApplied, page, showApiError]);
 
     useEffect(() => {
-        void load();
-    }, [load]);
+        void buscar();
+    }, [buscar]);
 
-    useEffect(() => {
-        if (dominios) {
-            if (!tipoId && dominios.tiposAto[0])
-                setTipoId(dominios.tiposAto[0].id);
-            if (!classificacaoId && dominios.classificacoesAto[0]) {
-                setClassificacaoId(dominios.classificacoesAto[0].id);
-            }
-        }
-    }, [dominios, tipoId, classificacaoId]);
-
-    function aplicarPesquisa() {
-        setFiltrosApplied({ ...filtrosDraft });
-        setSearchGeneration((g) => g + 1);
+    function aplicarFiltros() {
+        setPage(1);
+        setFiltrosApplied({ ...filtros });
     }
 
-    function clearFilters() {
-        const v = emptyAtosFiltros();
-        setFiltrosDraft(v);
-        setFiltrosApplied(v);
-        setSearchGeneration((g) => g + 1);
+    function limparFiltros() {
+        setFiltros({});
+        setFiltrosApplied({});
+        setPage(1);
     }
 
-    async function handleCreate() {
-        if (!numero.trim() || !tipoId || !classificacaoId) return;
-        setSaving(true);
-        try {
-            await api('/atos', {
-                method: 'POST',
-                body: JSON.stringify({
-                    numero: numero.trim(),
-                    tipoId,
-                    classificacaoId,
-                }),
-            });
-            setOpen(false);
-            setNumero('');
-            showSuccess('Ato administrativo registrado.');
-            await load();
-        } catch (err) {
-            showApiError(err);
-        } finally {
-            setSaving(false);
-        }
-    }
-
-    async function openDetail(id: string) {
-        setDetailOpen(true);
-        setDetailLoading(true);
-        setDetail(null);
-        try {
-            const data = await api<AtoDetail>(`/atos/${id}`);
-            setDetail(data);
-        } catch (err) {
-            showApiError(err);
-            setDetailOpen(false);
-        } finally {
-            setDetailLoading(false);
-        }
-    }
-
-    const vigenciaBody = (row: AtoListItem) => {
-        const inicio = formatDatePt(row.dataInicio);
-        const fim = formatDatePt(row.dataFim);
-        if (inicio === '—' && fim === '—') return '—';
-        return fim === '—' ? inicio : `${inicio} – ${fim}`;
-    };
+    const columns = (
+        <>
+            <Column
+                header="Tipo"
+                body={(row: Ato) => <span className="font-medium">{row.tipo.nome}</span>}
+                style={{ width: '10rem' }}
+            />
+            <Column
+                header="Classificação"
+                body={(row: Ato) => row.classificacao?.nome ?? '—'}
+                style={{ width: '11rem' }}
+            />
+            <Column field="numero" header="Número" style={{ width: '7rem' }} />
+            <Column
+                header="Ementa"
+                body={(row: Ato) => (
+                    <span
+                        title={row.ementa ?? ''}
+                        className="white-space-nowrap overflow-hidden text-overflow-ellipsis block"
+                        style={{ maxWidth: '22rem' }}
+                    >
+                        {row.ementa ?? '—'}
+                    </span>
+                )}
+            />
+            <Column
+                header="Data do ato"
+                body={(row: Ato) => formatDatePt(row.dataAto)}
+                style={{ width: '8rem' }}
+            />
+            <Column
+                header="Publicação"
+                body={(row: Ato) => formatDatePt(row.dataPublicacao)}
+                style={{ width: '7rem' }}
+            />
+        </>
+    );
 
     const mod = PUBLICACAO_MODULES.atos;
 
@@ -203,10 +121,10 @@ export function AtosPage() {
                 subtitle="Portarias, nomeações, exonerações, designações e demais atos de gestão administrativa."
                 actions={
                     canWrite ? (
-                        <SiglButton
+                        <Button
                             label="Registrar ato"
                             icon="pi pi-plus"
-                            onClick={() => setOpen(true)}
+                            onClick={() => setDialogCriar(true)}
                         />
                     ) : undefined
                 }
@@ -214,241 +132,76 @@ export function AtosPage() {
 
             <PublicacaoModuleIntro moduleId="atos" />
 
-            <DocumentListPanel
-                title={mod.listPanelTitle}
-                description={mod.listPanelDesc}
-            >
-                {dominios && (
-                    <AtosPesquisaFilters
-                        filtros={filtrosDraft}
-                        onChange={(patch) =>
-                            setFiltrosDraft((f) => ({ ...f, ...patch }))
-                        }
-                        tiposAto={dominios.tiposAto}
-                        classificacoesAto={dominios.classificacoesAto}
-                        onPesquisar={aplicarPesquisa}
-                        onClear={clearFilters}
-                        hasFilters={hasFilters}
-                        resultCount={items.length}
-                        searchGeneration={searchGeneration}
+            <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+                <div className="col-12 md:col-4 lg:col-3">
+                    <label htmlFor="af-tipo">Tipo</label>
+                    <Dropdown
+                        id="af-tipo"
+                        value={filtros.tipoId ?? ''}
+                        options={[{ id: '', nome: 'Todos' }, ...tiposAto]}
+                        optionLabel="nome"
+                        optionValue="id"
+                        onChange={(e) => setFiltros((f) => ({ ...f, tipoId: e.value || undefined }))}
                     />
-                )}
-
-                {!loading && items.length === 0 ? (
-                    <EmptyState
-                        icon="pi pi-inbox"
-                        title={
-                            hasFilters
-                                ? 'Nenhum ato encontrado com os filtros aplicados'
-                                : 'Nenhum ato administrativo registrado'
-                        }
-                        hint={
-                            hasFilters
-                                ? 'Ajuste tipo ou classificação e tente novamente.'
-                                : 'Registre portarias, nomeações e demais atos de gestão interna.'
-                        }
+                </div>
+                <div className="col-12 md:col-4 lg:col-3">
+                    <label htmlFor="af-numero">Número</label>
+                    <InputText
+                        id="af-numero"
+                        value={filtros.numero ?? ''}
+                        onChange={(e) => setFiltros((f) => ({ ...f, numero: e.target.value || undefined }))}
+                        placeholder="Número do ato"
                     />
-                ) : (
-                    <DataTable
-                        value={items}
-                        loading={loading}
-                        dataKey="id"
-                        paginator
-                        rows={10}
-                        rowsPerPageOptions={[10, 25, 50]}
-                        emptyMessage="Carregando…"
-                        className="sigl-datatable"
-                        rowClassName={() => 'table-row-clickable'}
-                        onRowClick={(e) =>
-                            void openDetail((e.data as AtoListItem).id)
-                        }
-                    >
-                        <Column
-                            header="Tipo"
-                            body={(row: AtoListItem) => (
-                                <span className="badge-ato-type">
-                                    {row.tipo?.nome ?? '—'}
-                                </span>
-                            )}
-                            style={{ width: '10rem' }}
-                        />
-                        <Column
-                            header="Classificação"
-                            body={(row: AtoListItem) => (
-                                <span className="badge-muted">
-                                    {row.classificacao?.nome ?? '—'}
-                                </span>
-                            )}
-                            style={{ width: '11rem' }}
-                        />
-                        <Column
-                            field="numero"
-                            header="Número"
-                            sortable
-                            style={{ width: '6rem' }}
-                        />
-                        <Column
-                            header="Vigência"
-                            body={vigenciaBody}
-                            style={{ width: '9rem' }}
-                        />
-                        <Column
-                            header="Publicação"
-                            body={(row: AtoListItem) =>
-                                formatDatePt(row.dataPublicacaoInicio)
-                            }
-                            style={{ width: '7rem' }}
-                        />
-                    </DataTable>
-                )}
-            </DocumentListPanel>
+                </div>
+                <div className="col-12 md:col-4 lg:col-3">
+                    <label htmlFor="af-ementa">Ementa</label>
+                    <InputText
+                        id="af-ementa"
+                        value={filtros.ementa ?? ''}
+                        onChange={(e) => setFiltros((f) => ({ ...f, ementa: e.target.value || undefined }))}
+                        placeholder="Texto da ementa"
+                    />
+                </div>
+            </FiltroLayout>
 
-            <Dialog
-                header="Detalhe do ato administrativo"
-                visible={detailOpen}
-                onHide={() => setDetailOpen(false)}
-                modal
-                className="sigl-dialog-md"
-                footer={
-                    <div className="dialog-footer">
-                        <SiglButton
-                            label="Fechar"
-                            severity="secondary"
-                            onClick={() => setDetailOpen(false)}
-                        />
-                    </div>
-                }
-            >
-                {detailLoading && (
-                    <p className="ui-loading-inline">Carregando ato…</p>
-                )}
-                {detail && !detailLoading && (
-                    <div className="publicacao-detail">
-                        <div className="sigl-cluster">
-                            <span className="badge-ato-type">
-                                {detail.tipo?.nome ?? 'Ato'}
-                            </span>
-                            <span className="badge-muted">
-                                {detail.classificacao?.nome ?? '—'}
-                            </span>
-                        </div>
-                        <PublicacaoMetaGrid
-                            items={[
-                                { label: 'Número', value: detail.numero },
-                                {
-                                    label: 'Início da vigência',
-                                    value: formatDatePt(detail.dataInicio),
-                                },
-                                {
-                                    label: 'Fim da vigência',
-                                    value: formatDatePt(detail.dataFim),
-                                },
-                                {
-                                    label: 'Publicação',
-                                    value: formatDatePt(
-                                        detail.dataPublicacaoInicio,
-                                    ),
-                                },
-                                {
-                                    label: 'Finalidade',
-                                    value: detail.classificacao?.nome,
-                                },
-                            ]}
-                        />
-                        {detail.mensagem && (
-                            <p className="field-hint">
-                                <strong>Observação administrativa:</strong>{' '}
-                                {detail.mensagem}
-                            </p>
-                        )}
-                        <p className="field-hint publicacao-detail__note">
-                            Anexos e documento assinado poderão ser vinculados
-                            quando o módulo de arquivos estiver disponível.
-                        </p>
-                    </div>
-                )}
-            </Dialog>
+            <DataTableLayout<Ato>
+                items={items}
+                total={total}
+                loading={loading}
+                page={page}
+                onPageChange={setPage}
+                columns={columns}
+                canWrite={canDelete}
+                onVer={(item) => setDialogVer(item)}
+                onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
+            />
 
-            <Dialog
-                header="Registrar ato administrativo"
-                visible={open && !!dominios && dominios.tiposAto.length > 0}
-                onHide={() => !saving && setOpen(false)}
-                modal
-                className="sigl-dialog-md"
-                footer={
-                    <div className="dialog-footer">
-                        <SiglButton
-                            label="Cancelar"
-                            severity="secondary"
-                            text
-                            disabled={saving}
-                            onClick={() => setOpen(false)}
-                        />
-                        <SiglButton
-                            label="Salvar ato"
-                            icon="pi pi-check"
-                            loading={saving}
-                            onClick={() => void handleCreate()}
-                        />
-                    </div>
-                }
-            >
-                {dominios && (
-                    <div className="form-stack">
-                        <div className="form-section">
-                            <p className="form-section__title">
-                                Classificação do ato
-                            </p>
-                            <label
-                                htmlFor="ato-tipo"
-                                className="field-required"
-                            >
-                                Tipo de ato
-                            </label>
-                            <Dropdown
-                                id="ato-tipo"
-                                value={tipoId}
-                                options={dominios.tiposAto}
-                                optionLabel="nome"
-                                optionValue="id"
-                                onChange={(e) => setTipoId(e.value)}
-                                className="w-full"
-                            />
-                            <label
-                                htmlFor="ato-class"
-                                className="field-required"
-                            >
-                                Classificação / finalidade
-                            </label>
-                            <Dropdown
-                                id="ato-class"
-                                value={classificacaoId}
-                                options={dominios.classificacoesAto}
-                                optionLabel="nome"
-                                optionValue="id"
-                                onChange={(e) => setClassificacaoId(e.value)}
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="form-section">
-                            <p className="form-section__title">Identificação</p>
-                            <label
-                                htmlFor="ato-numero"
-                                className="field-required"
-                            >
-                                Número do ato
-                            </label>
-                            <InputText
-                                id="ato-numero"
-                                value={numero}
-                                onChange={(e) => setNumero(e.target.value)}
-                                className="w-full"
-                                placeholder="Ex.: 012/2026"
-                            />
-                        </div>
-                    </div>
-                )}
-            </Dialog>
+            {dialogCriar && (
+                <AtoCreateDialog
+                    onClose={() => setDialogCriar(false)}
+                    onSaved={() => void buscar()}
+                />
+            )}
+
+            {dialogVer && (
+                <AtoVerDialog
+                    atoId={dialogVer.id}
+                    onClose={() => setDialogVer(null)}
+                />
+            )}
+
+            {dialogDeletar && (
+                <DeleteDialog
+                    visible
+                    title="Excluir ato"
+                    message={`Deseja excluir o ato "${dialogDeletar.tipo.nome} nº ${dialogDeletar.numero}"? Esta ação não pode ser desfeita.`}
+                    onConfirm={() => atosApi.remove(dialogDeletar.id)}
+                    onClose={() => {
+                        setDialogDeletar(null);
+                        void buscar();
+                    }}
+                />
+            )}
 
             <ModulePipelineFooter current="atos" />
         </section>

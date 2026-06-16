@@ -18,11 +18,13 @@ export type Dominios = {
     tiposSessao: LookupOption[];
     situacoesSessao: LookupOption[];
     tiposAutor: LookupOption[];
+    tiposAutorExterno: LookupOption[];
     statusTramitacao: LookupOption[];
     unidadesTramitacao: LookupOption[];
     cargosMesa: LookupOption[];
     tiposAto: LookupOption[];
     classificacoesAto: LookupOption[];
+    parlamentares: LookupOption[];
 };
 
 export const dominiosApi = {

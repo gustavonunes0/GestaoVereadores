@@ -3,44 +3,67 @@ import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
+import type { TenantUserRole } from '../types/auth';
+
+type SiglRole = 'MASTER' | 'ADMIN' | 'OPERADOR';
+type AnyRole = TenantUserRole | SiglRole | string;
 
 type Usuario = {
     id: string;
     username: string;
     nome: string;
-    role: 'MASTER' | 'ADMIN' | 'OPERADOR';
+    role: AnyRole;
     ativo: boolean;
     createdAt?: string;
 };
 
-const ROLES: Usuario['role'][] = ['MASTER', 'ADMIN', 'OPERADOR'];
+const SIGL_ROLES: SiglRole[] = ['MASTER', 'ADMIN', 'OPERADOR'];
 
-const roleLabel: Record<Usuario['role'], string> = {
+const TENANT_ROLE_OPTIONS: { label: string; value: TenantUserRole }[] = [
+    { label: 'Administrador (Admin Staff)', value: 'ADMIN_STAFF' },
+    { label: 'Operador (Staff)', value: 'STAFF' },
+    { label: 'Parlamentar', value: 'PARLIAMENTARIAN' },
+];
+
+const SIGL_ROLE_LABELS: Record<SiglRole, string> = {
     MASTER: 'Master',
     ADMIN: 'Administrador',
     OPERADOR: 'Operador',
 };
+
+const TENANT_ROLE_LABELS: Record<TenantUserRole, string> = {
+    ADMIN_STAFF: 'Administrador',
+    STAFF: 'Operador',
+    PARLIAMENTARIAN: 'Parlamentar',
+};
+
+function getRoleLabel(role: AnyRole): string {
+    if (role in TENANT_ROLE_LABELS) return TENANT_ROLE_LABELS[role as TenantUserRole];
+    if (role in SIGL_ROLE_LABELS) return SIGL_ROLE_LABELS[role as SiglRole];
+    return role;
+}
 
 export function UsuariosPage() {
     const [items, setItems] = useState<Usuario[]>([]);
     const [meta, setMeta] = useState({ total: 0, page: 1, totalPages: 1 });
     const [createOpen, setCreateOpen] = useState(false);
     const [editUser, setEditUser] = useState<Usuario | null>(null);
+    const [isTenantMode, setIsTenantMode] = useState(false);
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [nome, setNome] = useState('');
-    const [role, setRole] = useState<Usuario['role']>('OPERADOR');
+    const [role, setRole] = useState<AnyRole>('OPERADOR');
     const [ativo, setAtivo] = useState(true);
 
     function load(page = 1) {
         apiList<Usuario>('/usuarios', { page, limit: 50 }).then((r) => {
             setItems(r.data);
-            setMeta({
-                total: r.meta.total,
-                page: r.meta.page,
-                totalPages: r.meta.totalPages,
-            });
+            setMeta({ total: r.meta.total, page: r.meta.page, totalPages: r.meta.totalPages });
+            const hasTenantRole = r.data.some(
+                (u) => u.role === 'ADMIN_STAFF' || u.role === 'STAFF' || u.role === 'PARLIAMENTARIAN',
+            );
+            setIsTenantMode(hasTenantRole);
         });
     }
 
@@ -85,6 +108,10 @@ export function UsuariosPage() {
         load(meta.page);
     }
 
+    const roleOptions = isTenantMode
+        ? TENANT_ROLE_OPTIONS
+        : SIGL_ROLES.map((r) => ({ label: SIGL_ROLE_LABELS[r], value: r }));
+
     return (
         <section className="page">
             <PageHeader
@@ -94,10 +121,7 @@ export function UsuariosPage() {
                     <button
                         type="button"
                         className="btn btn-primary"
-                        onClick={() => {
-                            resetForm();
-                            setCreateOpen(true);
-                        }}
+                        onClick={() => { resetForm(); setCreateOpen(true); }}
                     >
                         Novo usuário
                     </button>
@@ -105,8 +129,7 @@ export function UsuariosPage() {
             />
 
             <p className="page-context">
-                Apenas perfil Master pode criar e alterar usuários. Operadores
-                têm acesso somente leitura nas demais telas.
+                Apenas perfil Master / Administrador pode criar e alterar usuários.
             </p>
 
             <div className="card table-wrap">
@@ -126,9 +149,7 @@ export function UsuariosPage() {
                                 <td>{u.username}</td>
                                 <td>{u.nome}</td>
                                 <td>
-                                    <span className="badge">
-                                        {roleLabel[u.role]}
-                                    </span>
+                                    <span className="badge">{getRoleLabel(u.role)}</span>
                                 </td>
                                 <td>{u.ativo ? 'Sim' : 'Não'}</td>
                                 <td>
@@ -145,9 +166,7 @@ export function UsuariosPage() {
                     </tbody>
                 </table>
                 {items.length === 0 && (
-                    <p className="table-empty-state">
-                        Nenhum usuário cadastrado.
-                    </p>
+                    <p className="table-empty-state">Nenhum usuário cadastrado.</p>
                 )}
             </div>
 
@@ -162,8 +181,7 @@ export function UsuariosPage() {
                         Anterior
                     </button>
                     <span className="text-muted">
-                        Página {meta.page} de {meta.totalPages} ({meta.total}{' '}
-                        usuários)
+                        Página {meta.page} de {meta.totalPages} ({meta.total} usuários)
                     </span>
                     <button
                         type="button"
@@ -177,10 +195,7 @@ export function UsuariosPage() {
             )}
 
             {createOpen && (
-                <Modal
-                    title="Novo usuário"
-                    onClose={() => setCreateOpen(false)}
-                >
+                <Modal title="Novo usuário" onClose={() => setCreateOpen(false)}>
                     <form onSubmit={handleCreate}>
                         <label>
                             Login *
@@ -216,38 +231,25 @@ export function UsuariosPage() {
                             Perfil *
                             <select
                                 value={role}
-                                onChange={(e) =>
-                                    setRole(e.target.value as Usuario['role'])
-                                }
+                                onChange={(e) => setRole(e.target.value)}
                             >
-                                {ROLES.map((r) => (
-                                    <option key={r} value={r}>
-                                        {roleLabel[r]}
-                                    </option>
+                                {roleOptions.map((r) => (
+                                    <option key={r.value} value={r.value}>{r.label}</option>
                                 ))}
                             </select>
                         </label>
                         <div className="modal-actions">
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={() => setCreateOpen(false)}
-                            >
+                            <button type="button" className="btn btn-secondary" onClick={() => setCreateOpen(false)}>
                                 Cancelar
                             </button>
-                            <button type="submit" className="btn btn-primary">
-                                Criar
-                            </button>
+                            <button type="submit" className="btn btn-primary">Criar</button>
                         </div>
                     </form>
                 </Modal>
             )}
 
             {editUser && (
-                <Modal
-                    title={`Editar — ${editUser.username}`}
-                    onClose={() => setEditUser(null)}
-                >
+                <Modal title={`Editar — ${editUser.username}`} onClose={() => setEditUser(null)}>
                     <form onSubmit={handleUpdate}>
                         <label>
                             Nome exibido *
@@ -260,16 +262,9 @@ export function UsuariosPage() {
                         </label>
                         <label>
                             Perfil *
-                            <select
-                                value={role}
-                                onChange={(e) =>
-                                    setRole(e.target.value as Usuario['role'])
-                                }
-                            >
-                                {ROLES.map((r) => (
-                                    <option key={r} value={r}>
-                                        {roleLabel[r]}
-                                    </option>
+                            <select value={role} onChange={(e) => setRole(e.target.value)}>
+                                {roleOptions.map((r) => (
+                                    <option key={r.value} value={r.value}>{r.label}</option>
                                 ))}
                             </select>
                         </label>
@@ -282,16 +277,10 @@ export function UsuariosPage() {
                             Usuário ativo
                         </label>
                         <div className="modal-actions">
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={() => setEditUser(null)}
-                            >
+                            <button type="button" className="btn btn-secondary" onClick={() => setEditUser(null)}>
                                 Cancelar
                             </button>
-                            <button type="submit" className="btn btn-primary">
-                                Salvar
-                            </button>
+                            <button type="submit" className="btn btn-primary">Salvar</button>
                         </div>
                     </form>
                 </Modal>

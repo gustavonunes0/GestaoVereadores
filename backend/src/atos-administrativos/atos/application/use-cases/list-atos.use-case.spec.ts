@@ -1,6 +1,8 @@
 import { ListAtosUseCase } from './list-atos.use-case';
 import { buildAtoEntity, buildAtoRepositoryMock } from './__tests__/ato-test.helpers';
 
+const TENANT_ID = 'tenant-1';
+
 describe('ListAtosUseCase', () => {
     it('lista atos com paginação', async () => {
         const repository = buildAtoRepositoryMock();
@@ -10,21 +12,15 @@ describe('ListAtosUseCase', () => {
         });
 
         const useCase = new ListAtosUseCase(repository as never);
-        const result = await useCase.execute({ page: 1, limit: 20 });
+        const result = await useCase.execute(TENANT_ID, { page: 1, limit: 20 });
 
-        expect(repository.findMany).toHaveBeenCalledWith({
-            tipoId: undefined,
-            classificacaoId: undefined,
-            numero: undefined,
-            dataPublicacaoDe: undefined,
-            dataPublicacaoAte: undefined,
-            dataInicioDe: undefined,
-            dataInicioAte: undefined,
-            dataFimDe: undefined,
-            dataFimAte: undefined,
-            page: 1,
-            limit: 20,
-        });
+        expect(repository.findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+                tenantId: TENANT_ID,
+                page: 1,
+                limit: 20,
+            }),
+        );
         expect(result.data).toHaveLength(1);
         expect(result.meta.total).toBe(1);
     });
@@ -37,7 +33,7 @@ describe('ListAtosUseCase', () => {
         });
 
         const useCase = new ListAtosUseCase(repository as never);
-        await useCase.execute({
+        await useCase.execute(TENANT_ID, {
             tipoId: 'tipo-1',
             classificacaoId: 'class-1',
             numero: '001',
@@ -48,6 +44,7 @@ describe('ListAtosUseCase', () => {
 
         expect(repository.findMany).toHaveBeenCalledWith(
             expect.objectContaining({
+                tenantId: TENANT_ID,
                 tipoId: 'tipo-1',
                 classificacaoId: 'class-1',
                 numero: '001',
@@ -64,7 +61,7 @@ describe('ListAtosUseCase', () => {
         });
 
         const useCase = new ListAtosUseCase(repository as never);
-        const result = await useCase.execute({});
+        const result = await useCase.execute(TENANT_ID, {});
 
         expect(result.data[0].tipo).toBeDefined();
         expect(result.data[0].classificacao).toBeDefined();

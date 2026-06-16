@@ -3,7 +3,9 @@ import { SiglButton } from '../common/SiglButton';
 import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
 import { sessoesApi } from '../../api/legislative/sessoes.api';
 import { useAppToast } from '../../hooks/useAppToast';
+import { useAuth } from '../../contexts/AuthContext';
 import { Modal } from '../Modal';
+import { RegistrarVotoDialog } from './RegistrarVotoDialog';
 import {
     shouldHideNominalVotes,
     type TipoVotacao,
@@ -53,6 +55,8 @@ type Props = {
     canWrite: boolean;
     sessaoEmAndamento: boolean;
     onUpdated: () => void;
+    canManageSessao?: boolean;
+    canVotar?: boolean;
 };
 
 const TIPO_VOTACAO_OPTIONS: { label: string; value: TipoVotacao }[] = [
@@ -74,8 +78,11 @@ export function SessaoDeliberacaoPanel({
     canWrite,
     sessaoEmAndamento,
     onUpdated,
+    canManageSessao,
+    canVotar,
 }: Props) {
     const { showApiError, showSuccess } = useAppToast();
+    const { user } = useAuth();
     const [parlamentares, setParlamentares] = useState<ParlamentarOption[]>([]);
     const [presencaOpen, setPresencaOpen] = useState(false);
     const [parlamentarPresencaId, setParlamentarPresencaId] = useState('');
@@ -91,8 +98,10 @@ export function SessaoDeliberacaoPanel({
     const [votoValor, setVotoValor] =
         useState<(typeof VOTO_OPTIONS)[number]['value']>('SIM');
     const [busy, setBusy] = useState(false);
+    const [registrarVotoItem, setRegistrarVotoItem] = useState<string | null>(null);
 
-    const podeDeliberar = canWrite && sessaoEmAndamento;
+    const podeDeliberar = (canManageSessao ?? canWrite) && sessaoEmAndamento;
+    const podeVotar = (canVotar ?? false) && sessaoEmAndamento && !!user?.parliamentarianId;
 
     useEffect(() => {
         parlamentaresApi.list({ limit: 200 })
@@ -320,6 +329,17 @@ export function SessaoDeliberacaoPanel({
                                             </p>
                                         )}
 
+                                        {podeVotar &&
+                                            votacao.tipoVotacao === 'NOMINAL' && (
+                                                <div className="sigl-cluster" style={{ marginTop: '0.5rem' }}>
+                                                    <SiglButton
+                                                        label="Registrar meu voto"
+                                                        icon="pi pi-check-circle"
+                                                        onClick={() => setRegistrarVotoItem(item.id)}
+                                                    />
+                                                </div>
+                                            )}
+
                                         {podeDeliberar &&
                                             votacao.tipoVotacao ===
                                                 'NOMINAL' && (
@@ -522,6 +542,16 @@ export function SessaoDeliberacaoPanel({
                         );
                     })}
                 </ol>
+            )}
+
+            {registrarVotoItem && user?.parliamentarianId && (
+                <RegistrarVotoDialog
+                    sessaoId={sessaoId}
+                    pautaItemId={registrarVotoItem}
+                    parlamentarId={user.parliamentarianId}
+                    onClose={() => setRegistrarVotoItem(null)}
+                    onSaved={onUpdated}
+                />
             )}
 
             {presencaOpen && (
