@@ -274,6 +274,14 @@ export const ADMIN_NAV = [
     },
 ] as const;
 
+export const PARLAMENTAR_NAV_ITEMS = [
+    { label: 'Meu Perfil',       route: '/parlamentar/perfil',    icon: 'pi-user' },
+    { label: 'Minhas Matérias',  route: '/parlamentar/materias',  icon: 'pi-file-edit' },
+    { label: 'Comissões',        route: '/parlamentar/comissoes', icon: 'pi-briefcase' },
+    { label: 'Mandato',          route: '/parlamentar/mandato',   icon: 'pi-history' },
+    { label: 'Filiação',         route: '/parlamentar/filiacao',  icon: 'pi-flag' },
+] as const;
+
 export const LEGACY_REDIRECTS: { from: string; to: string }[] = [
     { from: 'parlamentares', to: ROUTES.camara.parlamentares },
 

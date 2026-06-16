@@ -1,21 +1,10 @@
 import { useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import type { TenantUserRole } from '../types/auth';
 
 export function usePermissions() {
-    const { user } = useAuth();
+    const { user, isAdminStaff, isStaff, isParliamentarian } = useAuth();
 
     return useMemo(() => {
-        const authType = user?.authType ?? 'sigl';
-        const role = user?.role as TenantUserRole | string | undefined;
-
-        const isMaster = role === 'MASTER' && authType === 'sigl';
-        const isCamara = authType === 'camara';
-
-        const isAdminStaff = role === 'ADMIN_STAFF';
-        const isStaff = role === 'STAFF';
-        const isParliamentarian = role === 'PARLIAMENTARIAN';
-
         const canWrite = !!user && (isAdminStaff || isStaff);
         const canEdit = isAdminStaff;
         const canDelete = isAdminStaff;
@@ -26,10 +15,9 @@ export function usePermissions() {
 
         return {
             user,
-            authType,
-            role: role as TenantUserRole | undefined,
-            isMaster,
-            isCamara,
+            isAdminStaff,
+            isStaff,
+            isParliamentarian,
             canWrite,
             canEdit,
             canDelete,
@@ -39,5 +27,5 @@ export function usePermissions() {
             canRead,
             isReadOnly: isParliamentarian,
         };
-    }, [user]);
+    }, [user, isAdminStaff, isStaff, isParliamentarian]);
 }

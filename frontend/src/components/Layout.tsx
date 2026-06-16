@@ -1,27 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-
-import { ADMIN_NAV } from '../app/navigation';
-
-import { ModuleTitle } from './common/ModuleTitle';
-
-import { SiglButton } from './common/SiglButton';
-
-import { SidebarNav } from './SidebarNav';
-
 import { Tag } from 'primereact/tag';
-
 import { useAuth } from '../contexts/AuthContext';
-
 import { LegislaturaProvider } from '../contexts/LegislaturaContext';
-
 import { AppFeedbackProvider } from '../hooks/useAppToast';
-
+import { ModuleTitle } from './common/ModuleTitle';
+import { SiglButton } from './common/SiglButton';
+import { SidebarNav } from './SidebarNav';
 import { FooterBar } from './FooterBar';
 import { LegislaturaBar } from './LegislaturaBar';
 
 export function Layout() {
-    const { user, logout } = useAuth();
+    const { user, logout, isAdminStaff } = useAuth();
     const { pathname } = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -60,14 +50,7 @@ export function Layout() {
                             <p>Atividade legislativa</p>
                         </div>
 
-                        <SidebarNav
-                            showAdmin={
-                                user?.role === 'MASTER' &&
-                                user?.authType !== 'camara'
-                            }
-                            showAdministrativo={user?.authType !== 'camara'}
-                            adminItems={ADMIN_NAV}
-                        />
+                        <SidebarNav showAdmin={isAdminStaff} />
                     </aside>
 
                     <div className="main">
@@ -89,7 +72,7 @@ export function Layout() {
 
                             <div className="topbar-user">
                                 <span className="topbar-user-info">
-                                    <strong>{user?.nome}</strong>
+                                    <strong>{user?.name}</strong>
                                     <Tag
                                         value={user?.role ?? '—'}
                                         severity="secondary"

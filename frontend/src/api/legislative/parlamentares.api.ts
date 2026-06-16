@@ -60,4 +60,7 @@ export const parlamentaresApi = {
         api<void>(`${API_PATHS.legislative.parlamentares}/${id}`, {
             method: 'DELETE',
         }),
+
+    getMandatos: (id: string) =>
+        api<unknown[]>(`${API_PATHS.legislative.parlamentares}/${id}/mandates`),
 };

@@ -3,8 +3,10 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { LEGACY_REDIRECTS } from './app/navigation';
 import { Layout } from './components/Layout';
-import { MasterRoute } from './components/MasterRoute';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { ParlamentarLayout } from './components/ParlamentarLayout';
+import { StaffRoute } from './components/StaffRoute';
+import { ParlamentarRoute } from './components/ParlamentarRoute';
+import { AdminRoute } from './components/AdminRoute';
 
 const LoginPage = React.lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
@@ -23,18 +25,27 @@ const AutoresPage = React.lazy(() => import('./pages/AutoresPage').then((m) => (
 const LegislaturasPage = React.lazy(() => import('./pages/LegislaturasPage').then((m) => ({ default: m.LegislaturasPage })));
 const UsuariosPage = React.lazy(() => import('./pages/UsuariosPage').then((m) => ({ default: m.UsuariosPage })));
 
+const ParlamentarPerfilPage = React.lazy(() => import('./pages/parlamentar/ParlamentarPerfilPage').then((m) => ({ default: m.ParlamentarPerfilPage })));
+const ParlamentarMateriasPage = React.lazy(() => import('./pages/parlamentar/ParlamentarMateriasPage').then((m) => ({ default: m.ParlamentarMateriasPage })));
+const ParlamentarComissoesPage = React.lazy(() => import('./pages/parlamentar/ParlamentarComissoesPage').then((m) => ({ default: m.ParlamentarComissoesPage })));
+const ParlamentarMandatoPage = React.lazy(() => import('./pages/parlamentar/ParlamentarMandatoPage').then((m) => ({ default: m.ParlamentarMandatoPage })));
+const ParlamentarFiliacaoPage = React.lazy(() => import('./pages/parlamentar/ParlamentarFiliacaoPage').then((m) => ({ default: m.ParlamentarFiliacaoPage })));
+
+const Spinner = (
+    <div className="flex align-items-center justify-content-center" style={{ height: '100vh' }}>
+        <ProgressSpinner />
+    </div>
+);
+
 export default function App() {
     return (
-        <Suspense
-            fallback={
-                <div className="flex align-items-center justify-content-center" style={{ height: '100vh' }}>
-                    <ProgressSpinner />
-                </div>
-            }
-        >
+        <Suspense fallback={Spinner}>
             <Routes>
+                {/* Pública */}
                 <Route path="/login" element={<LoginPage />} />
-                <Route element={<ProtectedRoute />}>
+
+                {/* Staff (ADMIN_STAFF e STAFF) */}
+                <Route element={<StaffRoute />}>
                     <Route element={<Layout />}>
                         <Route index element={<DashboardPage />} />
                         <Route path="materias" element={<MateriasPage />} />
@@ -45,10 +56,7 @@ export default function App() {
                         <Route path="atos-administrativos" element={<AtosPage />} />
 
                         <Route path="camara" element={<CamaraPage />}>
-                            <Route
-                                index
-                                element={<Navigate to="legislaturas" replace />}
-                            />
+                            <Route index element={<Navigate to="legislaturas" replace />} />
                             <Route path="parlamentares" element={<ParlamentaresPage />} />
                             <Route path="comissoes" element={<ComissoesPage />} />
                             <Route path="frentes" element={<FrentesPage />} />
@@ -57,20 +65,30 @@ export default function App() {
                             <Route path="legislaturas" element={<LegislaturasPage />} />
                         </Route>
 
-                        <Route element={<MasterRoute />}>
-                            <Route path="usuarios" element={<UsuariosPage />} />
-                        </Route>
+                        <Route
+                            path="usuarios"
+                            element={<AdminRoute><UsuariosPage /></AdminRoute>}
+                        />
 
                         {LEGACY_REDIRECTS.map(({ from, to }) => (
-                            <Route
-                                key={from}
-                                path={from}
-                                element={<Navigate to={to} replace />}
-                            />
+                            <Route key={from} path={from} element={<Navigate to={to} replace />} />
                         ))}
                     </Route>
                 </Route>
-                <Route path="*" element={<Navigate to="/" replace />} />
+
+                {/* Parlamentar */}
+                <Route element={<ParlamentarRoute />}>
+                    <Route element={<ParlamentarLayout />}>
+                        <Route path="parlamentar/perfil" element={<ParlamentarPerfilPage />} />
+                        <Route path="parlamentar/materias" element={<ParlamentarMateriasPage />} />
+                        <Route path="parlamentar/comissoes" element={<ParlamentarComissoesPage />} />
+                        <Route path="parlamentar/mandato" element={<ParlamentarMandatoPage />} />
+                        <Route path="parlamentar/filiacao" element={<ParlamentarFiliacaoPage />} />
+                    </Route>
+                </Route>
+
+                {/* Catch-all */}
+                <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
         </Suspense>
     );

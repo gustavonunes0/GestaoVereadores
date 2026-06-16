@@ -2,7 +2,6 @@
 export const API_PATHS = {
     auth: {
         login: '/auth/login',
-        loginCamara: '/auth/login-camara',
         me: '/auth/me',
     },
     dominios: '/dominios',

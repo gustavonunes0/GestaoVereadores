@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-    ADMINISTRATIVO_NAV,
-    DASHBOARD_NAV,
     SIDEBAR_NAV_GROUPS,
+    ADMINISTRATIVO_NAV,
+    ADMIN_NAV,
+    DASHBOARD_NAV,
     type NavGroup,
 } from '../app/navigation';
+import { useAuth } from '../contexts/AuthContext';
 import { ModuleTitle } from './common/ModuleTitle';
 
 const STORAGE_KEY = 'sigl_sidebar_groups';
@@ -25,17 +27,13 @@ function groupHasActivePath(group: NavGroup, pathname: string) {
 }
 
 type Props = {
-    adminItems?: typeof import('../app/navigation').ADMIN_NAV;
     showAdmin?: boolean;
-    showAdministrativo?: boolean;
 };
 
-export function SidebarNav({
-    adminItems,
-    showAdmin,
-    showAdministrativo = true,
-}: Props) {
+export function SidebarNav({ showAdmin = false }: Props) {
     const { pathname } = useLocation();
+    const { isAdminStaff } = useAuth();
+
     const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
         () => {
             const stored = loadOpenGroups();
@@ -145,33 +143,29 @@ export function SidebarNav({
                 );
             })}
 
-            {showAdministrativo && (
-                <>
-                    <div className="nav-section">Outros</div>
-                    {ADMINISTRATIVO_NAV.map((item) => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            className={() =>
-                                `nav-link${item.match(pathname) ? ' active' : ''}`
-                            }
-                        >
-                            <ModuleTitle
-                                icon={item.icon}
-                                as="span"
-                                className="nav-link__label"
-                            >
-                                {item.label}
-                            </ModuleTitle>
-                        </NavLink>
-                    ))}
-                </>
-            )}
+            <div className="nav-section">Outros</div>
+            {ADMINISTRATIVO_NAV.map((item) => (
+                <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={() =>
+                        `nav-link${item.match(pathname) ? ' active' : ''}`
+                    }
+                >
+                    <ModuleTitle
+                        icon={item.icon}
+                        as="span"
+                        className="nav-link__label"
+                    >
+                        {item.label}
+                    </ModuleTitle>
+                </NavLink>
+            ))}
 
-            {showAdmin && adminItems && (
+            {(showAdmin || isAdminStaff) && (
                 <>
-                    <div className="nav-section">Plataforma</div>
-                    {adminItems.map((item) => (
+                    <div className="nav-section">Gestão</div>
+                    {ADMIN_NAV.map((item) => (
                         <NavLink
                             key={item.to}
                             to={item.to}
