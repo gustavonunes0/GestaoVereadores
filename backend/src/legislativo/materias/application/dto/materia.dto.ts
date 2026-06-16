@@ -61,6 +61,10 @@ export class CreateMateriaDto {
 
     @IsOptional()
     @IsString()
+    authorParliamentarianId?: string;
+
+    @IsOptional()
+    @IsString()
     primeiroAutorId?: string;
 
     @IsOptional()
@@ -102,6 +106,12 @@ export class CreateMateriaDto {
     @IsArray()
     @IsUUID('4', { each: true })
     coautorIds?: string[];
+
+    /** Relatores — `autorId` com papel=RELATOR para cada entrada. */
+    @IsOptional()
+    @IsArray()
+    @IsUUID('4', { each: true })
+    relatoresIds?: string[];
 }
 
 export class FilterMateriaDto extends PaginationQueryDto {

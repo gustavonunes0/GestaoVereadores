@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TipoEventoAgenda } from '@prisma/client';
-import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 import { PaginationQueryDto } from '../../../../common/dto/pagination.dto';
 
 export class CreateAgendaDto {
@@ -33,9 +33,51 @@ export class CreateAgendaDto {
     @IsOptional()
     @IsString()
     mensagem?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    local?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    descricao?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    sessaoPlenariaId?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsBoolean()
+    publicoExterno?: boolean;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    linkTransmissao?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    recorrencia?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    recorrenciaPaiId?: string;
 }
 
 export class UpdateAgendaDto extends CreateAgendaDto {}
+
+export class VincularSessaoDto {
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    sessaoPlenariaId?: string | null;
+}
 
 export class FilterAgendaDto extends PaginationQueryDto {
     @ApiPropertyOptional({ enum: TipoEventoAgenda })

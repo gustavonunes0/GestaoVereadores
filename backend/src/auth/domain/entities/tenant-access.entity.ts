@@ -1,4 +1,4 @@
-import { TenantStatus } from '@prisma/client';
+import { TenantStatus, TenantUserRole } from '@prisma/client';
 
 export type TenantAuthProps = {
     id: string;
@@ -25,6 +25,8 @@ export type TenantUserAccessProps = {
     id: string;
     tenantId: string;
     userId: string;
+    role: TenantUserRole;
+    parliamentarianId?: string;
     isTenantAdmin: boolean;
     isTenantStaff: boolean;
     isParliamentarian: boolean;
@@ -34,6 +36,8 @@ export class TenantUserAccessEntity {
     readonly id: string;
     readonly tenantId: string;
     readonly userId: string;
+    readonly role: TenantUserRole;
+    readonly parliamentarianId?: string;
     readonly isTenantAdmin: boolean;
     readonly isTenantStaff: boolean;
     readonly isParliamentarian: boolean;
@@ -42,6 +46,8 @@ export class TenantUserAccessEntity {
         this.id = props.id;
         this.tenantId = props.tenantId;
         this.userId = props.userId;
+        this.role = props.role;
+        this.parliamentarianId = props.parliamentarianId;
         this.isTenantAdmin = props.isTenantAdmin;
         this.isTenantStaff = props.isTenantStaff;
         this.isParliamentarian = props.isParliamentarian;

@@ -1,4 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnprocessableEntityException } from '@nestjs/common';
+import { TenantUserRole } from '@prisma/client';
+import { AuthenticatedUser } from '../../../../common/types/authenticated-request';
 import { MateriaRepository } from '../../domain/repositories/materia.repository';
 import { LegislativeMatterDomainService } from '../../domain/services/legislative-matter-domain.service';
 import { MATERIA_REPOSITORY } from '../../materias.tokens';
@@ -18,7 +20,7 @@ export class CreateMateriaUseCase {
         private readonly repository: MateriaRepository,
     ) {}
 
-    async execute(tenantId: string, dto: CreateMateriaDto) {
+    async execute(tenantId: string, dto: CreateMateriaDto, user?: AuthenticatedUser) {
         this.domainService.assertTenantIdProvided(tenantId);
 
         try {
@@ -27,8 +29,20 @@ export class CreateMateriaUseCase {
             throw new MatterEmentaRequiredError();
         }
 
+        let authorParliamentarianId = dto.authorParliamentarianId;
+
+        if (user && user.tenantUserRole === TenantUserRole.PARLIAMENTARIAN) {
+            if (!user.parliamentarianId) {
+                throw new UnprocessableEntityException(
+                    'Usuário parlamentar sem parlamentarianId no token — contate o administrador',
+                );
+            }
+            authorParliamentarianId = user.parliamentarianId;
+        }
+
         const created = await this.repository.create(tenantId, {
             ...dto,
+            authorParliamentarianId,
             status: dto.status ?? (this.domainService.getDefaultStatus() as never),
         });
 

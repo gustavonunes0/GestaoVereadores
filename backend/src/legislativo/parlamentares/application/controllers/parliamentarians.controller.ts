@@ -12,8 +12,9 @@ import {
     Post,
     Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { TenantMaintainer } from '../../../../common/decorators/tenant-maintainer.decorator';
+import { TenantRoles } from '../../../../common/decorators/tenant-roles.decorator';
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
+import { ADMIN_ONLY } from '../../../../auth/guards/guard-combos';
 import { CreateParliamentarianDto } from '../dto/create-parliamentarian.dto';
 import { ListParliamentariansQueryDto } from '../dto/list-parliamentarians-query.dto';
 import { UpdateParliamentarianDto } from '../dto/update-parliamentarian.dto';
@@ -65,7 +66,7 @@ export class ParliamentariansController {
         }
     }
 
-        @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Post()
     async create(
         @TenantId() tenantId: string,
@@ -81,7 +82,7 @@ export class ParliamentariansController {
         }
     }
 
-        @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Patch(':id')
     async update(
         @TenantId() tenantId: string,
@@ -99,7 +100,7 @@ export class ParliamentariansController {
         }
     }
 
-        @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Delete(':id')
     async remove(
         @TenantId() tenantId: string,

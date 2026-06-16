@@ -52,6 +52,9 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
                 isRemoved: false,
                 status: TenantUserStatus.ACTIVE,
             },
+            include: {
+                parliamentarian: { select: { id: true } },
+            },
         });
         if (!row) return null;
 
@@ -59,6 +62,8 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
             id: row.id,
             tenantId: row.tenantId,
             userId: row.userId,
+            role: row.role,
+            parliamentarianId: row.parliamentarian?.id,
             isTenantAdmin: row.isTenantAdmin,
             isTenantStaff: row.isTenantStaff,
             isParliamentarian: row.isParliamentarian,

@@ -21,12 +21,17 @@ import { ListMatterTramitationActionsUseCase } from './application/use-cases/lis
 import { RemoveMateriaAutorUseCase } from './application/use-cases/remove-materia-autor.use-case';
 import { RemoveMateriaUseCase } from './application/use-cases/remove-materia.use-case';
 import { UpdateMateriaUseCase } from './application/use-cases/update-materia.use-case';
+import { TramitarMateriaUseCase } from './application/use-cases/tramitar-materia.use-case';
+import { AddPublicacaoMateriaUseCase } from './application/use-cases/add-publicacao-materia.use-case';
+import { ListAutoresExternosUseCase } from './application/use-cases/list-autores-externos.use-case';
 import { MvpMatterCommitteeOpinionGate } from './infra/gates/mvp-matter-committee-opinion.gate';
 import { PrismaMateriaRepository } from './infra/prisma/prisma-materia.repository';
+import { PrismaTramitacaoHistoricoRepository } from './infra/prisma/prisma-tramitacao-historico.repository';
 import {
     MATERIA_REPOSITORY,
     MATTER_COMMITTEE_OPINION_GATE,
 } from './materias.tokens';
+import { TramitacaoHistoricoRepository } from './domain/repositories/tramitacao-historico.repository';
 
 @Module({
     imports: [PrismaModule],
@@ -50,17 +55,25 @@ import {
         AddMatterCoauthorUseCase,
         RemoveMatterCoauthorUseCase,
         SetMatterRelatorUseCase,
+        TramitarMateriaUseCase,
+        AddPublicacaoMateriaUseCase,
+        ListAutoresExternosUseCase,
         PrismaMateriaRepository,
+        PrismaTramitacaoHistoricoRepository,
         MvpMatterCommitteeOpinionGate,
         {
             provide: MATERIA_REPOSITORY,
             useExisting: PrismaMateriaRepository,
         },
         {
+            provide: TramitacaoHistoricoRepository,
+            useExisting: PrismaTramitacaoHistoricoRepository,
+        },
+        {
             provide: MATTER_COMMITTEE_OPINION_GATE,
             useExisting: MvpMatterCommitteeOpinionGate,
         },
     ],
-    exports: [MATERIA_REPOSITORY, MATTER_COMMITTEE_OPINION_GATE],
+    exports: [MATERIA_REPOSITORY, MATTER_COMMITTEE_OPINION_GATE, GetMateriaByIdUseCase],
 })
 export class MateriasModule {}

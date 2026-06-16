@@ -2,6 +2,7 @@ import { PaginatedResult } from '../../../../common/dto/pagination.dto';
 import { AtoEntity } from '../entities/ato.entity';
 
 export type CreateAtoRepositoryInput = {
+    tenantId: string;
     tipoId: string;
     classificacaoId: string;
     numero: string;
@@ -10,6 +11,11 @@ export type CreateAtoRepositoryInput = {
     dataPublicacaoInicio?: Date | null;
     dataPublicacaoFim?: Date | null;
     mensagem?: string | null;
+    ementa?: string | null;
+    dataAto?: Date | null;
+    anexoUrl?: string | null;
+    textoUrl?: string | null;
+    identificadorId?: string | null;
 };
 
 export type UpdateAtoRepositoryInput = {
@@ -21,9 +27,15 @@ export type UpdateAtoRepositoryInput = {
     dataPublicacaoInicio?: Date | null;
     dataPublicacaoFim?: Date | null;
     mensagem?: string | null;
+    ementa?: string | null;
+    dataAto?: Date | null;
+    anexoUrl?: string | null;
+    textoUrl?: string | null;
+    identificadorId?: string | null;
 };
 
 export type ListAtosRepositoryQuery = {
+    tenantId: string;
     tipoId?: string;
     classificacaoId?: string;
     numero?: string;
@@ -44,16 +56,18 @@ export abstract class AtoRepository {
         query: ListAtosRepositoryQuery,
     ): Promise<PaginatedResult<AtoEntity>>;
 
-    abstract findById(id: string): Promise<AtoEntity | null>;
+    abstract findById(tenantId: string, id: string): Promise<AtoEntity | null>;
 
     abstract update(
+        tenantId: string,
         id: string,
         data: UpdateAtoRepositoryInput,
     ): Promise<AtoEntity>;
 
-    abstract remove(id: string): Promise<void>;
+    abstract remove(tenantId: string, id: string): Promise<void>;
 
     abstract existsByNumero(
+        tenantId: string,
         numero: string,
         ignoreAtoId?: string,
     ): Promise<boolean>;

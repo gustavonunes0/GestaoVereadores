@@ -1,22 +1,51 @@
 /** Mirrors backend StatusMateria — UI gates for pauta, norma, etc. */
 export const MATERIA_STATUS = {
-    EM_TRAMITACAO: 'EM_TRAMITACAO',
-    APROVADA: 'APROVADA',
-    REJEITADA: 'REJEITADA',
-    ARQUIVADA: 'ARQUIVADA',
-    RETIRADA: 'RETIRADA',
-} as const;
-
-export type MateriaStatus =
-    (typeof MATERIA_STATUS)[keyof typeof MATERIA_STATUS];
-
-export const MATERIA_STATUS_LABELS: Record<MateriaStatus, string> = {
+    DRAFT: 'Rascunho',
+    PROTOCOLADA: 'Protocolada',
     EM_TRAMITACAO: 'Em tramitação',
+    EM_PAUTA: 'Em pauta',
     APROVADA: 'Aprovada',
     REJEITADA: 'Rejeitada',
     ARQUIVADA: 'Arquivada',
     RETIRADA: 'Retirada',
+    TRANSFORMADA_EM_NORMA: 'Transformada em norma',
+} as const;
+
+export type MateriaStatus = keyof typeof MATERIA_STATUS;
+
+export const MATERIA_STATUS_LABELS: Record<MateriaStatus, string> = {
+    DRAFT: 'Rascunho',
+    PROTOCOLADA: 'Protocolada',
+    EM_TRAMITACAO: 'Em tramitação',
+    EM_PAUTA: 'Em pauta',
+    APROVADA: 'Aprovada',
+    REJEITADA: 'Rejeitada',
+    ARQUIVADA: 'Arquivada',
+    RETIRADA: 'Retirada',
+    TRANSFORMADA_EM_NORMA: 'Transformada em norma',
 };
+
+export const SESSAO_STATUS = {
+    AGENDADA: 'Agendada',
+    ABERTA: 'Aberta',
+    SUSPENSA: 'Suspensa',
+    ENCERRADA: 'Encerrada',
+    CANCELADA: 'Cancelada',
+} as const;
+
+export type SessaoStatus = keyof typeof SESSAO_STATUS;
+
+export const NORMA_STATUS = {
+    EM_TRAMITE: 'Em trâmite',
+    SANCIONADA: 'Sancionada',
+    VETADA: 'Vetada',
+    PROMULGADA: 'Promulgada',
+    PUBLICADA: 'Publicada',
+    VIGENTE: 'Vigente',
+    REVOGADA: 'Revogada',
+} as const;
+
+export type NormaStatus = keyof typeof NORMA_STATUS;
 
 export type TipoVotacao = 'NOMINAL' | 'SIMBOLICA' | 'SECRETA';
 
@@ -25,7 +54,11 @@ export function canAddMateriaToPauta(materia: {
     emTramitacao?: boolean;
 }): boolean {
     if (materia.status) {
-        return materia.status === MATERIA_STATUS.EM_TRAMITACAO;
+        return (
+            materia.status === 'EM_TRAMITACAO' ||
+            materia.status === 'EM_PAUTA' ||
+            materia.status === 'PROTOCOLADA'
+        );
     }
     return materia.emTramitacao === true;
 }
@@ -33,7 +66,7 @@ export function canAddMateriaToPauta(materia: {
 export function canCreateNormaFromMateria(materia: {
     status?: MateriaStatus;
 }): boolean {
-    return materia.status === MATERIA_STATUS.APROVADA;
+    return materia.status === 'APROVADA';
 }
 
 export function shouldHideNominalVotes(tipoVotacao?: TipoVotacao): boolean {

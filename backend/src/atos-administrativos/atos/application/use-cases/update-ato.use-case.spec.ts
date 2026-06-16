@@ -6,6 +6,8 @@ import {
 } from '../errors/ato.errors';
 import { buildAtoEntity, buildAtoRepositoryMock } from './__tests__/ato-test.helpers';
 
+const TENANT_ID = 'tenant-1';
+
 describe('UpdateAtoUseCase', () => {
     it('atualiza ato existente', async () => {
         const repository = buildAtoRepositoryMock();
@@ -15,9 +17,9 @@ describe('UpdateAtoUseCase', () => {
         );
 
         const useCase = new UpdateAtoUseCase(repository as never);
-        const result = await useCase.execute('ato-1', { numero: '002/2024' });
+        const result = await useCase.execute(TENANT_ID, 'ato-1', { numero: '002/2024' });
 
-        expect(repository.update).toHaveBeenCalledWith('ato-1', {
+        expect(repository.update).toHaveBeenCalledWith(TENANT_ID, 'ato-1', {
             tipoId: undefined,
             classificacaoId: undefined,
             numero: '002/2024',
@@ -26,6 +28,11 @@ describe('UpdateAtoUseCase', () => {
             dataPublicacaoInicio: undefined,
             dataPublicacaoFim: undefined,
             mensagem: undefined,
+            ementa: undefined,
+            dataAto: undefined,
+            anexoUrl: undefined,
+            textoUrl: undefined,
+            identificadorId: undefined,
         });
         expect(result.numero).toBe('002/2024');
     });
@@ -36,7 +43,7 @@ describe('UpdateAtoUseCase', () => {
 
         const useCase = new UpdateAtoUseCase(repository as never);
         await expect(
-            useCase.execute('missing', { numero: '002/2024' }),
+            useCase.execute(TENANT_ID, 'missing', { numero: '002/2024' }),
         ).rejects.toBeInstanceOf(AtoNotFoundError);
     });
 
@@ -47,7 +54,7 @@ describe('UpdateAtoUseCase', () => {
 
         const useCase = new UpdateAtoUseCase(repository as never);
         await expect(
-            useCase.execute('ato-1', { tipoId: 'invalid' }),
+            useCase.execute(TENANT_ID, 'ato-1', { tipoId: 'invalid' }),
         ).rejects.toBeInstanceOf(TipoAtoNotFoundError);
     });
 
@@ -62,7 +69,7 @@ describe('UpdateAtoUseCase', () => {
 
         const useCase = new UpdateAtoUseCase(repository as never);
         await expect(
-            useCase.execute('ato-1', { dataFim: '2024-05-01' }),
+            useCase.execute(TENANT_ID, 'ato-1', { dataFim: '2024-05-01' }),
         ).rejects.toBeInstanceOf(AtoDataFinalAnteriorInicialError);
         expect(repository.update).not.toHaveBeenCalled();
     });

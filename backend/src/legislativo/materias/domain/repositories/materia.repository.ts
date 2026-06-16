@@ -13,6 +13,28 @@ import {
 } from '../../application/dto/materia.dto';
 import { UpdateMateriaDto } from '../../application/dto/update-materia.dto';
 import { MatterAuthorshipPayload } from '../../application/view-models/matter-authorship.view-model';
+import { MatterStatus } from '../enums/matter-status.enum';
+
+export type TramitarMateriaData = {
+    statusAnterior: MatterStatus | null;
+    novoStatus: MatterStatus;
+    responsavelId?: string;
+    despacho?: string;
+    observacao?: string;
+    unidadeOrigemId?: string;
+    unidadeDestinoId?: string;
+};
+
+export type AutorExternoListItem = {
+    id: string;
+    nome: string;
+    cargo: string | null;
+    instituicao: string | null;
+    registro: string | null;
+    partido: string | null;
+    uf: string | null;
+    tipoAutor: { id: string; nome: string; idNegocio: number | null };
+};
 
 export abstract class MateriaRepository {
     abstract create(tenantId: string, dto: CreateMateriaDto): Promise<unknown>;
@@ -84,4 +106,41 @@ export abstract class MateriaRepository {
         matterId: string,
         dto: SetRelatorMateriaDto,
     ): Promise<MatterAuthorshipPayload>;
+
+    // ── Métodos novos (clean DDD) ──────────────────────────────────────────
+
+    /** Próximo número sequencial com lock FOR UPDATE para evitar race conditions. */
+    abstract proximoNumero(
+        tenantId: string,
+        tipoId: string,
+        anoId: string,
+    ): Promise<number>;
+
+    /** Transição de status + registro em TramitacaoHistorico em uma transaction. */
+    abstract tramitar(
+        id: string,
+        tenantId: string,
+        dados: TramitarMateriaData,
+    ): Promise<void>;
+
+    /** Lista AutorExterno do tenant, opcionalmente filtrado por tipo. */
+    abstract listAutoresExternos(
+        tenantId: string,
+        tipoAutorId?: string,
+    ): Promise<AutorExternoListItem[]>;
+
+    /** Adiciona PublicacaoOficial vinculada a uma Materia. */
+    abstract addPublicacao(
+        tenantId: string,
+        materiaId: string,
+        data: {
+            dataPublicacao: Date;
+            veiculo: string;
+            paginaInicio?: number;
+            paginaFim?: number;
+            identificador?: string;
+            urlExterna?: string;
+            textoIntegral?: string;
+        },
+    ): Promise<{ id: string; dataPublicacao: Date; veiculo: string }>;
 }

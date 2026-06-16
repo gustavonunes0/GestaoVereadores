@@ -12,5 +12,20 @@ export function useDominios() {
             .finally(() => setLoading(false));
     }, []);
 
-    return { dominios, loading };
+    return {
+        dominios,
+        loading,
+        anos: dominios?.anos ?? [],
+        tiposMateria: dominios?.tiposMateria ?? [],
+        tiposNorma: dominios?.tiposNorma ?? [],
+        tiposAto: dominios?.tiposAto ?? [],
+        classificacoesAto: dominios?.classificacoesAto ?? [],
+        tiposSessao: dominios?.tiposSessao ?? [],
+        tiposComissao: dominios?.tiposComissao ?? [],
+        tiposAutor: dominios?.tiposAutor ?? [],
+        esferasFederacao: dominios?.esferasFederacao ?? [],
+        identificadoresNorma: dominios?.identificadoresNorma ?? [],
+        parlamentares: dominios?.parlamentares ?? [],
+        tiposAutorExterno: dominios?.tiposAutorExterno ?? [],
+    };
 }

@@ -7,8 +7,8 @@ import { AtoViewModel } from '../view-models/ato.view-model';
 export class GetAtoByIdUseCase {
     constructor(private readonly atoRepository: AtoRepository) {}
 
-    async execute(id: string) {
-        const ato = await this.atoRepository.findById(id);
+    async execute(tenantId: string, id: string) {
+        const ato = await this.atoRepository.findById(tenantId, id);
         if (!ato) throw new AtoNotFoundError();
         return AtoViewModel.toHttp(ato);
     }

@@ -12,6 +12,21 @@ import {
 import { FilterPautaDto, UpdatePautaItemDto } from '../../application/dto/pauta.dto';
 import { UpdateSessaoPlenariaDto } from '../../application/dto/update-sessao.dto';
 import { ExecutarCicloVidaSessaoDto } from '../../application/dto/session-lifecycle.dto';
+import { SessaoPlenariaEntity } from '../entities/sessao-plenaria.entity';
+import { StatusSessao } from '../enums/status-sessao.enum';
+
+export type TransicionarStatusDados = {
+    novoStatus: StatusSessao;
+    responsavelId: string;
+    observacao?: string;
+    quorumPresente?: number;
+};
+
+export type QuorumInfo = {
+    quorumMinimo: number;
+    quorumPresente: number;
+    temQuorum: boolean;
+};
 
 export abstract class SessaoPlenariaRepository {
     abstract create(
@@ -91,4 +106,14 @@ export abstract class SessaoPlenariaRepository {
         presencaId: string,
         dto: UpdatePresencaDto,
     ): Promise<unknown>;
+
+    // Novos métodos DDD (M4) — usados pelos novos use cases
+    abstract findSessaoById(id: string, tenantId: string): Promise<SessaoPlenariaEntity | null>;
+    abstract transicionarStatus(
+        id: string,
+        tenantId: string,
+        dados: TransicionarStatusDados,
+    ): Promise<void>;
+    abstract calcularQuorum(sessaoId: string, tenantId: string): Promise<QuorumInfo>;
+    abstract publicarPauta(sessaoId: string, tenantId: string): Promise<void>;
 }

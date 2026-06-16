@@ -12,12 +12,15 @@ import {
     Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { TenantMaintainer } from '../../../../common/decorators/tenant-maintainer.decorator';
+import { Public } from '../../../../auth/decorators/public.decorator';
+import { TenantRoles } from '../../../../common/decorators/tenant-roles.decorator';
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
+import { ADMIN_ONLY, STAFF_AND_ABOVE } from '../../../../auth/guards/guard-combos';
 import {
     CreateAgendaDto,
     FilterAgendaDto,
     UpdateAgendaDto,
+    VincularSessaoDto,
 } from '../dto/agenda.dto';
 import {
     AgendaInvalidDateRangeError,
@@ -27,8 +30,10 @@ import { CreateAgendaUseCase } from '../use-cases/create-agenda.use-case';
 import { GetAgendaByIdUseCase } from '../use-cases/get-agenda-by-id.use-case';
 import { ListAgendaTiposUseCase } from '../use-cases/list-agenda-tipos.use-case';
 import { ListAgendasUseCase } from '../use-cases/list-agendas.use-case';
+import { ListPublicAgendaUseCase } from '../use-cases/list-public-agenda.use-case';
 import { RemoveAgendaUseCase } from '../use-cases/remove-agenda.use-case';
 import { UpdateAgendaUseCase } from '../use-cases/update-agenda.use-case';
+import { VincularSessaoUseCase } from '../use-cases/vincular-sessao.use-case';
 
 @ApiTags('legislative-agenda-legislativa')
 @ApiBearerAuth()
@@ -41,7 +46,15 @@ export class AgendaController {
         private readonly createAgenda: CreateAgendaUseCase,
         private readonly updateAgenda: UpdateAgendaUseCase,
         private readonly removeAgenda: RemoveAgendaUseCase,
+        private readonly vincularSessao: VincularSessaoUseCase,
+        private readonly listPublicAgenda: ListPublicAgendaUseCase,
     ) {}
+
+    @Public()
+    @Get('public')
+    findPublic(@Query() query: FilterAgendaDto) {
+        return this.listPublicAgenda.execute(query);
+    }
 
     @Get('tipos')
     listTipos() {
@@ -65,7 +78,7 @@ export class AgendaController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Post()
     async create(
         @TenantId() tenantId: string,
@@ -78,7 +91,7 @@ export class AgendaController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...ADMIN_ONLY)
     @Patch(':id')
     async update(
         @TenantId() tenantId: string,
@@ -92,7 +105,21 @@ export class AgendaController {
         }
     }
 
-    @TenantMaintainer()
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Patch(':id/vincular-sessao')
+    async vincularSessaoHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: VincularSessaoDto,
+    ) {
+        try {
+            return await this.vincularSessao.execute(tenantId, id, dto);
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    @TenantRoles(...ADMIN_ONLY)
     @Delete(':id')
     async remove(
         @TenantId() tenantId: string,

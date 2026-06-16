@@ -13,6 +13,10 @@ export type CreateNormaRepositoryInput = {
     identificadorId?: string | null;
     materiaOrigemId?: string | null;
     mensagem?: string | null;
+    complementar?: boolean;
+    textoIntegralUrl?: string | null;
+    audioUrl?: string | null;
+    textoUrl?: string | null;
 };
 
 export type UpdateNormaRepositoryInput = {
@@ -27,6 +31,35 @@ export type UpdateNormaRepositoryInput = {
     identificadorId?: string | null;
     materiaOrigemId?: string | null;
     mensagem?: string | null;
+    complementar?: boolean;
+    textoIntegralUrl?: string | null;
+    audioUrl?: string | null;
+    textoUrl?: string | null;
+};
+
+export type RegistrarSancaoInput = {
+    dataSancao: Date;
+    textoUrl?: string | null;
+};
+
+export type RegistrarVetoInput = {
+    dataVeto: Date;
+    tipoVeto?: string | null;
+    motivoVeto?: string | null;
+};
+
+export type RegistrarPromulgacaoInput = {
+    dataPromulgacao: Date;
+};
+
+export type RegistrarPublicacaoInput = {
+    dataPublicacao: Date;
+    dataVigencia?: Date | null;
+};
+
+export type RevogarNormaInput = {
+    dataRevogacao: Date;
+    normaRevoganteId?: string | null;
 };
 
 export type ListNormasRepositoryQuery = {
@@ -54,6 +87,10 @@ export abstract class NormaRepository {
         query: ListNormasRepositoryQuery,
     ): Promise<PaginatedResult<NormaEntity>>;
 
+    abstract findPublic(
+        query: ListNormasRepositoryQuery,
+    ): Promise<PaginatedResult<NormaEntity>>;
+
     abstract findById(
         tenantId: string,
         id: string,
@@ -66,6 +103,12 @@ export abstract class NormaRepository {
     ): Promise<NormaEntity>;
 
     abstract softDelete(tenantId: string, id: string): Promise<void>;
+
+    abstract registrarSancao(tenantId: string, id: string, data: RegistrarSancaoInput): Promise<NormaEntity>;
+    abstract registrarVeto(tenantId: string, id: string, data: RegistrarVetoInput): Promise<NormaEntity>;
+    abstract registrarPromulgacao(tenantId: string, id: string, data: RegistrarPromulgacaoInput): Promise<NormaEntity>;
+    abstract registrarPublicacao(tenantId: string, id: string, data: RegistrarPublicacaoInput): Promise<NormaEntity>;
+    abstract revogar(tenantId: string, id: string, data: RevogarNormaInput): Promise<NormaEntity>;
 
     abstract existsTipoNorma(tipoId: string): Promise<boolean>;
     abstract existsAno(anoId: string): Promise<boolean>;

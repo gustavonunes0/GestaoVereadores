@@ -14,6 +14,13 @@ export type AgendaHttp = {
     dataInicio?: Date;
     dataFim?: Date;
     mensagem?: string;
+    local?: string;
+    descricao?: string;
+    sessaoPlenariaId?: string;
+    publicoExterno: boolean;
+    linkTransmissao?: string;
+    recorrencia?: string;
+    recorrenciaPaiId?: string;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -39,6 +46,13 @@ export class AgendaViewModel {
             ...(p.dataInicio ? { dataInicio: p.dataInicio } : {}),
             ...(p.dataFim ? { dataFim: p.dataFim } : {}),
             ...(p.mensagem ? { mensagem: p.mensagem } : {}),
+            ...(p.local ? { local: p.local } : {}),
+            ...(p.descricao ? { descricao: p.descricao } : {}),
+            ...(p.sessaoPlenariaId ? { sessaoPlenariaId: p.sessaoPlenariaId } : {}),
+            publicoExterno: p.publicoExterno,
+            ...(p.linkTransmissao ? { linkTransmissao: p.linkTransmissao } : {}),
+            ...(p.recorrencia ? { recorrencia: p.recorrencia } : {}),
+            ...(p.recorrenciaPaiId ? { recorrenciaPaiId: p.recorrenciaPaiId } : {}),
             createdAt: p.createdAt,
             updatedAt: p.updatedAt,
         };

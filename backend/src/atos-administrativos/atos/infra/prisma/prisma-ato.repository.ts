@@ -30,6 +30,7 @@ export class PrismaAtoRepository extends AtoRepository {
     async create(data: CreateAtoRepositoryInput) {
         const row = await this.prisma.ato.create({
             data: {
+                tenantId: data.tenantId,
                 tipoId: data.tipoId,
                 classificacaoId: data.classificacaoId,
                 numero: data.numero,
@@ -38,6 +39,11 @@ export class PrismaAtoRepository extends AtoRepository {
                 dataPublicacaoInicio: data.dataPublicacaoInicio ?? undefined,
                 dataPublicacaoFim: data.dataPublicacaoFim ?? undefined,
                 mensagem: data.mensagem ?? undefined,
+                ementa: data.ementa ?? undefined,
+                dataAto: data.dataAto ?? undefined,
+                anexoUrl: data.anexoUrl ?? undefined,
+                textoUrl: data.textoUrl ?? undefined,
+                identificadorId: data.identificadorId ?? undefined,
             },
             include: atoInclude,
         });
@@ -45,23 +51,18 @@ export class PrismaAtoRepository extends AtoRepository {
     }
 
     async findMany(query: ListAtosRepositoryQuery) {
-        const where: Prisma.AtoWhereInput = {};
+        const where: Prisma.AtoWhereInput = {
+            tenantId: query.tenantId,
+            isRemoved: false,
+        };
         if (query.tipoId) where.tipoId = query.tipoId;
-        if (query.classificacaoId) {
-            where.classificacaoId = query.classificacaoId;
-        }
+        if (query.classificacaoId) where.classificacaoId = query.classificacaoId;
         if (query.numero) where.numero = { contains: query.numero };
 
-        const pubRange = buildDateRangeFilter(
-            query.dataPublicacaoDe,
-            query.dataPublicacaoAte,
-        );
+        const pubRange = buildDateRangeFilter(query.dataPublicacaoDe, query.dataPublicacaoAte);
         if (pubRange) where.dataPublicacaoInicio = pubRange;
 
-        const inicioRange = buildDateRangeFilter(
-            query.dataInicioDe,
-            query.dataInicioAte,
-        );
+        const inicioRange = buildDateRangeFilter(query.dataInicioDe, query.dataInicioAte);
         if (inicioRange) where.dataInicio = inicioRange;
 
         const fimRange = buildDateRangeFilter(query.dataFimDe, query.dataFimAte);
@@ -83,48 +84,50 @@ export class PrismaAtoRepository extends AtoRepository {
         );
     }
 
-    async findById(id: string) {
-        const row = await this.prisma.ato.findUnique({
-            where: { id },
+    async findById(tenantId: string, id: string) {
+        const row = await this.prisma.ato.findFirst({
+            where: { id, tenantId, isRemoved: false },
             include: atoInclude,
         });
         return row ? this.toEntity(row) : null;
     }
 
-    async update(id: string, data: UpdateAtoRepositoryInput) {
+    async update(tenantId: string, id: string, data: UpdateAtoRepositoryInput) {
         const row = await this.prisma.ato.update({
             where: { id },
             data: {
                 ...(data.tipoId !== undefined ? { tipoId: data.tipoId } : {}),
-                ...(data.classificacaoId !== undefined
-                    ? { classificacaoId: data.classificacaoId }
-                    : {}),
+                ...(data.classificacaoId !== undefined ? { classificacaoId: data.classificacaoId } : {}),
                 ...(data.numero !== undefined ? { numero: data.numero } : {}),
-                ...(data.dataInicio !== undefined
-                    ? { dataInicio: data.dataInicio }
-                    : {}),
+                ...(data.dataInicio !== undefined ? { dataInicio: data.dataInicio } : {}),
                 ...(data.dataFim !== undefined ? { dataFim: data.dataFim } : {}),
-                ...(data.dataPublicacaoInicio !== undefined
-                    ? { dataPublicacaoInicio: data.dataPublicacaoInicio }
-                    : {}),
-                ...(data.dataPublicacaoFim !== undefined
-                    ? { dataPublicacaoFim: data.dataPublicacaoFim }
-                    : {}),
+                ...(data.dataPublicacaoInicio !== undefined ? { dataPublicacaoInicio: data.dataPublicacaoInicio } : {}),
+                ...(data.dataPublicacaoFim !== undefined ? { dataPublicacaoFim: data.dataPublicacaoFim } : {}),
                 ...(data.mensagem !== undefined ? { mensagem: data.mensagem } : {}),
+                ...(data.ementa !== undefined ? { ementa: data.ementa } : {}),
+                ...(data.dataAto !== undefined ? { dataAto: data.dataAto } : {}),
+                ...(data.anexoUrl !== undefined ? { anexoUrl: data.anexoUrl } : {}),
+                ...(data.textoUrl !== undefined ? { textoUrl: data.textoUrl } : {}),
+                ...(data.identificadorId !== undefined ? { identificadorId: data.identificadorId } : {}),
             },
             include: atoInclude,
         });
         return this.toEntity(row);
     }
 
-    async remove(id: string) {
-        await this.prisma.ato.delete({ where: { id } });
+    async remove(tenantId: string, id: string) {
+        await this.prisma.ato.updateMany({
+            where: { id, tenantId, isRemoved: false },
+            data: { isRemoved: true, removedAt: new Date() },
+        });
     }
 
-    async existsByNumero(numero: string, ignoreAtoId?: string) {
+    async existsByNumero(tenantId: string, numero: string, ignoreAtoId?: string) {
         const row = await this.prisma.ato.findFirst({
             where: {
+                tenantId,
                 numero,
+                isRemoved: false,
                 ...(ignoreAtoId ? { NOT: { id: ignoreAtoId } } : {}),
             },
             select: { id: true },
@@ -149,20 +152,36 @@ export class PrismaAtoRepository extends AtoRepository {
     }
 
     private toEntity(row: PrismaAtoWithRelations) {
+        const r = row as PrismaAtoWithRelations & {
+            tenantId?: string | null;
+            ementa?: string | null;
+            dataAto?: Date | null;
+            anexoUrl?: string | null;
+            textoUrl?: string | null;
+            identificadorId?: string | null;
+            isRemoved?: boolean;
+        };
         return AtoEntity.restore({
-            id: row.id,
-            tipoId: row.tipoId,
-            classificacaoId: row.classificacaoId,
-            numero: row.numero,
-            dataInicio: row.dataInicio,
-            dataFim: row.dataFim,
-            dataPublicacaoInicio: row.dataPublicacaoInicio,
-            dataPublicacaoFim: row.dataPublicacaoFim,
-            mensagem: row.mensagem,
-            createdAt: row.createdAt,
-            updatedAt: row.updatedAt,
-            tipo: row.tipo,
-            classificacao: row.classificacao,
+            id: r.id,
+            tenantId: r.tenantId ?? null,
+            tipoId: r.tipoId,
+            classificacaoId: r.classificacaoId,
+            numero: r.numero,
+            dataInicio: r.dataInicio,
+            dataFim: r.dataFim,
+            dataPublicacaoInicio: r.dataPublicacaoInicio,
+            dataPublicacaoFim: r.dataPublicacaoFim,
+            mensagem: r.mensagem,
+            ementa: r.ementa ?? null,
+            dataAto: r.dataAto ?? null,
+            anexoUrl: r.anexoUrl ?? null,
+            textoUrl: r.textoUrl ?? null,
+            identificadorId: r.identificadorId ?? null,
+            isRemoved: r.isRemoved ?? false,
+            createdAt: r.createdAt,
+            updatedAt: r.updatedAt,
+            tipo: r.tipo,
+            classificacao: r.classificacao,
         });
     }
 }

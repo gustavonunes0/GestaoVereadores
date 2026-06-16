@@ -1,0 +1,9 @@
+export enum StatusNorma {
+    EM_TRAMITE = 'EM_TRAMITE',
+    SANCIONADA = 'SANCIONADA',
+    VETADA = 'VETADA',
+    PROMULGADA = 'PROMULGADA',
+    PUBLICADA = 'PUBLICADA',
+    VIGENTE = 'VIGENTE',
+    REVOGADA = 'REVOGADA',
+}

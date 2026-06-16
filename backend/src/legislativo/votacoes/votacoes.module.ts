@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { EncerrarVotacaoUseCase } from './application/use-cases/encerrar-votacao.use-case';
 import { MateriasModule } from '../materias/materias.module';
 import { ParlamentaresModule } from '../parlamentares/parlamentares.module';
 import { VotacoesController } from './application/controllers/votacoes.controller';
@@ -38,6 +39,7 @@ import { VOTACAO_REPOSITORY } from './votacoes.tokens';
         RegistrarVotoUseCase,
         UpdateVotoUseCase,
         ListVotoValoresUseCase,
+        EncerrarVotacaoUseCase,
         PrismaVotacaoRepository,
         {
             provide: VOTACAO_REPOSITORY,
@@ -57,6 +59,7 @@ import { VOTACAO_REPOSITORY } from './votacoes.tokens';
         RegistrarVotoUseCase,
         UpdateVotoUseCase,
         ListVotoValoresUseCase,
+        EncerrarVotacaoUseCase,
     ],
 })
 export class VotacoesModule {}

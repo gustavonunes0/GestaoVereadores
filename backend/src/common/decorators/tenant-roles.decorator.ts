@@ -1,7 +1,7 @@
 import { SetMetadata } from '@nestjs/common';
-import { LegacyTenantRole } from '../auth/legacy-tenant-role';
+import { TenantUserRole } from '@prisma/client';
 
 export const TENANT_ROLES_KEY = 'tenantRoles';
 
-export const TenantRoles = (...roles: LegacyTenantRole[]) =>
+export const TenantRoles = (...roles: TenantUserRole[]) =>
     SetMetadata(TENANT_ROLES_KEY, roles);

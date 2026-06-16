@@ -31,6 +31,12 @@ import {
 } from './application/use-cases/session-lifecycle.use-case';
 import { RemoveSessaoPlenariaUseCase } from './application/use-cases/remove-sessao-plenaria.use-case';
 import { UpdateSessaoPlenariaUseCase } from './application/use-cases/update-sessao-plenaria.use-case';
+import { AbrirSessaoUseCase } from './application/use-cases/abrir-sessao.use-case';
+import { SuspenderSessaoUseCase } from './application/use-cases/suspender-sessao.use-case';
+import { EncerrarSessaoUseCase } from './application/use-cases/encerrar-sessao.use-case';
+import { CancelarSessaoUseCase } from './application/use-cases/cancelar-sessao.use-case';
+import { PublicarPautaUseCase } from './application/use-cases/publicar-pauta.use-case';
+import { CalcularQuorumUseCase } from './application/use-cases/calcular-quorum.use-case';
 import { PrismaSessaoPlenariaRepository } from './infra/prisma/prisma-sessao-plenaria.repository';
 import { SESSAO_PLENARIA_REPOSITORY } from './sessoes-plenarias.tokens';
 
@@ -59,6 +65,12 @@ import { SESSAO_PLENARIA_REPOSITORY } from './sessoes-plenarias.tokens';
         ListPresencaSituacoesUseCase,
         RegistrarPresencaUseCase,
         UpdatePresencaUseCase,
+        AbrirSessaoUseCase,
+        SuspenderSessaoUseCase,
+        EncerrarSessaoUseCase,
+        CancelarSessaoUseCase,
+        PublicarPautaUseCase,
+        CalcularQuorumUseCase,
         PrismaSessaoPlenariaRepository,
         {
             provide: SESSAO_PLENARIA_REPOSITORY,

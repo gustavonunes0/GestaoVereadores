@@ -7,12 +7,11 @@ import { AtoViewModel } from '../view-models/ato.view-model';
 export class RemoveAtoUseCase {
     constructor(private readonly atoRepository: AtoRepository) {}
 
-    async execute(id: string) {
-        const existing = await this.atoRepository.findById(id);
+    async execute(tenantId: string, id: string) {
+        const existing = await this.atoRepository.findById(tenantId, id);
         if (!existing) throw new AtoNotFoundError();
 
-        // TODO: Migrar Ato para soft delete quando o schema incluir isRemoved e removedAt.
-        await this.atoRepository.remove(id);
+        await this.atoRepository.remove(tenantId, id);
         return AtoViewModel.toHttp(existing);
     }
 }

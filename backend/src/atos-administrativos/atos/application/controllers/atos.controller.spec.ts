@@ -1,13 +1,13 @@
 import 'reflect-metadata';
 import { RoleUsuario } from '@prisma/client';
 import { ROLES_KEY } from '../../../../auth/decorators/roles.decorator';
-import { SKIP_TENANT_KEY } from '../../../../common/decorators/skip-tenant.decorator';
 import { AtosController } from '../controllers/atos.controller';
 
 describe('AtosController', () => {
-    it('usa @SkipTenant()', () => {
+    it('não usa @SkipTenant() — todos os endpoints requerem isolamento de tenant', () => {
+        const SKIP_TENANT_KEY = 'skipTenant';
         const skipTenant = Reflect.getMetadata(SKIP_TENANT_KEY, AtosController);
-        expect(skipTenant).toBe(true);
+        expect(skipTenant).toBeUndefined();
     });
 
     it('usa @ReadRoles() em consultas', () => {

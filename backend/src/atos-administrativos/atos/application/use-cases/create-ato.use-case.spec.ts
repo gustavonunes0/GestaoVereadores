@@ -11,6 +11,8 @@ import {
     buildAtoRepositoryMock,
 } from './__tests__/ato-test.helpers';
 
+const TENANT_ID = 'tenant-1';
+
 describe('CreateAtoUseCase', () => {
     const dto = {
         tipoId: 'tipo-1',
@@ -26,7 +28,7 @@ describe('CreateAtoUseCase', () => {
         repository.create.mockResolvedValue(buildAtoEntity());
 
         const useCase = new CreateAtoUseCase(repository as never);
-        const result = await useCase.execute(dto);
+        const result = await useCase.execute(TENANT_ID, dto);
 
         expect(repository.existsTipoAto).toHaveBeenCalledWith('tipo-1');
         expect(repository.existsClassificacaoAto).toHaveBeenCalledWith('class-1');
@@ -42,7 +44,7 @@ describe('CreateAtoUseCase', () => {
         repository.existsTipoAto.mockResolvedValue(false);
 
         const useCase = new CreateAtoUseCase(repository as never);
-        await expect(useCase.execute(dto)).rejects.toBeInstanceOf(
+        await expect(useCase.execute(TENANT_ID, dto)).rejects.toBeInstanceOf(
             TipoAtoNotFoundError,
         );
     });
@@ -53,7 +55,7 @@ describe('CreateAtoUseCase', () => {
         repository.existsClassificacaoAto.mockResolvedValue(false);
 
         const useCase = new CreateAtoUseCase(repository as never);
-        await expect(useCase.execute(dto)).rejects.toBeInstanceOf(
+        await expect(useCase.execute(TENANT_ID, dto)).rejects.toBeInstanceOf(
             ClassificacaoAtoNotFoundError,
         );
     });
@@ -65,7 +67,7 @@ describe('CreateAtoUseCase', () => {
         repository.existsByNumero.mockResolvedValue(true);
 
         const useCase = new CreateAtoUseCase(repository as never);
-        await expect(useCase.execute(dto)).rejects.toBeInstanceOf(
+        await expect(useCase.execute(TENANT_ID, dto)).rejects.toBeInstanceOf(
             AtoNumeroAlreadyInUseError,
         );
     });
@@ -78,7 +80,7 @@ describe('CreateAtoUseCase', () => {
 
         const useCase = new CreateAtoUseCase(repository as never);
         await expect(
-            useCase.execute({
+            useCase.execute(TENANT_ID, {
                 ...dto,
                 dataInicio: '2024-06-01',
                 dataFim: '2024-05-01',
@@ -95,7 +97,7 @@ describe('CreateAtoUseCase', () => {
 
         const useCase = new CreateAtoUseCase(repository as never);
         await expect(
-            useCase.execute({
+            useCase.execute(TENANT_ID, {
                 ...dto,
                 dataPublicacaoInicio: '2024-06-01',
                 dataPublicacaoFim: '2024-05-01',

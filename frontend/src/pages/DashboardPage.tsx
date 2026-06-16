@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { MODULE_ICONS, ROUTES } from '../app/navigation';
 import { apiList, apiTotal } from '../api/client';
 import { API_PATHS } from '../api/paths';
-import { ContextBanner } from '../components/ContextBanner';
 import { PageHeader } from '../components/PageHeader';
 import { useLegislatura } from '../contexts/LegislaturaContext';
 
@@ -85,7 +84,6 @@ export function DashboardPage() {
                 subtitle="Acompanhe o fluxo da legislatura em exercício e acesse cada etapa em sequência."
             />
 
-            <ContextBanner hint="O contexto abaixo vale para matérias, sessões e relatórios." />
 
             <div className="pipeline">
                 {pipeline.map((p, i) => (

@@ -41,4 +41,29 @@ export class CreateAtoDto {
     @IsOptional()
     @IsString()
     mensagem?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    ementa?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsDateString()
+    dataAto?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    anexoUrl?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    textoUrl?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    identificadorId?: string;
 }

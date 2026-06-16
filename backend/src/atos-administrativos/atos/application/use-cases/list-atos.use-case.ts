@@ -7,8 +7,9 @@ import { AtoViewModel } from '../view-models/ato.view-model';
 export class ListAtosUseCase {
     constructor(private readonly atoRepository: AtoRepository) {}
 
-    async execute(query: ListAtosQueryDto) {
+    async execute(tenantId: string, query: ListAtosQueryDto) {
         const result = await this.atoRepository.findMany({
+            tenantId,
             tipoId: query.tipoId,
             classificacaoId: query.classificacaoId,
             numero: query.numero,

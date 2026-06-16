@@ -18,7 +18,7 @@ export class CreateAtoUseCase {
 
     constructor(private readonly atoRepository: AtoRepository) {}
 
-    async execute(dto: CreateAtoDto) {
+    async execute(tenantId: string, dto: CreateAtoDto) {
         const tipoExists = await this.atoRepository.existsTipoAto(dto.tipoId);
         try {
             this.domainService.assertTipoExists(tipoExists);
@@ -26,15 +26,14 @@ export class CreateAtoUseCase {
             throw new TipoAtoNotFoundError();
         }
 
-        const classificacaoExists =
-            await this.atoRepository.existsClassificacaoAto(dto.classificacaoId);
+        const classificacaoExists = await this.atoRepository.existsClassificacaoAto(dto.classificacaoId);
         try {
             this.domainService.assertClassificacaoExists(classificacaoExists);
         } catch {
             throw new ClassificacaoAtoNotFoundError();
         }
 
-        const numeroExists = await this.atoRepository.existsByNumero(dto.numero);
+        const numeroExists = await this.atoRepository.existsByNumero(tenantId, dto.numero);
         try {
             this.domainService.assertNumeroAvailable(numeroExists);
         } catch {
@@ -43,18 +42,13 @@ export class CreateAtoUseCase {
 
         const dataInicio = toOptionalDate(dto.dataInicio) ?? null;
         const dataFim = toOptionalDate(dto.dataFim) ?? null;
-        const dataPublicacaoInicio =
-            toOptionalDate(dto.dataPublicacaoInicio) ?? null;
+        const dataPublicacaoInicio = toOptionalDate(dto.dataPublicacaoInicio) ?? null;
         const dataPublicacaoFim = toOptionalDate(dto.dataPublicacaoFim) ?? null;
 
-        this.assertDateRanges({
-            dataInicio,
-            dataFim,
-            dataPublicacaoInicio,
-            dataPublicacaoFim,
-        });
+        this.assertDateRanges({ dataInicio, dataFim, dataPublicacaoInicio, dataPublicacaoFim });
 
         const saved = await this.atoRepository.create({
+            tenantId,
             tipoId: dto.tipoId,
             classificacaoId: dto.classificacaoId,
             numero: dto.numero,
@@ -63,6 +57,11 @@ export class CreateAtoUseCase {
             dataPublicacaoInicio,
             dataPublicacaoFim,
             mensagem: dto.mensagem ?? null,
+            ementa: dto.ementa ?? null,
+            dataAto: toOptionalDate(dto.dataAto) ?? null,
+            anexoUrl: dto.anexoUrl ?? null,
+            textoUrl: dto.textoUrl ?? null,
+            identificadorId: dto.identificadorId ?? null,
         });
 
         return AtoViewModel.toHttp(saved);
@@ -75,19 +74,13 @@ export class CreateAtoUseCase {
         dataPublicacaoFim: Date | null;
     }) {
         try {
-            this.domainService.assertVigenciaDates(
-                dates.dataInicio,
-                dates.dataFim,
-            );
+            this.domainService.assertVigenciaDates(dates.dataInicio, dates.dataFim);
         } catch {
             throw new AtoDataFinalAnteriorInicialError();
         }
 
         try {
-            this.domainService.assertPublicacaoDates(
-                dates.dataPublicacaoInicio,
-                dates.dataPublicacaoFim,
-            );
+            this.domainService.assertPublicacaoDates(dates.dataPublicacaoInicio, dates.dataPublicacaoFim);
         } catch {
             throw new AtoDataPublicacaoFinalAnteriorInicialError();
         }

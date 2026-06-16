@@ -12,11 +12,9 @@ import {
     Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import {
-    ReadRoles,
-    WriteRoles,
-} from '../../../../common/decorators/api-roles.decorator';
-import { SkipTenant } from '../../../../common/decorators/skip-tenant.decorator';
+import { TenantRoles } from '../../../../common/decorators/tenant-roles.decorator';
+import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
+import { ADMIN_ONLY, STAFF_AND_ABOVE } from '../../../../auth/guards/guard-combos';
 import { CreateAtoDto } from '../dto/create-ato.dto';
 import { ListAtosQueryDto } from '../dto/list-atos-query.dto';
 import { UpdateAtoDto } from '../dto/update-ato.dto';
@@ -36,7 +34,6 @@ import { UpdateAtoUseCase } from '../use-cases/update-ato.use-case';
 
 @ApiTags('atos')
 @ApiBearerAuth()
-@SkipTenant()
 @Controller('atos')
 export class AtosController {
     constructor(
@@ -47,47 +44,49 @@ export class AtosController {
         private readonly removeAtoUseCase: RemoveAtoUseCase,
     ) {}
 
-    @ReadRoles()
     @Get()
-    findAll(@Query() query: ListAtosQueryDto) {
-        return this.listAtosUseCase.execute(query);
+    findAll(@TenantId() tenantId: string, @Query() query: ListAtosQueryDto) {
+        return this.listAtosUseCase.execute(tenantId, query);
     }
 
-    @ReadRoles()
     @Get(':id')
-    async findOne(@Param('id') id: string) {
+    async findOne(@TenantId() tenantId: string, @Param('id') id: string) {
         try {
-            return await this.getAtoByIdUseCase.execute(id);
+            return await this.getAtoByIdUseCase.execute(tenantId, id);
         } catch (error) {
             this.handleError(error);
         }
     }
 
-    @WriteRoles()
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Post()
-    async create(@Body() dto: CreateAtoDto) {
+    async create(@TenantId() tenantId: string, @Body() dto: CreateAtoDto) {
         try {
-            return await this.createAtoUseCase.execute(dto);
+            return await this.createAtoUseCase.execute(tenantId, dto);
         } catch (error) {
             this.handleError(error);
         }
     }
 
-    @WriteRoles()
+    @TenantRoles(...ADMIN_ONLY)
     @Patch(':id')
-    async update(@Param('id') id: string, @Body() dto: UpdateAtoDto) {
+    async update(
+        @TenantId() tenantId: string,
+        @Param('id') id: string,
+        @Body() dto: UpdateAtoDto,
+    ) {
         try {
-            return await this.updateAtoUseCase.execute(id, dto);
+            return await this.updateAtoUseCase.execute(tenantId, id, dto);
         } catch (error) {
             this.handleError(error);
         }
     }
 
-    @WriteRoles()
+    @TenantRoles(...ADMIN_ONLY)
     @Delete(':id')
-    async remove(@Param('id') id: string) {
+    async remove(@TenantId() tenantId: string, @Param('id') id: string) {
         try {
-            return await this.removeAtoUseCase.execute(id);
+            return await this.removeAtoUseCase.execute(tenantId, id);
         } catch (error) {
             this.handleError(error);
         }
