@@ -1,6 +1,5 @@
 import 'reflect-metadata';
-import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';import { NestFactory } from '@nestjs/core';
 import {
     FastifyAdapter,
     NestFastifyApplication,
@@ -11,8 +10,25 @@ import fastifyStatic from '@fastify/static';
 import { join } from 'path';
 import { AppModule } from './app.module';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { resolveVercelDatabaseEnv } from './config/resolve-vercel-env';
+function validateRuntimeEnv(): void {
+    resolveVercelDatabaseEnv();
+
+    const missing: string[] = [];
+    if (!process.env.DATABASE_URL?.trim()) {
+        missing.push(
+            'DATABASE_URL (ou gestaovereadores_PRISMA_DATABASE_URL)',
+        );
+    }
+    if (!process.env.JWT_SECRET?.trim()) missing.push('JWT_SECRET');    if (missing.length > 0) {
+        throw new Error(
+            `Variáveis de ambiente obrigatórias ausentes: ${missing.join(', ')}`,
+        );
+    }
+}
 
 async function bootstrap() {
+    validateRuntimeEnv();
     const app = await NestFactory.create<NestFastifyApplication>(
         AppModule,
         new FastifyAdapter({
@@ -71,4 +87,7 @@ async function bootstrap() {
     console.log(`Swagger em ${url}/api/docs`);
 }
 
-bootstrap();
+bootstrap().catch((error: unknown) => {
+    console.error('Falha ao iniciar a API:', error);
+    process.exit(1);
+});
