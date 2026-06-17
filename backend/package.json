@@ -15,7 +15,7 @@
         "prisma:migrate:deploy": "prisma migrate deploy",
         "test": "jest",
         "test:e2e": "jest --config ./test/jest-e2e.json",
-        "postinstall": "node scripts/resolve-vercel-env.cjs && prisma generate",
+        "postinstall": "node scripts/resolve-vercel-env.cjs && prisma generate"
     },
     "prisma": {
         "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
