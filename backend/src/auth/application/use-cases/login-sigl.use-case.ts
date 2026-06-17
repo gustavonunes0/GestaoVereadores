@@ -11,7 +11,6 @@ import {
     TenantNotFoundDomainError,
     TenantResolutionService,
 } from '../../domain/services/tenant-resolution.service';
-import { JwtPayload } from '../../domain/types/jwt-payload.type';
 import { LoginDto } from '../dto/login.dto';
 import {
     InvalidCredentialsError,
@@ -34,6 +33,9 @@ export class LoginSiglUseCase {
     ) {}
 
     async execute(dto: LoginDto) {
+        if (!dto.username) {
+            throw new InvalidCredentialsError();
+        }
         const user = await this.siglUsers.findByUsername(dto.username);
 
         try {
@@ -72,9 +74,9 @@ export class LoginSiglUseCase {
             throw error;
         }
 
-        const payload: JwtPayload = {
+        const payload = {
             sub: user.id,
-            authType: 'sigl',
+            authType: 'sigl' as const,
             username: user.username,
             role: user.role,
             tid,
@@ -83,7 +85,7 @@ export class LoginSiglUseCase {
         return AuthSessionViewModel.sigl(
             user,
             tid,
-            this.tokenIssuer.sign(payload),
+            this.tokenIssuer.sign(payload as never),
         );
     }
 }

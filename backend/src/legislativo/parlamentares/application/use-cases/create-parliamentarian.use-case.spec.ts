@@ -1,107 +1,182 @@
-import { TenantUserEntity, TenantUserStatus } from '../../../../identidade/tenant-users/domain/entities/tenant-user.entity';
+import { UserEntity } from '../../../../identidade/users/domain/user.entity';
 import { CreateParliamentarianUseCase } from './create-parliamentarian.use-case';
 import {
-    ParliamentarianAlreadyExistsError,
+    ParliamentarianCpfAlreadyInUseError,
+    ParliamentarianEmailAlreadyInUseError,
     PoliticalPartyNotFoundForParliamentarianError,
     PoliticalPartyRemovedForParliamentarianError,
-    TenantUserNotParliamentarianError,
 } from '../errors/parliamentarian.errors';
 import { PoliticalPartyEntity } from '../../../partidos-politicos/domain/entities/political-party.entity';
 import {
     buildParliamentarianRepositoryMock,
     buildParliamentarianWithRelations,
+    buildParlamentarianUserRepositoryMock,
     buildPoliticalPartyRepositoryMock,
-    buildTenantUserRepositoryMock,
 } from './__tests__/parliamentarian-test.helpers';
 
-describe('CreateParliamentarianUseCase', () => {
-    const tenantUser = TenantUserEntity.restore({
-        id: 'tu-1',
-        tenantId: 'tenant-1',
-        userId: 'user-1',
-        isTenantAdmin: false,
-        isTenantStaff: false,
-        isParliamentarian: true,
-        status: TenantUserStatus.ACTIVE,
-        permissions: [],
-        lastAccessAt: null,
-        removedAt: null,
-        createdAt: new Date(),
-        createdBy: null,
-        modifiedAt: new Date(),
-        modifiedBy: null,
-        isRemoved: false,
-    });
+function buildUserRepositoryMock() {
+    return {
+        create: jest.fn(),
+        findByEmail: jest.fn(),
+        findByCpf: jest.fn().mockResolvedValue(null),
+    };
+}
 
+function buildPasswordHasherMock() {
+    return {
+        hash: jest.fn().mockResolvedValue('hashed-password'),
+    };
+}
+
+describe('CreateParliamentarianUseCase', () => {
     const dto = {
-        tenantUserId: 'tu-1',
+        cpf: '529.982.247-25',
+        password: 'senha-segura',
         parliamentaryName: 'Vereador Teste',
     };
 
-    it('cria parlamentar para TenantUser com isParliamentarian true', async () => {
-        const parliamentarianRepository = buildParliamentarianRepositoryMock();
-        const tenantUserRepository = buildTenantUserRepositoryMock();
-        parliamentarianRepository.existsByTenantUserId.mockResolvedValue(false);
-        parliamentarianRepository.findRemovedByTenantUserId.mockResolvedValue(null);
-        parliamentarianRepository.create.mockResolvedValue(
-            buildParliamentarianWithRelations(),
-        );
-        tenantUserRepository.findByIdForTenant.mockResolvedValue(tenantUser);
+    function buildUseCase(overrides: {
+        parliamentarianRepository?: ReturnType<typeof buildParliamentarianRepositoryMock>;
+        parlamentarianUserRepository?: ReturnType<typeof buildParlamentarianUserRepositoryMock>;
+        politicalPartyRepository?: ReturnType<typeof buildPoliticalPartyRepositoryMock>;
+        userRepository?: ReturnType<typeof buildUserRepositoryMock>;
+        passwordHasher?: ReturnType<typeof buildPasswordHasherMock>;
+    } = {}) {
+        const parliamentarianRepository =
+            overrides.parliamentarianRepository ??
+            buildParliamentarianRepositoryMock();
+        const parlamentarianUserRepository =
+            overrides.parlamentarianUserRepository ??
+            buildParlamentarianUserRepositoryMock();
+        const politicalPartyRepository =
+            overrides.politicalPartyRepository ??
+            buildPoliticalPartyRepositoryMock();
+        const userRepository =
+            overrides.userRepository ?? buildUserRepositoryMock();
+        const passwordHasher =
+            overrides.passwordHasher ?? buildPasswordHasherMock();
 
-        const useCase = new CreateParliamentarianUseCase(
-            parliamentarianRepository as never,
-            tenantUserRepository as never,
-            buildPoliticalPartyRepositoryMock() as never,
+        const created = buildParliamentarianWithRelations();
+        parliamentarianRepository.create.mockResolvedValue(created);
+        parliamentarianRepository.findById.mockResolvedValue(created);
+        userRepository.create.mockImplementation(async (user: UserEntity) => user);
+        parlamentarianUserRepository.create.mockImplementation(
+            async (entity) => entity,
         );
+
+        return {
+            useCase: new CreateParliamentarianUseCase(
+                parliamentarianRepository as never,
+                parlamentarianUserRepository as never,
+                userRepository as never,
+                passwordHasher as never,
+                politicalPartyRepository as never,
+            ),
+            parliamentarianRepository,
+            parlamentarianUserRepository,
+            userRepository,
+            passwordHasher,
+            politicalPartyRepository,
+        };
+    }
+
+    it('cria parlamentar e provisiona ParlamentarianUser com CPF e senha', async () => {
+        const { useCase, parlamentarianUserRepository, userRepository, parliamentarianRepository, passwordHasher } =
+            buildUseCase();
 
         const result = await useCase.execute('tenant-1', dto);
-        expect(result.tenantUserId).toBe('tu-1');
-        expect(result.user.email).toBe('joao@camara.local');
+        const createdUser = userRepository.create.mock.calls[0][0] as UserEntity;
+
+        expect(passwordHasher.hash).toHaveBeenCalledWith('senha-segura');
+        expect(createdUser.cpf).toBe('52998224725');
+        expect(userRepository.create).toHaveBeenCalledTimes(1);
+        expect(parlamentarianUserRepository.create).toHaveBeenCalledTimes(1);
+        expect(parliamentarianRepository.create).toHaveBeenCalledWith(
+            expect.objectContaining({ parliamentaryName: 'Vereador Teste' }),
+        );
+        expect(result.hasAccess).toBe(true);
+        expect(result.user?.email).toBe('parlamentar.52998224725@interno.sigl.local');
     });
 
-    it('bloqueia TenantUser sem isParliamentarian', async () => {
-        const tenantUserRepository = buildTenantUserRepositoryMock();
-        tenantUserRepository.findByIdForTenant.mockResolvedValue(
-            TenantUserEntity.restore({
-                ...tenantUser.toPrimitives(),
-                isParliamentarian: false,
+    it('usa e-mail informado no cadastro', async () => {
+        const { useCase, userRepository, parliamentarianRepository } = buildUseCase();
+        const withEmail = buildParliamentarianWithRelations({
+            user: {
+                id: 'user-1',
+                firstName: 'Vereador',
+                lastName: 'Teste',
+                email: 'vereador@camara.gov.br',
+            },
+        });
+        parliamentarianRepository.findById.mockResolvedValue(withEmail);
+
+        const result = await useCase.execute('tenant-1', {
+            ...dto,
+            email: 'vereador@camara.gov.br',
+        });
+        const createdUser = userRepository.create.mock.calls[0][0] as UserEntity;
+
+        expect(createdUser.email).toBe('vereador@camara.gov.br');
+        expect(result.user?.email).toBe('vereador@camara.gov.br');
+    });
+
+    it('bloqueia e-mail já cadastrado', async () => {
+        const userRepository = buildUserRepositoryMock();
+        userRepository.findByEmail.mockResolvedValue(
+            UserEntity.restore({
+                id: 'user-3',
+                firstName: 'Outro',
+                lastName: 'Usuario',
+                cpf: '11144477735',
+                email: 'vereador@camara.gov.br',
+                passwordHash: 'hash',
+                profilePicture: null,
+                createdAt: new Date(),
+                createdBy: null,
+                modifiedAt: new Date(),
+                modifiedBy: null,
+                isRemoved: false,
             }),
         );
 
-        const useCase = new CreateParliamentarianUseCase(
-            buildParliamentarianRepositoryMock() as never,
-            tenantUserRepository as never,
-            buildPoliticalPartyRepositoryMock() as never,
-        );
+        const { useCase } = buildUseCase({ userRepository });
 
-        await expect(useCase.execute('tenant-1', dto)).rejects.toBeInstanceOf(
-            TenantUserNotParliamentarianError,
-        );
+        await expect(
+            useCase.execute('tenant-1', {
+                ...dto,
+                email: 'vereador@camara.gov.br',
+            }),
+        ).rejects.toBeInstanceOf(ParliamentarianEmailAlreadyInUseError);
     });
 
-    it('bloqueia duplicidade para o mesmo tenantUserId', async () => {
-        const parliamentarianRepository = buildParliamentarianRepositoryMock();
-        const tenantUserRepository = buildTenantUserRepositoryMock();
-        tenantUserRepository.findByIdForTenant.mockResolvedValue(tenantUser);
-        parliamentarianRepository.existsByTenantUserId.mockResolvedValue(true);
-
-        const useCase = new CreateParliamentarianUseCase(
-            parliamentarianRepository as never,
-            tenantUserRepository as never,
-            buildPoliticalPartyRepositoryMock() as never,
+    it('bloqueia CPF já cadastrado', async () => {
+        const userRepository = buildUserRepositoryMock();
+        userRepository.findByCpf.mockResolvedValue(
+            UserEntity.restore({
+                id: 'user-2',
+                firstName: 'Outro',
+                lastName: 'Usuario',
+                cpf: '52998224725',
+                email: 'outro@interno.sigl.local',
+                passwordHash: 'hash',
+                profilePicture: null,
+                createdAt: new Date(),
+                createdBy: null,
+                modifiedAt: new Date(),
+                modifiedBy: null,
+                isRemoved: false,
+            }),
         );
 
+        const { useCase } = buildUseCase({ userRepository });
+
         await expect(useCase.execute('tenant-1', dto)).rejects.toBeInstanceOf(
-            ParliamentarianAlreadyExistsError,
+            ParliamentarianCpfAlreadyInUseError,
         );
     });
 
     it('bloqueia partido removido', async () => {
-        const parliamentarianRepository = buildParliamentarianRepositoryMock();
-        const tenantUserRepository = buildTenantUserRepositoryMock();
         const politicalPartyRepository = buildPoliticalPartyRepositoryMock();
-        tenantUserRepository.findByIdForTenant.mockResolvedValue(tenantUser);
-        parliamentarianRepository.existsByTenantUserId.mockResolvedValue(false);
         politicalPartyRepository.findAnyById.mockResolvedValue(
             PoliticalPartyEntity.restore({
                 id: 'party-1',
@@ -117,11 +192,7 @@ describe('CreateParliamentarianUseCase', () => {
             }),
         );
 
-        const useCase = new CreateParliamentarianUseCase(
-            parliamentarianRepository as never,
-            tenantUserRepository as never,
-            politicalPartyRepository as never,
-        );
+        const { useCase } = buildUseCase({ politicalPartyRepository });
 
         await expect(
             useCase.execute('tenant-1', { ...dto, politicalPartyId: 'party-1' }),
@@ -130,15 +201,9 @@ describe('CreateParliamentarianUseCase', () => {
 
     it('bloqueia partido de outro tenant', async () => {
         const politicalPartyRepository = buildPoliticalPartyRepositoryMock();
-        const tenantUserRepository = buildTenantUserRepositoryMock();
-        tenantUserRepository.findByIdForTenant.mockResolvedValue(tenantUser);
         politicalPartyRepository.findAnyById.mockResolvedValue(null);
 
-        const useCase = new CreateParliamentarianUseCase(
-            buildParliamentarianRepositoryMock() as never,
-            tenantUserRepository as never,
-            politicalPartyRepository as never,
-        );
+        const { useCase } = buildUseCase({ politicalPartyRepository });
 
         await expect(
             useCase.execute('tenant-1', { ...dto, politicalPartyId: 'party-2' }),

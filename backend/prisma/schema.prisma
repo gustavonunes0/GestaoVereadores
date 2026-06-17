@@ -1,4 +1,4 @@
-// Schema derivado da aba "Atividade Legislativa" — Mapeamento_Banco_Dados_IntGest_Cardinalidade_CORRIGIDO.drawio
+// Schema derivado da aba "Atividade Legislativa" — mapeamento de cardinalidade (drawio em docs/)
 // Telas de pesquisa (MATERIA_PESQUISAR, SESSAO_PESQUISAR, NORMA_PESQUISAR) são filtros de API, não tabelas.
 
 generator client {
@@ -27,7 +27,12 @@ enum TenantUserStatus {
 enum TenantUserRole {
     ADMIN_STAFF
     STAFF
-    PARLIAMENTARIAN
+}
+
+enum ParlamentarianUserStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
 }
 
 enum GuestUserType {
@@ -103,6 +108,8 @@ model User {
     modifiedBy     String?
     isRemoved      Boolean      @default(false)
     tenantUsers    TenantUser[]
+
+    parliamentarianUser ParlamentarianUser?
 }
 
 model Tenant {
@@ -151,6 +158,7 @@ model Tenant {
     autoresExternos           AutorExterno[]
     publicacoesOficiais       PublicacaoOficial[]
     atos                      Ato[]
+    parliamentarianUsers      ParlamentarianUser[]
 }
 
 model TenantUser {
@@ -189,7 +197,6 @@ model TenantUser {
     @@index([tenantId, isRemoved])
     @@map("tenant_users")
 
-    parliamentarian Parliamentarian?
     parliamentaryFrontsCreated ParliamentaryFront[] @relation("FrontCreatedBy")
     tramitacaoHistorico        TramitacaoHistorico[]
     sessoesAbertas             SessaoPlenaria[]     @relation("SessaoAbertaPor")
@@ -212,7 +219,7 @@ model PoliticalParty {
     updatedAt DateTime @updatedAt
 
     tenant         Tenant            @relation(fields: [tenantId], references: [id])
-    parliamentarians Parliamentarian[]
+    parliamentarianUsers ParlamentarianUser[]
 
     @@unique([tenantId, acronym])
     @@unique([tenantId, name])
@@ -222,10 +229,8 @@ model PoliticalParty {
 }
 
 model Parliamentarian {
-    id               String @id @default(uuid())
-    tenantId         String
-    tenantUserId     String @unique
-    politicalPartyId String?
+    id       String @id @default(uuid())
+    tenantId String
 
     parliamentaryName String
     officeNumber      String?
@@ -240,9 +245,8 @@ model Parliamentarian {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    tenant         Tenant          @relation(fields: [tenantId], references: [id])
-    tenantUser     TenantUser      @relation(fields: [tenantUserId], references: [id])
-    politicalParty PoliticalParty? @relation(fields: [politicalPartyId], references: [id])
+    tenant              Tenant               @relation(fields: [tenantId], references: [id])
+    parliamentarianUser ParlamentarianUser?
 
     mandates ParliamentarianMandate[]
     boardMembers BoardMember[]
@@ -255,12 +259,36 @@ model Parliamentarian {
     autores                        Autor[]
     votos                          VotoParlamentar[]
 
-    @@unique([tenantId, tenantUserId])
     @@index([tenantId])
     @@index([tenantId, status])
-    @@index([tenantId, politicalPartyId])
     @@index([tenantId, isRemoved])
     @@map("parliamentarians")
+}
+
+model ParlamentarianUser {
+    id                String @id @default(uuid())
+    tenantId          String
+    parliamentarianId String @unique
+    userId            String @unique
+    politicalPartyId  String?
+
+    status       ParlamentarianUserStatus @default(ACTIVE)
+    lastAccessAt DateTime?
+
+    isRemoved Boolean   @default(false)
+    removedAt DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    tenant          Tenant          @relation(fields: [tenantId], references: [id])
+    parliamentarian Parliamentarian @relation(fields: [parliamentarianId], references: [id])
+    user            User            @relation(fields: [userId], references: [id])
+    politicalParty  PoliticalParty? @relation(fields: [politicalPartyId], references: [id])
+
+    @@index([tenantId])
+    @@index([tenantId, isRemoved])
+    @@index([tenantId, politicalPartyId])
+    @@map("parliamentarian_users")
 }
 
 model Legislature {

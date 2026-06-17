@@ -1,9 +1,22 @@
-import { IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import {
+    IsOptional,
+    IsString,
+    IsUUID,
+    Matches,
+    MinLength,
+    ValidateIf,
+} from 'class-validator';
 
 export class LoginDto {
+    @ValidateIf((o: LoginDto) => !o.cpf)
     @IsString()
     @MinLength(1)
-    username: string;
+    username?: string;
+
+    @ValidateIf((o: LoginDto) => !o.username)
+    @IsString()
+    @Matches(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)
+    cpf?: string;
 
     @IsString()
     @MinLength(1)

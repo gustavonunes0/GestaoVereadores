@@ -8,8 +8,6 @@ export function buildParliamentarianWithRelations(
     const entity = ParliamentarianEntity.restore({
         id: 'parl-1',
         tenantId: 'tenant-1',
-        tenantUserId: 'tu-1',
-        politicalPartyId: 'party-1',
         parliamentaryName: 'Vereador Teste',
         officeNumber: '101',
         photoUrl: null,
@@ -27,13 +25,13 @@ export function buildParliamentarianWithRelations(
             id: 'user-1',
             firstName: 'João',
             lastName: 'Silva',
-            email: 'joao@camara.local',
-        },
-        politicalParty: {
-            id: 'party-1',
-            name: 'Partido Teste',
-            acronym: 'PT',
-            flagUrl: null,
+            email: 'parlamentar.52998224725@interno.sigl.local',
+            politicalParty: {
+                id: 'party-1',
+                name: 'Partido Teste',
+                acronym: 'PT',
+                flagUrl: null,
+            },
         },
         activeMandatesCount: 0,
         ...overrides,
@@ -45,17 +43,19 @@ export function buildParliamentarianRepositoryMock() {
         create: jest.fn(),
         findMany: jest.fn(),
         findById: jest.fn(),
-        existsByTenantUserId: jest.fn(),
-        findRemovedByTenantUserId: jest.fn(),
-        reactivate: jest.fn(),
+        findProfileById: jest.fn(),
         update: jest.fn(),
         softDelete: jest.fn(),
     };
 }
 
-export function buildTenantUserRepositoryMock() {
+export function buildParlamentarianUserRepositoryMock() {
     return {
-        findByIdForTenant: jest.fn(),
+        create: jest.fn(),
+        findActiveByParliamentarianId: jest.fn().mockResolvedValue(null),
+        findActiveByUserId: jest.fn().mockResolvedValue(null),
+        deactivate: jest.fn(),
+        updatePoliticalParty: jest.fn(),
     };
 }
 

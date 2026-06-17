@@ -27,8 +27,9 @@ h6 {
 /* Títulos de página */
 .page-header .page-title,
 h1.module-title.page-title {
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-bold);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-heading);
     letter-spacing: -0.01em;
 }
 

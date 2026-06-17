@@ -1,31 +1,49 @@
-/** SIGL platform user roles (Usuario.role). */
-export type SiglRole = 'MASTER' | 'ADMIN' | 'OPERADOR';
+export type SessionType = 'staff' | 'parliamentarian';
 
-/** Câmara tenant user roles (TenantUser.role). */
-export type CamaraRole = 'ADMIN' | 'OWNER' | 'MANAGER' | 'VIEWER';
-
-/** Novo enum de roles para TenantUser do backend. */
-export type TenantUserRole = 'ADMIN_STAFF' | 'STAFF' | 'PARLIAMENTARIAN';
-
-export type AuthType = 'sigl' | 'camara';
-
-export type AuthUser = {
+export interface StaffUser {
+    sessionType: 'staff';
     id: string;
-    nome: string;
-    name?: string;
-    role: TenantUserRole | SiglRole | CamaraRole | string;
-    authType?: AuthType;
-    username?: string;
+    tenantId: string;
+    tenantUserId: string;
+    name: string;
+    cpf: string;
     email?: string;
-    tenantId?: string;
-    tenantUserId?: string;
+    role: 'ADMIN_STAFF' | 'STAFF';
     tenantName?: string;
-    parliamentarianId?: string;
-    isAdmin?: boolean;
-    ativo?: boolean;
-};
+    photoUrl?: string;
+}
 
-export type LoginResponse = {
+export interface ParlamentarianUser {
+    sessionType: 'parliamentarian';
+    id: string;
+    tenantId: string;
+    parliamentarianUserId: string;
+    parliamentarianId: string;
+    name: string;
+    parliamentaryName: string;
+    cpf: string;
+    email?: string;
+    tenantName?: string;
+    photoUrl?: string;
+}
+
+export type AuthUser = StaffUser | ParlamentarianUser;
+
+export function isStaffUser(u: AuthUser): u is StaffUser {
+    return u.sessionType === 'staff';
+}
+
+export function isParlamentarianUser(u: AuthUser): u is ParlamentarianUser {
+    return u.sessionType === 'parliamentarian';
+}
+
+export interface LoginRequest {
+    cpf: string;
+    password: string;
+}
+
+export interface LoginResponse {
     access_token: string;
+    sessionType: SessionType;
     user: AuthUser;
-};
+}

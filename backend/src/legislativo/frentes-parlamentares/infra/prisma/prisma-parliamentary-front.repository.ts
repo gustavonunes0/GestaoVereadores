@@ -20,8 +20,12 @@ const parliamentarianSelect = {
     id: true,
     parliamentaryName: true,
     officeNumber: true,
-    politicalParty: {
-        select: { id: true, name: true, acronym: true },
+    parliamentarianUser: {
+        select: {
+            politicalParty: {
+                select: { id: true, name: true, acronym: true },
+            },
+        },
     },
 } satisfies Prisma.ParliamentarianSelect;
 
@@ -257,7 +261,7 @@ export class PrismaParliamentaryFrontRepository extends ParliamentaryFrontReposi
             id: row.id,
             parliamentaryName: row.parliamentaryName,
             officeNumber: row.officeNumber,
-            politicalParty: row.politicalParty,
+            politicalParty: row.parliamentarianUser?.politicalParty ?? null,
         };
     }
 

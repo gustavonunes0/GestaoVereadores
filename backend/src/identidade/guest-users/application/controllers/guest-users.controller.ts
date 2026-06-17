@@ -13,7 +13,7 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { LegacyTenantRole as TenantUserRole } from '../../../../common/auth/legacy-tenant-role';
+import { TenantUserRole } from '@prisma/client';
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
 import { TenantRoles } from '../../../../common/decorators/tenant-roles.decorator';
 import { TenantRolesGuard } from '../../../../common/guards/tenant-roles.guard';
@@ -61,11 +61,7 @@ export class GuestUsersController {
     }
 
     @UseGuards(TenantRolesGuard)
-    @TenantRoles(
-        TenantUserRole.ADMIN,
-        TenantUserRole.OWNER,
-        TenantUserRole.MANAGER,
-    )
+    @TenantRoles(TenantUserRole.ADMIN_STAFF)
     @Post()
     async create(
         @TenantId() tenantId: string,
@@ -79,11 +75,7 @@ export class GuestUsersController {
     }
 
     @UseGuards(TenantRolesGuard)
-    @TenantRoles(
-        TenantUserRole.ADMIN,
-        TenantUserRole.OWNER,
-        TenantUserRole.MANAGER,
-    )
+    @TenantRoles(TenantUserRole.ADMIN_STAFF)
     @Patch(':id')
     async update(
         @TenantId() tenantId: string,
@@ -102,7 +94,7 @@ export class GuestUsersController {
     }
 
     @UseGuards(TenantRolesGuard)
-    @TenantRoles(TenantUserRole.ADMIN, TenantUserRole.OWNER)
+    @TenantRoles(TenantUserRole.ADMIN_STAFF)
     @Delete(':id')
     async remove(
         @TenantId() tenantId: string,

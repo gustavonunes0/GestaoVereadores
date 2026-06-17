@@ -106,6 +106,11 @@ export abstract class MateriaRepository {
         matterId: string,
         dto: SetRelatorMateriaDto,
     ): Promise<MatterAuthorshipPayload>;
+    abstract replaceCoautores(
+        tenantId: string,
+        matterId: string,
+        coautorIds: string[],
+    ): Promise<MatterAuthorshipPayload>;
 
     // ── Métodos novos (clean DDD) ──────────────────────────────────────────
 

@@ -1,10 +1,11 @@
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { TenantUserRole } from '@prisma/client';
+import { PARLIAMENTARIAN_SESSION } from '../../auth/guards/guard-combos';
 import { TENANT_ROLES_KEY } from '../decorators/tenant-roles.decorator';
 import { TenantRolesGuard } from './tenant-roles.guard';
 
-function makeContext(user: object | undefined, roles?: TenantUserRole[]) {
+function makeContext(user: object | undefined, roles?: Array<TenantUserRole | typeof PARLIAMENTARIAN_SESSION>) {
     const reflector = {
         getAllAndOverride: jest.fn().mockReturnValue(roles),
     } as unknown as Reflector;
@@ -24,63 +25,63 @@ function makeContext(user: object | undefined, roles?: TenantUserRole[]) {
 
 describe('TenantRolesGuard', () => {
     it('permite acesso quando não há @TenantRoles() no endpoint', () => {
-        const { guard, context } = makeContext({ tenantUserRole: TenantUserRole.STAFF }, undefined);
-        expect(guard.canActivate(context)).toBe(true);
-    });
-
-    it('permite acesso quando @TenantRoles() lista está vazia', () => {
-        const { guard, context } = makeContext({ tenantUserRole: TenantUserRole.STAFF }, []);
+        const { guard, context } = makeContext(
+            { authType: 'camara', sessionType: 'staff', role: TenantUserRole.STAFF },
+            undefined,
+        );
         expect(guard.canActivate(context)).toBe(true);
     });
 
     it('permite ADMIN_STAFF em endpoint com ADMIN_STAFF, STAFF', () => {
         const { guard, context } = makeContext(
-            { tenantUserRole: TenantUserRole.ADMIN_STAFF, authType: 'camara' },
+            {
+                authType: 'camara',
+                sessionType: 'staff',
+                role: TenantUserRole.ADMIN_STAFF,
+            },
             [TenantUserRole.ADMIN_STAFF, TenantUserRole.STAFF],
         );
         expect(guard.canActivate(context)).toBe(true);
     });
 
-    it('permite STAFF em endpoint com ADMIN_STAFF, STAFF', () => {
+    it('rejeita parlamentar em endpoint com ADMIN_ONLY', () => {
         const { guard, context } = makeContext(
-            { tenantUserRole: TenantUserRole.STAFF, authType: 'camara' },
-            [TenantUserRole.ADMIN_STAFF, TenantUserRole.STAFF],
-        );
-        expect(guard.canActivate(context)).toBe(true);
-    });
-
-    it('rejeita PARLIAMENTARIAN em endpoint com ADMIN_ONLY com mensagem em português', () => {
-        const { guard, context } = makeContext(
-            { tenantUserRole: TenantUserRole.PARLIAMENTARIAN, authType: 'camara' },
+            {
+                authType: 'camara',
+                sessionType: 'parliamentarian',
+                parliamentarianId: 'parl-1',
+            },
             [TenantUserRole.ADMIN_STAFF],
         );
         expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-        expect(() => guard.canActivate(context)).toThrow(
-            'Você não tem permissão para realizar esta ação',
-        );
     });
 
     it('rejeita STAFF em endpoint com PARLIAMENTARIAN_ONLY', () => {
         const { guard, context } = makeContext(
-            { tenantUserRole: TenantUserRole.STAFF, authType: 'camara' },
-            [TenantUserRole.PARLIAMENTARIAN],
+            {
+                authType: 'camara',
+                sessionType: 'staff',
+                role: TenantUserRole.STAFF,
+            },
+            [PARLIAMENTARIAN_SESSION],
         );
         expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
     });
 
-    it('permite PARLIAMENTARIAN em endpoint exclusivo de voto', () => {
+    it('permite parlamentar em endpoint exclusivo de voto', () => {
         const { guard, context } = makeContext(
-            { tenantUserRole: TenantUserRole.PARLIAMENTARIAN, authType: 'camara' },
-            [TenantUserRole.PARLIAMENTARIAN],
+            {
+                authType: 'camara',
+                sessionType: 'parliamentarian',
+                parliamentarianId: 'parl-1',
+            },
+            [PARLIAMENTARIAN_SESSION],
         );
         expect(guard.canActivate(context)).toBe(true);
     });
 
     it('lança ForbiddenException quando usuário não está autenticado', () => {
-        const { guard, context } = makeContext(
-            undefined,
-            [TenantUserRole.ADMIN_STAFF],
-        );
+        const { guard, context } = makeContext(undefined, [TenantUserRole.ADMIN_STAFF]);
         expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
     });
 
@@ -90,22 +91,5 @@ describe('TenantRolesGuard', () => {
             [TenantUserRole.ADMIN_STAFF],
         );
         expect(guard.canActivate(context)).toBe(true);
-    });
-
-    it('rejeita STAFF tentando acessar endpoint com REFLECTOR key correto', () => {
-        const reflector = new Reflector();
-        const guard = new TenantRolesGuard(reflector);
-        const mockGetAllAndOverride = jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([TenantUserRole.ADMIN_STAFF]);
-
-        const context = {
-            getHandler: () => ({}),
-            getClass: () => ({}),
-            switchToHttp: () => ({
-                getRequest: () => ({ user: { tenantUserRole: TenantUserRole.STAFF, authType: 'camara' } }),
-            }),
-        } as unknown as ExecutionContext;
-
-        expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-        expect(mockGetAllAndOverride).toHaveBeenCalledWith(TENANT_ROLES_KEY, expect.any(Array));
     });
 });

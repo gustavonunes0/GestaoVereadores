@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
-import { Calendar } from 'primereact/calendar';
 import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
-import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
 import { Tooltip } from 'primereact/tooltip';
@@ -15,6 +13,7 @@ import { PageHeader } from '../components/PageHeader';
 import { FiltroLayout } from '../components/common/FiltroLayout';
 import { DataTableLayout } from '../components/common/DataTableLayout';
 import { DeleteDialog } from '../components/common/DeleteDialog';
+import { DatePicker, DateRangePicker, Dropdown, withEmptyOption } from '../components/ui';
 import { useAppToast } from '../hooks/useAppToast';
 import { usePermissions } from '../hooks/usePermissions';
 import { formatDatePt } from '../utils/formatDate';
@@ -76,7 +75,7 @@ function emptyForm(): AgendaFormState {
 }
 
 export function AgendaPage() {
-    const { canWrite, canDelete } = usePermissions();
+    const { canDelete } = usePermissions();
     const { showSuccess, showApiError } = useAppToast();
 
     const [items, setItems] = useState<AgendaItem[]>([]);
@@ -86,7 +85,7 @@ export function AgendaPage() {
     const [saving, setSaving] = useState(false);
 
     const [filtroTipo, setFiltroTipo] = useState<TipoEvento | ''>('');
-    const [filtroDataRange, setFiltroDataRange] = useState<(Date | null)[]>([null, null]);
+    const [filtroDataRange, setFiltroDataRange] = useState<[Date | null, Date | null]>([null, null]);
     const [filtroPublico, setFiltroPublico] = useState(false);
     const [filtrosApplied, setFiltrosApplied] = useState<Record<string, unknown>>({});
 
@@ -209,6 +208,21 @@ export function AgendaPage() {
                 style={{ width: '10rem' }}
             />
             <Column
+                header="Sessão"
+                body={(row: AgendaItem) =>
+                    row.sessaoPlenariaId ? (
+                        <a
+                            href={`/sessoes?id=${row.sessaoPlenariaId}`}
+                            aria-label="Ver sessão vinculada"
+                            className="text-primary"
+                        >
+                            Ver sessão
+                        </a>
+                    ) : '—'
+                }
+                style={{ width: '8rem' }}
+            />
+            <Column
                 header="Público"
                 body={(row: AgendaItem) =>
                     row.publicoExterno ? (
@@ -234,44 +248,37 @@ export function AgendaPage() {
     );
 
     return (
-        <section className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.agenda}
                 title="Agenda legislativa"
                 subtitle="Compromissos e eventos da câmara municipal."
                 actions={
-                    canWrite ? (
-                        <Button label="Adicionar evento" icon="pi pi-plus" onClick={openCriar} />
-                    ) : undefined
+                    <Button label="Adicionar evento" icon="pi pi-plus" onClick={openCriar} />
                 }
             />
 
-            <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
-                <div className="col-12 md:col-6 lg:col-3">
+            <section aria-label="Filtros de pesquisa" className="pt-4">
+                <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+                <div className="sigl-filtro-campo">
                     <label htmlFor="ag-tipo">Tipo de evento</label>
                     <Dropdown
                         id="ag-tipo"
                         value={filtroTipo}
-                        options={[{ label: 'Todos', value: '' }, ...TIPO_OPTIONS]}
-                        optionLabel="label"
-                        optionValue="value"
-                        onChange={(e) => setFiltroTipo(e.value)}
+                        options={withEmptyOption(TIPO_OPTIONS)}
+                        onChange={(v) => setFiltroTipo(v as TipoEvento | '')}
                     />
                 </div>
-                <div className="col-12 md:col-6 lg:col-3">
-                    <label htmlFor="ag-data">Período</label>
-                    <Calendar
+                <div className="sigl-filtro-campo">
+                    <DateRangePicker
                         id="ag-data"
-                        value={filtroDataRange as Date[]}
-                        onChange={(e) => setFiltroDataRange((e.value as (Date | null)[]) ?? [null, null])}
-                        selectionMode="range"
-                        dateFormat="dd/mm/yy"
-                        showIcon
-                        readOnlyInput
+                        label="Período"
+                        value={filtroDataRange}
+                        onChange={setFiltroDataRange}
                     />
                 </div>
-                <div className="col-12 md:col-6 lg:col-3 flex align-items-end">
-                    <div className="flex align-items-center gap-2">
+                <div className="sigl-filtro-campo flex items-end">
+                    <div className="flex items-center gap-2">
                         <Checkbox
                             inputId="ag-pub"
                             checked={filtroPublico}
@@ -280,9 +287,11 @@ export function AgendaPage() {
                         <label htmlFor="ag-pub">Apenas eventos públicos</label>
                     </div>
                 </div>
-            </FiltroLayout>
+                </FiltroLayout>
+            </section>
 
-            <DataTableLayout<AgendaItem>
+            <section aria-label="Lista de eventos da agenda">
+                <DataTableLayout<AgendaItem>
                 items={items}
                 total={total}
                 loading={loading}
@@ -291,7 +300,8 @@ export function AgendaPage() {
                 columns={columns}
                 canWrite={canDelete}
                 onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
-            />
+                />
+            </section>
 
             <Dialog
                 header="Adicionar evento à agenda"
@@ -301,94 +311,102 @@ export function AgendaPage() {
                 footer={dialogFooter}
                 modal
             >
-                <div className="grid p-fluid">
-                    <div className="col-12 md:col-8">
-                        <label htmlFor="ag-titulo">Título / assunto *</label>
-                        <InputText
-                            id="ag-titulo"
-                            value={form.titulo}
-                            onChange={(e) => patch({ titulo: e.target.value })}
-                            placeholder="Ex.: Sessão ordinária de junho"
-                        />
+                <div className="sigl-dialog-body">
+                    <div className="sigl-dialog-secao">
+                        <span className="sigl-dialog-secao-titulo">Evento</span>
+                        <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                            <div className="sigl-filtro-campo">
+                                <label htmlFor="ag-titulo">Título / assunto *</label>
+                                <InputText
+                                    id="ag-titulo"
+                                    value={form.titulo}
+                                    onChange={(e) => patch({ titulo: e.target.value })}
+                                    placeholder="Ex.: Sessão ordinária de junho"
+                                />
+                            </div>
+                            <div className="sigl-filtro-campo">
+                                <label htmlFor="ag-tipo-form">Tipo *</label>
+                                <Dropdown
+                                    id="ag-tipo-form"
+                                    value={form.tipo}
+                                    options={TIPO_OPTIONS}
+                                    onChange={(v) => patch({ tipo: v as TipoEvento, sessaoPlenariaId: '' })}
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div className="col-12 md:col-4">
-                        <label htmlFor="ag-tipo-form">Tipo *</label>
-                        <Dropdown
-                            id="ag-tipo-form"
-                            value={form.tipo}
-                            options={TIPO_OPTIONS}
-                            optionLabel="label"
-                            optionValue="value"
-                            onChange={(e) => patch({ tipo: e.value, sessaoPlenariaId: '' })}
-                        />
+                    <div className="sigl-dialog-secao">
+                        <span className="sigl-dialog-secao-titulo">Período</span>
+                        <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                            <div className="sigl-filtro-campo">
+                                <DatePicker
+                                    id="ag-inicio-form"
+                                    label="Data início"
+                                    value={form.dataInicio}
+                                    onChange={(d) => patch({ dataInicio: d })}
+                                    withTime
+                                />
+                            </div>
+                            <div className="sigl-filtro-campo">
+                                <DatePicker
+                                    id="ag-fim-form"
+                                    label="Data fim"
+                                    value={form.dataFim}
+                                    onChange={(d) => patch({ dataFim: d })}
+                                    withTime
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div className="col-12 md:col-6">
-                        <label htmlFor="ag-inicio-form">Data início</label>
-                        <Calendar
-                            id="ag-inicio-form"
-                            value={form.dataInicio}
-                            onChange={(e) => patch({ dataInicio: e.value as Date | null })}
-                            showTime
-                            hourFormat="24"
-                            dateFormat="dd/mm/yy"
-                            showIcon
-                        />
-                    </div>
-                    <div className="col-12 md:col-6">
-                        <label htmlFor="ag-fim-form">Data fim</label>
-                        <Calendar
-                            id="ag-fim-form"
-                            value={form.dataFim}
-                            onChange={(e) => patch({ dataFim: e.value as Date | null })}
-                            showTime
-                            hourFormat="24"
-                            dateFormat="dd/mm/yy"
-                            showIcon
-                        />
-                    </div>
-                    <div className="col-12">
-                        <label htmlFor="ag-local">Local</label>
-                        <InputText
-                            id="ag-local"
-                            value={form.local}
-                            onChange={(e) => patch({ local: e.target.value })}
-                            placeholder="Ex.: Plenário da Câmara Municipal"
-                        />
-                    </div>
-                    {form.tipo === 'SESSAO' && sessoes.length > 0 && (
-                        <div className="col-12">
-                            <label htmlFor="ag-sessao">Sessão vinculada</label>
-                            <Dropdown
-                                id="ag-sessao"
-                                value={form.sessaoPlenariaId}
-                                options={[{ id: '', label: 'Nenhuma' }, ...sessoes]}
-                                optionLabel="label"
-                                optionValue="id"
-                                onChange={(e) => patch({ sessaoPlenariaId: e.value })}
-                                placeholder="Selecione a sessão agendada"
-                                showClear
+                    <div className="sigl-dialog-secao">
+                        <span className="sigl-dialog-secao-titulo">Localização e vínculos</span>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="ag-local">Local</label>
+                            <InputText
+                                id="ag-local"
+                                value={form.local}
+                                onChange={(e) => patch({ local: e.target.value })}
+                                placeholder="Ex.: Plenário da Câmara Municipal"
                             />
                         </div>
-                    )}
-                    <div className="col-12">
-                        <label htmlFor="ag-link">Link de transmissão</label>
-                        <InputText
-                            id="ag-link"
-                            value={form.linkTransmissao}
-                            onChange={(e) => patch({ linkTransmissao: e.target.value })}
-                            placeholder="https://..."
-                        />
+                        {form.tipo === 'SESSAO' && sessoes.length > 0 && (
+                            <div className="sigl-filtro-campo">
+                                <label htmlFor="ag-sessao">Sessão vinculada</label>
+                                <Dropdown
+                                    id="ag-sessao"
+                                    value={form.sessaoPlenariaId}
+                                    options={withEmptyOption(
+                                        sessoes.map((s) => ({ label: s.label, value: s.id })),
+                                        'Nenhuma',
+                                    )}
+                                    onChange={(v) => patch({ sessaoPlenariaId: String(v) })}
+                                    placeholder="Selecione a sessão agendada"
+                                />
+                            </div>
+                        )}
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="ag-link">Link de transmissão</label>
+                            <InputText
+                                id="ag-link"
+                                value={form.linkTransmissao}
+                                onChange={(e) => patch({ linkTransmissao: e.target.value })}
+                                placeholder="https://..."
+                            />
+                        </div>
                     </div>
-                    <div className="col-12 flex align-items-center gap-2">
-                        <Checkbox
-                            inputId="ag-pub-form"
-                            checked={form.publicoExterno}
-                            onChange={(e) => patch({ publicoExterno: e.checked ?? false })}
-                        />
-                        <label htmlFor="ag-pub-form" className="cursor-pointer">
-                            Evento público externo
-                        </label>
-                        <Tooltip target="#ag-pub-form" content="Eventos públicos aparecem no portal da câmara sem login" position="right" />
+                    <div className="sigl-dialog-secao">
+                        <span className="sigl-dialog-secao-titulo">Visibilidade</span>
+                        <div className="sigl-filtro-campo flex align-items-center gap-2">
+                            <Checkbox
+                                inputId="ag-pub-form"
+                                checked={form.publicoExterno}
+                                onChange={(e) => patch({ publicoExterno: e.checked ?? false })}
+                            />
+                            <label htmlFor="ag-pub-form" className="cursor-pointer">
+                                Evento público externo
+                            </label>
+                            <Tooltip target="#ag-pub-form" content="Eventos públicos aparecem no portal da câmara sem login" position="right" />
+                        </div>
                     </div>
                 </div>
             </Dialog>
@@ -405,6 +423,6 @@ export function AgendaPage() {
                     }}
                 />
             )}
-        </section>
+        </main>
     );
 }

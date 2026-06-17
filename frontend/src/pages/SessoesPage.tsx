@@ -1,11 +1,15 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Button } from 'primereact/button';
+import { Column } from 'primereact/column';
 import { SiglButton } from '../components/common/SiglButton';
+import { DataTableLayout } from '../components/common/DataTableLayout';
+import { FiltroLayout } from '../components/common/FiltroLayout';
 import { materiasApi } from '../api/legislative/materias.api';
 import { sessoesApi } from '../api/legislative/sessoes.api';
 import { MODULE_ICONS, ROUTES } from '../app/navigation';
 import { NavDrawer } from '../components/NavDrawer';
-import { IntGestMensagemField } from '../components/forms/IntGestMensagemField';
+import { SessaoMensagemField } from '../components/forms/SessaoMensagemField';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
 import {
@@ -96,8 +100,9 @@ function defaultFiltros(
 
 function filtrosToQuery(
     f: SessaoFiltrosForm,
+    page: number,
 ): Record<string, string | number | undefined> {
-    const params: Record<string, string | number | undefined> = { limit: 100 };
+    const params: Record<string, string | number | undefined> = { limit: 20, page };
     if (f.legislaturaId) params.legislaturaId = f.legislaturaId;
     if (f.sessaoLegislativaId)
         params.sessaoLegislativaId = f.sessaoLegislativaId;
@@ -138,9 +143,12 @@ export function SessoesPage() {
         [],
     );
     const [items, setItems] = useState<Sessao[]>([]);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(1);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [detail, setDetail] = useState<Sessao | null>(null);
-    const [open, setOpen] = useState(false);
+    const [dialogCriar, setDialogCriar] = useState(false);
     const [pautaOpen, setPautaOpen] = useState(false);
     const [materias, setMaterias] = useState<Materia[]>([]);
     const [savingDetail, setSavingDetail] = useState(false);
@@ -172,22 +180,27 @@ export function SessoesPage() {
         void refresh().then(setLegislaturasList);
     }, [refresh]);
 
-    const load = useCallback(() => {
-        return sessoesApi.list(filtrosToQuery(filtrosApplied)).then(
-            (r) => {
-                const rows = r.data as unknown as Sessao[];
-                setItems(rows);
-                if (selectedId && !rows.some((s) => s.id === selectedId)) {
-                    setSelectedId(null);
-                    setDetail(null);
-                }
-            },
-        );
-    }, [filtrosApplied, selectedId]);
+    const buscar = useCallback(async () => {
+        setLoading(true);
+        try {
+            const r = await sessoesApi.list(filtrosToQuery(filtrosApplied, page));
+            const rows = r.data as unknown as Sessao[];
+            setItems(rows);
+            setTotal(r.meta.total);
+            if (selectedId && !rows.some((s) => s.id === selectedId)) {
+                setSelectedId(null);
+                setDetail(null);
+            }
+        } catch (err) {
+            showApiError(err);
+        } finally {
+            setLoading(false);
+        }
+    }, [filtrosApplied, page, selectedId, showApiError]);
 
     useEffect(() => {
-        void load();
-    }, [load]);
+        void buscar();
+    }, [buscar]);
 
     useEffect(() => {
         if (!selectedId) {
@@ -222,7 +235,7 @@ export function SessoesPage() {
     }, [selectedId, dominios]);
 
     useEffect(() => {
-        if (dominios && open) {
+        if (dominios && dialogCriar) {
             if (!createTipoSessaoId && dominios.tiposSessao[0]) {
                 setCreateTipoSessaoId(dominios.tiposSessao[0].id);
             }
@@ -234,7 +247,7 @@ export function SessoesPage() {
                 setCreateSituacaoId(agendada.id);
             }
         }
-    }, [dominios, open, createTipoSessaoId, createSituacaoId]);
+    }, [dominios, dialogCriar, createTipoSessaoId, createSituacaoId]);
 
     const sessaoEmAndamento = useMemo(
         () => !!detail && sessaoAceitaPauta(detail.situacao),
@@ -267,10 +280,11 @@ export function SessoesPage() {
     function refreshDetail() {
         if (!selectedId) return;
         sessoesApi.getById(selectedId).then((d) => setDetail(d as unknown as Sessao));
-        void load();
+        void buscar();
     }
 
     function aplicarPesquisa() {
+        setPage(1);
         setFiltrosApplied({ ...filtrosDraft });
         setSelectedId(null);
         setDetail(null);
@@ -279,6 +293,7 @@ export function SessoesPage() {
 
     function limparFiltros() {
         const v = defaultFiltros('', '');
+        setPage(1);
         setFiltrosDraft(v);
         setFiltrosApplied(v);
         setSelectedId(null);
@@ -326,10 +341,10 @@ export function SessoesPage() {
                     filtrosApplied.sessaoLegislativaId || undefined,
                 mensagem: createMensagem.trim() || undefined,
             });
-            setOpen(false);
+            setDialogCriar(false);
             setCreateMensagem('');
             showSuccess('Sessão plenária cadastrada.');
-            await load();
+            await buscar();
         } catch (err) {
             showApiError(err);
         }
@@ -374,107 +389,106 @@ export function SessoesPage() {
         defaultFiltros('', ''),
     );
 
+    const colunas = (
+        <>
+            <Column
+                header="Data início"
+                style={{ minWidth: '10rem' }}
+                body={(s: Sessao) =>
+                    new Date(s.dataInicio).toLocaleString('pt-BR')
+                }
+            />
+            <Column
+                header="Tipo"
+                style={{ minWidth: '8rem' }}
+                body={(s: Sessao) => s.tipo?.nome ?? '—'}
+            />
+            <Column
+                header="Situação"
+                style={{ width: '9rem' }}
+                body={(s: Sessao) =>
+                    s.statusSessao ? (
+                        <SessaoStatusBadge status={s.statusSessao} />
+                    ) : (
+                        s.situacao?.nome ?? '—'
+                    )
+                }
+            />
+            <Column
+                header="Legislatura"
+                style={{ width: '7rem' }}
+                body={(s: Sessao) =>
+                    s.sessaoLegislativa?.legislatura?.numero
+                        ? `${s.sessaoLegislativa.legislatura.numero}ª`
+                        : '—'
+                }
+            />
+            <Column
+                header="Pauta"
+                style={{ width: '5rem' }}
+                body={(s: Sessao) => s.pautaItens?.length ?? 0}
+            />
+        </>
+    );
+
     return (
-        <section className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.sessoes}
                 title="Sessões plenárias"
-                subtitle="Pesquisar, editar e deliberar sessões (fluxo SIGL / IntGest)."
+                subtitle="Pesquisar, editar e deliberar sessões plenárias."
                 actions={
-                    canWrite ? (
-                        <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={() => setOpen(true)}
-                        >
-                            Adicionar sessão plenária
-                        </button>
-                    ) : undefined
+                    <Button
+                        label="Adicionar sessão plenária"
+                        icon="pi pi-plus"
+                        onClick={() => setDialogCriar(true)}
+                    />
                 }
             />
 
-
-
             {dominios && (
-                <SessaoPesquisaFilters
-                    filtros={filtrosDraft}
-                    onChange={(patch) =>
-                        setFiltrosDraft((f) => ({ ...f, ...patch }))
-                    }
-                    legislaturas={
-                        legislaturasList.length
-                            ? legislaturasList
-                            : legislaturas
-                    }
-                    tiposSessao={dominios.tiposSessao}
-                    situacoesSessao={dominios.situacoesSessao}
-                    onPesquisar={aplicarPesquisa}
-                    onClear={limparFiltros}
-                    hasFilters={filterActive}
-                    resultCount={items.length}
-                    searchGeneration={searchGeneration}
-                />
+                <section aria-label="Filtros de pesquisa">
+                    <FiltroLayout
+                        onBuscar={aplicarPesquisa}
+                        onLimpar={limparFiltros}
+                        loading={loading}
+                    >
+                        <SessaoPesquisaFilters
+                            embedded
+                            filtros={filtrosDraft}
+                            onChange={(patch) =>
+                                setFiltrosDraft((f) => ({ ...f, ...patch }))
+                            }
+                            legislaturas={
+                                legislaturasList.length
+                                    ? legislaturasList
+                                    : legislaturas
+                            }
+                            tiposSessao={dominios.tiposSessao}
+                            situacoesSessao={dominios.situacoesSessao}
+                            onPesquisar={aplicarPesquisa}
+                            onClear={limparFiltros}
+                            hasFilters={filterActive}
+                            resultCount={total}
+                            searchGeneration={searchGeneration}
+                        />
+                    </FiltroLayout>
+                </section>
             )}
 
-            <div className="list-panel">
-                <div className="list-panel__body">
-                    <div className="list-panel__scroll table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Data início</th>
-                                    <th>Tipo</th>
-                                    <th>Situação</th>
-                                    <th>Legislatura</th>
-                                    <th>Pauta</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {items.map((s) => (
-                                    <tr
-                                        key={s.id}
-                                        className={
-                                            selectedId === s.id
-                                                ? 'row-selected'
-                                                : ''
-                                        }
-                                        onClick={() => setSelectedId(s.id)}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        <td>
-                                            {new Date(
-                                                s.dataInicio,
-                                            ).toLocaleString('pt-BR')}
-                                        </td>
-                                        <td>{s.tipo?.nome ?? '—'}</td>
-                                        <td>
-                                            {s.statusSessao ? (
-                                                <SessaoStatusBadge status={s.statusSessao} />
-                                            ) : (
-                                                s.situacao?.nome ?? '—'
-                                            )}
-                                        </td>
-                                        <td>
-                                            {s.sessaoLegislativa?.legislatura
-                                                ?.numero
-                                                ? `${s.sessaoLegislativa.legislatura.numero}ª`
-                                                : '—'}
-                                        </td>
-                                        <td>{s.pautaItens?.length ?? 0}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    {items.length === 0 && (
-                        <p className="table-empty-state">
-                            {filterActive
-                                ? 'Nenhuma sessão com os filtros aplicados.'
-                                : 'Nenhuma sessão cadastrada. Clique em Adicionar sessão plenária.'}
-                        </p>
-                    )}
-                </div>
-            </div>
+            <section aria-label="Lista de sessões plenárias" className="pt-4">
+                <DataTableLayout<Sessao>
+                    items={items}
+                    total={total}
+                    loading={loading}
+                    page={page}
+                    onPageChange={setPage}
+                    columns={colunas}
+                    canWrite={canWrite}
+                    onVer={(s) => setSelectedId(s.id)}
+                    onEditar={canWrite ? (s) => setSelectedId(s.id) : undefined}
+                />
+            </section>
 
             <NavDrawer
                 visible={!!detail}
@@ -581,101 +595,84 @@ export function SessoesPage() {
                             onSubmit={handleSaveDetail}
                             className="form-stack"
                         >
-                            <div className="form-section">
-                                <p className="form-section__title">
-                                    Dados da sessão
-                                </p>
-                                <label>
-                                    Data início *
-                                    <input
-                                        type="datetime-local"
-                                        value={editDataInicio}
-                                        onChange={(e) =>
-                                            setEditDataInicio(e.target.value)
-                                        }
-                                        required
-                                        disabled={!canWrite}
-                                    />
-                                </label>
-                                <div className="form-grid-2">
-                                    <label>
-                                        Tipo *
-                                        <select
-                                            value={editTipoSessaoId}
-                                            onChange={(e) =>
-                                                setEditTipoSessaoId(
-                                                    e.target.value,
-                                                )
-                                            }
+                            <div className="sigl-dialog-body">
+                                <div className="sigl-dialog-secao">
+                                    <span className="sigl-dialog-secao-titulo">Dados da sessão</span>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="sess-edit-inicio">Data início *</label>
+                                        <input
+                                            id="sess-edit-inicio"
+                                            type="datetime-local"
+                                            value={editDataInicio}
+                                            onChange={(e) => setEditDataInicio(e.target.value)}
                                             required
                                             disabled={!canWrite}
+                                        />
+                                    </div>
+                                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                        <div className="sigl-filtro-campo">
+                                            <label htmlFor="sess-edit-tipo">Tipo *</label>
+                                            <select
+                                                id="sess-edit-tipo"
+                                                value={editTipoSessaoId}
+                                                onChange={(e) => setEditTipoSessaoId(e.target.value)}
+                                                required
+                                                disabled={!canWrite}
+                                            >
+                                                {dominios?.tiposSessao.map((t) => (
+                                                    <option key={t.id} value={t.id}>
+                                                        {t.nome}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="sigl-filtro-campo">
+                                            <label htmlFor="sess-edit-situacao">Situação *</label>
+                                            <select
+                                                id="sess-edit-situacao"
+                                                value={editSituacaoId}
+                                                onChange={(e) => setEditSituacaoId(e.target.value)}
+                                                required
+                                                disabled={!canWrite}
+                                            >
+                                                {dominios?.situacoesSessao.map((s) => (
+                                                    <option key={s.id} value={s.id}>
+                                                        {s.nome}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="sess-edit-leg">Sessão legislativa</label>
+                                        <select
+                                            id="sess-edit-leg"
+                                            value={editSessaoLegislativaId}
+                                            onChange={(e) => setEditSessaoLegislativaId(e.target.value)}
+                                            disabled={!canWrite}
                                         >
-                                            {dominios?.tiposSessao.map((t) => (
-                                                <option key={t.id} value={t.id}>
-                                                    {t.nome}
+                                            <option value="">—</option>
+                                            {sessoesLegislativasEdit.map((s) => (
+                                                <option key={s.id} value={s.id}>
+                                                    {s.numero}ª sessão legislativa
                                                 </option>
                                             ))}
                                         </select>
-                                    </label>
-                                    <label>
-                                        Situação *
-                                        <select
-                                            value={editSituacaoId}
-                                            onChange={(e) =>
-                                                setEditSituacaoId(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            required
-                                            disabled={!canWrite}
+                                    </div>
+                                    <SessaoMensagemField
+                                        value={editMensagem}
+                                        onChange={setEditMensagem}
+                                    />
+                                    {canWrite && (
+                                        <button
+                                            type="submit"
+                                            className="btn btn-primary"
+                                            disabled={savingDetail}
                                         >
-                                            {dominios?.situacoesSessao.map(
-                                                (s) => (
-                                                    <option
-                                                        key={s.id}
-                                                        value={s.id}
-                                                    >
-                                                        {s.nome}
-                                                    </option>
-                                                ),
-                                            )}
-                                        </select>
-                                    </label>
+                                            {savingDetail ? 'Salvando…' : 'Salvar sessão'}
+                                        </button>
+                                    )}
                                 </div>
-                                <label>
-                                    Sessão legislativa
-                                    <select
-                                        value={editSessaoLegislativaId}
-                                        onChange={(e) =>
-                                            setEditSessaoLegislativaId(
-                                                e.target.value,
-                                            )
-                                        }
-                                        disabled={!canWrite}
-                                    >
-                                        <option value="">—</option>
-                                        {sessoesLegislativasEdit.map((s) => (
-                                            <option key={s.id} value={s.id}>
-                                                {s.numero}ª sessão legislativa
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                                <IntGestMensagemField
-                                    value={editMensagem}
-                                    onChange={setEditMensagem}
-                                />
-                                {canWrite && (
-                                    <button
-                                        type="submit"
-                                        className="btn btn-primary"
-                                        disabled={savingDetail}
-                                    >
-                                        {savingDetail
-                                            ? 'Salvando…'
-                                            : 'Salvar sessão'}
-                                    </button>
-                                )}
                             </div>
                         </form>
 
@@ -698,66 +695,74 @@ export function SessoesPage() {
                 )}
             </NavDrawer>
 
-            {open && dominios && (
+            {dialogCriar && dominios && (
                 <Modal
                     title="Adicionar sessão plenária"
-                    onClose={() => setOpen(false)}
+                    onClose={() => setDialogCriar(false)}
                 >
                     <form onSubmit={handleCreate} className="form-stack">
-                        <label>
-                            Data início *
-                            <input
-                                type="datetime-local"
-                                value={createDataInicio}
-                                onChange={(e) =>
-                                    setCreateDataInicio(e.target.value)
-                                }
-                                required
-                            />
-                        </label>
-                        <div className="form-grid-2">
-                            <label>
-                                Tipo *
-                                <select
-                                    value={createTipoSessaoId}
-                                    onChange={(e) =>
-                                        setCreateTipoSessaoId(e.target.value)
-                                    }
-                                    required
-                                >
-                                    {dominios.tiposSessao.map((t) => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.nome}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-                            <label>
-                                Situação *
-                                <select
-                                    value={createSituacaoId}
-                                    onChange={(e) =>
-                                        setCreateSituacaoId(e.target.value)
-                                    }
-                                    required
-                                >
-                                    {dominios.situacoesSessao.map((s) => (
-                                        <option key={s.id} value={s.id}>
-                                            {s.nome}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                        <div className="sigl-dialog-body">
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Agendamento</span>
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="sess-data-inicio">Data início *</label>
+                                    <input
+                                        id="sess-data-inicio"
+                                        type="datetime-local"
+                                        value={createDataInicio}
+                                        onChange={(e) => setCreateDataInicio(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Classificação</span>
+                                <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="sess-tipo">Tipo *</label>
+                                        <select
+                                            id="sess-tipo"
+                                            value={createTipoSessaoId}
+                                            onChange={(e) => setCreateTipoSessaoId(e.target.value)}
+                                            required
+                                        >
+                                            {dominios.tiposSessao.map((t) => (
+                                                <option key={t.id} value={t.id}>
+                                                    {t.nome}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="sess-situacao">Situação *</label>
+                                        <select
+                                            id="sess-situacao"
+                                            value={createSituacaoId}
+                                            onChange={(e) => setCreateSituacaoId(e.target.value)}
+                                            required
+                                        >
+                                            {dominios.situacoesSessao.map((s) => (
+                                                <option key={s.id} value={s.id}>
+                                                    {s.nome}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Mensagem</span>
+                                <SessaoMensagemField
+                                    value={createMensagem}
+                                    onChange={setCreateMensagem}
+                                />
+                            </div>
                         </div>
-                        <IntGestMensagemField
-                            value={createMensagem}
-                            onChange={setCreateMensagem}
-                        />
                         <div className="modal-actions">
                             <button
                                 type="button"
                                 className="btn btn-secondary"
-                                onClick={() => setOpen(false)}
+                                onClick={() => setDialogCriar(false)}
                             >
                                 Cancelar
                             </button>
@@ -775,38 +780,43 @@ export function SessoesPage() {
                     onClose={() => setPautaOpen(false)}
                 >
                     <form onSubmit={handleAddPauta} className="form-stack">
-                        <label>
-                            Matéria *
-                            <select
-                                value={materiaId}
-                                onChange={(e) => setMateriaId(e.target.value)}
-                                required
-                            >
-                                {!materias.length && (
-                                    <option value="">
-                                        Nenhuma matéria em tramitação disponível
-                                    </option>
-                                )}
-                                {materias.map((m) => (
-                                    <option key={m.id} value={m.id}>
-                                        {m.tipo?.nome ? `${m.tipo.nome}: ` : ''}
-                                        {m.ementa.slice(0, 80)}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                        <label>
-                            Ordem na pauta *
-                            <input
-                                type="number"
-                                min={1}
-                                value={ordemPauta}
-                                onChange={(e) =>
-                                    setOrdemPauta(Number(e.target.value))
-                                }
-                                required
-                            />
-                        </label>
+                        <div className="sigl-dialog-body">
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Pauta</span>
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="pauta-materia">Matéria *</label>
+                                    <select
+                                        id="pauta-materia"
+                                        value={materiaId}
+                                        onChange={(e) => setMateriaId(e.target.value)}
+                                        required
+                                    >
+                                        {!materias.length && (
+                                            <option value="">
+                                                Nenhuma matéria em tramitação disponível
+                                            </option>
+                                        )}
+                                        {materias.map((m) => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.tipo?.nome ? `${m.tipo.nome}: ` : ''}
+                                                {m.ementa.slice(0, 80)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="pauta-ordem">Ordem na pauta *</label>
+                                    <input
+                                        id="pauta-ordem"
+                                        type="number"
+                                        min={1}
+                                        value={ordemPauta}
+                                        onChange={(e) => setOrdemPauta(Number(e.target.value))}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
                         <div className="modal-actions">
                             <button
                                 type="button"
@@ -838,6 +848,6 @@ export function SessoesPage() {
                     onSaved={refreshDetail}
                 />
             )}
-        </section>
+        </main>
     );
 }

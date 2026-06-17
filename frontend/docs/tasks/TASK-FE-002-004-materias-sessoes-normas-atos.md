@@ -10,7 +10,7 @@
 ### T-01 · Atualizar filtros da MateriasPage
 
 - [x] Usar `FiltroLayout` (criado em TASK-FE-001 T-14)
-- [ ] Campos de filtro conforme documento operacional:
+- [x] Campos de filtro conforme documento operacional:
   ```
   Tipo de Matéria    → Dropdown (tiposMateria do useDominios, mostra sigla+nome)
   Ementa             → InputText (busca parcial)
@@ -21,8 +21,8 @@
   Tipo de Autor      → Dropdown (tiposAutor do useDominios)
   Autor              → InputText ou Dropdown condicional
   ```
-- [ ] Todos em grid `col-12 md:col-6 lg:col-4` — mobile-first
-- [ ] Limpar filtros reseta todos os campos e chama `buscar()`
+- [x] Todos em grid `col-12 md:col-6 lg:col-4` — mobile-first
+- [x] Limpar filtros reseta todos os campos e chama `buscar()`
 
 ---
 
@@ -30,8 +30,8 @@
 
 ### T-02 · Atualizar colunas da DataTable
 
-- [ ] Usar `DataTableLayout` (criado em TASK-FE-001 T-15)
-- [ ] Colunas:
+- [x] Usar `DataTableLayout` (criado em TASK-FE-001 T-15)
+- [x] Colunas:
   ```
   Identificação  → materia.identificacao ("PLO nº 3/2025") — sortable
   Ementa         → truncada com tooltip
@@ -40,9 +40,9 @@
   Data Protocolo → formatDate(materia.dataProtocolo)
   Ações          → Ver / Editar (só Admin) / Deletar (só Admin)
   ```
-- [ ] Ação "Ver" → abre `MateriaVerDialog` (exibe Texto Original como link/viewer)
-- [ ] Ordenação descendente por `createdAt` como padrão
-- [ ] `size="small"` conforme requisito
+- [x] Ação "Ver" → abre `MateriaVerDialog` (exibe Texto Original como link/viewer)
+- [x] Ordenação descendente por `createdAt` como padrão
+- [x] `size="small"` conforme requisito
 
 ---
 
@@ -50,15 +50,15 @@
 
 ### T-03 · Criar `MateriaVerDialog`
 
-- [ ] Usar `VerDialog` base (TASK-FE-001 T-17)
-- [ ] Exibir campos:
+- [x] Usar `VerDialog` base (TASK-FE-001 T-17)
+- [x] Exibir campos:
   - Identificação, Status (badge), Ementa, Justificativa
   - Autor principal + coautores + relatores (separados em seções)
   - Data protocolo, Data publicação
   - Link para Texto Original (PDF/DOC) — `<a>` com `aria-label`
-- [ ] Seção "Histórico de Tramitação" — timeline `<Timeline>` PrimeReact
+- [x] Seção "Histórico de Tramitação" — timeline `<Timeline>` PrimeReact
   - cada entrada: status anterior → status novo, despacho, data, responsável
-- [ ] Responsivo: `width: min(90vw, 800px)`
+- [x] Responsivo: `width: min(90vw, 800px)`
 
 ---
 
@@ -67,24 +67,24 @@
 ### T-04 · Atualizar `MateriaCreateDialog`
 
 Campos conforme documento operacional:
-- [ ] **Tipo de Matéria** * → `Dropdown` com sigla+nome (ex: "PLO — Projeto de Lei Ordinária")
-- [ ] **Data Protocolo** → `Calendar`
-- [ ] **Tipo de Autor** * → `Dropdown` (tiposAutor, 26 tipos)
-- [ ] **Autor** * → campo dinâmico conforme tipo selecionado:
+- [x] **Tipo de Matéria** * → `Dropdown` com sigla+nome (ex: "PLO — Projeto de Lei Ordinária")
+- [x] **Data Protocolo** → `Calendar`
+- [x] **Tipo de Autor** * → `Dropdown` (tiposAutor, 26 tipos)
+- [x] **Autor** * → campo dinâmico conforme tipo selecionado:
   - Se tipo = Parlamentar → `Dropdown` de parlamentares ativos
   - Se tipo = AutorExterno → `Dropdown` de autores externos (busca por tipo)
   - (Ambos filtram por `tipoAutorId`)
-- [ ] **Coautor(es)** → `MultiSelect` de parlamentares ou autores externos
-- [ ] **Relator(es)** → `MultiSelect` (múltiplos permitidos)
-- [ ] **Ementa** * → `InputTextarea` 3 linhas
-- [ ] **Justificativa** → `InputTextarea` 5 linhas
-- [ ] **Texto Original** → `FileUpload` PrimeReact — aceita PDF e DOC
+- [x] **Coautor(es)** → `MultiSelect` de parlamentares ou autores externos
+- [x] **Relator(es)** → `MultiSelect` (múltiplos permitidos)
+- [x] **Ementa** * → `InputTextarea` 3 linhas
+- [x] **Justificativa** → `InputTextarea` 5 linhas
+- [x] **Texto Original** → `FileUpload` PrimeReact — aceita PDF e DOC
   - Usar `apiFormData()` para enviar multipart
   - Preview do nome do arquivo após seleção
 
 Validação:
-- [ ] Tipo, TipoAutor, Autor e Ementa são obrigatórios
-- [ ] Se PARLIAMENTARIAN está logado → Autor preenchido automaticamente (do JWT), campo desabilitado
+- [x] Tipo, TipoAutor, Autor e Ementa são obrigatórios
+- [x] Se PARLIAMENTARIAN está logado → Autor preenchido automaticamente (do JWT), campo desabilitado
 
 Lógica de submit:
 ```
@@ -101,10 +101,10 @@ Lógica de submit:
 
 ### T-05 · Criar `MateriaEditDialog`
 
-- [ ] Mesmos campos do Criar, pré-populados com dados da matéria
-- [ ] Botão "Editar" visível apenas para `canEdit` (ADMIN_STAFF)
-- [ ] Campos não editáveis: Tipo de Matéria, Número, Ano (exibir como texto)
-- [ ] Usar `PATCH /legislative/materias/:id`
+- [x] Mesmos campos do Criar, pré-populados com dados da matéria
+- [x] Botão "Editar" visível apenas para `canEdit` (ADMIN_STAFF)
+- [x] Campos não editáveis: Tipo de Matéria, Número, Ano (exibir como texto)
+- [x] Usar `PATCH /legislative/materias/:id`
 
 ---
 
@@ -112,9 +112,9 @@ Lógica de submit:
 
 ### T-06 · Criar `MateriaDeleteDialog`
 
-- [ ] Usar `DeleteDialog` base (TASK-FE-001 T-16)
-- [ ] Mensagem: `Deseja excluir a matéria "${materia.identificacao}"? Esta ação não pode ser desfeita.`
-- [ ] Apenas `canDelete` (ADMIN_STAFF) vê o botão na tabela
+- [x] Usar `DeleteDialog` base (TASK-FE-001 T-16)
+- [x] Mensagem: `Deseja excluir a matéria "${materia.identificacao}"? Esta ação não pode ser desfeita.`
+- [x] Apenas `canDelete` (ADMIN_STAFF) vê o botão na tabela
 
 ---
 
@@ -149,15 +149,15 @@ export function MateriaStatusBadge({ status }: { status: MateriaStatus }) {
 
 ## Checklist
 
-- [ ] Filtros em grid responsivo col-12/md:col-6/lg:col-4
-- [ ] DataTable com paginação lazy server-side
-- [ ] Identificação exibida como "PLO nº 3/2025" (não só número)
-- [ ] Ações Editar/Deletar visíveis apenas para `canEdit`
-- [ ] Parlamentar logado → autor preenchido do JWT, campo desabilitado
-- [ ] Upload de Texto Original via `apiFormData()`
-- [ ] Múltiplos relatores via MultiSelect
-- [ ] Histórico de tramitação no dialog Ver
-- [ ] Status PROTOCOLADA e EM_PAUTA com badge correto
+- [x] Filtros em grid responsivo col-12/md:col-6/lg:col-4
+- [x] DataTable com paginação lazy server-side
+- [x] Identificação exibida como "PLO nº 3/2025" (não só número)
+- [x] Ações Editar/Deletar visíveis apenas para `canEdit`
+- [x] Parlamentar logado → autor preenchido do JWT, campo desabilitado
+- [x] Upload de Texto Original via `apiFormData()`
+- [x] Múltiplos relatores via MultiSelect
+- [x] Histórico de tramitação no dialog Ver
+- [x] Status PROTOCOLADA e EM_PAUTA com badge correto
 
 ---
 ---
@@ -172,8 +172,8 @@ export function MateriaStatusBadge({ status }: { status: MateriaStatus }) {
 
 ### T-01 · Atualizar `SessoesPage` com novos status
 
-- [ ] Exibir `statusSessao` (AGENDADA/ABERTA/SUSPENSA/ENCERRADA/CANCELADA) como badge
-- [ ] Botões de ação por status:
+- [x] Exibir `statusSessao` (AGENDADA/ABERTA/SUSPENSA/ENCERRADA/CANCELADA) como badge
+- [x] Botões de ação por status:
   ```
   AGENDADA  → [Abrir sessão] [Cancelar]
   ABERTA    → [Suspender] [Encerrar]  + exibir quórum atual
@@ -181,21 +181,21 @@ export function MateriaStatusBadge({ status }: { status: MateriaStatus }) {
   ENCERRADA → apenas visualização
   CANCELADA → apenas visualização
   ```
-- [ ] Botões visíveis apenas para `canManageSessao` (ADMIN_STAFF e STAFF)
+- [x] Botões visíveis apenas para `canManageSessao` (ADMIN_STAFF e STAFF)
 
 ### T-02 · Criar `AbrirSessaoDialog`
 
-- [ ] Exibir quórum calculado: `GET /sessoes-plenarias/:id/quorum`
+- [x] Exibir quórum calculado: `GET /sessoes-plenarias/:id/quorum`
   - "Quórum mínimo: X / Presentes: Y — ✅ Tem quórum / ⚠️ Sem quórum"
-- [ ] Campo `observacoes` opcional
-- [ ] Confirmar → `POST /sessoes-plenarias/:id/abrir`
-- [ ] Aviso se sem quórum (mas não bloqueia — backend valida)
+- [x] Campo `observacoes` opcional
+- [x] Confirmar → `POST /sessoes-plenarias/:id/abrir`
+- [x] Aviso se sem quórum (mas não bloqueia — backend valida)
 
 ### T-03 · Criar `EncerrarSessaoDialog`
 
-- [ ] Campo `observacoes` opcional
-- [ ] Confirmar → `POST /sessoes-plenarias/:id/encerrar`
-- [ ] Aviso: "Ao encerrar, a pauta será fechada automaticamente"
+- [x] Campo `observacoes` opcional
+- [x] Confirmar → `POST /sessoes-plenarias/:id/encerrar`
+- [x] Aviso: "Ao encerrar, a pauta será fechada automaticamente"
 
 ---
 
@@ -203,17 +203,17 @@ export function MateriaStatusBadge({ status }: { status: MateriaStatus }) {
 
 ### T-04 · Atualizar painel de votação
 
-- [ ] Exibir contadores calculados: `votosSim`, `votosNao`, `abstencoes` (vêm do backend)
-- [ ] Para votação NOMINAL: exibir lista de votos individuais com nome + voto
-- [ ] Para votação SECRETA: exibir apenas contadores, nunca nomes
-- [ ] Botão "Registrar meu voto" visível apenas para `canVotar` (PARLIAMENTARIAN)
-- [ ] Botão "Encerrar votação" visível apenas para `canManageSessao`
+- [x] Exibir contadores calculados: `votosSim`, `votosNao`, `abstencoes` (vêm do backend)
+- [x] Para votação NOMINAL: exibir lista de votos individuais com nome + voto
+- [x] Para votação SECRETA: exibir apenas contadores, nunca nomes
+- [x] Botão "Registrar meu voto" visível apenas para `canVotar` (PARLIAMENTARIAN)
+- [x] Botão "Encerrar votação" visível apenas para `canManageSessao`
 
 ### T-05 · Criar `RegistrarVotoDialog` (PARLIAMENTARIAN)
 
-- [ ] Opções: SIM / NÃO / ABSTENÇÃO
-- [ ] Confirmar → `POST /votacoes/:id/votos`
-- [ ] Feedback visual do voto atual (pode alterar até encerrar)
+- [x] Opções: SIM / NÃO / ABSTENÇÃO
+- [x] Confirmar → `POST /votacoes/:id/votos`
+- [x] Feedback visual do voto atual (pode alterar até encerrar)
 
 ### T-06 · Badge `SessaoStatusBadge`
 
@@ -231,11 +231,11 @@ const SESSAO_STATUS_SEVERITY = {
 
 ## Checklist
 
-- [ ] Botões de ciclo de vida aparecem conforme status atual
-- [ ] `canManageSessao` controla botões de abertura/encerramento
-- [ ] `canVotar` controla botão de voto
-- [ ] Votação SECRETA não exibe nomes dos votantes
-- [ ] Contadores vêm do backend (não calculados no frontend)
+- [x] Botões de ciclo de vida aparecem conforme status atual
+- [x] `canManageSessao` controla botões de abertura/encerramento
+- [x] `canVotar` controla botão de voto
+- [x] Votação SECRETA não exibe nomes dos votantes
+- [x] Contadores vêm do backend (não calculados no frontend)
 
 ---
 ---
@@ -275,32 +275,32 @@ Ações   → Ver / Editar (Admin) / Deletar (Admin)
 
 ### T-03 · Criar `NormaVerDialog`
 
-- [ ] Campos detalhados: tipo, número, ano, esfera, ementa
-- [ ] Ciclo jurídico em timeline: sanção → veto/promulgação → publicação → vigência → revogação
-- [ ] Links: URL externa, Texto Integral (PDF), Áudio
-- [ ] Campo "Complementar" exibido como badge/chip
-- [ ] Matéria de origem como link (se existir)
+- [x] Campos detalhados: tipo, número, ano, esfera, ementa
+- [x] Ciclo jurídico em timeline: sanção → veto/promulgação → publicação → vigência → revogação
+- [x] Links: URL externa, Texto Integral (PDF), Áudio
+- [x] Campo "Complementar" exibido como badge/chip
+- [x] Matéria de origem como link (se existir)
 
 ### T-04 · Criar `NormaCreateDialog`
 
 Campos conforme documento operacional:
-- [ ] **Tipo da Norma Jurídica** * → `Dropdown`
-- [ ] **Ano** * → `Dropdown`
-- [ ] **Número** * → `InputText`
-- [ ] **Data** * → `Calendar`
-- [ ] **Esfera Federação** * → `Dropdown` (Municipal / Estadual / Federal)
-- [ ] **Complementar?** → `Checkbox`
-- [ ] **Tipo de Matéria** → `Dropdown` (opcional — para vínculo)
-- [ ] **Ano Matéria** → `Dropdown` (aparece quando Tipo Matéria selecionado)
-- [ ] **Matéria** → `Dropdown` filtrado por tipo+ano (busca `/legislative/materias`)
-- [ ] **Data Publicação** → `Calendar`
-- [ ] **Veículo Publicação** → `InputText`
-- [ ] **Pg. Início / Pg. Fim** → `InputNumber`
-- [ ] **Identificador** → `Dropdown` (identificadoresNorma do useDominios)
-- [ ] **URL externa** → `InputText`
-- [ ] **Texto Integral** → `FileUpload` (PDF/DOC) — `apiFormData()`
-- [ ] **Áudio** → `FileUpload` (MP3/WAV)
-- [ ] **Ementa** * → `InputTextarea`
+- [x] **Tipo da Norma Jurídica** * → `Dropdown`
+- [x] **Ano** * → `Dropdown`
+- [x] **Número** * → `InputText`
+- [x] **Data** * → `Calendar`
+- [x] **Esfera Federação** * → `Dropdown` (Municipal / Estadual / Federal)
+- [x] **Complementar?** → `Checkbox`
+- [x] **Tipo de Matéria** → `Dropdown` (opcional — para vínculo)
+- [x] **Ano Matéria** → `Dropdown` (aparece quando Tipo Matéria selecionado)
+- [x] **Matéria** → `Dropdown` filtrado por tipo+ano (busca `/legislative/materias`)
+- [x] **Data Publicação** → `Calendar`
+- [x] **Veículo Publicação** → `InputText`
+- [x] **Pg. Início / Pg. Fim** → `InputNumber`
+- [x] **Identificador** → `Dropdown` (identificadoresNorma do useDominios)
+- [x] **URL externa** → `InputText`
+- [x] **Texto Integral** → `FileUpload` (PDF/DOC) — `apiFormData()`
+- [x] **Áudio** → `FileUpload` (MP3/WAV)
+- [x] **Ementa** * → `InputTextarea`
 
 ### T-05 · Criar `NormaStatusBadge`
 
@@ -344,29 +344,29 @@ Ações          → Ver / Editar (Admin) / Deletar (Admin)
 ### T-08 · Criar `AtoCreateDialog`
 
 Campos conforme documento operacional:
-- [ ] **Tipo do Ato** * → `Dropdown` (tiposAto)
-- [ ] **Classificação** → `Dropdown` (classificacoesAto)
-- [ ] **Identificador** → `Dropdown` (identificadoresNorma — mesma lista da Norma)
-- [ ] **Número** * → `InputText`
-- [ ] **Data** * → `Calendar` (dataAto)
-- [ ] **Data Publicação** → `Calendar`
-- [ ] **Anexo** * → `FileUpload` (PDF/DOC) — `apiFormData()`
-- [ ] **Texto** → `InputTextarea`
-- [ ] **Ementa** → `InputTextarea`
+- [x] **Tipo do Ato** * → `Dropdown` (tiposAto)
+- [x] **Classificação** → `Dropdown` (classificacoesAto)
+- [x] **Identificador** → `Dropdown` (identificadoresNorma — mesma lista da Norma)
+- [x] **Número** * → `InputText`
+- [x] **Data** * → `Calendar` (dataAto)
+- [x] **Data Publicação** → `Calendar`
+- [x] **Anexo** * → `FileUpload` (PDF/DOC) — `apiFormData()`
+- [x] **Texto** → `InputTextarea`
+- [x] **Ementa** → `InputTextarea`
 
 ### T-09 · `AtoVerDialog`
 
-- [ ] Todos os campos + link para Anexo
-- [ ] Ementa em destaque no topo
+- [x] Todos os campos + link para Anexo
+- [x] Ementa em destaque no topo
 
 ---
 
 ## Checklist — Normas e Atos
 
-- [ ] `normasApi` e `atosApi` usados (não chamadas inline)
-- [ ] Filtros em grid responsivo
-- [ ] Status da norma exibido como badge derivado
-- [ ] Upload de arquivo via `apiFormData()`
-- [ ] Campo "Complementar?" no formulário e no dialog Ver
-- [ ] `ato.dataAto` exibido como "Data" (não `dataInicio`)
-- [ ] Atos visíveis apenas quando `authType !== 'camara'` (já existe `showAdministrativo`)
+- [x] `normasApi` e `atosApi` usados (não chamadas inline)
+- [x] Filtros em grid responsivo
+- [x] Status da norma exibido como badge derivado
+- [x] Upload de arquivo via `apiFormData()`
+- [x] Campo "Complementar?" no formulário e no dialog Ver
+- [x] `ato.dataAto` exibido como "Data" (não `dataInicio`)
+- [x] Atos visíveis apenas quando `authType !== 'camara'` (já existe `showAdministrativo`)

@@ -20,6 +20,9 @@ function buildMateriaRepositoryMock() {
         listarAutores: jest.fn(),
         adicionarAutor: jest.fn(),
         removerAutor: jest.fn(),
+        setAutorParlamentar: jest.fn(),
+        setAutorExterno: jest.fn(),
+        replaceCoautores: jest.fn(),
     };
 }
 
@@ -109,11 +112,22 @@ describe('CreateMateriaUseCase', () => {
     const dto = {
         tipoId: 'tipo-1',
         ementa: 'Institui programa municipal de saúde.',
+        authorParliamentarianId: 'parl-1',
     };
 
     it('cadastra proposição em DRAFT', async () => {
         const repository = buildMateriaRepositoryMock();
         repository.create.mockResolvedValue({
+            ...materiaBase,
+            id: 'matter-1',
+            status: StatusMateria.DRAFT,
+            emTramitacao: false,
+        });
+        repository.setAutorParlamentar.mockResolvedValue({
+            ...materiaBase,
+            authorParliamentarianId: 'parl-1',
+        });
+        repository.findOne.mockResolvedValue({
             ...materiaBase,
             status: StatusMateria.DRAFT,
             emTramitacao: false,
@@ -129,6 +143,11 @@ describe('CreateMateriaUseCase', () => {
             expect.objectContaining({
                 status: StatusMateria.DRAFT,
             }),
+        );
+        expect(repository.setAutorParlamentar).toHaveBeenCalledWith(
+            'tenant-1',
+            'matter-1',
+            { parliamentarianId: 'parl-1' },
         );
     });
 

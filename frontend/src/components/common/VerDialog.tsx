@@ -6,9 +6,18 @@ interface VerDialogProps {
     title: string;
     onClose: () => void;
     children: React.ReactNode;
+    width?: string;
+    contentClassName?: string;
 }
 
-export function VerDialog({ visible, title, onClose, children }: VerDialogProps) {
+export function VerDialog({
+    visible,
+    title,
+    onClose,
+    children,
+    width = 'min(90vw, 700px)',
+    contentClassName,
+}: VerDialogProps) {
     const footer = (
         <div className="flex justify-content-end">
             <Button label="Fechar" icon="pi pi-times" severity="secondary" onClick={onClose} />
@@ -20,7 +29,8 @@ export function VerDialog({ visible, title, onClose, children }: VerDialogProps)
             header={title}
             visible={visible}
             onHide={onClose}
-            style={{ width: 'min(90vw, 700px)' }}
+            style={{ width }}
+            className={contentClassName}
             footer={footer}
         >
             {children}

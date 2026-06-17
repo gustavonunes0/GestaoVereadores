@@ -24,8 +24,11 @@ export function LegislaturaBar() {
     return (
         <div className="legislatura-bar">
             <label className="legislatura-bar-field">
-                <span className="legislatura-bar-field__label">Legislatura</span>
+                <span className="legislatura-bar-field__label legislature-label">
+                    Legislatura
+                </span>
                 <select
+                    className="legislature-select"
                     value={legislaturaId}
                     onChange={(e) => setLegislaturaId(e.target.value)}
                     aria-label="Legislatura em exercício"

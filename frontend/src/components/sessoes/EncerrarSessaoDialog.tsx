@@ -53,20 +53,25 @@ export function EncerrarSessaoDialog({ sessaoId, onClose, onSaved }: Props) {
             footer={footer}
             modal
         >
-            <Message
-                severity="warn"
-                text="Ao encerrar, a pauta será fechada automaticamente e nenhum novo voto poderá ser registrado."
-                className="w-full mb-3"
-            />
-            <div className="p-fluid">
-                <label htmlFor="enc-obs">Observações (opcional)</label>
-                <InputTextarea
-                    id="enc-obs"
-                    value={observacoes}
-                    onChange={(e) => setObservacoes(e.target.value)}
-                    rows={2}
-                    autoResize
+            <div className="sigl-dialog-body">
+                <Message
+                    severity="warn"
+                    text="Ao encerrar, a pauta será fechada automaticamente e nenhum novo voto poderá ser registrado."
+                    className="w-full"
                 />
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Observações</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="enc-obs">Observações (opcional)</label>
+                        <InputTextarea
+                            id="enc-obs"
+                            value={observacoes}
+                            onChange={(e) => setObservacoes(e.target.value)}
+                            rows={2}
+                            autoResize
+                        />
+                    </div>
+                </div>
             </div>
         </Dialog>
     );

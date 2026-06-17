@@ -3,11 +3,13 @@ import {
     CodigoTipoSessao,
     RoleUsuario,
     TenantStatus,
+    TenantUserRole,
     TenantUserStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes, scrypt as scryptCallback } from 'crypto';
 import { promisify } from 'util';
+import { BRAZILIAN_POLITICAL_PARTIES } from './data/brazilian-political-parties';
 
 const prisma = new PrismaClient();
 const scrypt = promisify(scryptCallback);
@@ -36,6 +38,30 @@ async function main() {
             status: TenantStatus.ACTIVE,
         },
     });
+
+    for (const party of BRAZILIAN_POLITICAL_PARTIES) {
+        await prisma.politicalParty.upsert({
+            where: {
+                tenantId_acronym: {
+                    tenantId: DEMO_TENANT_ID,
+                    acronym: party.sigla,
+                },
+            },
+            update: {
+                name: party.nome,
+                isRemoved: false,
+                removedAt: null,
+            },
+            create: {
+                tenantId: DEMO_TENANT_ID,
+                acronym: party.sigla,
+                name: party.nome,
+            },
+        });
+    }
+    console.log(
+        `Partidos políticos: ${BRAZILIAN_POLITICAL_PARTIES.length} cadastrados/atualizados`,
+    );
 
     // --- Usuário SIGL master ---
     const passwordHash = await bcrypt.hash('admin', 10);
@@ -74,6 +100,7 @@ async function main() {
             },
         },
         update: {
+            role: TenantUserRole.ADMIN_STAFF,
             isTenantAdmin: true,
             isTenantStaff: true,
             isParliamentarian: false,
@@ -83,6 +110,7 @@ async function main() {
         create: {
             tenantId: DEMO_TENANT_ID,
             userId: camaraUser.id,
+            role: TenantUserRole.ADMIN_STAFF,
             isTenantAdmin: true,
             isTenantStaff: true,
             isParliamentarian: false,
@@ -92,6 +120,53 @@ async function main() {
     console.log(
         'Usuário câmara: admin@camara.teste / camara123 (CNPJ 00.000.000/0001-91)',
     );
+
+    // --- Conta ADMIN_STAFF adicional (CPF + senha) ---
+    const adminStaffPasswordHash = await hashPasswordScrypt('admin123');
+    const adminStaffUser = await prisma.user.upsert({
+        where: { email: 'admin.staff@camara.teste' },
+        update: {
+            firstName: 'Admin',
+            lastName: 'Staff',
+            cpf: '99999999999',
+            passwordHash: adminStaffPasswordHash,
+            isRemoved: false,
+        },
+        create: {
+            firstName: 'Admin',
+            lastName: 'Staff',
+            cpf: '99999999999',
+            email: 'admin.staff@camara.teste',
+            passwordHash: adminStaffPasswordHash,
+        },
+    });
+
+    await prisma.tenantUser.upsert({
+        where: {
+            tenantId_userId: {
+                tenantId: DEMO_TENANT_ID,
+                userId: adminStaffUser.id,
+            },
+        },
+        update: {
+            role: TenantUserRole.ADMIN_STAFF,
+            isTenantAdmin: true,
+            isTenantStaff: true,
+            isParliamentarian: false,
+            status: TenantUserStatus.ACTIVE,
+            isRemoved: false,
+        },
+        create: {
+            tenantId: DEMO_TENANT_ID,
+            userId: adminStaffUser.id,
+            role: TenantUserRole.ADMIN_STAFF,
+            isTenantAdmin: true,
+            isTenantStaff: true,
+            isParliamentarian: false,
+            status: TenantUserStatus.ACTIVE,
+        },
+    });
+    console.log('Usuário ADMIN_STAFF: CPF 99999999999 / senha admin123');
 
     // --- Ano ---
     const ano2026 = await prisma.ano.upsert({

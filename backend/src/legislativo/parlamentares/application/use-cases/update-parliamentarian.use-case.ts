@@ -2,10 +2,15 @@ import { Inject, Injectable } from '@nestjs/common';
 import { POLITICAL_PARTY_REPOSITORY } from '../../../partidos-politicos/partidos-politicos.tokens';
 import { PoliticalPartyRepository } from '../../../partidos-politicos/domain/repositories/political-party.repository';
 import { ParliamentarianRepository } from '../../domain/repositories/parliamentarian.repository';
+import { ParlamentarianUserRepository } from '../../domain/repositories/parlamentarian-user.repository';
 import { ParliamentarianDomainService } from '../../domain/services/parliamentarian-domain.service';
-import { PARLIAMENTARIAN_REPOSITORY } from '../../parlamentares.tokens';
+import {
+    PARLIAMENTARIAN_REPOSITORY,
+    PARLIAMENTARIAN_USER_REPOSITORY,
+} from '../../parlamentares.tokens';
 import { UpdateParliamentarianDto } from '../dto/update-parliamentarian.dto';
 import {
+    ParliamentarianAccessRequiredForPartyError,
     ParliamentarianNotFoundError,
     PoliticalPartyNotFoundForParliamentarianError,
     PoliticalPartyRemovedForParliamentarianError,
@@ -19,6 +24,8 @@ export class UpdateParliamentarianUseCase {
     constructor(
         @Inject(PARLIAMENTARIAN_REPOSITORY)
         private readonly parliamentarianRepository: ParliamentarianRepository,
+        @Inject(PARLIAMENTARIAN_USER_REPOSITORY)
+        private readonly parlamentarianUserRepository: ParlamentarianUserRepository,
         @Inject(POLITICAL_PARTY_REPOSITORY)
         private readonly politicalPartyRepository: PoliticalPartyRepository,
     ) {}
@@ -30,15 +37,24 @@ export class UpdateParliamentarianUseCase {
         );
         if (!existing) throw new ParliamentarianNotFoundError();
 
-        if (dto.politicalPartyId !== undefined && dto.politicalPartyId !== null) {
-            await this.assertPoliticalPartyForParliamentarian(
+        if (dto.politicalPartyId !== undefined) {
+            if (!existing.user) {
+                throw new ParliamentarianAccessRequiredForPartyError();
+            }
+            if (dto.politicalPartyId !== null) {
+                await this.assertPoliticalPartyForParliamentarian(
+                    tenantId,
+                    dto.politicalPartyId,
+                );
+            }
+            await this.parlamentarianUserRepository.updatePoliticalParty(
                 tenantId,
+                id,
                 dto.politicalPartyId,
             );
         }
 
         existing.entity.update({
-            politicalPartyId: dto.politicalPartyId,
             parliamentaryName: dto.parliamentaryName,
             officeNumber: dto.officeNumber,
             photoUrl: dto.photoUrl,
@@ -47,18 +63,19 @@ export class UpdateParliamentarianUseCase {
         });
 
         const p = existing.entity.toPrimitives();
-        const updated = await this.parliamentarianRepository.update(
+        await this.parliamentarianRepository.update(tenantId, id, {
+            parliamentaryName: p.parliamentaryName,
+            officeNumber: p.officeNumber,
+            photoUrl: p.photoUrl,
+            biography: p.biography,
+            status: p.status,
+        });
+
+        const updated = await this.parliamentarianRepository.findById(
             tenantId,
             id,
-            {
-                politicalPartyId: p.politicalPartyId,
-                parliamentaryName: p.parliamentaryName,
-                officeNumber: p.officeNumber,
-                photoUrl: p.photoUrl,
-                biography: p.biography,
-                status: p.status,
-            },
         );
+        if (!updated) throw new ParliamentarianNotFoundError();
         return ParliamentarianViewModel.toHttp(updated);
     }
 

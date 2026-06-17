@@ -174,12 +174,16 @@ export class PrismaPoliticalPartyRepository extends PoliticalPartyRepository {
         tenantId: string,
         politicalPartyId: string,
     ) {
-        return this.prisma.parliamentarian.count({
+        return this.prisma.parlamentarianUser.count({
             where: {
                 tenantId,
                 politicalPartyId,
                 isRemoved: false,
                 status: 'ACTIVE',
+                parliamentarian: {
+                    isRemoved: false,
+                    status: 'ACTIVE',
+                },
             },
         });
     }

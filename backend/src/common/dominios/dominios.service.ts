@@ -55,9 +55,11 @@ export class DominiosService {
                 select: { id: true, nome: true },
             }),
             this.prisma.tipoAutor.findMany({
-                where: { tenantId },
-                orderBy: { nome: 'asc' },
-                select: { id: true, nome: true },
+                where: {
+                    OR: [{ tenantId }, { tenantId: null }],
+                },
+                orderBy: { idNegocio: 'asc' },
+                select: { id: true, nome: true, idNegocio: true },
             }),
             this.prisma.statusTramitacao.findMany({
                 orderBy: { nome: 'asc' },
@@ -108,6 +110,15 @@ export class DominiosService {
             }),
         ]);
 
+        const tiposAutorHttp = tiposAutor.map((t) => ({
+            id: t.id,
+            nome: t.nome,
+            ...(t.idNegocio != null ? { codigo: String(t.idNegocio) } : {}),
+        }));
+        const tiposAutorExternoHttp = tiposAutorHttp.filter(
+            (t) => t.codigo !== '1',
+        );
+
         return {
             anos: anos.map((a) => ({ id: a.id, valor: a.valor })),
             tiposMateria: mapNome(tiposMateria),
@@ -115,7 +126,8 @@ export class DominiosService {
             tematicas: mapNome(tematicas),
             origensMateria: mapNome(origensMateria),
             locaisOrigemExterna: mapNome(locaisOrigemExterna),
-            tiposAutor: mapNome(tiposAutor),
+            tiposAutor: tiposAutorHttp,
+            tiposAutorExterno: tiposAutorExternoHttp,
             statusTramitacao: mapNome(statusTramitacao),
             unidadesTramitacao: mapNome(unidadesTramitacao),
             tiposSessao: tiposSessao.map((t) => ({

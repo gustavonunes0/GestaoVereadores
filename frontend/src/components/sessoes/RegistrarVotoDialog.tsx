@@ -62,15 +62,20 @@ export function RegistrarVotoDialog({ sessaoId, pautaItemId, parlamentarId, onCl
             footer={footer}
             modal
         >
-            <p className="mb-3 text-color-secondary">Selecione seu voto para esta matéria:</p>
-            <div className="flex justify-content-center">
-                <SelectButton
-                    value={voto}
-                    options={VOTO_OPTIONS}
-                    optionLabel="label"
-                    optionValue="value"
-                    onChange={(e) => setVoto(e.value)}
-                />
+            <div className="sigl-dialog-body">
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Voto</span>
+                    <p className="m-0 text-color-secondary">Selecione seu voto para esta matéria:</p>
+                    <div className="flex justify-content-center">
+                        <SelectButton
+                            value={voto}
+                            options={VOTO_OPTIONS}
+                            optionLabel="label"
+                            optionValue="value"
+                            onChange={(e) => setVoto(e.value)}
+                        />
+                    </div>
+                </div>
             </div>
         </Dialog>
     );

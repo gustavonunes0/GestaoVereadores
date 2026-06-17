@@ -55,9 +55,9 @@ const authorshipPayload = {
 describe('MatterAuthorshipDomainService', () => {
     const service = new MatterAuthorshipDomainService();
 
-    it('exige GuestUser para autor externo', () => {
-        expect(() => service.assertExternalAuthorUsesGuestUser(null)).toThrow(
-            'Autor externo requer GuestUser vinculado',
+    it('exige autor externo informado', () => {
+        expect(() => service.assertExternalAuthorProvided(null)).toThrow(
+            'Autor externo é obrigatório',
         );
     });
 
@@ -103,7 +103,7 @@ describe('SetMatterAutorParlamentarUseCase', () => {
 });
 
 describe('SetMatterAutorExternoUseCase', () => {
-    it('registra autor externo via GuestUser', async () => {
+    it('registra autor externo via AutorExterno', async () => {
         const repository = buildMateriaRepositoryMock();
         repository.setAutorExterno.mockResolvedValue({
             ...authorshipPayload,
@@ -111,10 +111,10 @@ describe('SetMatterAutorExternoUseCase', () => {
             autor: {
                 id: 'autor-1',
                 nome: 'Cidadão Externo',
-                guestUser: {
-                    id: 'guest-1',
-                    fullName: 'Cidadão Externo',
-                    type: 'EXTERNAL_AUTHOR',
+                autorExterno: {
+                    id: 'ext-1',
+                    nome: 'Cidadão Externo',
+                    tipoAutorId: 'tipo-popular',
                 },
             },
             autorId: 'autor-1',
@@ -122,14 +122,14 @@ describe('SetMatterAutorExternoUseCase', () => {
 
         const useCase = new SetMatterAutorExternoUseCase(repository as never);
         const result = await useCase.execute('tenant-1', 'matter-1', {
-            guestUserId: 'guest-1',
+            autorExternoId: 'ext-1',
         });
 
         expect(result.primaryAuthor?.type).toBe(MatterAuthorType.EXTERNAL);
         expect(
             result.primaryAuthor &&
-                'guestUser' in result.primaryAuthor &&
-                result.primaryAuthor.guestUser.fullName,
+                'autorExterno' in result.primaryAuthor &&
+                result.primaryAuthor.autorExterno?.nome,
         ).toBe('Cidadão Externo');
     });
 });
@@ -212,10 +212,10 @@ describe('MatterAuthorshipViewModel', () => {
             autor: {
                 id: 'autor-1',
                 nome: 'Externo',
-                guestUser: {
-                    id: 'guest-1',
-                    fullName: 'Externo',
-                    type: 'CITIZEN',
+                autorExterno: {
+                    id: 'ext-1',
+                    nome: 'Externo',
+                    tipoAutorId: 'tipo-1',
                 },
             },
         });

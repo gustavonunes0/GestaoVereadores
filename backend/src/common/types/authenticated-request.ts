@@ -2,23 +2,49 @@ import { RoleUsuario, TenantUserRole } from '@prisma/client';
 
 export type AuthType = 'sigl' | 'camara';
 
-export type AuthenticatedUser = {
+export type StaffAuthenticatedUser = {
     id: string;
-    authType: AuthType;
+    authType: 'camara';
+    sessionType: 'staff';
+    tenantId: string;
+    tenantUserId: string;
+    role: TenantUserRole;
+    email?: string;
+    nome?: string;
+};
+
+export type ParlamentarianAuthenticatedUser = {
+    id: string;
+    authType: 'camara';
+    sessionType: 'parliamentarian';
+    tenantId: string;
+    parliamentarianUserId: string;
+    parliamentarianId: string;
+    parliamentaryName: string;
+    email?: string;
+    nome?: string;
+};
+
+export type CamaraAuthenticatedUser = StaffAuthenticatedUser | ParlamentarianAuthenticatedUser;
+
+export type SiglAuthenticatedUser = {
+    id: string;
+    authType: 'sigl';
     tenantId?: string;
-    tenantUserId?: string;
-    tenantUserRole?: TenantUserRole;
-    parliamentarianId?: string;
-    isTenantAdmin?: boolean;
-    isTenantStaff?: boolean;
-    isParliamentarian?: boolean;
-    /** @deprecated use isTenantAdmin */
-    isAdmin?: boolean;
     username?: string;
     nome?: string;
-    email?: string;
     role?: RoleUsuario;
 };
+
+export type AuthenticatedUser = CamaraAuthenticatedUser | SiglAuthenticatedUser;
+
+export function isStaffUser(u: AuthenticatedUser): u is StaffAuthenticatedUser {
+    return u.authType === 'camara' && (u as CamaraAuthenticatedUser).sessionType === 'staff';
+}
+
+export function isParlamentarianUser(u: AuthenticatedUser): u is ParlamentarianAuthenticatedUser {
+    return u.authType === 'camara' && (u as CamaraAuthenticatedUser).sessionType === 'parliamentarian';
+}
 
 export type RequestWithTenant = {
     tenantId?: string;

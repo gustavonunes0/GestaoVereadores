@@ -1,4 +1,4 @@
-/** Converte filtros estilo IntGest (ano/mês/dia) em intervalo ISO para a API. */
+/** Converte filtros de ano/mês/dia em intervalo ISO para a API. */
 export function buildSessaoDataRange(params: {
     ano?: number;
     mes?: number;

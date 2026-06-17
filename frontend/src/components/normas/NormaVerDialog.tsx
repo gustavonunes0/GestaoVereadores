@@ -5,6 +5,7 @@ import { normasApi, type Norma } from '../../api/normas.api';
 import { NormaStatusBadge } from './NormaStatusBadge';
 import { useAppToast } from '../../hooks/useAppToast';
 import { formatDatePt } from '../../utils/formatDate';
+import { formatNormaIdentificacao, resolveNormaStatus } from '../../utils/normaDisplay';
 
 interface Props {
     normaId: string;
@@ -45,9 +46,9 @@ export function NormaVerDialog({ normaId, onClose }: Props) {
                 <div>
                     <div className="flex align-items-center gap-2 mb-3">
                         <span className="font-bold text-lg">
-                            {norma.tipo.nome} nº {norma.numero}/{norma.ano}
+                            {formatNormaIdentificacao(norma)}
                         </span>
-                        <NormaStatusBadge status={norma.statusDerived} />
+                        <NormaStatusBadge status={resolveNormaStatus(norma)} />
                         {norma.complementar && (
                             <span className="text-sm text-color-secondary">(Complementar)</span>
                         )}

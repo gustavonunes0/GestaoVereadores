@@ -1,6 +1,5 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
 import { PrimeReactProvider } from 'primereact/api';
 
 import 'primereact/resources/themes/lara-light-blue/theme.css';
@@ -18,11 +17,9 @@ import { AuthProvider } from './contexts/AuthContext';
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <PrimeReactProvider value={{ ripple: true }}>
-            <BrowserRouter>
-                <AuthProvider>
-                    <App />
-                </AuthProvider>
-            </BrowserRouter>
+            <AuthProvider>
+                <App />
+            </AuthProvider>
         </PrimeReactProvider>
     </StrictMode>,
 );

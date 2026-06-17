@@ -1,43 +1,54 @@
 import { useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import type { TenantUserRole } from '../types/auth';
+import { isParlamentarianUser } from '../types/auth';
 
 export function usePermissions() {
-    const { user } = useAuth();
+    const { user, isAdminStaff, isStaff, isParliamentarian } = useAuth();
 
     return useMemo(() => {
-        const authType = user?.authType ?? 'sigl';
-        const role = user?.role as TenantUserRole | string | undefined;
+        if (!user) {
+            return {
+                user: null,
+                isAdminStaff: false,
+                isStaff: false,
+                isParliamentarian: false,
+                canWrite: false,
+                canEdit: false,
+                canDelete: false,
+                canManageSessao: false,
+                canVotar: false,
+                canManagePessoas: false,
+                canRead: false,
+                isReadOnly: false,
+                sessionType: null,
+                parliamentarianId: undefined as string | undefined,
+            };
+        }
 
-        const isMaster = role === 'MASTER' && authType === 'sigl';
-        const isCamara = authType === 'camara';
-
-        const isAdminStaff = role === 'ADMIN_STAFF';
-        const isStaff = role === 'STAFF';
-        const isParliamentarian = role === 'PARLIAMENTARIAN';
-
-        const canWrite = !!user && (isAdminStaff || isStaff);
+        const canWrite = isAdminStaff || isStaff;
         const canEdit = isAdminStaff;
         const canDelete = isAdminStaff;
         const canManageSessao = isAdminStaff || isStaff;
         const canVotar = isParliamentarian;
         const canManagePessoas = isAdminStaff;
-        const canRead = !!user;
 
         return {
             user,
-            authType,
-            role: role as TenantUserRole | undefined,
-            isMaster,
-            isCamara,
+            isAdminStaff,
+            isStaff,
+            isParliamentarian,
             canWrite,
             canEdit,
             canDelete,
             canManageSessao,
             canVotar,
             canManagePessoas,
-            canRead,
+            canRead: true,
             isReadOnly: isParliamentarian,
+            sessionType: user.sessionType,
+            parliamentarianId: isParlamentarianUser(user)
+                ? user.parliamentarianId
+                : undefined,
         };
-    }, [user]);
+    }, [user, isAdminStaff, isStaff, isParliamentarian]);
 }

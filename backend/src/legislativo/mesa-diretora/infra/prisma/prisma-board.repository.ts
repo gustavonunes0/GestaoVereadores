@@ -27,23 +27,36 @@ const legislatureSelect = {
     isCurrent: true,
 } satisfies Prisma.LegislatureSelect;
 
+const boardMemberParliamentarianSelect = {
+    id: true,
+    parliamentaryName: true,
+    officeNumber: true,
+    photoUrl: true,
+    parliamentarianUser: {
+        select: {
+            politicalParty: {
+                select: {
+                    id: true,
+                    name: true,
+                    acronym: true,
+                    flagUrl: true,
+                },
+            },
+        },
+    },
+} satisfies Prisma.ParliamentarianSelect;
+
+const boardMemberInclude = {
+    parliamentarian: { select: boardMemberParliamentarianSelect },
+    boardRole: { select: { id: true, name: true } },
+} satisfies Prisma.BoardMemberInclude;
+
 const boardInclude = {
     legislature: { select: legislatureSelect },
     members: {
         where: { isRemoved: false },
         orderBy: { createdAt: 'asc' as const },
-        include: {
-            parliamentarian: {
-                select: {
-                    id: true,
-                    parliamentaryName: true,
-                    officeNumber: true,
-                },
-            },
-            boardRole: {
-                select: { id: true, name: true },
-            },
-        },
+        include: boardMemberInclude,
     },
 } satisfies Prisma.BoardInclude;
 
@@ -185,16 +198,7 @@ export class PrismaBoardRepository extends BoardRepository {
                 parliamentarianId: data.parliamentarianId,
                 boardRoleId: data.boardRoleId,
             },
-            include: {
-                parliamentarian: {
-                    select: {
-                        id: true,
-                        parliamentaryName: true,
-                        officeNumber: true,
-                    },
-                },
-                boardRole: { select: { id: true, name: true } },
-            },
+            include: boardMemberInclude,
         });
         return this.toMember(row);
     }
@@ -290,24 +294,19 @@ export class PrismaBoardRepository extends BoardRepository {
 
     private toMember(
         row: Prisma.BoardMemberGetPayload<{
-            include: {
-                parliamentarian: {
-                    select: {
-                        id: true;
-                        parliamentaryName: true;
-                        officeNumber: true;
-                    };
-                };
-                boardRole: { select: { id: true; name: true } };
-            };
+            include: typeof boardMemberInclude;
         }>,
     ): BoardMemberWithRelations {
+        const party =
+            row.parliamentarian.parliamentarianUser?.politicalParty ?? null;
         return {
             id: row.id,
             parliamentarian: {
                 id: row.parliamentarian.id,
                 parliamentaryName: row.parliamentarian.parliamentaryName,
                 officeNumber: row.parliamentarian.officeNumber,
+                photoUrl: row.parliamentarian.photoUrl,
+                politicalParty: party,
             },
             boardRole: row.boardRole,
             createdAt: row.createdAt,

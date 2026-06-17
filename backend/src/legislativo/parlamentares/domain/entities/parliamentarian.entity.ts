@@ -4,8 +4,6 @@ import { ParliamentarianStatus } from '../enums/parliamentarian-status.enum';
 type ParliamentarianProps = {
     id: string;
     tenantId: string;
-    tenantUserId: string;
-    politicalPartyId: string | null;
     parliamentaryName: string;
     officeNumber: string | null;
     photoUrl: string | null;
@@ -21,8 +19,6 @@ export type ParliamentarianPrimitives = ParliamentarianProps;
 
 export type CreateParliamentarianParams = {
     tenantId: string;
-    tenantUserId: string;
-    politicalPartyId?: string | null;
     parliamentaryName: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
@@ -30,7 +26,6 @@ export type CreateParliamentarianParams = {
 };
 
 export type UpdateParliamentarianParams = {
-    politicalPartyId?: string | null;
     parliamentaryName?: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
@@ -46,8 +41,6 @@ export class ParliamentarianEntity {
         const entity = new ParliamentarianEntity({
             id: randomUUID(),
             tenantId: params.tenantId,
-            tenantUserId: params.tenantUserId,
-            politicalPartyId: params.politicalPartyId ?? null,
             parliamentaryName: params.parliamentaryName.trim(),
             officeNumber: ParliamentarianEntity.normalizeOptional(
                 params.officeNumber,
@@ -84,18 +77,7 @@ export class ParliamentarianEntity {
         return this.props.tenantId;
     }
 
-    get tenantUserId() {
-        return this.props.tenantUserId;
-    }
-
-    get politicalPartyId() {
-        return this.props.politicalPartyId;
-    }
-
     update(params: UpdateParliamentarianParams) {
-        if (params.politicalPartyId !== undefined) {
-            this.props.politicalPartyId = params.politicalPartyId;
-        }
         if (params.parliamentaryName !== undefined) {
             this.props.parliamentaryName = params.parliamentaryName.trim();
         }
@@ -133,9 +115,6 @@ export class ParliamentarianEntity {
     }
 
     private validate() {
-        if (!this.props.tenantUserId?.trim()) {
-            throw new Error('Vínculo TenantUser é obrigatório para parlamentar');
-        }
         if (!this.props.parliamentaryName) {
             throw new Error('Nome parlamentar é obrigatório');
         }

@@ -1,47 +1,83 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Column } from 'primereact/column';
-import { Dropdown } from 'primereact/dropdown';
-import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
-import { MODULE_ICONS } from '../app/navigation';
+import { Column } from 'primereact/column';
+import { InputText } from 'primereact/inputtext';
 import { atosApi, type Ato, type AtoFiltros } from '../api/atos.api';
-import { PageHeader } from '../components/PageHeader';
-import { FiltroLayout } from '../components/common/FiltroLayout';
+import { MODULE_ICONS } from '../app/navigation';
 import { DataTableLayout } from '../components/common/DataTableLayout';
 import { DeleteDialog } from '../components/common/DeleteDialog';
-import { AtoVerDialog } from '../components/atos/AtoVerDialog';
+import { FiltroLayout } from '../components/common/FiltroLayout';
+import { PageHeader } from '../components/PageHeader';
 import { AtoCreateDialog } from '../components/atos/AtoCreateDialog';
-import { PublicacaoModuleIntro } from '../components/publicacao/PublicacaoModuleIntro';
-import { ModulePipelineFooter } from '../components/workflow/ModulePipelineFooter';
-import { PipelineStepBadge } from '../components/workflow/PipelineStepBadge';
-import { PUBLICACAO_MODULES } from '../app/publicacao';
-import { WORKFLOW_PIPELINE_TOTAL } from '../app/navigation';
+import { AtoEditDialog } from '../components/atos/AtoEditDialog';
+import { AtoVerDialog } from '../components/atos/AtoVerDialog';
+import { DateRangePicker, Dropdown, mapDropdownOptions, PreviewImg, withEmptyOption } from '../components/ui';
 import { useAppToast } from '../hooks/useAppToast';
 import { useDominios } from '../hooks/useDominios';
 import { usePermissions } from '../hooks/usePermissions';
 import { formatDatePt } from '../utils/formatDate';
+import { resolveMateriaTextoOriginalUrl } from '../utils/materiaDisplay';
+
+const EMPTY_FILTROS: AtoFiltros = {
+    tipoId: '',
+    numero: '',
+    page: 1,
+    limit: 20,
+};
+
+type DocumentoPreview = {
+    src: string;
+    fileName: string;
+    mimeType?: string;
+};
 
 export function AtosPage() {
-    const { canWrite, canDelete } = usePermissions();
-    const { showApiError } = useAppToast();
     const { tiposAto } = useDominios();
+    const { canEdit, canDelete } = usePermissions();
+    const { showApiError } = useAppToast();
 
     const [items, setItems] = useState<Ato[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
 
-    const [filtros, setFiltros] = useState<AtoFiltros>({});
-    const [filtrosApplied, setFiltrosApplied] = useState<AtoFiltros>({});
+    const [filtros, setFiltros] = useState<AtoFiltros>({ ...EMPTY_FILTROS });
+    const [filtrosApplied, setFiltrosApplied] = useState<AtoFiltros>({ ...EMPTY_FILTROS });
+    const [dataAto, setDataAto] = useState<[Date | null, Date | null]>([null, null]);
+    const [dataPublicacao, setDataPublicacao] = useState<[Date | null, Date | null]>([
+        null,
+        null,
+    ]);
 
     const [dialogCriar, setDialogCriar] = useState(false);
-    const [dialogVer, setDialogVer] = useState<Ato | null>(null);
+    const [previewDocumento, setPreviewDocumento] = useState<DocumentoPreview | null>(null);
+    const [dialogVerId, setDialogVerId] = useState<string | null>(null);
+    const [dialogEditar, setDialogEditar] = useState<Ato | null>(null);
     const [dialogDeletar, setDialogDeletar] = useState<Ato | null>(null);
+
+    function handleVer(ato: Ato) {
+        const url = (ato.anexoUrl ?? ato.textoUrl)?.trim();
+        if (url) {
+            const resolved = resolveMateriaTextoOriginalUrl(url);
+            const isPdf = resolved.toLowerCase().includes('.pdf');
+            setPreviewDocumento({
+                src: resolved,
+                fileName: `${ato.tipo.nome} nº ${ato.numero}${isPdf ? '.pdf' : ''}`,
+                mimeType: isPdf ? 'application/pdf' : undefined,
+            });
+            return;
+        }
+        setDialogVerId(ato.id);
+    }
 
     const buscar = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await atosApi.list({ ...filtrosApplied, page, limit: 20 });
+            const res = await atosApi.list({
+                ...filtrosApplied,
+                page,
+                limit: 20,
+            });
             setItems(res.data);
             setTotal(res.meta.total);
         } catch (err) {
@@ -57,16 +93,24 @@ export function AtosPage() {
 
     function aplicarFiltros() {
         setPage(1);
-        setFiltrosApplied({ ...filtros });
+        setFiltrosApplied({
+            ...filtros,
+            dataInicioDe: dataAto[0]?.toISOString().slice(0, 10),
+            dataInicioAte: dataAto[1]?.toISOString().slice(0, 10),
+            dataPublicacaoDe: dataPublicacao[0]?.toISOString().slice(0, 10),
+            dataPublicacaoAte: dataPublicacao[1]?.toISOString().slice(0, 10),
+        });
     }
 
     function limparFiltros() {
-        setFiltros({});
-        setFiltrosApplied({});
+        setFiltros({ ...EMPTY_FILTROS });
+        setFiltrosApplied({ ...EMPTY_FILTROS });
+        setDataAto([null, null]);
+        setDataPublicacao([null, null]);
         setPage(1);
     }
 
-    const columns = (
+    const colunas = (
         <>
             <Column
                 header="Tipo"
@@ -104,77 +148,78 @@ export function AtosPage() {
         </>
     );
 
-    const mod = PUBLICACAO_MODULES.atos;
-
     return (
-        <section className="page page--atos">
-            <PipelineStepBadge
-                step={mod.pipelineStep}
-                total={WORKFLOW_PIPELINE_TOTAL}
-                label={mod.title}
-                domain="administrative"
-            />
-
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.atos}
                 title="Atos administrativos"
-                subtitle="Portarias, nomeações, exonerações, designações e demais atos de gestão administrativa."
                 actions={
-                    canWrite ? (
+                    (
                         <Button
                             label="Registrar ato"
                             icon="pi pi-plus"
                             onClick={() => setDialogCriar(true)}
                         />
-                    ) : undefined
+                    )
                 }
             />
 
-            <PublicacaoModuleIntro moduleId="atos" />
+            <section aria-label="Filtros de pesquisa" className="pt-4">
+                <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="af-tipo">Tipo do ato</label>
+                        <Dropdown
+                            id="af-tipo"
+                            value={filtros.tipoId ?? ''}
+                            options={withEmptyOption(mapDropdownOptions(tiposAto, 'nome', 'id'))}
+                            onChange={(v) => setFiltros((f) => ({ ...f, tipoId: String(v) }))}
+                            placeholder="Todos"
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="af-numero">Número</label>
+                        <InputText
+                            id="af-numero"
+                            value={filtros.numero ?? ''}
+                            onChange={(e) => setFiltros((f) => ({ ...f, numero: e.target.value }))}
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <DateRangePicker
+                            id="af-data"
+                            label="Data do ato"
+                            value={dataAto}
+                            onChange={setDataAto}
+                            placeholder="Início — Fim"
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <DateRangePicker
+                            id="af-publicacao"
+                            label="Data publicação"
+                            value={dataPublicacao}
+                            onChange={setDataPublicacao}
+                            placeholder="Início — Fim"
+                        />
+                    </div>
+                </FiltroLayout>
+            </section>
 
-            <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
-                <div className="col-12 md:col-4 lg:col-3">
-                    <label htmlFor="af-tipo">Tipo</label>
-                    <Dropdown
-                        id="af-tipo"
-                        value={filtros.tipoId ?? ''}
-                        options={[{ id: '', nome: 'Todos' }, ...tiposAto]}
-                        optionLabel="nome"
-                        optionValue="id"
-                        onChange={(e) => setFiltros((f) => ({ ...f, tipoId: e.value || undefined }))}
-                    />
-                </div>
-                <div className="col-12 md:col-4 lg:col-3">
-                    <label htmlFor="af-numero">Número</label>
-                    <InputText
-                        id="af-numero"
-                        value={filtros.numero ?? ''}
-                        onChange={(e) => setFiltros((f) => ({ ...f, numero: e.target.value || undefined }))}
-                        placeholder="Número do ato"
-                    />
-                </div>
-                <div className="col-12 md:col-4 lg:col-3">
-                    <label htmlFor="af-ementa">Ementa</label>
-                    <InputText
-                        id="af-ementa"
-                        value={filtros.ementa ?? ''}
-                        onChange={(e) => setFiltros((f) => ({ ...f, ementa: e.target.value || undefined }))}
-                        placeholder="Texto da ementa"
-                    />
-                </div>
-            </FiltroLayout>
-
-            <DataTableLayout<Ato>
-                items={items}
-                total={total}
-                loading={loading}
-                page={page}
-                onPageChange={setPage}
-                columns={columns}
-                canWrite={canDelete}
-                onVer={(item) => setDialogVer(item)}
-                onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
-            />
+            <section aria-label="Lista de atos administrativos" className="atos-table-section">
+                <DataTableLayout
+                    items={items}
+                    total={total}
+                    loading={loading}
+                    page={page}
+                    onPageChange={setPage}
+                    columns={colunas}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    onVer={handleVer}
+                    onEditar={canEdit ? (item) => setDialogEditar(item) : undefined}
+                    onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
+                />
+            </section>
 
             {dialogCriar && (
                 <AtoCreateDialog
@@ -183,10 +228,24 @@ export function AtosPage() {
                 />
             )}
 
-            {dialogVer && (
-                <AtoVerDialog
-                    atoId={dialogVer.id}
-                    onClose={() => setDialogVer(null)}
+            {previewDocumento && (
+                <PreviewImg
+                    src={previewDocumento.src}
+                    fileName={previewDocumento.fileName}
+                    mimeType={previewDocumento.mimeType}
+                    onClose={() => setPreviewDocumento(null)}
+                />
+            )}
+
+            {dialogVerId && (
+                <AtoVerDialog atoId={dialogVerId} onClose={() => setDialogVerId(null)} />
+            )}
+
+            {dialogEditar && (
+                <AtoEditDialog
+                    ato={dialogEditar}
+                    onClose={() => setDialogEditar(null)}
+                    onSaved={() => void buscar()}
                 />
             )}
 
@@ -195,15 +254,13 @@ export function AtosPage() {
                     visible
                     title="Excluir ato"
                     message={`Deseja excluir o ato "${dialogDeletar.tipo.nome} nº ${dialogDeletar.numero}"? Esta ação não pode ser desfeita.`}
-                    onConfirm={() => atosApi.remove(dialogDeletar.id)}
-                    onClose={() => {
-                        setDialogDeletar(null);
+                    onConfirm={async () => {
+                        await atosApi.remove(dialogDeletar.id);
                         void buscar();
                     }}
+                    onClose={() => setDialogDeletar(null)}
                 />
             )}
-
-            <ModulePipelineFooter current="atos" />
-        </section>
+        </main>
     );
 }

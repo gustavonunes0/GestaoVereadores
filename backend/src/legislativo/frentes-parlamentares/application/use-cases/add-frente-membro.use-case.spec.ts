@@ -78,11 +78,14 @@ describe('AddFrenteMembroUseCase', () => {
             parliamentarianRepository.findById.mockResolvedValueOnce(
                 buildParliamentarianWithRelations({
                     entity: buildParliamentarianWithRelations().entity,
-                    politicalParty: {
-                        id: partyId,
-                        name: `Partido ${acronym}`,
-                        acronym,
-                        flagUrl: null,
+                    user: {
+                        ...buildParliamentarianWithRelations().user!,
+                        politicalParty: {
+                            id: partyId,
+                            name: `Partido ${acronym}`,
+                            acronym,
+                            flagUrl: null,
+                        },
                     },
                 }),
             );

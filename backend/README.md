@@ -1,6 +1,6 @@
 # API Gestão Vereadores — Atividade Legislativa
 
-Backend **NestJS** + **Prisma** modelado a partir da aba **Atividade Legislativa** do arquivo `docs/Mapeamento_Banco_Dados_IntGest_Cardinalidade_CORRIGIDO.drawio`.
+Backend **NestJS** + **Prisma** modelado a partir da aba **Atividade Legislativa** do mapeamento de banco de dados em `docs/`.
 
 ## Stack
 

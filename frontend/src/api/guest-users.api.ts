@@ -1,5 +1,10 @@
+/**
+ * @deprecated Substituído por autores-externos.api.ts
+ * Mantido para compatibilidade retroativa. Não usar em código novo.
+ */
 import { api, apiList } from './client';
-import { API_PATHS } from './paths';
+
+const GUEST_USERS_PATH = '/guest-users';
 
 export type GuestUser = {
     id: string;
@@ -27,14 +32,14 @@ export type CreateGuestUserInput = {
 
 export const guestUsersApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
-        apiList<GuestUser>(API_PATHS.guestUsers, params),
+        apiList<GuestUser>(GUEST_USERS_PATH, params),
 
     create: (body: CreateGuestUserInput) =>
-        api<GuestUser>(API_PATHS.guestUsers, {
+        api<GuestUser>(GUEST_USERS_PATH, {
             method: 'POST',
             body: JSON.stringify(body),
         }),
 
     remove: (id: string) =>
-        api<void>(`${API_PATHS.guestUsers}/${id}`, { method: 'DELETE' }),
+        api<void>(`${GUEST_USERS_PATH}/${id}`, { method: 'DELETE' }),
 };

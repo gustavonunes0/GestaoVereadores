@@ -41,7 +41,7 @@ export interface QuorumInfo {
     temQuorum: boolean;
 }
 
-const base = API_PATHS.legislative.sessoes;
+const base = API_PATHS.sessoes;
 
 export const sessoesApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>

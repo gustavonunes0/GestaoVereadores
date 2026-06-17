@@ -3,21 +3,22 @@ import { ParliamentarianNotFoundError } from '../errors/parliamentarian.errors';
 import {
     buildParliamentarianRepositoryMock,
     buildParliamentarianWithRelations,
+    buildParlamentarianUserRepositoryMock,
     buildPoliticalPartyRepositoryMock,
 } from './__tests__/parliamentarian-test.helpers';
 
 describe('UpdateParliamentarianUseCase', () => {
     it('atualiza parlamentar existente', async () => {
         const repository = buildParliamentarianRepositoryMock();
-        repository.findById.mockResolvedValue(buildParliamentarianWithRelations());
-        repository.update.mockResolvedValue(
-            buildParliamentarianWithRelations({
-                entity: buildParliamentarianWithRelations().entity,
-            }),
-        );
+        const withRelations = buildParliamentarianWithRelations();
+        repository.findById
+            .mockResolvedValueOnce(withRelations)
+            .mockResolvedValueOnce(withRelations);
+        repository.update.mockResolvedValue(withRelations);
 
         const useCase = new UpdateParliamentarianUseCase(
             repository as never,
+            buildParlamentarianUserRepositoryMock() as never,
             buildPoliticalPartyRepositoryMock() as never,
         );
         const result = await useCase.execute('tenant-1', 'parl-1', {
@@ -34,6 +35,7 @@ describe('UpdateParliamentarianUseCase', () => {
 
         const useCase = new UpdateParliamentarianUseCase(
             repository as never,
+            buildParlamentarianUserRepositoryMock() as never,
             buildPoliticalPartyRepositoryMock() as never,
         );
 

@@ -15,7 +15,7 @@ describe('ListParliamentariansUseCase', () => {
         const useCase = new ListParliamentariansUseCase(repository as never);
         const result = await useCase.execute('tenant-1', { page: 1, limit: 20 });
 
-        expect(result.data[0].user.firstName).toBe('João');
-        expect(result.data[0].tenantUserId).toBe('tu-1');
+        expect(result.data[0]?.user?.firstName).toBe('João');
+        expect(result.data[0]?.hasAccess).toBe(true);
     });
 });

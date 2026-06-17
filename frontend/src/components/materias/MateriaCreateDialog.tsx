@@ -1,113 +1,129 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from 'primereact/button';
-import { Calendar } from 'primereact/calendar';
 import { Dialog } from 'primereact/dialog';
-import { Dropdown } from 'primereact/dropdown';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { MultiSelect } from 'primereact/multiselect';
-import { apiFormData } from '../../api/client';
-import { API_PATHS } from '../../api/paths';
-import { autoresExternosApi } from '../../api/autores-externos.api';
-import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
-import { useAuth } from '../../contexts/AuthContext';
+import { materiasApi } from '../../api/legislative/materias.api';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { usePermissions } from '../../hooks/usePermissions';
+import { DatePicker, Dropdown, FileUpload, MultiSelect, mapDropdownOptions } from '../../components/ui';
 import type { LookupOption } from '../../api/dominios.api';
-import type { Materia } from '../../api/legislative/materias.api';
 
 interface Props {
     onClose: () => void;
     onSaved: () => void;
 }
 
-function isTipoAutorParlamentar(nome: string): boolean {
-    const lower = nome.toLowerCase();
-    return lower.includes('vereador') || lower.includes('parlamentar') || lower.includes('presidente da câmara');
+/** idNegocio global do tipo Parlamentar (seed). */
+export const PARLAMENTAR_TIPO_AUTOR_ID_NEGOCIO = '1';
+
+function findParlamentarTipoId(tiposAutor: LookupOption[]): string {
+    const match = tiposAutor.find(
+        (t) =>
+            t.codigo === PARLAMENTAR_TIPO_AUTOR_ID_NEGOCIO ||
+            t.nome.trim().toLowerCase() === 'parlamentar',
+    );
+    return match?.id ?? '';
 }
 
 export function MateriaCreateDialog({ onClose, onSaved }: Props) {
-    const { user } = useAuth();
-    const { canVotar } = usePermissions();
+    const { canVotar, parliamentarianId } = usePermissions();
     const { showSuccess, showApiError } = useAppToast();
     const { tiposMateria, tiposAutor } = useDominios();
-    const fileRef = useRef<HTMLInputElement>(null);
+
+    const parlamentarTipoId = useMemo(
+        () => findParlamentarTipoId(tiposAutor),
+        [tiposAutor],
+    );
 
     const [saving, setSaving] = useState(false);
     const [tipoId, setTipoId] = useState('');
     const [dataProtocolo, setDataProtocolo] = useState<Date | null>(null);
     const [tipoAutorId, setTipoAutorId] = useState('');
-    const [autorParlamentarianId, setAutorParlamentarianId] = useState('');
-    const [autorExternoId, setAutorExternoId] = useState('');
+    const [autorId, setAutorId] = useState('');
+    const [authorKind, setAuthorKind] = useState<'parliamentarian' | 'external' | null>(null);
     const [coautorIds, setCoautorIds] = useState<string[]>([]);
     const [relatorIds, setRelatorIds] = useState<string[]>([]);
     const [ementa, setEmenta] = useState('');
     const [justificativa, setJustificativa] = useState('');
-    const [textoOriginalNome, setTextoOriginalNome] = useState('');
+    const [textoOriginal, setTextoOriginal] = useState<File | null>(null);
 
-    const [parlamentares, setParlamentares] = useState<LookupOption[]>([]);
-    const [autoresExternos, setAutoresExternos] = useState<LookupOption[]>([]);
+    const [autorOptions, setAutorOptions] = useState<LookupOption[]>([]);
+    const [relatorOptions, setRelatorOptions] = useState<LookupOption[]>([]);
+    const [loadingAutores, setLoadingAutores] = useState(false);
 
-    const tipoAutorSelecionado = tiposAutor.find((t) => t.id === tipoAutorId);
-    const isParlamentarType = tipoAutorSelecionado
-        ? isTipoAutorParlamentar(tipoAutorSelecionado.nome)
-        : false;
-
-    useEffect(() => {
-        parlamentaresApi.list({ limit: 200 }).then((r) =>
-            setParlamentares(
-                r.data.map((p) => ({
-                    id: p.id,
-                    nome: p.parliamentaryName || `${p.user.firstName} ${p.user.lastName}`.trim(),
-                })),
-            ),
-        );
-        autoresExternosApi.list({ limit: 200 }).then((r) =>
-            setAutoresExternos(r.data.map((a) => ({ id: a.id, nome: a.nome }))),
-        );
-    }, []);
+    const isParlamentarType = authorKind === 'parliamentarian';
+    const isAutorDisabled = canVotar && isParlamentarType && !!parliamentarianId;
 
     useEffect(() => {
-        if (canVotar && user?.parliamentarianId) {
-            setAutorParlamentarianId(user.parliamentarianId);
+        if (!parlamentarTipoId) return;
+        void materiasApi.listOpcoesAutor(parlamentarTipoId).then((res) => {
+            setRelatorOptions(
+                res.options.map((o) => ({ id: o.id, nome: o.label })),
+            );
+        });
+    }, [parlamentarTipoId]);
+
+    useEffect(() => {
+        if (!tipoAutorId) {
+            setAutorOptions([]);
+            setAuthorKind(null);
+            return;
         }
-    }, [canVotar, user]);
+
+        setLoadingAutores(true);
+        void materiasApi
+            .listOpcoesAutor(tipoAutorId)
+            .then((res) => {
+                setAuthorKind(res.kind);
+                setAutorOptions(
+                    res.options.map((o) => ({ id: o.id, nome: o.label })),
+                );
+            })
+            .catch(showApiError)
+            .finally(() => setLoadingAutores(false));
+    }, [tipoAutorId, showApiError]);
 
     useEffect(() => {
-        setAutorParlamentarianId('');
-        setAutorExternoId('');
+        if (canVotar && parliamentarianId && isParlamentarType) {
+            setAutorId(parliamentarianId);
+        }
+    }, [canVotar, parliamentarianId, isParlamentarType]);
+
+    useEffect(() => {
+        setAutorId('');
         setCoautorIds([]);
     }, [tipoAutorId]);
 
-    const autorOptions = isParlamentarType ? parlamentares : autoresExternos;
-    const autorValue = isParlamentarType ? autorParlamentarianId : autorExternoId;
-    const setAutorValue = isParlamentarType ? setAutorParlamentarianId : setAutorExternoId;
-    const isAutorDisabled = canVotar && isParlamentarType && !!user?.parliamentarianId;
-
     async function handleSubmit() {
-        if (!tipoId || !tipoAutorId || !autorValue || !ementa.trim()) {
-            showApiError(new Error('Preencha os campos obrigatórios: Tipo, Tipo de Autor, Autor e Ementa.'));
+        if (!tipoId || !tipoAutorId || !autorId || !ementa.trim()) {
+            showApiError(
+                new Error('Preencha os campos obrigatórios: Tipo, Tipo de Autor, Autor e Ementa.'),
+            );
             return;
         }
         setSaving(true);
         try {
-            const fd = new FormData();
-            fd.append('tipoId', tipoId);
-            fd.append('ementa', ementa.trim());
-            if (tipoAutorId) fd.append('tipoAutorId', tipoAutorId);
-            if (isParlamentarType && autorParlamentarianId) {
-                fd.append('autorParliamentarianId', autorParlamentarianId);
-            } else if (!isParlamentarType && autorExternoId) {
-                fd.append('autorExternoId', autorExternoId);
-            }
-            if (dataProtocolo) fd.append('dataProtocolo', dataProtocolo.toISOString());
-            if (justificativa.trim()) fd.append('justificativa', justificativa.trim());
-            coautorIds.forEach((id) => fd.append('coautorIds[]', id));
-            relatorIds.forEach((id) => fd.append('relatorIds[]', id));
-            const file = fileRef.current?.files?.[0];
-            if (file) fd.append('textoOriginal', file);
+            const created = await materiasApi.create({
+                tipoId,
+                ementa: ementa.trim(),
+                ...(isParlamentarType
+                    ? { authorParliamentarianId: autorId }
+                    : { autorExternoId: autorId }),
+                ...(dataProtocolo
+                    ? { dataProtocolo: dataProtocolo.toISOString() }
+                    : {}),
+                ...(justificativa.trim()
+                    ? { justificativa: justificativa.trim() }
+                    : {}),
+                ...(coautorIds.length ? { coautorIds } : {}),
+                ...(relatorIds.length ? { relatoresIds: relatorIds } : {}),
+            });
 
-            await apiFormData<Materia>(API_PATHS.legislative.materias, fd);
+            if (textoOriginal) {
+                await materiasApi.uploadTextoOriginal(created.id, textoOriginal);
+            }
+
             showSuccess('Matéria criada com sucesso.');
             onSaved();
             onClose();
@@ -117,6 +133,10 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
             setSaving(false);
         }
     }
+
+    const coautorSelectOptions = isParlamentarType
+        ? autorOptions.filter((p) => p.id !== autorId)
+        : [];
 
     const footer = (
         <div className="flex justify-content-end gap-2">
@@ -134,129 +154,120 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
             footer={footer}
             modal
         >
-            <div className="grid p-fluid">
-                <div className="col-12 md:col-8">
-                    <label htmlFor="mat-tipo">Tipo de Matéria *</label>
-                    <Dropdown
-                        id="mat-tipo"
-                        value={tipoId}
-                        options={tiposMateria}
-                        optionLabel="nome"
-                        optionValue="id"
-                        placeholder="Selecione o tipo"
-                        onChange={(e) => setTipoId(e.value)}
-                        filter
-                    />
-                </div>
-                <div className="col-12 md:col-4">
-                    <label htmlFor="mat-data-protocolo">Data Protocolo</label>
-                    <Calendar
-                        id="mat-data-protocolo"
-                        value={dataProtocolo}
-                        onChange={(e) => setDataProtocolo(e.value ?? null)}
-                        dateFormat="dd/mm/yy"
-                        showButtonBar
-                    />
-                </div>
-
-                <div className="col-12 md:col-6">
-                    <label htmlFor="mat-tipo-autor">Tipo de Autor *</label>
-                    <Dropdown
-                        id="mat-tipo-autor"
-                        value={tipoAutorId}
-                        options={tiposAutor}
-                        optionLabel="nome"
-                        optionValue="id"
-                        placeholder="Selecione o tipo de autor"
-                        onChange={(e) => setTipoAutorId(e.value)}
-                        filter
-                    />
-                </div>
-                <div className="col-12 md:col-6">
-                    <label htmlFor="mat-autor">Autor *</label>
-                    <Dropdown
-                        id="mat-autor"
-                        value={autorValue}
-                        options={autorOptions}
-                        optionLabel="nome"
-                        optionValue="id"
-                        placeholder={tipoAutorId ? 'Selecione o autor' : 'Selecione o tipo primeiro'}
-                        onChange={(e) => setAutorValue(e.value)}
-                        disabled={!tipoAutorId || isAutorDisabled}
-                        filter
-                    />
+            <div className="sigl-dialog-body">
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Identificação</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="mat-tipo">Tipo de Matéria *</label>
+                            <Dropdown
+                                id="mat-tipo"
+                                value={tipoId}
+                                options={mapDropdownOptions(tiposMateria, 'nome', 'id')}
+                                placeholder="Selecione o tipo"
+                                onChange={(v) => setTipoId(String(v))}
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <DatePicker
+                                id="mat-data-protocolo"
+                                label="Data Protocolo"
+                                value={dataProtocolo}
+                                onChange={setDataProtocolo}
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                <div className="col-12">
-                    <label htmlFor="mat-coautores">Coautor(es)</label>
-                    <MultiSelect
-                        id="mat-coautores"
-                        value={coautorIds}
-                        options={isParlamentarType
-                            ? parlamentares.filter((p) => p.id !== autorParlamentarianId)
-                            : autoresExternos.filter((a) => a.id !== autorExternoId)
-                        }
-                        optionLabel="nome"
-                        optionValue="id"
-                        placeholder="Selecione coautores (opcional)"
-                        onChange={(e) => setCoautorIds(e.value ?? [])}
-                        display="chip"
-                        filter
-                        disabled={!tipoAutorId}
-                    />
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Autoria</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="mat-tipo-autor">Tipo de Autor *</label>
+                            <Dropdown
+                                id="mat-tipo-autor"
+                                value={tipoAutorId}
+                                options={mapDropdownOptions(tiposAutor, 'nome', 'id')}
+                                placeholder="Selecione o tipo de autor"
+                                onChange={(v) => setTipoAutorId(String(v))}
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="mat-autor">Autor *</label>
+                            <Dropdown
+                                id="mat-autor"
+                                value={autorId}
+                                options={mapDropdownOptions(autorOptions, 'nome', 'id')}
+                                placeholder={
+                                    loadingAutores
+                                        ? 'Carregando...'
+                                        : tipoAutorId
+                                          ? 'Selecione o autor'
+                                          : 'Selecione o tipo primeiro'
+                                }
+                                onChange={(v) => setAutorId(String(v))}
+                                disabled={!tipoAutorId || isAutorDisabled || loadingAutores}
+                            />
+                        </div>
+                        {isParlamentarType && (
+                            <div className="sigl-filtro-campo sigl-col-full">
+                                <MultiSelect
+                                    id="mat-coautores"
+                                    label="Coautor(es)"
+                                    value={coautorIds}
+                                    options={mapDropdownOptions(coautorSelectOptions, 'nome', 'id')}
+                                    placeholder="Selecione coautores (opcional)"
+                                    onChange={(ids) => setCoautorIds(ids.map(String))}
+                                    filter
+                                    disabled={!tipoAutorId || loadingAutores}
+                                />
+                            </div>
+                        )}
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <MultiSelect
+                                id="mat-relatores"
+                                label="Relator(es)"
+                                value={relatorIds}
+                                options={mapDropdownOptions(relatorOptions, 'nome', 'id')}
+                                placeholder="Selecione relatores (opcional)"
+                                onChange={(ids) => setRelatorIds(ids.map(String))}
+                                filter
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                <div className="col-12">
-                    <label htmlFor="mat-relatores">Relator(es)</label>
-                    <MultiSelect
-                        id="mat-relatores"
-                        value={relatorIds}
-                        options={parlamentares}
-                        optionLabel="nome"
-                        optionValue="id"
-                        placeholder="Selecione relatores (opcional)"
-                        onChange={(e) => setRelatorIds(e.value ?? [])}
-                        display="chip"
-                        filter
-                    />
-                </div>
-
-                <div className="col-12">
-                    <label htmlFor="mat-ementa">Ementa *</label>
-                    <InputTextarea
-                        id="mat-ementa"
-                        value={ementa}
-                        onChange={(e) => setEmenta(e.target.value)}
-                        rows={3}
-                        autoResize
-                    />
-                </div>
-
-                <div className="col-12">
-                    <label htmlFor="mat-justificativa">Justificativa</label>
-                    <InputTextarea
-                        id="mat-justificativa"
-                        value={justificativa}
-                        onChange={(e) => setJustificativa(e.target.value)}
-                        rows={5}
-                        autoResize
-                    />
-                </div>
-
-                <div className="col-12">
-                    <label htmlFor="mat-texto-original">Texto Original (PDF / DOC)</label>
-                    <input
-                        id="mat-texto-original"
-                        ref={fileRef}
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        className="w-full"
-                        style={{ padding: '0.4rem 0' }}
-                        onChange={(e) => setTextoOriginalNome(e.target.files?.[0]?.name ?? '')}
-                    />
-                    {textoOriginalNome && (
-                        <small className="text-color-secondary">{textoOriginalNome}</small>
-                    )}
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Conteúdo</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="mat-ementa">Ementa *</label>
+                        <InputTextarea
+                            id="mat-ementa"
+                            value={ementa}
+                            onChange={(e) => setEmenta(e.target.value)}
+                            rows={3}
+                            autoResize
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="mat-justificativa">Justificativa</label>
+                        <InputTextarea
+                            id="mat-justificativa"
+                            value={justificativa}
+                            onChange={(e) => setJustificativa(e.target.value)}
+                            rows={5}
+                            autoResize
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <FileUpload
+                            id="mat-texto-original"
+                            label="Texto Original (PDF / DOC)"
+                            value={textoOriginal}
+                            onChange={setTextoOriginal}
+                            accept=".pdf,.doc,.docx"
+                        />
+                    </div>
                 </div>
             </div>
         </Dialog>

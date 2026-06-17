@@ -7,33 +7,33 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import { authApi, type AuthUser } from '../api/client';
-import { digitsOnly } from '../utils/normalizeDocument';
+import { authApi } from '../api/client';
+import type { AuthUser } from '../types/auth';
+import { isParlamentarianUser, isStaffUser } from '../types/auth';
 
-type AuthContextValue = {
+interface AuthContextValue {
     user: AuthUser | null;
-    loading: boolean;
-    loginSigl: (username: string, password: string) => Promise<void>;
-    loginCamara: (
-        email: string,
-        password: string,
-        tenantCnpj: string,
-    ) => Promise<void>;
-    logout: () => void;
-};
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    login(cpf: string, password: string): Promise<void>;
+    logout(): void;
+    isAdminStaff: boolean;
+    isStaff: boolean;
+    isParliamentarian: boolean;
+    canEdit: boolean;
+    canWrite: boolean;
+    canVotar: boolean;
+}
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-function persistSession(accessToken: string, user: AuthUser) {
-    localStorage.setItem('access_token', accessToken);
-    localStorage.setItem('user', JSON.stringify(user));
-}
 
 function loadStoredUser(): AuthUser | null {
     const raw = localStorage.getItem('user');
     if (!raw) return null;
     try {
-        return JSON.parse(raw) as AuthUser;
+        const parsed = JSON.parse(raw) as AuthUser;
+        if (!parsed.sessionType) return null;
+        return parsed;
     } catch {
         return null;
     }
@@ -41,57 +41,36 @@ function loadStoredUser(): AuthUser | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(loadStoredUser);
-    const [loading, setLoading] = useState(
+    const [isLoading, setIsLoading] = useState(
         !!localStorage.getItem('access_token'),
     );
 
     useEffect(() => {
         const token = localStorage.getItem('access_token');
         if (!token) {
-            setLoading(false);
+            setIsLoading(false);
             return;
         }
         authApi
             .me()
             .then((u) => {
-                const stored = loadStoredUser();
-                const merged: AuthUser = {
-                    ...stored,
-                    ...u,
-                    authType: stored?.authType ?? u.authType ?? 'sigl',
-                };
-                setUser(merged);
-                localStorage.setItem('user', JSON.stringify(merged));
+                setUser(u);
+                localStorage.setItem('user', JSON.stringify(u));
             })
             .catch(() => {
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('user');
                 setUser(null);
             })
-            .finally(() => setLoading(false));
+            .finally(() => setIsLoading(false));
     }, []);
 
-    const loginSigl = useCallback(
-        async (username: string, password: string) => {
-            const res = await authApi.login(username, password);
-            persistSession(res.access_token, res.user);
-            setUser(res.user);
-        },
-        [],
-    );
-
-    const loginCamara = useCallback(
-        async (email: string, password: string, tenantCnpj: string) => {
-            const res = await authApi.loginCamara(
-                email.trim().toLowerCase(),
-                password,
-                digitsOnly(tenantCnpj),
-            );
-            persistSession(res.access_token, res.user);
-            setUser(res.user);
-        },
-        [],
-    );
+    const login = useCallback(async (cpf: string, password: string) => {
+        const res = await authApi.login({ cpf, password });
+        localStorage.setItem('access_token', res.access_token);
+        localStorage.setItem('user', JSON.stringify(res.user));
+        setUser(res.user);
+    }, []);
 
     const logout = useCallback(() => {
         localStorage.removeItem('access_token');
@@ -99,10 +78,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     }, []);
 
-    const value = useMemo(
-        () => ({ user, loading, loginSigl, loginCamara, logout }),
-        [user, loading, loginSigl, loginCamara, logout],
-    );
+    const value = useMemo<AuthContextValue>(() => {
+        const isAdminStaff =
+            !!user && isStaffUser(user) && user.role === 'ADMIN_STAFF';
+        const isStaff = !!user && isStaffUser(user) && user.role === 'STAFF';
+        const isParliamentarian = !!user && isParlamentarianUser(user);
+
+        return {
+            user,
+            isAuthenticated: !!user,
+            isLoading,
+            login,
+            logout,
+            isAdminStaff,
+            isStaff,
+            isParliamentarian,
+            canEdit: isAdminStaff,
+            canWrite: isAdminStaff || isStaff,
+            canVotar: isParliamentarian,
+        };
+    }, [user, isLoading, login, logout]);
 
     return (
         <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

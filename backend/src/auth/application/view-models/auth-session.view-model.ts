@@ -1,7 +1,10 @@
 import { CamaraUserEntity } from '../../domain/entities/camara-user.entity';
 import { SiglUserEntity } from '../../domain/entities/sigl-user.entity';
-import { TenantAuthEntity } from '../../domain/entities/tenant-access.entity';
-import { TenantUserAccessEntity } from '../../domain/entities/tenant-access.entity';
+import {
+    ParlamentarianUserAccessEntity,
+    TenantAuthEntity,
+    TenantUserAccessEntity,
+} from '../../domain/entities/tenant-access.entity';
 
 export class AuthSessionViewModel {
     static sigl(
@@ -22,7 +25,7 @@ export class AuthSessionViewModel {
         };
     }
 
-    static camara(
+    static camaraStaff(
         user: CamaraUserEntity,
         tenant: TenantAuthEntity,
         tenantUser: TenantUserAccessEntity,
@@ -30,17 +33,90 @@ export class AuthSessionViewModel {
     ) {
         return {
             access_token: accessToken,
+            sessionType: 'staff' as const,
             user: {
                 id: user.id,
+                name: user.fullName(),
+                cpf: user.cpf,
                 email: user.email,
-                nome: user.fullName(),
                 tenantId: tenant.id,
                 tenantName: tenant.name,
-                isTenantAdmin: tenantUser.isTenantAdmin,
-                isTenantStaff: tenantUser.isTenantStaff,
-                isParliamentarian: tenantUser.isParliamentarian,
-                authType: 'camara' as const,
+                tenantUserId: tenantUser.id,
+                role: tenantUser.role,
+                sessionType: 'staff' as const,
             },
+        };
+    }
+
+    static camaraParliamentarian(
+        user: CamaraUserEntity,
+        tenant: TenantAuthEntity,
+        parlUser: ParlamentarianUserAccessEntity,
+        accessToken: string,
+    ) {
+        return {
+            access_token: accessToken,
+            sessionType: 'parliamentarian' as const,
+            user: {
+                id: user.id,
+                name: user.fullName(),
+                cpf: user.cpf,
+                email: user.email,
+                tenantId: tenant.id,
+                tenantName: tenant.name,
+                parliamentarianUserId: parlUser.id,
+                parliamentarianId: parlUser.parliamentarianId,
+                parliamentaryName: parlUser.parliamentaryName,
+                sessionType: 'parliamentarian' as const,
+            },
+        };
+    }
+
+    static camaraParliamentarianMe(profile: {
+        id: string;
+        name: string;
+        cpf: string;
+        email: string;
+        tenantId: string;
+        tenantName?: string;
+        parliamentarianUserId: string;
+        parliamentarianId: string;
+        parliamentaryName: string;
+    }) {
+        return {
+            id: profile.id,
+            name: profile.name,
+            cpf: profile.cpf,
+            email: profile.email,
+            tenantId: profile.tenantId,
+            ...(profile.tenantName ? { tenantName: profile.tenantName } : {}),
+            parliamentarianUserId: profile.parliamentarianUserId,
+            parliamentarianId: profile.parliamentarianId,
+            parliamentaryName: profile.parliamentaryName,
+            sessionType: 'parliamentarian' as const,
+        };
+    }
+
+    static camaraStaffMe(profile: {
+        id: string;
+        name: string;
+        cpf: string;
+        email: string;
+        tenantId: string;
+        tenantName?: string;
+        tenantUserId: string;
+        role: TenantUserAccessEntity['role'];
+    }) {
+        return {
+            id: profile.id,
+            name: profile.name,
+            cpf: profile.cpf,
+            email: profile.email,
+            tenantId: profile.tenantId,
+            ...(profile.tenantName ? { tenantName: profile.tenantName } : {}),
+            tenantUserId: profile.tenantUserId,
+            role: profile.role,
+            sessionType: 'staff' as const,
         };
     }
 

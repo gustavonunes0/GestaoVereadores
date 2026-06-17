@@ -32,6 +32,8 @@ type Props = {
     resultCount?: number;
     /** Incrementa após cada pesquisa para recolher o painel */
     searchGeneration?: number;
+    /** Campos apenas — sem card nem botões (uso com FiltroLayout na page) */
+    embedded?: boolean;
 };
 
 type PeriodoModo = 'rapido' | 'intervalo';
@@ -73,6 +75,7 @@ export function SessaoPesquisaFilters({
     hasFilters,
     resultCount,
     searchGeneration = 0,
+    embedded = false,
 }: Props) {
     const [periodoModo, setPeriodoModoState] = useState<PeriodoModo>(() =>
         filtros.dataDe || filtros.dataAte ? 'intervalo' : 'rapido',
@@ -157,17 +160,8 @@ export function SessaoPesquisaFilters({
         setPeriodoModoState('intervalo');
     }
 
-    return (
-        <PesquisaFiltersCard
-            title="Filtros de pesquisa — sessões"
-            activeCount={activeCount}
-            chips={chips}
-            hasFilters={hasFilters}
-            resultCount={resultCount}
-            searchGeneration={searchGeneration}
-            onPesquisar={onPesquisar}
-            onClear={onClear}
-        >
+    const fields = (
+        <>
             <div className="sessao-filters-section">
                 <p className="sessao-filters-section__title">Contexto</p>
                 <div className="sessao-filters-grid sessao-filters-grid--2">
@@ -396,6 +390,25 @@ export function SessaoPesquisaFilters({
                     </label>
                 </div>
             </div>
+        </>
+    );
+
+    if (embedded) {
+        return <div className="col-span-12">{fields}</div>;
+    }
+
+    return (
+        <PesquisaFiltersCard
+            title="Filtros de pesquisa — sessões"
+            activeCount={activeCount}
+            chips={chips}
+            hasFilters={hasFilters}
+            resultCount={resultCount}
+            searchGeneration={searchGeneration}
+            onPesquisar={onPesquisar}
+            onClear={onClear}
+        >
+            {fields}
         </PesquisaFiltersCard>
     );
 }

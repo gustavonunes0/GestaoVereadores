@@ -1,4 +1,4 @@
-import type { AuthUser, LoginResponse } from '../types/auth';
+import type { AuthUser, LoginRequest, LoginResponse } from '../types/auth';
 import { API_PATHS } from './paths';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
@@ -75,7 +75,7 @@ export async function apiList<T>(
     if (params?.page) qs.set('page', String(params.page));
     if (params) {
         for (const [key, value] of Object.entries(params)) {
-            if (key === 'limit' || key === 'page' || value === undefined)
+            if (key === 'limit' || key === 'page' || value === undefined || value === '')
                 continue;
             qs.set(key, String(value));
         }
@@ -124,19 +124,13 @@ export async function apiFormData<T>(
 }
 
 export const authApi = {
-    login: (username: string, password: string, tenantId?: string) =>
-        api<LoginResponse>(API_PATHS.auth.login, {
+    login: (dto: LoginRequest): Promise<LoginResponse> =>
+        api(API_PATHS.authLogin, {
             method: 'POST',
-            body: JSON.stringify({ username, password, tenantId }),
+            body: JSON.stringify(dto),
         }),
 
-    loginCamara: (email: string, password: string, tenantCnpj: string) =>
-        api<LoginResponse>(API_PATHS.auth.loginCamara, {
-            method: 'POST',
-            body: JSON.stringify({ email, password, tenantCnpj }),
-        }),
-
-    me: () => api<AuthUser>(API_PATHS.auth.me),
+    me: (): Promise<AuthUser> => api(API_PATHS.authMe),
 };
 
 export type { AuthUser } from '../types/auth';

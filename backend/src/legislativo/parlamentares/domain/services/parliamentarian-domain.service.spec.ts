@@ -1,55 +1,17 @@
-import { TenantUserEntity, TenantUserStatus } from '../../../../identidade/tenant-users/domain/entities/tenant-user.entity';
 import { PoliticalPartyEntity } from '../../../partidos-politicos/domain/entities/political-party.entity';
 import { ParliamentarianDomainService } from './parliamentarian-domain.service';
 
 describe('ParliamentarianDomainService', () => {
     const service = new ParliamentarianDomainService();
 
-    const buildTenantUser = (isParliamentarian: boolean) =>
-        TenantUserEntity.restore({
-            id: 'tu-1',
-            tenantId: 'tenant-1',
-            userId: 'user-1',
-            isTenantAdmin: false,
-            isTenantStaff: false,
-            isParliamentarian,
-            status: TenantUserStatus.ACTIVE,
-            permissions: [],
-            lastAccessAt: null,
-            removedAt: null,
-            createdAt: new Date(),
-            createdBy: null,
-            modifiedAt: new Date(),
-            modifiedBy: null,
-            isRemoved: false,
-        });
-
-    it('bloqueia criação se isParliamentarian for false', () => {
-        expect(() =>
-            service.assertTenantUserIsParliamentarian(
-                buildTenantUser(false),
-            ),
-        ).toThrow(
-            'Este usuário do tenant não está marcado como parlamentar.',
+    it('bloqueia duplicidade de acesso', () => {
+        expect(() => service.assertNoDuplicateAccess(true)).toThrow(
+            'Parlamentar já possui acesso ao sistema',
         );
     });
 
-    it('permite criação se isParliamentarian for true', () => {
-        expect(() =>
-            service.assertTenantUserIsParliamentarian(buildTenantUser(true)),
-        ).not.toThrow();
-    });
-
-    it('bloqueia duplicidade para o mesmo tenantUserId', () => {
-        expect(() => service.assertNoDuplicate(true)).toThrow(
-            'Já existe parlamentar para este usuário do tenant',
-        );
-    });
-
-    it('exige tenantUserId na criação', () => {
-        expect(() => service.assertTenantUserIdProvided('')).toThrow(
-            'Vínculo TenantUser é obrigatório para parlamentar',
-        );
+    it('permite quando não há acesso duplicado', () => {
+        expect(() => service.assertNoDuplicateAccess(false)).not.toThrow();
     });
 
     it('valida partido utilizável pelo parlamentar', () => {

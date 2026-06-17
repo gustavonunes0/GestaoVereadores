@@ -12,10 +12,16 @@ export class PrismaActiveParliamentarianChecker extends ActiveParliamentarianChe
         tenantId: string,
         tenantUserId: string,
     ): Promise<boolean> {
-        const count = await this.prisma.parliamentarian.count({
+        const tenantUser = await this.prisma.tenantUser.findFirst({
+            where: { id: tenantUserId, tenantId, isRemoved: false },
+            select: { userId: true },
+        });
+        if (!tenantUser) return false;
+
+        const count = await this.prisma.parlamentarianUser.count({
             where: {
                 tenantId,
-                tenantUserId,
+                userId: tenantUser.userId,
                 isRemoved: false,
                 status: 'ACTIVE',
             },

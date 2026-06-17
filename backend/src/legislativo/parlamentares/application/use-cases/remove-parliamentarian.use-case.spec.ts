@@ -15,7 +15,7 @@ describe('RemoveParliamentarianUseCase', () => {
         const result = await useCase.execute('tenant-1', 'parl-1');
 
         expect(repository.softDelete).toHaveBeenCalledWith('tenant-1', 'parl-1');
-        expect(result.tenantUserId).toBe('tu-1');
+        expect(result.hasAccess).toBe(true);
     });
 
     it('falha quando parlamentar não existe', async () => {

@@ -17,9 +17,14 @@ describe('GetParliamentarianByIdUseCase', () => {
             id: 'user-1',
             firstName: 'João',
             lastName: 'Silva',
-            email: 'joao@camara.local',
+            email: 'parlamentar.52998224725@interno.sigl.local',
+            politicalParty: {
+                id: 'party-1',
+                name: 'Partido Teste',
+                acronym: 'PT',
+            },
         });
-        expect(result.tenantUserId).toBe('tu-1');
+        expect(result.hasAccess).toBe(true);
     });
 
     it('retorna 404 quando não encontrado', async () => {

@@ -14,7 +14,7 @@ import {
 } from '../../domain/repositories/parliamentarian.repository';
 
 const includeRelations = {
-    tenantUser: {
+    parliamentarianUser: {
         include: {
             user: {
                 select: {
@@ -24,39 +24,75 @@ const includeRelations = {
                     email: true,
                 },
             },
-        },
-    },
-    politicalParty: {
-        select: {
-            id: true,
-            name: true,
-            acronym: true,
-            flagUrl: true,
+            politicalParty: {
+                select: {
+                    id: true,
+                    name: true,
+                    acronym: true,
+                    flagUrl: true,
+                },
+            },
         },
     },
     _count: {
         select: {
             mandates: { where: { isRemoved: false } },
+            authoredMatters: { where: { isRemoved: false } },
+            matterCoauthorships: { where: { matter: { isRemoved: false } } },
+            committeeMembers: { where: { isRemoved: false } },
+            votos: true,
+        },
+    },
+    mandates: {
+        where: { isRemoved: false, status: 'ACTIVE' },
+        orderBy: { startedAt: 'desc' },
+        take: 1,
+        select: { id: true, status: true },
+    },
+} satisfies Prisma.ParliamentarianInclude;
+
+const includeDetailRelations = {
+    ...includeRelations,
+    committeeMembers: {
+        where: { isRemoved: false },
+        include: {
+            committee: {
+                select: { id: true, name: true, acronym: true },
+            },
         },
     },
 } satisfies Prisma.ParliamentarianInclude;
 
 type ParliamentarianRow = PrismaParliamentarian & {
-    tenantUser: {
+    parliamentarianUser: {
+        isRemoved: boolean;
         user: {
             id: string;
             firstName: string;
             lastName: string;
             email: string;
         };
-    };
-    politicalParty: {
-        id: string;
-        name: string;
-        acronym: string;
-        flagUrl: string | null;
+        politicalParty: {
+            id: string;
+            name: string;
+            acronym: string;
+            flagUrl: string | null;
+        } | null;
     } | null;
-    _count: { mandates: number };
+    _count: {
+        mandates: number;
+        authoredMatters: number;
+        matterCoauthorships: number;
+        committeeMembers: number;
+        votos: number;
+    };
+    mandates: Array<{ id: string; status: string }>;
+};
+
+type ParliamentarianDetailRow = ParliamentarianRow & {
+    committeeMembers: Array<{
+        committee: { id: string; name: string; acronym: string | null };
+    }>;
 };
 
 @Injectable()
@@ -69,8 +105,6 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
         const row = await this.prisma.parliamentarian.create({
             data: {
                 tenantId: data.tenantId,
-                tenantUserId: data.tenantUserId,
-                politicalPartyId: data.politicalPartyId ?? null,
                 parliamentaryName: data.parliamentaryName,
                 officeNumber: data.officeNumber ?? null,
                 photoUrl: data.photoUrl ?? null,
@@ -88,7 +122,10 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
         };
         if (query.status) where.status = query.status;
         if (query.politicalPartyId) {
-            where.politicalPartyId = query.politicalPartyId;
+            where.parliamentarianUser = {
+                isRemoved: false,
+                politicalPartyId: query.politicalPartyId,
+            };
         }
         if (query.search?.trim()) {
             const term = query.search.trim();
@@ -96,27 +133,31 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
                 { parliamentaryName: { contains: term, mode: 'insensitive' } },
                 { officeNumber: { contains: term, mode: 'insensitive' } },
                 {
-                    tenantUser: {
+                    parliamentarianUser: {
                         user: {
                             firstName: { contains: term, mode: 'insensitive' },
                         },
                     },
                 },
                 {
-                    tenantUser: {
+                    parliamentarianUser: {
                         user: {
                             lastName: { contains: term, mode: 'insensitive' },
                         },
                     },
                 },
                 {
-                    politicalParty: {
-                        name: { contains: term, mode: 'insensitive' },
+                    parliamentarianUser: {
+                        politicalParty: {
+                            name: { contains: term, mode: 'insensitive' },
+                        },
                     },
                 },
                 {
-                    politicalParty: {
-                        acronym: { contains: term, mode: 'insensitive' },
+                    parliamentarianUser: {
+                        politicalParty: {
+                            acronym: { contains: term, mode: 'insensitive' },
+                        },
                     },
                 },
             ];
@@ -140,64 +181,63 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
     async findById(tenantId: string, id: string) {
         const row = await this.prisma.parliamentarian.findFirst({
             where: { id, tenantId, isRemoved: false },
-            include: includeRelations,
+            include: includeDetailRelations,
         });
-        return row ? this.toWithRelations(row) : null;
+        return row ? this.toWithRelations(row as ParliamentarianDetailRow) : null;
     }
 
-    async existsByTenantUserId(
-        tenantId: string,
-        tenantUserId: string,
-        ignoreId?: string,
-    ) {
-        const row = await this.prisma.parliamentarian.findFirst({
-            where: {
-                tenantId,
-                tenantUserId,
-                isRemoved: false,
-                ...(ignoreId ? { NOT: { id: ignoreId } } : {}),
-            },
-            select: { id: true },
-        });
-        return Boolean(row);
-    }
-
-    async findRemovedByTenantUserId(tenantId: string, tenantUserId: string) {
-        const row = await this.prisma.parliamentarian.findFirst({
-            where: { tenantId, tenantUserId, isRemoved: true },
-            include: includeRelations,
-        });
-        return row ? this.toWithRelations(row) : null;
-    }
-
-    async reactivate(
-        tenantId: string,
-        id: string,
-        data: CreateParliamentarianRepositoryInput,
-    ) {
-        const result = await this.prisma.parliamentarian.updateMany({
-            where: { id, tenantId, isRemoved: true },
-            data: {
-                isRemoved: false,
-                removedAt: null,
-                status: ParliamentarianStatus.ACTIVE,
-                politicalPartyId: data.politicalPartyId ?? null,
-                parliamentaryName: data.parliamentaryName,
-                officeNumber: data.officeNumber ?? null,
-                photoUrl: data.photoUrl ?? null,
-                biography: data.biography ?? null,
-            },
-        });
-        assertTenantScopedUpdate(result.count, 'Parlamentar não encontrado');
-
-        const row = await this.prisma.parliamentarian.findFirst({
+    async findProfileById(tenantId: string, id: string) {
+        return this.prisma.parliamentarian.findFirst({
             where: { id, tenantId, isRemoved: false },
-            include: includeRelations,
+            include: {
+                parliamentarianUser: {
+                    where: { isRemoved: false },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                            },
+                        },
+                        politicalParty: {
+                            select: {
+                                id: true,
+                                name: true,
+                                acronym: true,
+                                flagUrl: true,
+                            },
+                        },
+                    },
+                },
+                mandates: {
+                    where: { isRemoved: false },
+                    orderBy: { startedAt: 'desc' },
+                    include: {
+                        legislature: {
+                            select: { id: true, number: true },
+                        },
+                    },
+                },
+                committeeMembers: {
+                    where: { isRemoved: false },
+                    include: {
+                        committee: {
+                            select: { id: true, name: true, acronym: true },
+                        },
+                    },
+                },
+                parliamentaryFrontMembers: {
+                    where: { isRemoved: false },
+                    include: {
+                        front: {
+                            select: { id: true, name: true },
+                        },
+                    },
+                },
+            },
         });
-        if (!row) {
-            throw new Error('Parlamentar não encontrado');
-        }
-        return this.toWithRelations(row);
     }
 
     async update(
@@ -208,9 +248,6 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
         const result = await this.prisma.parliamentarian.updateMany({
             where: { id, tenantId, isRemoved: false },
             data: {
-                ...(data.politicalPartyId !== undefined
-                    ? { politicalPartyId: data.politicalPartyId }
-                    : {}),
                 ...(data.parliamentaryName !== undefined
                     ? { parliamentaryName: data.parliamentaryName }
                     : {}),
@@ -249,13 +286,25 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
         });
     }
 
-    private toWithRelations(row: ParliamentarianRow): ParliamentarianWithRelations {
+    private toWithRelations(row: ParliamentarianRow | ParliamentarianDetailRow): ParliamentarianWithRelations {
+        const activeMandate = row.mandates[0] ?? null;
+        const committees =
+            'committeeMembers' in row
+                ? row.committeeMembers.map((m) => ({
+                      id: m.committee.id,
+                      name: m.committee.name,
+                      acronym: m.committee.acronym,
+                  }))
+                : undefined;
+        const parlUser =
+            row.parliamentarianUser && !row.parliamentarianUser.isRemoved
+                ? row.parliamentarianUser
+                : null;
+
         return {
             entity: ParliamentarianEntity.restore({
                 id: row.id,
                 tenantId: row.tenantId,
-                tenantUserId: row.tenantUserId,
-                politicalPartyId: row.politicalPartyId,
                 parliamentaryName: row.parliamentaryName,
                 officeNumber: row.officeNumber,
                 photoUrl: row.photoUrl,
@@ -266,9 +315,23 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
                 createdAt: row.createdAt,
                 updatedAt: row.updatedAt,
             }),
-            user: row.tenantUser.user,
-            politicalParty: row.politicalParty,
+            ...(parlUser?.user
+                ? {
+                      user: {
+                          ...parlUser.user,
+                          politicalParty: parlUser.politicalParty,
+                      },
+                  }
+                : {}),
             activeMandatesCount: row._count.mandates,
+            stats: {
+                authoredMattersCount: row._count.authoredMatters,
+                coauthoredMattersCount: row._count.matterCoauthorships,
+                committeeMembersCount: row._count.committeeMembers,
+                sessionVotesCount: row._count.votos,
+            },
+            activeMandate,
+            ...(committees ? { committees } : {}),
         };
     }
 }

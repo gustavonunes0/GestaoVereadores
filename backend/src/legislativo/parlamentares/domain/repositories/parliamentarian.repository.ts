@@ -7,6 +7,7 @@ export type ParliamentarianUserSummary = {
     firstName: string;
     lastName: string;
     email: string;
+    politicalParty?: ParliamentarianPartySummary | null;
 };
 
 export type ParliamentarianPartySummary = {
@@ -16,18 +17,32 @@ export type ParliamentarianPartySummary = {
     flagUrl: string | null;
 };
 
+export type ParliamentarianCommitteeSummary = {
+    id: string;
+    name: string;
+    acronym: string | null;
+};
+
 export type ParliamentarianWithRelations = {
     entity: ParliamentarianEntity;
-    /** Dados básicos do User resolvidos via TenantUser (nunca userId direto). */
-    user: ParliamentarianUserSummary;
-    politicalParty: ParliamentarianPartySummary | null;
+    /** Dados do User resolvidos via ParlamentarianUser (opcional — parlamentar pode não ter acesso). */
+    user?: ParliamentarianUserSummary;
     activeMandatesCount?: number;
+    stats?: {
+        authoredMattersCount: number;
+        coauthoredMattersCount: number;
+        committeeMembersCount: number;
+        sessionVotesCount: number;
+    };
+    activeMandate?: {
+        id: string;
+        status: string;
+    } | null;
+    committees?: ParliamentarianCommitteeSummary[];
 };
 
 export type CreateParliamentarianRepositoryInput = {
     tenantId: string;
-    tenantUserId: string;
-    politicalPartyId?: string | null;
     parliamentaryName: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
@@ -35,7 +50,6 @@ export type CreateParliamentarianRepositoryInput = {
 };
 
 export type UpdateParliamentarianRepositoryInput = {
-    politicalPartyId?: string | null;
     parliamentaryName?: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
@@ -63,24 +77,15 @@ export abstract class ParliamentarianRepository {
         tenantId: string,
         id: string,
     ): Promise<ParliamentarianWithRelations | null>;
-    abstract existsByTenantUserId(
-        tenantId: string,
-        tenantUserId: string,
-        ignoreId?: string,
-    ): Promise<boolean>;
-    abstract findRemovedByTenantUserId(
-        tenantId: string,
-        tenantUserId: string,
-    ): Promise<ParliamentarianWithRelations | null>;
-    abstract reactivate(
-        tenantId: string,
-        id: string,
-        data: CreateParliamentarianRepositoryInput,
-    ): Promise<ParliamentarianWithRelations>;
     abstract update(
         tenantId: string,
         id: string,
         data: UpdateParliamentarianRepositoryInput,
     ): Promise<ParliamentarianWithRelations>;
     abstract softDelete(tenantId: string, id: string): Promise<void>;
+
+    abstract findProfileById(
+        tenantId: string,
+        id: string,
+    ): Promise<Record<string, unknown> | null>;
 }

@@ -24,6 +24,8 @@ import { UpdateMateriaUseCase } from './application/use-cases/update-materia.use
 import { TramitarMateriaUseCase } from './application/use-cases/tramitar-materia.use-case';
 import { AddPublicacaoMateriaUseCase } from './application/use-cases/add-publicacao-materia.use-case';
 import { ListAutoresExternosUseCase } from './application/use-cases/list-autores-externos.use-case';
+import { ListMatterAuthorOptionsUseCase } from './application/use-cases/list-matter-author-options.use-case';
+import { UploadMatterTextoOriginalUseCase } from './application/use-cases/upload-matter-texto-original.use-case';
 import { MvpMatterCommitteeOpinionGate } from './infra/gates/mvp-matter-committee-opinion.gate';
 import { PrismaMateriaRepository } from './infra/prisma/prisma-materia.repository';
 import { PrismaTramitacaoHistoricoRepository } from './infra/prisma/prisma-tramitacao-historico.repository';
@@ -58,6 +60,8 @@ import { TramitacaoHistoricoRepository } from './domain/repositories/tramitacao-
         TramitarMateriaUseCase,
         AddPublicacaoMateriaUseCase,
         ListAutoresExternosUseCase,
+        ListMatterAuthorOptionsUseCase,
+        UploadMatterTextoOriginalUseCase,
         PrismaMateriaRepository,
         PrismaTramitacaoHistoricoRepository,
         MvpMatterCommitteeOpinionGate,

@@ -8,18 +8,21 @@ type ParliamentarianAuthorshipSummary = {
     id: string;
     parliamentaryName: string;
     officeNumber: string | null;
-    politicalParty?: { id: string; name: string; acronym: string } | null;
+    parliamentarianUser?: {
+        politicalParty?: { id: string; name: string; acronym: string } | null;
+    } | null;
 };
 
 function mapParliamentarian(
     row: ParliamentarianAuthorshipSummary | null | undefined,
 ) {
     if (!row) return null;
+    const politicalParty = row.parliamentarianUser?.politicalParty ?? null;
     return {
         id: row.id,
         parliamentaryName: row.parliamentaryName,
         officeNumber: row.officeNumber,
-        ...(row.politicalParty ? { politicalParty: row.politicalParty } : {}),
+        ...(politicalParty ? { politicalParty } : {}),
     };
 }
 
@@ -39,26 +42,52 @@ export type MatterAuthorshipPayload = MateriaPrismaPayload & {
             fullName: string;
             type: string;
         } | null;
+        autorExterno?: {
+            id: string;
+            nome: string;
+            tipoAutorId: string;
+        } | null;
         parliamentarian?: ParliamentarianAuthorshipSummary | null;
     } | null;
 };
+
+function buildExternalAuthor(autor: NonNullable<MatterAuthorshipPayload['autor']>) {
+    if (autor.autorExterno) {
+        return {
+            type: MatterAuthorType.EXTERNAL,
+            label: MATTER_AUTHOR_TYPE_LABELS[MatterAuthorType.EXTERNAL],
+            autorId: autor.id,
+            autorExterno: {
+                id: autor.autorExterno.id,
+                nome: autor.autorExterno.nome,
+                tipoAutorId: autor.autorExterno.tipoAutorId,
+            },
+        };
+    }
+
+    if (autor.guestUser) {
+        return {
+            type: MatterAuthorType.EXTERNAL,
+            label: MATTER_AUTHOR_TYPE_LABELS[MatterAuthorType.EXTERNAL],
+            autorId: autor.id,
+            guestUser: {
+                id: autor.guestUser.id,
+                fullName: autor.guestUser.fullName,
+                guestType: autor.guestUser.type,
+            },
+        };
+    }
+
+    return null;
+}
 
 export class MatterAuthorshipViewModel {
     static toHttp(data: MatterAuthorshipPayload) {
         const parliamentaryAuthor = mapParliamentarian(
             data.authorParliamentarian,
         );
-        const externalAuthor = data.autor?.guestUser
-            ? {
-                  type: MatterAuthorType.EXTERNAL,
-                  label: MATTER_AUTHOR_TYPE_LABELS[MatterAuthorType.EXTERNAL],
-                  autorId: data.autor.id,
-                  guestUser: {
-                      id: data.autor.guestUser.id,
-                      fullName: data.autor.guestUser.fullName,
-                      guestType: data.autor.guestUser.type,
-                  },
-              }
+        const externalAuthor = data.autor
+            ? buildExternalAuthor(data.autor)
             : null;
 
         const primaryAuthor = parliamentaryAuthor

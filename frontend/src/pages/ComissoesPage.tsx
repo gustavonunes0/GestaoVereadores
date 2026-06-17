@@ -1,385 +1,279 @@
-import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { MODULE_ICONS } from '../app/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { Button } from 'primereact/button';
+import { Column } from 'primereact/column';
+import { InputText } from 'primereact/inputtext';
+import { Tag } from 'primereact/tag';
 import {
     comissoesApi,
+    type ComissaoFiltros,
     type Committee,
-    type CommitteeInput,
-    type CommitteeStatus,
-    type CommitteeType,
 } from '../api/legislative/comissoes.api';
-import { NavDrawer } from '../components/NavDrawer';
-import { EmptyState } from '../components/common/EmptyState';
-import { PanelToolbar } from '../components/PanelToolbar';
+import { MODULE_ICONS } from '../app/navigation';
+import { DataTableLayout } from '../components/common/DataTableLayout';
+import { DeleteDialog } from '../components/common/DeleteDialog';
+import { FiltroLayout } from '../components/common/FiltroLayout';
+import { PageHeader } from '../components/PageHeader';
+import {
+    buildComissaoPayload,
+    ComissaoFormDialog,
+    comissaoToForm,
+    emptyComissaoForm,
+    STATUS_OPTIONS,
+    TYPE_OPTIONS,
+    type ComissaoFormState,
+} from '../components/comissoes/ComissaoFormDialog';
+import { ComissaoVerDialog } from '../components/comissoes/ComissaoVerDialog';
+import { Dropdown, withEmptyOption } from '../components/ui';
+import { useAppToast } from '../hooks/useAppToast';
 import { usePermissions } from '../hooks/usePermissions';
+import { formatDatePt } from '../utils/formatDate';
 
-const TYPE_OPTIONS: { value: CommitteeType; label: string }[] = [
-    { value: 'PERMANENT', label: 'Permanente' },
-    { value: 'TEMPORARY', label: 'Temporária' },
-];
+type Severity = 'success' | 'secondary' | 'danger';
 
-const STATUS_OPTIONS: { value: CommitteeStatus; label: string }[] = [
-    { value: 'ACTIVE', label: 'Ativa' },
-    { value: 'INACTIVE', label: 'Inativa' },
-    { value: 'FINISHED', label: 'Encerrada' },
-];
-
-type FormState = {
-    name: string;
-    acronym: string;
-    type: CommitteeType;
-    purpose: string;
-    startDate: string;
-    endDate: string;
-    status: CommitteeStatus;
-    notes: string;
+const STATUS_SEVERITY: Record<Committee['status'], Severity> = {
+    ACTIVE: 'success',
+    INACTIVE: 'secondary',
+    FINISHED: 'danger',
 };
 
-const emptyForm = (): FormState => ({
-    name: '',
-    acronym: '',
-    type: 'PERMANENT',
-    purpose: '',
-    startDate: '',
-    endDate: '',
-    status: 'ACTIVE',
-    notes: '',
-});
-
-function detailToForm(row: Committee): FormState {
-    return {
-        name: row.name,
-        acronym: row.acronym ?? '',
-        type: row.type,
-        purpose: row.purpose,
-        startDate: row.startDate?.slice(0, 10) ?? '',
-        endDate: row.endDate?.slice(0, 10) ?? '',
-        status: row.status,
-        notes: row.notes ?? '',
-    };
-}
-
-function buildPayload(form: FormState): CommitteeInput {
-    const trim = (s: string) => s.trim() || undefined;
-    const dateIso = (d: string) => (d ? new Date(d).toISOString() : undefined);
-    return {
-        name: form.name.trim(),
-        acronym: trim(form.acronym),
-        type: form.type,
-        purpose: form.purpose.trim(),
-        startDate: dateIso(form.startDate),
-        endDate: dateIso(form.endDate),
-        status: form.status,
-        notes: trim(form.notes),
-    };
-}
+const EMPTY_FILTROS: ComissaoFiltros = {
+    search: '',
+    type: undefined,
+    status: undefined,
+    page: 1,
+    limit: 20,
+};
 
 export function ComissoesPage() {
-    const { canWrite } = usePermissions();
+    const { canWrite, canEdit, canDelete } = usePermissions();
+    const { showSuccess, showApiError } = useAppToast();
+
     const [items, setItems] = useState<Committee[]>([]);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [creating, setCreating] = useState(false);
-    const [form, setForm] = useState<FormState>(emptyForm);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(1);
     const [saving, setSaving] = useState(false);
 
-    const load = useCallback(() => {
-        return comissoesApi.list({ limit: 100 }).then((r) => {
-            setItems(r.data);
-            if (selectedId && !r.data.some((c) => c.id === selectedId)) {
-                setSelectedId(null);
-                setCreating(false);
-                setForm(emptyForm());
-            }
-        });
-    }, [selectedId]);
+    const [filtros, setFiltros] = useState<ComissaoFiltros>({ ...EMPTY_FILTROS });
+    const [filtrosApplied, setFiltrosApplied] = useState<ComissaoFiltros>({ ...EMPTY_FILTROS });
 
-    useEffect(() => {
-        load();
-    }, [load]);
+    const [dialogCriar, setDialogCriar] = useState(false);
+    const [dialogVerId, setDialogVerId] = useState<string | null>(null);
+    const [dialogEditar, setDialogEditar] = useState<Committee | null>(null);
+    const [dialogDeletar, setDialogDeletar] = useState<Committee | null>(null);
 
-    useEffect(() => {
-        if (creating) return;
-        if (!selectedId) {
-            setForm(emptyForm());
-            return;
+    const buscar = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await comissoesApi.list({
+                ...filtrosApplied,
+                page,
+                limit: 20,
+            });
+            setItems(res.data);
+            setTotal(res.meta.total);
+        } catch (err) {
+            showApiError(err);
+        } finally {
+            setLoading(false);
         }
-        comissoesApi.getById(selectedId).then((d) => setForm(detailToForm(d)));
-    }, [selectedId, creating]);
+    }, [filtrosApplied, page, showApiError]);
 
-    function startCreate() {
-        setSelectedId(null);
-        setCreating(true);
-        setForm(emptyForm());
+    useEffect(() => {
+        void buscar();
+    }, [buscar]);
+
+    function aplicarFiltros() {
+        setPage(1);
+        setFiltrosApplied({ ...filtros });
     }
 
-    function closeDrawer() {
-        setSelectedId(null);
-        setCreating(false);
-        setForm(emptyForm());
+    function limparFiltros() {
+        setFiltros({ ...EMPTY_FILTROS });
+        setFiltrosApplied({ ...EMPTY_FILTROS });
+        setPage(1);
     }
 
-    async function handleSubmit(e: FormEvent) {
-        e.preventDefault();
-        if (!canWrite) return;
+    async function handleCreate(form: ComissaoFormState) {
         setSaving(true);
         try {
-            const body = buildPayload(form);
-            if (creating) {
-                const created = await comissoesApi.create(body);
-                setCreating(false);
-                setSelectedId(created.id);
-                await load();
-            } else if (selectedId) {
-                await comissoesApi.update(selectedId, body);
-                await load();
-            }
+            await comissoesApi.create(buildComissaoPayload(form));
+            showSuccess('Comissão cadastrada.');
+            setDialogCriar(false);
+            void buscar();
+        } catch (err) {
+            showApiError(err);
         } finally {
             setSaving(false);
         }
     }
 
-    async function remove(id: string) {
-        if (!confirm('Excluir comissão?')) return;
-        await comissoesApi.remove(id);
-        if (selectedId === id) closeDrawer();
-        load();
+    async function handleUpdate(form: ComissaoFormState) {
+        if (!dialogEditar) return;
+        setSaving(true);
+        try {
+            await comissoesApi.update(dialogEditar.id, buildComissaoPayload(form));
+            showSuccess('Comissão atualizada.');
+            setDialogEditar(null);
+            void buscar();
+        } catch (err) {
+            showApiError(err);
+        } finally {
+            setSaving(false);
+        }
     }
 
-    const editing = creating || !!selectedId;
+    const colunas = (
+        <>
+            <Column
+                header="Sigla"
+                body={(row: Committee) => row.acronym ?? '—'}
+                style={{ width: '6rem' }}
+            />
+            <Column
+                header="Nome"
+                body={(row: Committee) => <span className="font-medium">{row.name}</span>}
+            />
+            <Column
+                header="Tipo"
+                body={(row: Committee) =>
+                    TYPE_OPTIONS.find((t) => t.value === row.type)?.label ?? row.type
+                }
+                style={{ width: '9rem' }}
+            />
+            <Column
+                header="Situação"
+                body={(row: Committee) => (
+                    <Tag
+                        value={
+                            STATUS_OPTIONS.find((s) => s.value === row.status)?.label ??
+                            row.status
+                        }
+                        severity={STATUS_SEVERITY[row.status]}
+                    />
+                )}
+                style={{ width: '7rem' }}
+            />
+            <Column
+                header="Início"
+                body={(row: Committee) => formatDatePt(row.startDate)}
+                style={{ width: '7rem' }}
+            />
+        </>
+    );
 
     return (
-        <div className="page">
-            <PanelToolbar
+        <main>
+            <PageHeader
                 icon={MODULE_ICONS.comissoes}
                 title="Comissões"
                 actions={
                     canWrite ? (
-                        <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={startCreate}
-                        >
-                            Adicionar comissão
-                        </button>
+                        <Button
+                            label="Nova comissão"
+                            icon="pi pi-plus"
+                            onClick={() => setDialogCriar(true)}
+                        />
                     ) : undefined
                 }
             />
 
-            <div className="list-panel">
-                <div className="list-panel__body">
-                    <div className="list-panel__scroll table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Sigla</th>
-                                    <th>Nome</th>
-                                    <th>Tipo</th>
-                                    <th>Situação</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {items.map((c) => (
-                                    <tr
-                                        key={c.id}
-                                        className={
-                                            selectedId === c.id
-                                                ? 'row-selected'
-                                                : ''
-                                        }
-                                        onClick={() => {
-                                            setCreating(false);
-                                            setSelectedId(c.id);
-                                        }}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        <td>{c.acronym ?? '—'}</td>
-                                        <td>{c.name}</td>
-                                        <td>
-                                            {TYPE_OPTIONS.find(
-                                                (t) => t.value === c.type,
-                                            )?.label ?? c.type}
-                                        </td>
-                                        <td>
-                                            {STATUS_OPTIONS.find(
-                                                (s) => s.value === c.status,
-                                            )?.label ?? c.status}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    {items.length === 0 && (
-                        <EmptyState
-                            icon="pi pi-briefcase"
-                            title="Nenhuma comissão"
-                            hint="Cadastre a primeira comissão da casa."
+            <section aria-label="Filtros de pesquisa" className="pt-4">
+                <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="cf-busca">Nome ou sigla</label>
+                        <InputText
+                            id="cf-busca"
+                            value={filtros.search ?? ''}
+                            onChange={(e) => setFiltros((f) => ({ ...f, search: e.target.value }))}
                         />
-                    )}
-                </div>
-            </div>
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="cf-tipo">Tipo</label>
+                        <Dropdown
+                            id="cf-tipo"
+                            value={filtros.type ?? ''}
+                            options={withEmptyOption(TYPE_OPTIONS)}
+                            onChange={(v) =>
+                                setFiltros((f) => ({
+                                    ...f,
+                                    type: v ? (String(v) as Committee['type']) : undefined,
+                                }))
+                            }
+                            placeholder="Todos"
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="cf-status">Situação</label>
+                        <Dropdown
+                            id="cf-status"
+                            value={filtros.status ?? ''}
+                            options={withEmptyOption(STATUS_OPTIONS)}
+                            onChange={(v) =>
+                                setFiltros((f) => ({
+                                    ...f,
+                                    status: v
+                                        ? (String(v) as Committee['status'])
+                                        : undefined,
+                                }))
+                            }
+                            placeholder="Todas"
+                        />
+                    </div>
+                </FiltroLayout>
+            </section>
 
-            <NavDrawer
-                    visible={editing}
-                    onHide={closeDrawer}
-                    wide
-                    title={
-                        creating
-                            ? 'Nova comissão'
-                            : form.name || 'Comissão'
-                    }
-                >
-                    <form onSubmit={handleSubmit} className="form-stack">
-                        <div className="form-grid-2">
-                            <label>
-                                Nome *
-                                <input
-                                    value={form.name}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            name: e.target.value,
-                                        }))
-                                    }
-                                    required
-                                />
-                            </label>
-                            <label>
-                                Sigla
-                                <input
-                                    value={form.acronym}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            acronym: e.target.value,
-                                        }))
-                                    }
-                                />
-                            </label>
-                        </div>
-                        <div className="form-grid-2">
-                            <label>
-                                Tipo *
-                                <select
-                                    value={form.type}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            type: e.target
-                                                .value as CommitteeType,
-                                        }))
-                                    }
-                                >
-                                    {TYPE_OPTIONS.map((t) => (
-                                        <option key={t.value} value={t.value}>
-                                            {t.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-                            <label>
-                                Situação
-                                <select
-                                    value={form.status}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            status: e.target
-                                                .value as CommitteeStatus,
-                                        }))
-                                    }
-                                >
-                                    {STATUS_OPTIONS.map((s) => (
-                                        <option key={s.value} value={s.value}>
-                                            {s.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-                        </div>
-                        <label>
-                            Finalidade *
-                            <textarea
-                                value={form.purpose}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        purpose: e.target.value,
-                                    }))
-                                }
-                                rows={3}
-                                required
-                            />
-                        </label>
-                        <div className="form-grid-2">
-                            <label>
-                                Início
-                                <input
-                                    type="date"
-                                    value={form.startDate}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            startDate: e.target.value,
-                                        }))
-                                    }
-                                />
-                            </label>
-                            <label>
-                                Fim
-                                <input
-                                    type="date"
-                                    value={form.endDate}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            endDate: e.target.value,
-                                        }))
-                                    }
-                                />
-                            </label>
-                        </div>
-                        <label>
-                            Observações
-                            <textarea
-                                value={form.notes}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        notes: e.target.value,
-                                    }))
-                                }
-                                rows={2}
-                            />
-                        </label>
-                        <div className="modal-actions">
-                            {!creating && selectedId && canWrite && (
-                                <button
-                                    type="button"
-                                    className="btn btn-danger"
-                                    onClick={() => remove(selectedId)}
-                                >
-                                    Excluir
-                                </button>
-                            )}
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={closeDrawer}
-                            >
-                                Fechar
-                            </button>
-                            {canWrite && (
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    disabled={saving}
-                                >
-                                    {saving ? 'Salvando…' : 'Salvar'}
-                                </button>
-                            )}
-                        </div>
-                    </form>
-            </NavDrawer>
-        </div>
+            <section aria-label="Lista de comissões" className="comissoes-table-section">
+                <DataTableLayout
+                    items={items}
+                    total={total}
+                    loading={loading}
+                    page={page}
+                    onPageChange={setPage}
+                    columns={colunas}
+                    canWrite={canEdit}
+                    onVer={(item) => setDialogVerId(item.id)}
+                    onEditar={canEdit ? (item) => setDialogEditar(item) : undefined}
+                    onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
+                />
+            </section>
+
+            {dialogCriar && (
+                <ComissaoFormDialog
+                    title="Nova comissão"
+                    initial={emptyComissaoForm()}
+                    loading={saving}
+                    onClose={() => setDialogCriar(false)}
+                    onSubmit={(form) => void handleCreate(form)}
+                />
+            )}
+
+            {dialogVerId && (
+                <ComissaoVerDialog comissaoId={dialogVerId} onClose={() => setDialogVerId(null)} />
+            )}
+
+            {dialogEditar && (
+                <ComissaoFormDialog
+                    title={`Editar — ${dialogEditar.name}`}
+                    initial={comissaoToForm(dialogEditar)}
+                    loading={saving}
+                    onClose={() => setDialogEditar(null)}
+                    onSubmit={(form) => void handleUpdate(form)}
+                />
+            )}
+
+            {dialogDeletar && (
+                <DeleteDialog
+                    visible
+                    title="Excluir comissão"
+                    message={`Deseja excluir a comissão "${dialogDeletar.name}"? Esta ação não pode ser desfeita.`}
+                    onConfirm={async () => {
+                        await comissoesApi.remove(dialogDeletar.id);
+                        void buscar();
+                    }}
+                    onClose={() => setDialogDeletar(null)}
+                />
+            )}
+        </main>
     );
 }

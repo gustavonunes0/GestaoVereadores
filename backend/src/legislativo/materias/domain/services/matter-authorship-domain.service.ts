@@ -1,6 +1,6 @@
 /**
  * Regras de autoria (task 20).
- * - Autor: parlamentar ou externo (GuestUser).
+ * - Autor: parlamentar com ParlamentarianUser ou AutorExterno.
  * - Coautor: somente parlamentar no MVP.
  * - Relator: somente parlamentar.
  */
@@ -19,9 +19,9 @@ export class MatterAuthorshipDomainService {
         return;
     }
 
-    assertExternalAuthorUsesGuestUser(guestUserId?: string | null) {
-        if (!guestUserId?.trim()) {
-            throw new Error('Autor externo requer GuestUser vinculado');
+    assertExternalAuthorProvided(autorExternoId?: string | null) {
+        if (!autorExternoId?.trim()) {
+            throw new Error('Autor externo é obrigatório');
         }
     }
 

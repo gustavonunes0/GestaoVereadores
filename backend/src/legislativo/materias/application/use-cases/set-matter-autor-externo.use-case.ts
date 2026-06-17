@@ -7,7 +7,6 @@ import {
     GuestUserNotFoundForMatterError,
     MatterAuthorshipValidationError,
     MatterNotFoundError,
-    TipoAutorNotFoundForMatterError,
 } from '../errors/matter.errors';
 import { MatterAuthorshipViewModel } from '../view-models/matter-authorship.view-model';
 
@@ -27,7 +26,7 @@ export class SetMatterAutorExternoUseCase {
     ) {
         this.domainService.assertTenantIdProvided(tenantId);
         try {
-            this.domainService.assertExternalAuthorUsesGuestUser(dto.guestUserId);
+            this.domainService.assertExternalAuthorProvided(dto.autorExternoId);
         } catch (error) {
             throw new MatterAuthorshipValidationError(
                 error instanceof Error ? error.message : 'Autor externo inválido',
@@ -44,11 +43,8 @@ export class SetMatterAutorExternoUseCase {
         } catch (error) {
             if (error instanceof NotFoundException) {
                 const msg = error.message;
-                if (msg.includes('GuestUser')) {
+                if (msg.includes('Autor externo')) {
                     throw new GuestUserNotFoundForMatterError();
-                }
-                if (msg.includes('Tipo de autor')) {
-                    throw new TipoAutorNotFoundForMatterError();
                 }
                 throw new MatterNotFoundError();
             }

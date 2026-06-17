@@ -1,48 +1,89 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Column } from 'primereact/column';
-import { Dropdown } from 'primereact/dropdown';
-import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
-import { MODULE_ICONS } from '../app/navigation';
+import { Column } from 'primereact/column';
+import { InputText } from 'primereact/inputtext';
 import { normasApi, type Norma, type NormaFiltros } from '../api/normas.api';
-import { PageHeader } from '../components/PageHeader';
-import { FiltroLayout } from '../components/common/FiltroLayout';
+import { MODULE_ICONS } from '../app/navigation';
 import { DataTableLayout } from '../components/common/DataTableLayout';
 import { DeleteDialog } from '../components/common/DeleteDialog';
+import { FiltroLayout } from '../components/common/FiltroLayout';
+import { PageHeader } from '../components/PageHeader';
+import { NormaCreateDialog } from '../components/normas/NormaCreateDialog';
+import { NormaEditDialog } from '../components/normas/NormaEditDialog';
 import { NormaStatusBadge } from '../components/normas/NormaStatusBadge';
 import { NormaVerDialog } from '../components/normas/NormaVerDialog';
-import { NormaCreateDialog } from '../components/normas/NormaCreateDialog';
-import { PublicacaoModuleIntro } from '../components/publicacao/PublicacaoModuleIntro';
-import { ModulePipelineFooter } from '../components/workflow/ModulePipelineFooter';
-import { PipelineStepBadge } from '../components/workflow/PipelineStepBadge';
-import { PUBLICACAO_MODULES } from '../app/publicacao';
-import { WORKFLOW_PIPELINE_TOTAL } from '../app/navigation';
+import { DateRangePicker, Dropdown, mapDropdownOptions, PreviewImg, withEmptyOption } from '../components/ui';
 import { useAppToast } from '../hooks/useAppToast';
 import { useDominios } from '../hooks/useDominios';
 import { usePermissions } from '../hooks/usePermissions';
 import { formatDatePt } from '../utils/formatDate';
+import { resolveMateriaTextoOriginalUrl } from '../utils/materiaDisplay';
+import {
+    formatNormaEspecie,
+    formatNormaIdentificacao,
+    resolveNormaAnoValor,
+    resolveNormaStatus,
+} from '../utils/normaDisplay';
+
+const EMPTY_FILTROS: NormaFiltros = {
+    tipoId: '',
+    numero: '',
+    search: '',
+    anoId: '',
+    esferaFederacaoId: '',
+    page: 1,
+    limit: 20,
+};
+
+type DocumentoPreview = {
+    src: string;
+    fileName: string;
+    mimeType?: string;
+};
 
 export function NormasPage() {
-    const { canWrite, canDelete } = usePermissions();
+    const { tiposNorma, anos, esferasFederacao } = useDominios();
+    const { canEdit, canDelete } = usePermissions();
     const { showApiError } = useAppToast();
-    const { tiposNorma, anos } = useDominios();
 
     const [items, setItems] = useState<Norma[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
 
-    const [filtros, setFiltros] = useState<NormaFiltros>({});
-    const [filtrosApplied, setFiltrosApplied] = useState<NormaFiltros>({});
+    const [filtros, setFiltros] = useState<NormaFiltros>({ ...EMPTY_FILTROS });
+    const [filtrosApplied, setFiltrosApplied] = useState<NormaFiltros>({ ...EMPTY_FILTROS });
+    const [dataNorma, setDataNorma] = useState<[Date | null, Date | null]>([null, null]);
 
     const [dialogCriar, setDialogCriar] = useState(false);
-    const [dialogVer, setDialogVer] = useState<Norma | null>(null);
+    const [previewDocumento, setPreviewDocumento] = useState<DocumentoPreview | null>(null);
+    const [dialogVerId, setDialogVerId] = useState<string | null>(null);
+    const [dialogEditar, setDialogEditar] = useState<Norma | null>(null);
     const [dialogDeletar, setDialogDeletar] = useState<Norma | null>(null);
+
+    function handleVer(norma: Norma) {
+        const url = norma.textoIntegralUrl?.trim();
+        if (url) {
+            const resolved = resolveMateriaTextoOriginalUrl(url);
+            const isPdf = resolved.toLowerCase().includes('.pdf');
+            setPreviewDocumento({
+                src: resolved,
+                fileName: `${formatNormaIdentificacao(norma)}${isPdf ? '.pdf' : ''}`,
+                mimeType: isPdf ? 'application/pdf' : undefined,
+            });
+            return;
+        }
+        setDialogVerId(norma.id);
+    }
 
     const buscar = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await normasApi.list({ ...filtrosApplied, page, limit: 20 });
+            const res = await normasApi.list({
+                ...filtrosApplied,
+                page,
+                limit: 20,
+            });
             setItems(res.data);
             setTotal(res.meta.total);
         } catch (err) {
@@ -58,26 +99,33 @@ export function NormasPage() {
 
     function aplicarFiltros() {
         setPage(1);
-        setFiltrosApplied({ ...filtros });
+        setFiltrosApplied({
+            ...filtros,
+            dataInicio: dataNorma[0]?.toISOString().slice(0, 10),
+            dataFim: dataNorma[1]?.toISOString().slice(0, 10),
+        });
     }
 
     function limparFiltros() {
-        setFiltros({});
-        setFiltrosApplied({});
+        setFiltros({ ...EMPTY_FILTROS });
+        setFiltrosApplied({ ...EMPTY_FILTROS });
+        setDataNorma([null, null]);
         setPage(1);
     }
 
-    const columns = (
+    const colunas = (
         <>
             <Column
                 header="Espécie"
-                body={(row: Norma) => <span className="font-medium">{row.tipo.nome}</span>}
+                body={(row: Norma) => (
+                    <span className="font-medium">{formatNormaEspecie(row)}</span>
+                )}
                 style={{ width: '10rem' }}
             />
             <Column field="numero" header="Número" style={{ width: '6rem' }} />
             <Column
                 header="Ano"
-                body={(row: Norma) => row.ano}
+                body={(row: Norma) => resolveNormaAnoValor(row.ano) ?? '—'}
                 style={{ width: '4.5rem' }}
             />
             <Column
@@ -94,7 +142,7 @@ export function NormasPage() {
             />
             <Column
                 header="Status"
-                body={(row: Norma) => <NormaStatusBadge status={row.statusDerived} />}
+                body={(row: Norma) => <NormaStatusBadge status={resolveNormaStatus(row)} />}
                 style={{ width: '8rem' }}
             />
             <Column
@@ -105,88 +153,101 @@ export function NormasPage() {
         </>
     );
 
-    const mod = PUBLICACAO_MODULES.normas;
-
     return (
-        <section className="page page--normas">
-            <PipelineStepBadge
-                step={mod.pipelineStep}
-                total={WORKFLOW_PIPELINE_TOTAL}
-                label={mod.title}
-                domain="normative"
-            />
-
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.normas}
                 title="Normas jurídicas"
-                subtitle="Leis, resoluções, decretos legislativos e demais normas oficiais."
                 actions={
-                    canWrite ? (
+                    (
                         <Button
                             label="Registrar norma"
                             icon="pi pi-plus"
                             onClick={() => setDialogCriar(true)}
                         />
-                    ) : undefined
+                    )
                 }
             />
 
-            <PublicacaoModuleIntro moduleId="normas" />
+            <section aria-label="Filtros de pesquisa" className="pt-4">
+                <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="nf-tipo">Espécie normativa</label>
+                        <Dropdown
+                            id="nf-tipo"
+                            value={filtros.tipoId ?? ''}
+                            options={withEmptyOption(mapDropdownOptions(tiposNorma, 'nome', 'id'))}
+                            onChange={(v) => setFiltros((f) => ({ ...f, tipoId: String(v) }))}
+                            placeholder="Todas"
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="nf-numero">Número</label>
+                        <InputText
+                            id="nf-numero"
+                            value={filtros.numero ?? ''}
+                            onChange={(e) => setFiltros((f) => ({ ...f, numero: e.target.value }))}
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="nf-ementa">Ementa contém</label>
+                        <InputText
+                            id="nf-ementa"
+                            value={filtros.search ?? ''}
+                            onChange={(e) => setFiltros((f) => ({ ...f, search: e.target.value }))}
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="nf-ano">Ano</label>
+                        <Dropdown
+                            id="nf-ano"
+                            value={filtros.anoId ?? ''}
+                            options={withEmptyOption(
+                                anos.map((a) => ({ label: String(a.valor), value: a.id })),
+                            )}
+                            onChange={(v) => setFiltros((f) => ({ ...f, anoId: String(v) }))}
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="nf-esfera">Esfera</label>
+                        <Dropdown
+                            id="nf-esfera"
+                            value={filtros.esferaFederacaoId ?? ''}
+                            options={withEmptyOption(
+                                mapDropdownOptions(esferasFederacao, 'nome', 'id'),
+                            )}
+                            onChange={(v) =>
+                                setFiltros((f) => ({ ...f, esferaFederacaoId: String(v) }))
+                            }
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <DateRangePicker
+                            id="nf-data"
+                            label="Data"
+                            value={dataNorma}
+                            onChange={setDataNorma}
+                            placeholder="Início — Fim"
+                        />
+                    </div>
+                </FiltroLayout>
+            </section>
 
-            <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
-                <div className="col-12 md:col-4 lg:col-3">
-                    <label htmlFor="nf-tipo">Espécie</label>
-                    <Dropdown
-                        id="nf-tipo"
-                        value={filtros.tipoId ?? ''}
-                        options={[{ id: '', nome: 'Todos' }, ...tiposNorma]}
-                        optionLabel="nome"
-                        optionValue="id"
-                        onChange={(e) => setFiltros((f) => ({ ...f, tipoId: e.value || undefined }))}
-                    />
-                </div>
-                <div className="col-12 md:col-4 lg:col-3">
-                    <label htmlFor="nf-numero">Número</label>
-                    <InputText
-                        id="nf-numero"
-                        value={filtros.numero ?? ''}
-                        onChange={(e) => setFiltros((f) => ({ ...f, numero: e.target.value || undefined }))}
-                        placeholder="Número da norma"
-                    />
-                </div>
-                <div className="col-12 md:col-4 lg:col-3">
-                    <label htmlFor="nf-ementa">Ementa</label>
-                    <InputText
-                        id="nf-ementa"
-                        value={filtros.ementa ?? ''}
-                        onChange={(e) => setFiltros((f) => ({ ...f, ementa: e.target.value || undefined }))}
-                        placeholder="Texto da ementa"
-                    />
-                </div>
-                <div className="col-12 md:col-4 lg:col-3">
-                    <label htmlFor="nf-ano">Ano</label>
-                    <Dropdown
-                        id="nf-ano"
-                        value={filtros.ano ?? ''}
-                        options={[{ id: '', valor: 'Todos' }, ...anos.map((a) => ({ id: a.valor, valor: a.valor }))]}
-                        optionLabel="valor"
-                        optionValue="id"
-                        onChange={(e) => setFiltros((f) => ({ ...f, ano: e.value || undefined }))}
-                    />
-                </div>
-            </FiltroLayout>
-
-            <DataTableLayout<Norma>
-                items={items}
-                total={total}
-                loading={loading}
-                page={page}
-                onPageChange={setPage}
-                columns={columns}
-                canWrite={canDelete}
-                onVer={(item) => setDialogVer(item)}
-                onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
-            />
+            <section aria-label="Lista de normas jurídicas" className="normas-table-section">
+                <DataTableLayout
+                    items={items}
+                    total={total}
+                    loading={loading}
+                    page={page}
+                    onPageChange={setPage}
+                    columns={colunas}
+                    canEdit={canEdit}
+                    canDelete={canDelete}
+                    onVer={handleVer}
+                    onEditar={canEdit ? (item) => setDialogEditar(item) : undefined}
+                    onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
+                />
+            </section>
 
             {dialogCriar && (
                 <NormaCreateDialog
@@ -195,10 +256,27 @@ export function NormasPage() {
                 />
             )}
 
-            {dialogVer && (
+            {previewDocumento && (
+                <PreviewImg
+                    src={previewDocumento.src}
+                    fileName={previewDocumento.fileName}
+                    mimeType={previewDocumento.mimeType}
+                    onClose={() => setPreviewDocumento(null)}
+                />
+            )}
+
+            {dialogVerId && (
                 <NormaVerDialog
-                    normaId={dialogVer.id}
-                    onClose={() => setDialogVer(null)}
+                    normaId={dialogVerId}
+                    onClose={() => setDialogVerId(null)}
+                />
+            )}
+
+            {dialogEditar && (
+                <NormaEditDialog
+                    norma={dialogEditar}
+                    onClose={() => setDialogEditar(null)}
+                    onSaved={() => void buscar()}
                 />
             )}
 
@@ -206,16 +284,14 @@ export function NormasPage() {
                 <DeleteDialog
                     visible
                     title="Excluir norma"
-                    message={`Deseja excluir a norma "${dialogDeletar.tipo.nome} nº ${dialogDeletar.numero}"? Esta ação não pode ser desfeita.`}
-                    onConfirm={() => normasApi.remove(dialogDeletar.id)}
-                    onClose={() => {
-                        setDialogDeletar(null);
+                    message={`Deseja excluir a norma "${formatNormaIdentificacao(dialogDeletar)}"? Esta ação não pode ser desfeita.`}
+                    onConfirm={async () => {
+                        await normasApi.remove(dialogDeletar.id);
                         void buscar();
                     }}
+                    onClose={() => setDialogDeletar(null)}
                 />
             )}
-
-            <ModulePipelineFooter current="normas" />
-        </section>
+        </main>
     );
 }

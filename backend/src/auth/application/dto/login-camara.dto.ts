@@ -3,12 +3,20 @@ import {
     IsOptional,
     IsString,
     IsUUID,
+    Matches,
     MinLength,
+    ValidateIf,
 } from 'class-validator';
 
 export class LoginCamaraDto {
+    @ValidateIf((o: LoginCamaraDto) => !o.cpf)
     @IsEmail()
-    email: string;
+    email?: string;
+
+    @ValidateIf((o: LoginCamaraDto) => !o.email)
+    @IsString()
+    @Matches(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)
+    cpf?: string;
 
     @IsString()
     @MinLength(8)

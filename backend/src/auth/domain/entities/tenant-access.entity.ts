@@ -26,10 +26,6 @@ export type TenantUserAccessProps = {
     tenantId: string;
     userId: string;
     role: TenantUserRole;
-    parliamentarianId?: string;
-    isTenantAdmin: boolean;
-    isTenantStaff: boolean;
-    isParliamentarian: boolean;
 };
 
 export class TenantUserAccessEntity {
@@ -37,19 +33,35 @@ export class TenantUserAccessEntity {
     readonly tenantId: string;
     readonly userId: string;
     readonly role: TenantUserRole;
-    readonly parliamentarianId?: string;
-    readonly isTenantAdmin: boolean;
-    readonly isTenantStaff: boolean;
-    readonly isParliamentarian: boolean;
 
     constructor(props: TenantUserAccessProps) {
         this.id = props.id;
         this.tenantId = props.tenantId;
         this.userId = props.userId;
         this.role = props.role;
+    }
+}
+
+export type ParlamentarianUserAccessProps = {
+    id: string;
+    tenantId: string;
+    userId: string;
+    parliamentarianId: string;
+    parliamentaryName: string;
+};
+
+export class ParlamentarianUserAccessEntity {
+    readonly id: string;
+    readonly tenantId: string;
+    readonly userId: string;
+    readonly parliamentarianId: string;
+    readonly parliamentaryName: string;
+
+    constructor(props: ParlamentarianUserAccessProps) {
+        this.id = props.id;
+        this.tenantId = props.tenantId;
+        this.userId = props.userId;
         this.parliamentarianId = props.parliamentarianId;
-        this.isTenantAdmin = props.isTenantAdmin;
-        this.isTenantStaff = props.isTenantStaff;
-        this.isParliamentarian = props.isParliamentarian;
+        this.parliamentaryName = props.parliamentaryName;
     }
 }

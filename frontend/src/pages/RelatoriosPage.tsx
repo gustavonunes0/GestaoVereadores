@@ -31,7 +31,7 @@ export function RelatoriosPage() {
         setLoadingAtividade(true);
         try {
             const data = await api<RelatorioResult>(
-                API_PATHS.relatorios.atividadeCompleto,
+                API_PATHS.relatorioAtividade,
                 {
                     method: 'POST',
                     body: JSON.stringify({
@@ -54,7 +54,7 @@ export function RelatoriosPage() {
         setLoadingPresenca(true);
         try {
             const data = await api<RelatorioResult>(
-                API_PATHS.relatorios.presenca,
+                API_PATHS.relatorioPresenca,
                 {
                     method: 'POST',
                     body: JSON.stringify({
@@ -73,7 +73,7 @@ export function RelatoriosPage() {
     }
 
     return (
-        <section className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.relatorios}
                 title="Relatórios"
@@ -96,7 +96,7 @@ export function RelatoriosPage() {
                 />
             </label>
 
-            <div className="sigl-card-grid">
+            <div className="sigl-card-grid pt-4">
                 <ActionCard
                     title="Atividade legislativa (completo)"
                     description="Matérias vinculadas à pauta das sessões desta sessão legislativa."
@@ -139,6 +139,6 @@ export function RelatoriosPage() {
                     <pre>{JSON.stringify(result, null, 2)}</pre>
                 </div>
             )}
-        </section>
+        </main>
     );
 }

@@ -1,24 +1,16 @@
 import { useEffect, useState } from 'react';
+import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
 import { Outlet, useLocation } from 'react-router-dom';
-
-import { ADMIN_NAV } from '../app/navigation';
-
-import { ModuleTitle } from './common/ModuleTitle';
-
-import { SiglButton } from './common/SiglButton';
-
-import { SidebarNav } from './SidebarNav';
-
 import { Tag } from 'primereact/tag';
-
 import { useAuth } from '../contexts/AuthContext';
-
+import { isStaffUser } from '../types/auth';
 import { LegislaturaProvider } from '../contexts/LegislaturaContext';
-
 import { AppFeedbackProvider } from '../hooks/useAppToast';
-
+import { SiglButton } from './common/SiglButton';
+import { SidebarNav } from './SidebarNav';
 import { FooterBar } from './FooterBar';
 import { LegislaturaBar } from './LegislaturaBar';
+import logoSrc from '../../assets/logo.png';
 
 export function Layout() {
     const { user, logout } = useAuth();
@@ -47,27 +39,17 @@ export function Layout() {
                     />
 
                     <aside className="sidebar" id="app-sidebar">
-                        <div className="sidebar-brand">
-                            <h1>
-                                <ModuleTitle
-                                    icon="pi pi-building"
-                                    as="span"
-                                    className="sidebar-brand__title"
-                                >
-                                    SIGL
-                                </ModuleTitle>
+                        <div className="sidebar-logo-area">
+                            <h1 className="sidebar-logo-area__heading">
+                                <img
+                                    src={logoSrc}
+                                    alt="Câmara Municipal de Baturité — SIGL"
+                                    className="sidebar-brand__logo"
+                                />
                             </h1>
-                            <p>Atividade legislativa</p>
                         </div>
 
-                        <SidebarNav
-                            showAdmin={
-                                user?.role === 'MASTER' &&
-                                user?.authType !== 'camara'
-                            }
-                            showAdministrativo={user?.authType !== 'camara'}
-                            adminItems={ADMIN_NAV}
-                        />
+                        <SidebarNav />
                     </aside>
 
                     <div className="main">
@@ -89,9 +71,15 @@ export function Layout() {
 
                             <div className="topbar-user">
                                 <span className="topbar-user-info">
-                                    <strong>{user?.nome}</strong>
+                                    <strong>{user?.name}</strong>
                                     <Tag
-                                        value={user?.role ?? '—'}
+                                        value={
+                                            user && isStaffUser(user)
+                                                ? user.role
+                                                : user?.sessionType === 'parliamentarian'
+                                                  ? 'Parlamentar'
+                                                  : '—'
+                                        }
                                         severity="secondary"
                                         className="topbar-role-tag"
                                     />
@@ -101,12 +89,17 @@ export function Layout() {
                                         </span>
                                     )}
                                 </span>
-                                <SiglButton
-                                    label="Sair"
-                                    icon="pi pi-sign-out"
-                                    severity="secondary"
+                                <button
+                                    type="button"
+                                    className="btn-sair"
                                     onClick={logout}
-                                />
+                                >
+                                    <LogoutOutlined
+                                        sx={{ fontSize: 16 }}
+                                        aria-hidden="true"
+                                    />
+                                    Sair
+                                </button>
                             </div>
                         </header>
 

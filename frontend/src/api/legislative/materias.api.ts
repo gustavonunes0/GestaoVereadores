@@ -2,13 +2,41 @@ import { api, apiFormData, apiList } from '../client';
 import { API_PATHS } from '../paths';
 import type { MateriaStatus } from '../../types/legislative';
 
+export interface MatterAuthorOption {
+    id: string;
+    label: string;
+    kind: 'parliamentarian' | 'external';
+}
+
+export interface MatterAuthorOptionsResponse {
+    kind: 'parliamentarian' | 'external';
+    options: MatterAuthorOption[];
+}
+
+export interface MatterAuthorship {
+    matterId: string;
+    primaryAuthor?: {
+        type: 'parliamentarian' | 'external';
+        label: string;
+        parliamentarian?: { id: string; parliamentaryName: string };
+        autorExterno?: { id: string; nome: string; tipoAutorId?: string };
+        guestUser?: { id: string; fullName: string };
+    };
+    coauthors?: Array<{
+        id: string;
+        ordem: number;
+        parliamentarian: { id: string; parliamentaryName: string };
+    }>;
+}
+
 export interface AutorMateria {
     id: string;
-    tipo: 'parlamentar' | 'externo' | 'guestUser';
+    tipo: 'parlamentar' | 'externo';
     nome: string;
     parlamentarId?: string;
     autorExternoId?: string;
-    guestUserId?: string;
+    photoUrl?: string | null;
+    subtitulo?: string | null;
 }
 
 export interface TramitacaoItem {
@@ -22,19 +50,57 @@ export interface TramitacaoItem {
 
 export interface Materia {
     id: string;
-    identificacao: string;
+    identificacao?: string;
     sigla?: string;
     tipo: { id: string; nome: string; sigla?: string };
-    numero: string;
-    ano: number;
+    numero: number | string | null;
+    numeroProtocolo?: number | string | null;
+    ano: number | { id: string; valor: number } | null;
     ementa: string;
-    status: MateriaStatus;
-    dataProtocolo?: string;
-    textoOriginalUrl?: string;
-    autor?: AutorMateria;
+    status: MateriaStatus | { value: MateriaStatus; label: string };
+    dataProtocolo?: string | null;
+    textoOriginalUrl?: string | null;
+    autor?: AutorMateria | null;
+    authorship?: {
+        authorParliamentarian?: {
+            id: string;
+            parliamentaryName: string;
+            officeNumber?: string | null;
+            photoUrl?: string | null;
+        } | null;
+        rapporteurParliamentarian?: {
+            id: string;
+            parliamentaryName: string;
+            photoUrl?: string | null;
+        } | null;
+        coauthors?: Array<{
+            id: string;
+            ordem: number;
+            parliamentarian: {
+                id: string;
+                parliamentaryName: string;
+                photoUrl?: string | null;
+            };
+        }>;
+    };
+    statusTramitacao?: { id: string; nome: string } | null;
+    unidadeTramitacao?: { id: string; nome: string } | null;
+    ultimaTramitacao?: {
+        data: string;
+        status: MateriaStatus;
+        observacao?: string | null;
+    } | null;
     autoresAdicionais?: AutorMateria[];
+    relator?: { id: string; nome: string; parlamentarId: string } | null;
     relatores?: Array<{ id: string; nome: string; parlamentarId: string }>;
     tramitacaoHistorico?: TramitacaoItem[];
+    workflow?: {
+        tramitacao?: Array<{
+            em?: string;
+            status?: MateriaStatus;
+            observacao?: string;
+        }>;
+    };
 }
 
 export interface CreateMateriaDto {
@@ -46,9 +112,10 @@ export interface CreateMateriaDto {
     tematicaId?: string;
     dataProtocolo?: string;
     justificativa?: string;
-    autorParliamentarianId?: string;
+    authorParliamentarianId?: string;
     autorExternoId?: string;
-    autorGuestUserId?: string;
+    coautorIds?: string[];
+    relatoresIds?: string[];
 }
 
 export interface MateriaFiltros {
@@ -69,13 +136,13 @@ export interface MateriaFiltros {
 
 export const materiasApi = {
     list: (filtros?: MateriaFiltros) =>
-        apiList<Materia>(API_PATHS.legislative.materias, filtros as Record<string, string | number | boolean | undefined>),
+        apiList<Materia>(API_PATHS.materias, filtros as Record<string, string | number | boolean | undefined>),
 
     getById: (id: string) =>
-        api<Materia>(`${API_PATHS.legislative.materias}/${id}`),
+        api<Materia>(`${API_PATHS.materias}/${id}`),
 
     create: (dto: CreateMateriaDto | Record<string, unknown>) =>
-        api<Materia>(API_PATHS.legislative.materias, { method: 'POST', body: JSON.stringify(dto) }),
+        api<Materia>(API_PATHS.materias, { method: 'POST', body: JSON.stringify(dto) }),
 
     createComTexto: (dto: CreateMateriaDto & { textoOriginal?: File }) => {
         const { textoOriginal, ...rest } = dto;
@@ -84,14 +151,14 @@ export const materiasApi = {
             if (value !== undefined) fd.append(key, String(value));
         }
         if (textoOriginal) fd.append('textoOriginal', textoOriginal);
-        return apiFormData<Materia>(API_PATHS.legislative.materias, fd, 'POST');
+        return apiFormData<Materia>(API_PATHS.materias, fd, 'POST');
     },
 
     update: (id: string, dto: Partial<CreateMateriaDto>) =>
-        api<Materia>(`${API_PATHS.legislative.materias}/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
+        api<Materia>(`${API_PATHS.materias}/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
 
     remove: (id: string) =>
-        api<void>(`${API_PATHS.legislative.materias}/${id}`, { method: 'DELETE' }),
+        api<void>(`${API_PATHS.materias}/${id}`, { method: 'DELETE' }),
 
     tramitar: (id: string, dto: { statusNovo: MateriaStatus; descricao?: string }) =>
         api<Materia>(API_PATHS.materiasTramitar(id), { method: 'POST', body: JSON.stringify(dto) }),
@@ -101,4 +168,30 @@ export const materiasApi = {
 
     addPublicacao: (id: string, dto: Record<string, unknown>) =>
         api<Materia>(API_PATHS.materiasPublicacoes(id), { method: 'POST', body: JSON.stringify(dto) }),
+
+    listOpcoesAutor: (tipoAutorId: string) =>
+        api<MatterAuthorOptionsResponse>(
+            `${API_PATHS.materiasOpcoesAutor}?tipoAutorId=${encodeURIComponent(tipoAutorId)}`,
+        ),
+
+    getAutoria: (id: string) =>
+        api<MatterAuthorship>(API_PATHS.materiasAutoria(id)),
+
+    setAutorParlamentar: (id: string, parliamentarianId: string) =>
+        api<MatterAuthorship>(API_PATHS.materiasAutoriaParlamentar(id), {
+            method: 'PUT',
+            body: JSON.stringify({ parliamentarianId }),
+        }),
+
+    setAutorExterno: (id: string, autorExternoId: string) =>
+        api<MatterAuthorship>(API_PATHS.materiasAutoriaExterno(id), {
+            method: 'PUT',
+            body: JSON.stringify({ autorExternoId }),
+        }),
+
+    uploadTextoOriginal: (id: string, file: File) => {
+        const fd = new FormData();
+        fd.append('textoOriginal', file);
+        return apiFormData<Materia>(API_PATHS.materiasTextoOriginal(id), fd);
+    },
 };

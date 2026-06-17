@@ -9,11 +9,16 @@ export type CreateNormaRepositoryInput = {
     data?: Date | null;
     dataPublicacaoInicio?: Date | null;
     dataPublicacaoFim?: Date | null;
+    dataPublicacao?: Date | null;
     esferaFederacaoId?: string | null;
     identificadorId?: string | null;
     materiaOrigemId?: string | null;
     mensagem?: string | null;
     complementar?: boolean;
+    veiculoPublicacao?: string | null;
+    urlExternaPublicacao?: string | null;
+    paginaInicio?: number | null;
+    paginaFim?: number | null;
     textoIntegralUrl?: string | null;
     audioUrl?: string | null;
     textoUrl?: string | null;

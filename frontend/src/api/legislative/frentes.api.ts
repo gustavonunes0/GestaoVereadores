@@ -23,24 +23,35 @@ export type CreateFrontInput = {
     coordinatorParliamentarianId?: string;
 };
 
+export type FrenteFiltros = {
+    search?: string;
+    theme?: string;
+    status?: FrontStatus;
+    page?: number;
+    limit?: number;
+};
+
 export const frentesApi = {
-    list: (params?: Record<string, string | number | boolean | undefined>) =>
-        apiList<ParliamentaryFront>(API_PATHS.legislative.frentes, params),
+    list: (params?: FrenteFiltros) =>
+        apiList<ParliamentaryFront>(API_PATHS.frentes, params),
+
+    getById: (id: string) =>
+        api<ParliamentaryFront>(`${API_PATHS.frentes}/${id}`),
 
     create: (body: CreateFrontInput) =>
-        api<ParliamentaryFront>(API_PATHS.legislative.frentes, {
+        api<ParliamentaryFront>(API_PATHS.frentes, {
             method: 'POST',
             body: JSON.stringify(body),
         }),
 
     update: (id: string, body: Partial<CreateFrontInput>) =>
-        api<ParliamentaryFront>(`${API_PATHS.legislative.frentes}/${id}`, {
+        api<ParliamentaryFront>(`${API_PATHS.frentes}/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(body),
         }),
 
     remove: (id: string) =>
-        api<void>(`${API_PATHS.legislative.frentes}/${id}`, {
+        api<void>(`${API_PATHS.frentes}/${id}`, {
             method: 'DELETE',
         }),
 };

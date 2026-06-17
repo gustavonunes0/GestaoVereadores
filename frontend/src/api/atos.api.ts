@@ -27,9 +27,10 @@ export interface CreateAtoDto {
 export interface AtoFiltros {
     tipoId?: string;
     numero?: string;
-    dataInicio?: string;
-    dataFim?: string;
-    ementa?: string;
+    dataInicioDe?: string;
+    dataInicioAte?: string;
+    dataPublicacaoDe?: string;
+    dataPublicacaoAte?: string;
     page?: number;
     limit?: number;
 }

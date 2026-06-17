@@ -1,7 +1,9 @@
 import { SetMetadata } from '@nestjs/common';
-import { TenantUserRole } from '@prisma/client';
+import {
+    TenantRoleRequirement,
+} from '../../auth/guards/guard-combos';
 
 export const TENANT_ROLES_KEY = 'tenantRoles';
 
-export const TenantRoles = (...roles: TenantUserRole[]) =>
+export const TenantRoles = (...roles: TenantRoleRequirement[]) =>
     SetMetadata(TENANT_ROLES_KEY, roles);

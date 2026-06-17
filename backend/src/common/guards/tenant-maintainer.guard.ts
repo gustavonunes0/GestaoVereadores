@@ -5,8 +5,7 @@ import {
     Injectable,
 } from '@nestjs/common';
 import { RoleUsuario, TenantUserRole } from '@prisma/client';
-import { isTenantMaintainer } from '../auth/tenant-maintainer';
-import { AuthenticatedUser } from '../types/authenticated-request';
+import { AuthenticatedUser, isStaffUser } from '../types/authenticated-request';
 
 const SIGL_WRITE_ROLES: RoleUsuario[] = [
     RoleUsuario.MASTER,
@@ -39,16 +38,7 @@ export class TenantMaintainerGuard implements CanActivate {
             );
         }
 
-        if (user.tenantUserRole && MAINTAINER_ROLES.includes(user.tenantUserRole)) {
-            return true;
-        }
-
-        if (
-            isTenantMaintainer({
-                isTenantAdmin: user.isTenantAdmin ?? user.isAdmin,
-                isTenantStaff: user.isTenantStaff,
-            })
-        ) {
+        if (isStaffUser(user) && MAINTAINER_ROLES.includes(user.role)) {
             return true;
         }
 

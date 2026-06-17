@@ -64,33 +64,38 @@ export function AbrirSessaoDialog({ sessaoId, onClose, onSaved }: Props) {
             footer={footer}
             modal
         >
-            {loadingQuorum ? (
-                <div className="flex justify-content-center py-3">
-                    <ProgressSpinner style={{ width: '2rem', height: '2rem' }} />
+            <div className="sigl-dialog-body">
+                {loadingQuorum ? (
+                    <div className="flex justify-content-center py-3">
+                        <ProgressSpinner style={{ width: '2rem', height: '2rem' }} />
+                    </div>
+                ) : quorum ? (
+                    <Message
+                        severity={quorum.temQuorum ? 'success' : 'warn'}
+                        text={`Quórum mínimo: ${quorum.minimo} — Presentes: ${quorum.presente} — ${quorum.temQuorum ? '✅ Tem quórum' : '⚠️ Sem quórum'}`}
+                        className="w-full"
+                    />
+                ) : null}
+
+                {quorum && !quorum.temQuorum && (
+                    <p className="text-sm text-color-secondary m-0">
+                        Atenção: a sessão pode ser aberta mesmo sem quórum, mas o backend pode rejeitar dependendo da configuração.
+                    </p>
+                )}
+
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Observações</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="abrir-obs">Observações (opcional)</label>
+                        <InputTextarea
+                            id="abrir-obs"
+                            value={observacoes}
+                            onChange={(e) => setObservacoes(e.target.value)}
+                            rows={2}
+                            autoResize
+                        />
+                    </div>
                 </div>
-            ) : quorum ? (
-                <Message
-                    severity={quorum.temQuorum ? 'success' : 'warn'}
-                    text={`Quórum mínimo: ${quorum.minimo} — Presentes: ${quorum.presente} — ${quorum.temQuorum ? '✅ Tem quórum' : '⚠️ Sem quórum'}`}
-                    className="w-full mb-3"
-                />
-            ) : null}
-
-            {quorum && !quorum.temQuorum && (
-                <p className="text-sm text-color-secondary mb-3">
-                    Atenção: a sessão pode ser aberta mesmo sem quórum, mas o backend pode rejeitar dependendo da configuração.
-                </p>
-            )}
-
-            <div className="p-fluid">
-                <label htmlFor="abrir-obs">Observações (opcional)</label>
-                <InputTextarea
-                    id="abrir-obs"
-                    value={observacoes}
-                    onChange={(e) => setObservacoes(e.target.value)}
-                    rows={2}
-                    autoResize
-                />
             </div>
         </Dialog>
     );
