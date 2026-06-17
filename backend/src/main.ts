@@ -1,5 +1,6 @@
 import 'reflect-metadata';
-import { ValidationPipe } from '@nestjs/common';import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import {
     FastifyAdapter,
     NestFastifyApplication,
@@ -9,8 +10,10 @@ import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { join } from 'path';
 import { AppModule } from './app.module';
-import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { buildCorsOptions } from './config/cors.config';
 import { resolveVercelDatabaseEnv } from './config/resolve-vercel-env';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+
 function validateRuntimeEnv(): void {
     resolveVercelDatabaseEnv();
 
@@ -20,7 +23,8 @@ function validateRuntimeEnv(): void {
             'DATABASE_URL (ou gestaovereadores_PRISMA_DATABASE_URL)',
         );
     }
-    if (!process.env.JWT_SECRET?.trim()) missing.push('JWT_SECRET');    if (missing.length > 0) {
+    if (!process.env.JWT_SECRET?.trim()) missing.push('JWT_SECRET');
+    if (missing.length > 0) {
         throw new Error(
             `Variáveis de ambiente obrigatórias ausentes: ${missing.join(', ')}`,
         );
@@ -29,6 +33,7 @@ function validateRuntimeEnv(): void {
 
 async function bootstrap() {
     validateRuntimeEnv();
+
     const app = await NestFactory.create<NestFastifyApplication>(
         AppModule,
         new FastifyAdapter({
@@ -36,6 +41,8 @@ async function bootstrap() {
             bodyLimit: 10 * 1024 * 1024,
         }),
     );
+
+    app.enableCors(buildCorsOptions() as Parameters<NestFastifyApplication['enableCors']>[0]);
 
     await app.register(multipart, {
         limits: { fileSize: 10 * 1024 * 1024 },
@@ -50,16 +57,6 @@ async function bootstrap() {
     }
 
     app.setGlobalPrefix('api');
-    app.enableCors({
-        origin: process.env.CORS_ORIGIN?.split(',') ?? [
-            'http://localhost:5173',
-            'http://127.0.0.1:5173',
-            'http://localhost:8080',
-            'http://127.0.0.1:8080',
-            'http://localhost',
-        ],
-        credentials: true,
-    });
     app.useGlobalPipes(
         new ValidationPipe({
             whitelist: true,
