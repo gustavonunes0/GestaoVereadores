@@ -39,3 +39,10 @@ export class PoliticalPartyRemovedForParliamentarianError extends Error {
         this.name = 'PoliticalPartyRemovedForParliamentarianError';
     }
 }
+
+export class ParliamentarianCpfAlreadyInUseError extends Error {
+    constructor() {
+        super('Já existe um usuário cadastrado com este CPF');
+        this.name = 'ParliamentarianCpfAlreadyInUseError';
+    }
+}

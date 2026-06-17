@@ -78,55 +78,67 @@ function FrenteDialog({
 
     return (
         <Dialog header={title} visible onHide={onClose} style={{ width: 'min(90vw, 600px)' }} footer={footer} modal>
-            <div className="grid p-fluid">
-                <div className="col-12 md:col-8">
-                    <label htmlFor="fr-nome">Nome *</label>
-                    <InputText id="fr-nome" value={form.name} onChange={(e) => patch({ name: e.target.value })} />
+            <div className="sigl-dialog-body">
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Identificação</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="fr-nome">Nome *</label>
+                            <InputText id="fr-nome" value={form.name} onChange={(e) => patch({ name: e.target.value })} />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="fr-status">Situação</label>
+                            <select
+                                id="fr-status"
+                                value={form.status}
+                                onChange={(e) => patch({ status: e.target.value as FrontStatus })}
+                                className="p-inputtext w-full"
+                            >
+                                {STATUS_OPTIONS.map((o) => (
+                                    <option key={o.value} value={o.value}>{o.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div className="col-12 md:col-4">
-                    <label htmlFor="fr-status">Situação</label>
-                    <select
-                        id="fr-status"
-                        value={form.status}
-                        onChange={(e) => patch({ status: e.target.value as FrontStatus })}
-                        className="p-inputtext w-full"
-                        style={{ height: '2.5rem' }}
-                    >
-                        {STATUS_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                    </select>
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Conteúdo</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="fr-tema">Tema *</label>
+                        <InputText id="fr-tema" value={form.theme} onChange={(e) => patch({ theme: e.target.value })} />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="fr-desc">Descrição</label>
+                        <InputTextarea
+                            id="fr-desc"
+                            value={form.description}
+                            onChange={(e) => patch({ description: e.target.value })}
+                            rows={3}
+                        />
+                    </div>
                 </div>
-                <div className="col-12">
-                    <label htmlFor="fr-tema">Tema *</label>
-                    <InputText id="fr-tema" value={form.theme} onChange={(e) => patch({ theme: e.target.value })} />
-                </div>
-                <div className="col-12">
-                    <label htmlFor="fr-desc">Descrição</label>
-                    <InputTextarea
-                        id="fr-desc"
-                        value={form.description}
-                        onChange={(e) => patch({ description: e.target.value })}
-                        rows={3}
-                    />
-                </div>
-                <div className="col-12 md:col-6">
-                    <label htmlFor="fr-inicio">Data de início</label>
-                    <InputText
-                        id="fr-inicio"
-                        type="date"
-                        value={form.startDate}
-                        onChange={(e) => patch({ startDate: e.target.value })}
-                    />
-                </div>
-                <div className="col-12 md:col-6">
-                    <label htmlFor="fr-fim">Data de fim</label>
-                    <InputText
-                        id="fr-fim"
-                        type="date"
-                        value={form.endDate}
-                        onChange={(e) => patch({ endDate: e.target.value })}
-                    />
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Período</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="fr-inicio">Data de início</label>
+                            <InputText
+                                id="fr-inicio"
+                                type="date"
+                                value={form.startDate}
+                                onChange={(e) => patch({ startDate: e.target.value })}
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="fr-fim">Data de fim</label>
+                            <InputText
+                                id="fr-fim"
+                                type="date"
+                                value={form.endDate}
+                                onChange={(e) => patch({ endDate: e.target.value })}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </Dialog>
@@ -134,7 +146,7 @@ function FrenteDialog({
 }
 
 export function FrentesPage() {
-    const { canWrite, canEdit, canDelete } = usePermissions();
+    const { canEdit, canDelete } = usePermissions();
     const { showSuccess, showApiError } = useAppToast();
 
     const [items, setItems] = useState<ParliamentaryFront[]>([]);
@@ -225,19 +237,18 @@ export function FrentesPage() {
     );
 
     return (
-        <section className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.frentes}
                 title="Frentes parlamentares"
                 subtitle="Grupos temáticos de parlamentares com objetivo legislativo comum."
                 actions={
-                    canWrite ? (
-                        <Button label="Adicionar frente" icon="pi pi-plus" onClick={() => setDialogCriar(true)} />
-                    ) : undefined
+                    <Button label="Adicionar frente" icon="pi pi-plus" onClick={() => setDialogCriar(true)} />
                 }
             />
 
-            <DataTableLayout<ParliamentaryFront>
+            <section aria-label="Lista de frentes parlamentares" className="pt-4">
+                <DataTableLayout<ParliamentaryFront>
                 items={items}
                 total={total}
                 loading={loading}
@@ -247,7 +258,8 @@ export function FrentesPage() {
                 canWrite={canEdit}
                 onEditar={canEdit ? (item) => setDialogEditar(item) : undefined}
                 onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
-            />
+                />
+            </section>
 
             {dialogCriar && (
                 <FrenteDialog
@@ -288,6 +300,6 @@ export function FrentesPage() {
                     }}
                 />
             )}
-        </section>
+        </main>
     );
 }

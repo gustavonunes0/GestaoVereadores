@@ -1,4 +1,4 @@
-// Schema derivado da aba "Atividade Legislativa" — Mapeamento_Banco_Dados_IntGest_Cardinalidade_CORRIGIDO.drawio
+// Schema derivado da aba "Atividade Legislativa" — mapeamento de cardinalidade (drawio em docs/)
 // Telas de pesquisa (MATERIA_PESQUISAR, SESSAO_PESQUISAR, NORMA_PESQUISAR) são filtros de API, não tabelas.
 
 generator client {

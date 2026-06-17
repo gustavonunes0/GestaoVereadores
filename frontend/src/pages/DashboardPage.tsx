@@ -77,7 +77,7 @@ export function DashboardPage() {
     }, []);
 
     return (
-        <section className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.dashboard}
                 title="Painel legislativo"
@@ -194,6 +194,6 @@ export function DashboardPage() {
                     </Link>
                 </div>
             </div>
-        </section>
+        </main>
     );
 }

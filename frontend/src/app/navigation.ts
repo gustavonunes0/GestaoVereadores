@@ -3,6 +3,8 @@
  * Matéria → Sessão → (1) Normas jurídicas | (2) Atos administrativos
  */
 
+import type { SidebarIconKey } from './sidebar-icons';
+
 /** Ícones PrimeIcons por módulo (reutilizar em menu, abas e PageHeader). */
 export const MODULE_ICONS = {
     dashboard: 'pi pi-th-large',
@@ -59,38 +61,80 @@ export const WORKFLOW_PIPELINE_TOTAL = 6;
 /** Item de navegação — route é undefined para grupos accordion. */
 export interface NavItemDef {
     label: string;
-    icon: string;
+    /** Chave do par de ícones MUI (sidebar staff). */
+    sidebarIcon?: SidebarIconKey;
+    /** Sufixo PrimeIcons sem prefixo pi (layout parlamentar). */
+    icon?: string;
     route?: string;
     adminOnly?: boolean;
     children?: NavItemDef[];
 }
 
+/** Grupo de itens no menu lateral (label + itens). */
+export interface NavGroupDef {
+    label: string;
+    items: NavItemDef[];
+}
+
 /**
- * Menu lateral Staff — lista plana na ordem do documento operacional.
- * Apenas "Câmara Gestão" é um accordion.
+ * Menu lateral Staff — agrupado por domínio.
+ * Apenas "Câmara Gestão" é accordion.
  */
-export const STAFF_NAV_GROUPS: NavItemDef[] = [
-    { label: 'Dashboard',             route: ROUTES.dashboard,             icon: 'pi-home' },
-    { label: 'Sessões Legislativas',  route: ROUTES.sessoes,               icon: 'pi-calendar' },
-    { label: 'Matérias',              route: ROUTES.materias,              icon: 'pi-file-edit' },
-    { label: 'Normas Jurídicas',      route: ROUTES.normasJuridicas,      icon: 'pi-book' },
-    { label: 'Atos Administrativos',  route: ROUTES.atosAdministrativos,  icon: 'pi-briefcase' },
-    { label: 'Parlamentares',         route: ROUTES.camara.parlamentares,  icon: 'pi-users' },
-    { label: 'Mesa Diretora',         route: ROUTES.camara.mesaDiretora,  icon: 'pi-star' },
-    { label: 'Comissões',             route: ROUTES.camara.comissoes,      icon: 'pi-sitemap' },
-    { label: 'Frentes Parlamentares', route: ROUTES.camara.frentes,        icon: 'pi-flag' },
-    { label: 'Autor Externo',         route: ROUTES.camara.autores,        icon: 'pi-id-card' },
-    { label: 'Agenda',                route: ROUTES.agenda,                icon: 'pi-calendar-plus' },
-    { label: 'Relatórios',            route: ROUTES.relatorios,            icon: 'pi-chart-bar' },
+export const STAFF_NAV_MENU: NavGroupDef[] = [
     {
-        label: 'Câmara Gestão',
-        icon: 'pi-building',
-        children: [
-            { label: 'Portal Institucional', route: ROUTES.camara.portal, icon: 'pi-globe' },
-            { label: 'Usuários', route: ROUTES.usuarios, icon: 'pi-user-edit', adminOnly: true },
+        label: 'Geral',
+        items: [
+            { label: 'Dashboard', route: ROUTES.dashboard, sidebarIcon: 'dashboard' },
+        ],
+    },
+    {
+        label: 'Legislativo',
+        items: [
+            { label: 'Sessões Legislativas', route: ROUTES.sessoes, sidebarIcon: 'gavel' },
+            { label: 'Matérias', route: ROUTES.materias, sidebarIcon: 'description' },
+            { label: 'Normas Jurídicas', route: ROUTES.normasJuridicas, sidebarIcon: 'balance' },
+            { label: 'Atos Administrativos', route: ROUTES.atosAdministrativos, sidebarIcon: 'task' },
+        ],
+    },
+    {
+        label: 'Pessoas',
+        items: [
+            { label: 'Parlamentares', route: ROUTES.camara.parlamentares, sidebarIcon: 'groups' },
+            { label: 'Mesa Diretora', route: ROUTES.camara.mesaDiretora, sidebarIcon: 'recent_actors' },
+            { label: 'Comissões', route: ROUTES.camara.comissoes, sidebarIcon: 'people' },
+            { label: 'Frentes Parlamentares', route: ROUTES.camara.frentes, sidebarIcon: 'flag' },
+            { label: 'Autor Externo', route: ROUTES.camara.autores, sidebarIcon: 'person_add' },
+        ],
+    },
+    {
+        label: 'Sistema',
+        items: [
+            { label: 'Agenda', route: ROUTES.agenda, sidebarIcon: 'calendar_month' },
+            { label: 'Relatórios', route: ROUTES.relatorios, sidebarIcon: 'bar_chart' },
+            {
+                label: 'Câmara Gestão',
+                sidebarIcon: 'account_balance',
+                children: [
+                    { label: 'Portal Institucional', route: ROUTES.camara.portal, sidebarIcon: 'public' },
+                    {
+                        label: 'Usuários',
+                        route: ROUTES.usuarios,
+                        sidebarIcon: 'manage_accounts',
+                        adminOnly: true,
+                    },
+                ],
+            },
         ],
     },
 ];
+
+/** Lista plana de itens do menu staff (validação de rotas). */
+export function flattenStaffNavItems(): NavItemDef[] {
+    return STAFF_NAV_MENU.flatMap((group) => group.items);
+}
+
+/** @deprecated Use STAFF_NAV_MENU na sidebar; mantido para scripts de validação. */
+export const STAFF_NAV_GROUPS = flattenStaffNavItems();
 
 /**
  * Menu lateral Parlamentar — "Perfil" é accordion expandido por padrão.

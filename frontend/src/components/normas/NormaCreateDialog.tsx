@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
-import { Calendar } from 'primereact/calendar';
 import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
-import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Message } from 'primereact/message';
@@ -11,6 +9,7 @@ import { normasApi, type CreateNormaDto } from '../../api/normas.api';
 import { materiasApi } from '../../api/legislative/materias.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
+import { DatePicker, Dropdown, mapDropdownOptions, withEmptyOption } from '../../components/ui';
 
 interface Props {
     onClose: () => void;
@@ -87,113 +86,123 @@ export function NormaCreateDialog({ onClose, onSaved }: Props) {
             footer={footer}
             modal
         >
-            <div className="grid p-fluid">
-                <div className="col-12 md:col-6">
-                    <label htmlFor="n-tipo">Espécie normativa *</label>
-                    <Dropdown
-                        id="n-tipo"
-                        value={form.tipoId}
-                        options={tiposNorma}
-                        optionLabel="nome"
-                        optionValue="id"
-                        onChange={(e) => patch({ tipoId: e.value })}
-                        placeholder="Selecione"
-                    />
-                </div>
-                <div className="col-12 md:col-3">
-                    <label htmlFor="n-numero">Número *</label>
-                    <InputText
-                        id="n-numero"
-                        value={form.numero ?? ''}
-                        onChange={(e) => patch({ numero: e.target.value })}
-                        placeholder="Ex.: 1234"
-                    />
-                </div>
-                <div className="col-12 md:col-3">
-                    <label htmlFor="n-ano">Ano *</label>
-                    <Dropdown
-                        id="n-ano"
-                        value={form.anoId}
-                        options={anos}
-                        optionLabel="valor"
-                        optionValue="id"
-                        onChange={(e) => patch({ anoId: e.value })}
-                        placeholder="Selecione"
-                    />
-                </div>
-                <div className="col-12 md:col-6">
-                    <label htmlFor="n-esfera">Esfera *</label>
-                    <Dropdown
-                        id="n-esfera"
-                        value={form.esferaFederacaoId}
-                        options={esferasFederacao}
-                        optionLabel="nome"
-                        optionValue="id"
-                        onChange={(e) => patch({ esferaFederacaoId: e.value })}
-                        placeholder="Selecione"
-                    />
-                </div>
-                <div className="col-12 md:col-6 flex align-items-end">
-                    <div className="flex align-items-center gap-2">
-                        <Checkbox
-                            inputId="n-complementar"
-                            checked={form.complementar ?? false}
-                            onChange={(e) => patch({ complementar: e.checked ?? false })}
-                        />
-                        <label htmlFor="n-complementar">Lei Complementar</label>
+            <div className="sigl-dialog-body">
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Identificação</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-3">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="n-tipo">Espécie normativa *</label>
+                            <Dropdown
+                                id="n-tipo"
+                                value={form.tipoId ?? ''}
+                                options={mapDropdownOptions(tiposNorma, 'nome', 'id')}
+                                onChange={(v) => patch({ tipoId: String(v) })}
+                                placeholder="Selecione"
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="n-numero">Número *</label>
+                            <InputText
+                                id="n-numero"
+                                value={form.numero ?? ''}
+                                onChange={(e) => patch({ numero: e.target.value })}
+                                placeholder="Ex.: 1234"
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="n-ano">Ano *</label>
+                            <Dropdown
+                                id="n-ano"
+                                value={form.anoId ?? ''}
+                                options={anos.map((a) => ({ label: String(a.valor), value: a.id }))}
+                                onChange={(v) => patch({ anoId: String(v) })}
+                                placeholder="Selecione"
+                            />
+                        </div>
+                    </div>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="n-esfera">Esfera *</label>
+                            <Dropdown
+                                id="n-esfera"
+                                value={form.esferaFederacaoId ?? ''}
+                                options={mapDropdownOptions(esferasFederacao, 'nome', 'id')}
+                                onChange={(v) => patch({ esferaFederacaoId: String(v) })}
+                                placeholder="Selecione"
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo flex align-items-end">
+                            <div className="flex align-items-center gap-2">
+                                <Checkbox
+                                    inputId="n-complementar"
+                                    checked={form.complementar ?? false}
+                                    onChange={(e) => patch({ complementar: e.checked ?? false })}
+                                />
+                                <label htmlFor="n-complementar">Lei Complementar</label>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="col-12">
-                    <label htmlFor="n-ementa">Ementa *</label>
-                    <InputTextarea
-                        id="n-ementa"
-                        value={form.ementa ?? ''}
-                        onChange={(e) => patch({ ementa: e.target.value })}
-                        rows={3}
-                        placeholder="Resumo do objeto e alcance da norma"
-                    />
-                </div>
-                <div className="col-12 md:col-6">
-                    <label htmlFor="n-publicacao">Data de publicação</label>
-                    <Calendar
-                        id="n-publicacao"
-                        value={form.dataPublicacao ? new Date(form.dataPublicacao) : null}
-                        onChange={(e) =>
-                            patch({ dataPublicacao: e.value ? (e.value as Date).toISOString().split('T')[0] : undefined })
-                        }
-                        dateFormat="dd/mm/yy"
-                        showIcon
-                    />
-                </div>
-                <div className="col-12 md:col-6">
-                    <label htmlFor="n-veiculo">Veículo de publicação</label>
-                    <InputText
-                        id="n-veiculo"
-                        value={form.veiculoPublicacao ?? ''}
-                        onChange={(e) => patch({ veiculoPublicacao: e.target.value })}
-                        placeholder="Ex.: Diário Oficial"
-                    />
-                </div>
-                <div className="col-12">
-                    <label htmlFor="n-materia">Matéria de origem (aprovada)</label>
-                    {materiasAprovadas.length === 0 && (
-                        <Message
-                            severity="warn"
-                            text="Nenhuma matéria aprovada disponível."
-                            className="mb-2"
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Conteúdo</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="n-ementa">Ementa *</label>
+                        <InputTextarea
+                            id="n-ementa"
+                            value={form.ementa ?? ''}
+                            onChange={(e) => patch({ ementa: e.target.value })}
+                            rows={3}
+                            placeholder="Resumo do objeto e alcance da norma"
                         />
-                    )}
-                    <Dropdown
-                        id="n-materia"
-                        value={form.materiaOrigemId ?? null}
-                        options={materiasAprovadas}
-                        optionLabel="ementa"
-                        optionValue="id"
-                        onChange={(e) => patch({ materiaOrigemId: e.value })}
-                        placeholder="Opcional — vincule a matéria aprovada"
-                        disabled={materiasAprovadas.length === 0}
-                        showClear
-                    />
+                    </div>
+                </div>
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Publicação</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <DatePicker
+                                id="n-publicacao"
+                                label="Data de publicação"
+                                value={form.dataPublicacao ? new Date(form.dataPublicacao) : null}
+                                onChange={(d) =>
+                                    patch({ dataPublicacao: d ? d.toISOString().split('T')[0] : undefined })
+                                }
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="n-veiculo">Veículo de publicação</label>
+                            <InputText
+                                id="n-veiculo"
+                                value={form.veiculoPublicacao ?? ''}
+                                onChange={(e) => patch({ veiculoPublicacao: e.target.value })}
+                                placeholder="Ex.: Diário Oficial"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Vínculo</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="n-materia">Matéria de origem (aprovada)</label>
+                        {materiasAprovadas.length === 0 && (
+                            <Message
+                                severity="warn"
+                                text="Nenhuma matéria aprovada disponível."
+                                className="mb-2"
+                            />
+                        )}
+                        <Dropdown
+                            id="n-materia"
+                            value={form.materiaOrigemId ?? ''}
+                            options={withEmptyOption(
+                                mapDropdownOptions(materiasAprovadas, 'ementa', 'id'),
+                                'Nenhuma',
+                            )}
+                            onChange={(v) => patch({ materiaOrigemId: v ? String(v) : undefined })}
+                            placeholder="Opcional — vincule a matéria aprovada"
+                            disabled={materiasAprovadas.length === 0}
+                        />
+                    </div>
                 </div>
             </div>
         </Dialog>

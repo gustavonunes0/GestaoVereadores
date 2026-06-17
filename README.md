@@ -1,6 +1,6 @@
 # Gestão Vereadores
 
-Sistema de gestão da atividade legislativa da Câmara (baseado no mapeamento IntGest / SIGL).
+Sistema de gestão da atividade legislativa da Câmara (SIGL).
 
 ## Estrutura do repositório
 
@@ -192,5 +192,5 @@ Detalhes de rotas, perfis de acesso, paginação, mapeamento drawio → tabelas 
 ## Referências de domínio
 
 - [docs/fluxos_de_trabalho.md](docs/fluxos_de_trabalho.md) — fluxo legislativo
-- [docs/Mapeamento_Banco_Dados_IntGest_Cardinalidade_CORRIGIDO.drawio](docs/Mapeamento_Banco_Dados_IntGest_Cardinalidade_CORRIGIDO.drawio) — ERD com cardinalidade
+- `docs/` — diagramas e mapeamento de banco (ERD com cardinalidade)
 - [docs/desenho_banco_de_dados.md](docs/desenho_banco_de_dados.md) — ERD resumido do módulo legislativo

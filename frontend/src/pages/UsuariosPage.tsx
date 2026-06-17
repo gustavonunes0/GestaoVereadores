@@ -114,7 +114,7 @@ export function UsuariosPage() {
         : SIGL_ROLES.map((r) => ({ label: SIGL_ROLE_LABELS[r], value: r }));
 
     return (
-        <section className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.usuarios}
                 title="Usuários do sistema"
@@ -131,6 +131,7 @@ export function UsuariosPage() {
                 Apenas perfil Master / Administrador pode criar e alterar usuários.
             </p>
 
+            <section aria-label="Lista de usuários">
             <div className="card table-wrap">
                 <table>
                     <thead>
@@ -193,50 +194,68 @@ export function UsuariosPage() {
                 </div>
             )}
 
+            </section>
+
             {createOpen && (
                 <Modal title="Novo usuário" onClose={() => setCreateOpen(false)}>
                     <form onSubmit={handleCreate}>
-                        <label>
-                            Login *
-                            <input
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                                minLength={3}
-                                autoComplete="off"
-                            />
-                        </label>
-                        <label>
-                            Senha *
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={6}
-                                autoComplete="new-password"
-                            />
-                        </label>
-                        <label>
-                            Nome exibido *
-                            <input
-                                value={nome}
-                                onChange={(e) => setNome(e.target.value)}
-                                required
-                                minLength={2}
-                            />
-                        </label>
-                        <label>
-                            Perfil *
-                            <select
-                                value={role}
-                                onChange={(e) => setRole(e.target.value)}
-                            >
-                                {roleOptions.map((r) => (
-                                    <option key={r.value} value={r.value}>{r.label}</option>
-                                ))}
-                            </select>
-                        </label>
+                        <div className="sigl-dialog-body">
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Acesso</span>
+                                <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="usr-login">Login *</label>
+                                        <input
+                                            id="usr-login"
+                                            value={username}
+                                            onChange={(e) => setUsername(e.target.value)}
+                                            required
+                                            minLength={3}
+                                            autoComplete="off"
+                                        />
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="usr-senha">Senha *</label>
+                                        <input
+                                            id="usr-senha"
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                            minLength={6}
+                                            autoComplete="new-password"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Perfil</span>
+                                <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="usr-nome">Nome exibido *</label>
+                                        <input
+                                            id="usr-nome"
+                                            value={nome}
+                                            onChange={(e) => setNome(e.target.value)}
+                                            required
+                                            minLength={2}
+                                        />
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="usr-role">Perfil *</label>
+                                        <select
+                                            id="usr-role"
+                                            value={role}
+                                            onChange={(e) => setRole(e.target.value)}
+                                        >
+                                            {roleOptions.map((r) => (
+                                                <option key={r.value} value={r.value}>{r.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div className="modal-actions">
                             <button type="button" className="btn btn-secondary" onClick={() => setCreateOpen(false)}>
                                 Cancelar
@@ -250,31 +269,43 @@ export function UsuariosPage() {
             {editUser && (
                 <Modal title={`Editar — ${editUser.username}`} onClose={() => setEditUser(null)}>
                     <form onSubmit={handleUpdate}>
-                        <label>
-                            Nome exibido *
-                            <input
-                                value={nome}
-                                onChange={(e) => setNome(e.target.value)}
-                                required
-                                minLength={2}
-                            />
-                        </label>
-                        <label>
-                            Perfil *
-                            <select value={role} onChange={(e) => setRole(e.target.value)}>
-                                {roleOptions.map((r) => (
-                                    <option key={r.value} value={r.value}>{r.label}</option>
-                                ))}
-                            </select>
-                        </label>
-                        <label className="label-inline">
-                            <input
-                                type="checkbox"
-                                checked={ativo}
-                                onChange={(e) => setAtivo(e.target.checked)}
-                            />
-                            Usuário ativo
-                        </label>
+                        <div className="sigl-dialog-body">
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Perfil</span>
+                                <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="usr-edit-nome">Nome exibido *</label>
+                                        <input
+                                            id="usr-edit-nome"
+                                            value={nome}
+                                            onChange={(e) => setNome(e.target.value)}
+                                            required
+                                            minLength={2}
+                                        />
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="usr-edit-role">Perfil *</label>
+                                        <select id="usr-edit-role" value={role} onChange={(e) => setRole(e.target.value)}>
+                                            {roleOptions.map((r) => (
+                                                <option key={r.value} value={r.value}>{r.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Status</span>
+                                <div className="sigl-filtro-campo flex align-items-center gap-2">
+                                    <input
+                                        id="usr-edit-ativo"
+                                        type="checkbox"
+                                        checked={ativo}
+                                        onChange={(e) => setAtivo(e.target.checked)}
+                                    />
+                                    <label htmlFor="usr-edit-ativo">Usuário ativo</label>
+                                </div>
+                            </div>
+                        </div>
                         <div className="modal-actions">
                             <button type="button" className="btn btn-secondary" onClick={() => setEditUser(null)}>
                                 Cancelar
@@ -284,6 +315,6 @@ export function UsuariosPage() {
                     </form>
                 </Modal>
             )}
-        </section>
+        </main>
     );
 }

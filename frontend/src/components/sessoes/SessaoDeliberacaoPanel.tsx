@@ -560,30 +560,35 @@ export function SessaoDeliberacaoPanel({
                     onClose={() => !busy && setPresencaOpen(false)}
                 >
                     <form onSubmit={handlePresenca}>
-                        <label>
-                            Parlamentar *
-                            <select
-                                value={parlamentarPresencaId}
-                                onChange={(e) =>
-                                    setParlamentarPresencaId(e.target.value)
-                                }
-                                required
-                            >
-                                {parlamentares.map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.pessoa.nome}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                        <label className="label-inline">
-                            <input
-                                type="checkbox"
-                                checked={presente}
-                                onChange={(e) => setPresente(e.target.checked)}
-                            />
-                            Presente na sessão
-                        </label>
+                        <div className="sigl-dialog-body">
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Presença</span>
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="pres-parl">Parlamentar *</label>
+                                    <select
+                                        id="pres-parl"
+                                        value={parlamentarPresencaId}
+                                        onChange={(e) => setParlamentarPresencaId(e.target.value)}
+                                        required
+                                    >
+                                        {parlamentares.map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.pessoa.nome}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="sigl-filtro-campo flex align-items-center gap-2">
+                                    <input
+                                        id="pres-presente"
+                                        type="checkbox"
+                                        checked={presente}
+                                        onChange={(e) => setPresente(e.target.checked)}
+                                    />
+                                    <label htmlFor="pres-presente">Presente na sessão</label>
+                                </div>
+                            </div>
+                        </div>
                         <div className="modal-actions">
                             <button
                                 type="button"

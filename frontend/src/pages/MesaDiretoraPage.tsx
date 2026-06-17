@@ -1,7 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Button } from 'primereact/button';
-import { ROUTES, MODULE_ICONS } from '../app/navigation';
+import { MODULE_ICONS } from '../app/navigation';
 import {
     mesaDiretoraApi,
     type Board,
@@ -11,10 +10,8 @@ import { NavDrawer } from '../components/NavDrawer';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
 import { useLegislatura } from '../contexts/LegislaturaContext';
-import { usePermissions } from '../hooks/usePermissions';
 
 export function MesaDiretoraPage() {
-    const { canWrite } = usePermissions();
     const { legislaturaId, legislaturaAtiva } = useLegislatura();
     const [items, setItems] = useState<Board[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -78,30 +75,24 @@ export function MesaDiretoraPage() {
     }
 
     return (
-        <div className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.mesaDiretora}
                 title="Mesa diretora"
                 subtitle="Composição e membros da mesa diretora por legislatura."
                 actions={
-                    canWrite ? (
+                    (
                         <Button
                             label="Nova composição"
                             icon="pi pi-plus"
                             onClick={() => setOpen(true)}
                             disabled={!legislaturaId}
                         />
-                    ) : undefined
+                    )
                 }
             />
 
-            {!legislaturaId && (
-                <p className="alert alert-warn">
-                    Selecione a legislatura na barra superior ou cadastre em{' '}
-                    <Link to={ROUTES.camara.legislaturas}>Legislaturas</Link>.
-                </p>
-            )}
-
+            <section aria-label="Lista de composições da mesa diretora" className="pt-4">
             <div className="list-panel">
                 <div className="list-panel__body">
                     <div className="list-panel__scroll table-wrap">
@@ -145,6 +136,7 @@ export function MesaDiretoraPage() {
                     )}
                 </div>
             </div>
+            </section>
 
             <NavDrawer
                 visible={!!detail}
@@ -171,14 +163,20 @@ export function MesaDiretoraPage() {
                     onClose={() => setOpen(false)}
                 >
                     <form onSubmit={handleCreate}>
-                        <label>
-                            Nome
-                            <input
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder={`Mesa ${legislaturaAtiva?.numero ?? ''}ª legislatura`}
-                            />
-                        </label>
+                        <div className="sigl-dialog-body">
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Identificação</span>
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="mesa-nome">Nome</label>
+                                    <input
+                                        id="mesa-nome"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder={`Mesa ${legislaturaAtiva?.numero ?? ''}ª legislatura`}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                         <div className="modal-actions">
                             <button
                                 type="button"
@@ -194,6 +192,6 @@ export function MesaDiretoraPage() {
                     </form>
                 </Modal>
             )}
-        </div>
+        </main>
     );
 }

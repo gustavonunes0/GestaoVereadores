@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import ExpandLessOutlined from '@mui/icons-material/ExpandLessOutlined';
+import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import { NavLink, useLocation } from 'react-router-dom';
-import { STAFF_NAV_GROUPS, type NavItemDef } from '../app/navigation';
+import { SIDEBAR_ICONS } from '../app/sidebar-icons';
+import { STAFF_NAV_MENU, type NavItemDef } from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import { SidebarIcon } from './ui/SidebarIcon';
 
 export function SidebarNav() {
     const { pathname } = useLocation();
@@ -21,6 +25,18 @@ export function SidebarNav() {
         return pathname.startsWith(route);
     }
 
+    function renderSidebarIcon(item: NavItemDef, active: boolean) {
+        if (!item.sidebarIcon) return null;
+        const pair = SIDEBAR_ICONS[item.sidebarIcon];
+        return (
+            <SidebarIcon
+                icon={pair.icon}
+                iconActive={pair.iconActive}
+                active={active}
+            />
+        );
+    }
+
     function renderItem(item: NavItemDef, nested = false): React.ReactNode {
         if (item.adminOnly && !isAdminStaff) return null;
 
@@ -29,23 +45,32 @@ export function SidebarNav() {
             const hasActiveChild = item.children.some(
                 (c) => c.route && isRouteActive(c.route),
             );
+            const groupActive = hasActiveChild;
+
             return (
-                <div key={item.label} className={`nav-group${hasActiveChild ? ' nav-group--active' : ''}`}>
+                <div key={item.label} className={`nav-group${groupActive ? ' nav-group--active' : ''}`}>
                     <button
                         type="button"
-                        className="nav-link w-full text-left"
+                        className={`sidebar-item text-left${groupActive ? ' active' : ''}`}
                         onClick={() => toggleGroup(item.label)}
                         aria-expanded={isExpanded}
                     >
-                        <span className="nav-link__label flex items-center justify-between">
-                            <span className="flex items-center gap-2">
-                                <i className={`pi ${item.icon} module-title__icon`} aria-hidden="true" />
-                                <span>{item.label}</span>
-                            </span>
-                            <i
-                                className={`pi ${isExpanded ? 'pi-chevron-up' : 'pi-chevron-down'} text-xs opacity-50`}
-                                aria-hidden="true"
-                            />
+                        <span className="sidebar-item__label">
+                            {renderSidebarIcon(item, groupActive)}
+                            <span>{item.label}</span>
+                            {isExpanded ? (
+                                <ExpandLessOutlined
+                                    aria-hidden="true"
+                                    className="sidebar-item__chevron"
+                                    sx={{ fontSize: 18, flexShrink: 0, color: 'currentColor' }}
+                                />
+                            ) : (
+                                <ExpandMoreOutlined
+                                    aria-hidden="true"
+                                    className="sidebar-item__chevron"
+                                    sx={{ fontSize: 18, flexShrink: 0, color: 'currentColor' }}
+                                />
+                            )}
                         </span>
                     </button>
                     {isExpanded && (
@@ -59,7 +84,7 @@ export function SidebarNav() {
             );
         }
 
-        if (!item.route) return null;
+        if (!item.route || !item.sidebarIcon) return null;
         const active = isRouteActive(item.route);
 
         return (
@@ -68,21 +93,24 @@ export function SidebarNav() {
                 to={item.route}
                 end={item.route === '/'}
                 className={() =>
-                    `nav-link${nested ? ' nav-link--nested' : ''}${active ? ' active' : ''}`
+                    `sidebar-item${nested ? ' sidebar-item--nested' : ''}${active ? ' active' : ''}`
                 }
                 aria-current={active ? 'page' : undefined}
             >
-                <span className="nav-link__label flex items-center gap-2">
-                    <i className={`pi ${item.icon} module-title__icon`} aria-hidden="true" />
-                    <span>{item.label}</span>
-                </span>
+                {renderSidebarIcon(item, active)}
+                <span>{item.label}</span>
             </NavLink>
         );
     }
 
     return (
         <nav className="sidebar-nav" aria-label="Navegação principal">
-            {STAFF_NAV_GROUPS.map((item) => renderItem(item))}
+            {STAFF_NAV_MENU.map((group) => (
+                <div key={group.label} className="sidebar-nav__group">
+                    <div className="sidebar-group-label">{group.label}</div>
+                    {group.items.map((item) => renderItem(item))}
+                </div>
+            ))}
         </nav>
     );
 }

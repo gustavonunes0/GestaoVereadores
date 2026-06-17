@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
-import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { apiList } from '../../api/client';
@@ -12,6 +11,7 @@ import {
     type UpdateParliamentarianInput,
 } from '../../api/legislative/parlamentares.api';
 import { useAppToast } from '../../hooks/useAppToast';
+import { Dropdown } from '../../components/ui';
 
 type Partido = { id: string; name: string; acronym: string };
 type PartidoOption = { id: string; label: string };
@@ -89,46 +89,51 @@ export function ParlamentarEditDialog({ parlamentar, onClose, onSaved }: Props) 
             footer={footer}
             modal
         >
-            <div className="grid p-fluid">
-                <div className="col-12 md:col-8">
-                    <label htmlFor="pe-nome">Nome parlamentar *</label>
-                    <InputText
-                        id="pe-nome"
-                        value={form.parliamentaryName}
-                        onChange={(e) => patch({ parliamentaryName: e.target.value })}
-                    />
+            <div className="sigl-dialog-body">
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Identificação</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pe-nome">Nome parlamentar *</label>
+                            <InputText
+                                id="pe-nome"
+                                value={form.parliamentaryName}
+                                onChange={(e) => patch({ parliamentaryName: e.target.value })}
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pe-gabinete">Gabinete / Sala</label>
+                            <InputText
+                                id="pe-gabinete"
+                                value={form.officeNumber}
+                                onChange={(e) => patch({ officeNumber: e.target.value })}
+                                placeholder="Ex.: Sala 05"
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <label htmlFor="pe-partido">Partido</label>
+                            <Dropdown
+                                id="pe-partido"
+                                value={form.politicalPartyId}
+                                options={partidoOptions.map((p) => ({ label: p.label, value: p.id }))}
+                                onChange={(v) => patch({ politicalPartyId: String(v) })}
+                                placeholder="Selecione o partido"
+                            />
+                        </div>
+                    </div>
                 </div>
-                <div className="col-12 md:col-4">
-                    <label htmlFor="pe-gabinete">Gabinete / Sala</label>
-                    <InputText
-                        id="pe-gabinete"
-                        value={form.officeNumber}
-                        onChange={(e) => patch({ officeNumber: e.target.value })}
-                        placeholder="Ex.: Sala 05"
-                    />
-                </div>
-                <div className="col-12">
-                    <label htmlFor="pe-partido">Partido</label>
-                    <Dropdown
-                        id="pe-partido"
-                        value={form.politicalPartyId}
-                        options={partidoOptions}
-                        optionLabel="label"
-                        optionValue="id"
-                        onChange={(e) => patch({ politicalPartyId: e.value })}
-                        placeholder="Selecione o partido"
-                        showClear
-                    />
-                </div>
-                <div className="col-12">
-                    <label htmlFor="pe-bio">Biografia</label>
-                    <InputTextarea
-                        id="pe-bio"
-                        value={form.biography}
-                        onChange={(e) => patch({ biography: e.target.value })}
-                        rows={4}
-                        autoResize
-                    />
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Conteúdo</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="pe-bio">Biografia</label>
+                        <InputTextarea
+                            id="pe-bio"
+                            value={form.biography}
+                            onChange={(e) => patch({ biography: e.target.value })}
+                            rows={4}
+                            autoResize
+                        />
+                    </div>
                 </div>
             </div>
         </Dialog>

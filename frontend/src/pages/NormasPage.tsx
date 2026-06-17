@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { MODULE_ICONS } from '../app/navigation';
@@ -13,13 +12,14 @@ import { NormaStatusBadge } from '../components/normas/NormaStatusBadge';
 import { NormaVerDialog } from '../components/normas/NormaVerDialog';
 import { NormaCreateDialog } from '../components/normas/NormaCreateDialog';
 import { ModulePipelineFooter } from '../components/workflow/ModulePipelineFooter';
+import { Dropdown, mapDropdownOptions, withEmptyOption } from '../components/ui';
 import { useAppToast } from '../hooks/useAppToast';
 import { useDominios } from '../hooks/useDominios';
 import { usePermissions } from '../hooks/usePermissions';
 import { formatDatePt } from '../utils/formatDate';
 
 export function NormasPage() {
-    const { canWrite, canDelete } = usePermissions();
+    const { canDelete } = usePermissions();
     const { showApiError } = useAppToast();
     const { tiposNorma, anos } = useDominios();
 
@@ -102,32 +102,31 @@ export function NormasPage() {
     );
 
     return (
-        <section className="page page--normas">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.normas}
                 title="Normas jurídicas"
                 subtitle="Leis, resoluções, decretos legislativos e demais normas oficiais."
                 actions={
-                    canWrite ? (
+                     (
                         <Button
                             label="Registrar norma"
                             icon="pi pi-plus"
                             onClick={() => setDialogCriar(true)}
                         />
-                    ) : undefined
+                    ) 
                 }
             />
 
-            <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+            <section aria-label="Filtros de pesquisa" className="pt-4">
+                <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
                 <div className="sigl-filtro-campo">
                     <label htmlFor="nf-tipo">Espécie</label>
                     <Dropdown
                         id="nf-tipo"
                         value={filtros.tipoId ?? ''}
-                        options={[{ id: '', nome: 'Todos' }, ...tiposNorma]}
-                        optionLabel="nome"
-                        optionValue="id"                    
-                        onChange={(e) => setFiltros((f) => ({ ...f, tipoId: e.value || undefined }))}
+                        options={withEmptyOption(mapDropdownOptions(tiposNorma, 'nome', 'id'))}
+                        onChange={(v) => setFiltros((f) => ({ ...f, tipoId: v ? String(v) : undefined }))}
                     />
                 </div>
                 <div className="sigl-filtro-campo">
@@ -153,15 +152,17 @@ export function NormasPage() {
                     <Dropdown
                         id="nf-ano"
                         value={filtros.ano ?? ''}
-                        options={[{ id: '', valor: 'Todos' }, ...anos.map((a) => ({ id: a.valor, valor: a.valor }))]}
-                        optionLabel="valor"
-                        optionValue="id"
-                        onChange={(e) => setFiltros((f) => ({ ...f, ano: e.value || undefined }))}
+                        options={withEmptyOption(
+                            anos.map((a) => ({ label: String(a.valor), value: a.valor })),
+                        )}
+                        onChange={(v) => setFiltros((f) => ({ ...f, ano: v ? Number(v) : undefined }))}
                     />
                 </div>
-            </FiltroLayout>
+                </FiltroLayout>
+            </section>
 
-            <DataTableLayout<Norma>
+            <section aria-label="Lista de normas jurídicas">
+                <DataTableLayout<Norma>
                 items={items}
                 total={total}
                 loading={loading}
@@ -171,7 +172,8 @@ export function NormasPage() {
                 canWrite={canDelete}
                 onVer={(item) => setDialogVer(item)}
                 onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
-            />
+                />
+            </section>
 
             {dialogCriar && (
                 <NormaCreateDialog
@@ -201,6 +203,6 @@ export function NormasPage() {
             )}
 
             <ModulePipelineFooter current="normas" />
-        </section>
+        </main>
     );
 }

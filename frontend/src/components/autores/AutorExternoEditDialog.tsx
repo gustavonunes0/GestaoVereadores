@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
-import { Dropdown } from 'primereact/dropdown';
 import { InputMask } from 'primereact/inputmask';
 import { InputText } from 'primereact/inputtext';
 import { autoresExternosApi, type AutorExterno, type CreateAutorExternoDto } from '../../api/autores-externos.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
+import { Dropdown, mapDropdownOptions } from '../../components/ui';
 
 const CATEGORIA_A_IDS = [2, 3, 4, 5, 6, 7, 10, 17, 20, 25, 26];
 const CATEGORIA_C_IDS = [13, 15];
@@ -122,109 +122,124 @@ export function AutorExternoEditDialog({ autor, onClose, onSaved }: Props) {
             footer={footer}
             modal
         >
-            <div className="grid p-fluid">
-                <div className="col-12">
-                    <label htmlFor="ae-edit-tipo">Tipo de autor *</label>
-                    <Dropdown
-                        id="ae-edit-tipo"
-                        value={tipoAutorId}
-                        options={tiposAutorExterno}
-                        optionLabel="nome"
-                        optionValue="id"
-                        onChange={(e) => handleTipoChange(e.value)}
-                        placeholder="Selecione o tipo"
-                        filter
-                    />
-                </div>
-                <div className="col-12 md:col-8">
-                    <label htmlFor="ae-edit-nome">{nomeLabelPrefix} *</label>
-                    <InputText
-                        id="ae-edit-nome"
-                        value={nome}
-                        onChange={(e) => setNome(e.target.value)}
-                    />
-                </div>
-                {showCpf && (
-                    <div className="col-12 md:col-4">
-                        <label htmlFor="ae-edit-cpf">CPF</label>
-                        <InputMask
-                            id="ae-edit-cpf"
-                            value={cpf}
-                            onChange={(e) => setCpf(e.target.value ?? '')}
-                            mask="999.999.999-99"
-                        />
-                    </div>
-                )}
-                {showCargo && (
-                    <div className="col-12 md:col-6">
-                        <label htmlFor="ae-edit-cargo">Cargo / função</label>
-                        <InputText
-                            id="ae-edit-cargo"
-                            value={cargo}
-                            onChange={(e) => setCargo(e.target.value)}
-                        />
-                    </div>
-                )}
-                {showInstituicao && (
-                    <div className="col-12 md:col-6">
-                        <label htmlFor="ae-edit-inst">Instituição</label>
-                        <InputText
-                            id="ae-edit-inst"
-                            value={instituicao}
-                            onChange={(e) => setInstituicao(e.target.value)}
-                        />
-                    </div>
-                )}
-                {showRegistro && (
-                    <div className="col-12 md:col-6">
-                        <label htmlFor="ae-edit-reg">Nº OAB / CRM</label>
-                        <InputText
-                            id="ae-edit-reg"
-                            value={registro}
-                            onChange={(e) => setRegistro(e.target.value)}
-                        />
-                    </div>
-                )}
-                {showPartido && (
-                    <div className="col-12 md:col-6">
-                        <label htmlFor="ae-edit-partido">Partido</label>
-                        <InputText
-                            id="ae-edit-partido"
-                            value={partido}
-                            onChange={(e) => setPartido(e.target.value)}
-                        />
-                    </div>
-                )}
-                {showUf && (
-                    <div className="col-12 md:col-3">
-                        <label htmlFor="ae-edit-uf">UF</label>
+            <div className="sigl-dialog-body">
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Classificação</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="ae-edit-tipo">Tipo de autor *</label>
                         <Dropdown
-                            id="ae-edit-uf"
-                            value={uf}
-                            options={UF_OPTIONS}
-                            optionLabel="label"
-                            optionValue="value"
-                            onChange={(e) => setUf(e.value)}
+                            id="ae-edit-tipo"
+                            value={tipoAutorId}
+                            options={mapDropdownOptions(tiposAutorExterno, 'nome', 'id')}
+                            onChange={(v) => handleTipoChange(String(v))}
+                            placeholder="Selecione o tipo"
                         />
                     </div>
-                )}
-                <div className="col-12 md:col-6">
-                    <label htmlFor="ae-edit-email">E-mail</label>
-                    <InputText
-                        id="ae-edit-email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
                 </div>
-                <div className="col-12 md:col-6">
-                    <label htmlFor="ae-edit-tel">Telefone</label>
-                    <InputMask
-                        id="ae-edit-tel"
-                        value={telefone}
-                        onChange={(e) => setTelefone(e.target.value ?? '')}
-                        mask="(99) 9 9999-9999"
-                    />
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Identificação</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className={`sigl-filtro-campo${showCpf ? '' : ' sigl-col-full'}`}>
+                            <label htmlFor="ae-edit-nome">{nomeLabelPrefix} *</label>
+                            <InputText
+                                id="ae-edit-nome"
+                                value={nome}
+                                onChange={(e) => setNome(e.target.value)}
+                            />
+                        </div>
+                        {showCpf && (
+                            <div className="sigl-filtro-campo">
+                                <label htmlFor="ae-edit-cpf">CPF</label>
+                                <InputMask
+                                    id="ae-edit-cpf"
+                                    value={cpf}
+                                    onChange={(e) => setCpf(e.target.value ?? '')}
+                                    mask="999.999.999-99"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+                {(showCargo || showInstituicao || showRegistro || showPartido || showUf) && (
+                    <div className="sigl-dialog-secao">
+                        <span className="sigl-dialog-secao-titulo">Dados profissionais</span>
+                        <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                            {showCargo && (
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="ae-edit-cargo">Cargo / função</label>
+                                    <InputText
+                                        id="ae-edit-cargo"
+                                        value={cargo}
+                                        onChange={(e) => setCargo(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            {showInstituicao && (
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="ae-edit-inst">Instituição</label>
+                                    <InputText
+                                        id="ae-edit-inst"
+                                        value={instituicao}
+                                        onChange={(e) => setInstituicao(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            {showRegistro && (
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="ae-edit-reg">Nº OAB / CRM</label>
+                                    <InputText
+                                        id="ae-edit-reg"
+                                        value={registro}
+                                        onChange={(e) => setRegistro(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            {showPartido && (
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="ae-edit-partido">Partido</label>
+                                    <InputText
+                                        id="ae-edit-partido"
+                                        value={partido}
+                                        onChange={(e) => setPartido(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            {showUf && (
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="ae-edit-uf">UF</label>
+                                    <Dropdown
+                                        id="ae-edit-uf"
+                                        value={uf}
+                                        options={UF_OPTIONS}
+                                        onChange={(v) => setUf(String(v))}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Contato</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="ae-edit-email">E-mail</label>
+                            <InputText
+                                id="ae-edit-email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="ae-edit-tel">Telefone</label>
+                            <InputMask
+                                id="ae-edit-tel"
+                                value={telefone}
+                                onChange={(e) => setTelefone(e.target.value ?? '')}
+                                mask="(99) 9 9999-9999"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </Dialog>

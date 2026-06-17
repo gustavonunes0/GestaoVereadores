@@ -26,13 +26,13 @@
     border-radius: var(--layout-radius-md);
 }
 
-.form-section__title {
+.form-section__title,
+.section-label {
     margin: 0 0 var(--layout-gap-md);
-    font-size: 0.8125rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-600);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
 }
 
 label.field-required > span:first-child::after,
@@ -65,17 +65,32 @@ textarea:disabled,
     background: var(--bg-soft) !important;
 }
 
+input:not(:disabled),
+select:not(:disabled),
+textarea:not(:disabled) {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    color: var(--text-body);
+    font-size: 13px;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--input-placeholder);
+}
+
 input:not(:disabled):hover,
 select:not(:disabled):hover,
 textarea:not(:disabled):hover {
-    border-color: var(--text-300);
+    border-color: var(--input-border);
 }
 
 input:not(:disabled):focus,
 select:not(:disabled):focus,
 textarea:not(:disabled):focus {
     outline: none;
-    border-color: var(--brand-blue-iris);
+    border-color: var(--input-border-focus);
     box-shadow: 0 0 0 3px var(--focus-ring-color);
 }
 
@@ -86,7 +101,7 @@ textarea:not(:disabled):focus {
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: var(--brand-blue-iris-soft);
+    background: var(--accent-hover);
 }
 
 .btn-primary:active:not(:disabled) {
@@ -290,7 +305,8 @@ textarea:not(:disabled):focus {
 
 /* ——— Topbar / legislatura ——— */
 .topbar {
-    background: var(--bg-elevated);
+    background: var(--topbar-bg);
+    border-bottom: 1px solid var(--topbar-border);
     box-shadow: none;
 }
 
@@ -300,12 +316,13 @@ textarea:not(:disabled):focus {
     gap: 0.2rem;
 }
 
-.legislatura-bar-field__label {
-    font-size: 0.6875rem;
-    font-weight: 700;
+.legislatura-bar-field__label,
+.legislature-label {
+    font-size: 11px;
+    font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--text-500);
+    color: var(--text-muted);
 }
 
 /* ——— Cards & dashboard ——— */
@@ -797,29 +814,128 @@ textarea:not(:disabled):focus {
 }
 
 /* ——— Filtros em grid ——— */
+.sigl-filtro-campos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+.sigl-filtro-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 12px;
+}
+
 .sigl-filtro-campo {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    grid-column: span 4;
+    min-width: 0;
+}
+
+.sigl-filtro-campos .sigl-filtro-campo.col-span-2,
+.sigl-filtro-campos .sigl-filtro-campo.sigl-col-span-2 {
+    grid-column: span 2;
 }
 
 .sigl-filtro-campo label {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--text-600);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.sigl-filtro-campo .p-dropdown,
+.sigl-filtro-campo .p-multiselect,
+.sigl-filtro-campo .p-calendar {
+    width: 100%;
 }
 
 @media (max-width: 1024px) {
-    .sigl-filtro-campo { grid-column: span 6; }
+    .sigl-filtro-campos {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 640px) {
-    .sigl-filtro-campo { grid-column: span 12; }
+    .sigl-filtro-campos {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sigl-filtro-campos .sigl-filtro-campo.col-span-2,
+    .sigl-filtro-campos .sigl-filtro-campo.sigl-col-span-2 {
+        grid-column: span 1;
+    }
 }
 
 .sigl-filtro-card .p-card-body {
     padding: 1rem;
+}
+
+/* ——— Dialog forms (grid layout) ——— */
+.p-dialog .p-dialog-content:has(.sigl-dialog-body) {
+    padding: 0;
+}
+
+.modal .sigl-dialog-body {
+    padding: 0;
+}
+
+.sigl-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.5rem;
+}
+
+.sigl-dialog-secao {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sigl-dialog-secao-titulo {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.sigl-dialog-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.sigl-dialog-grid .sigl-filtro-campo {
+    grid-column: auto;
+}
+
+.sigl-dialog-grid .sigl-filtro-campo .p-dropdown,
+.sigl-dialog-grid .sigl-filtro-campo .p-multiselect,
+.sigl-dialog-grid .sigl-filtro-campo .p-calendar {
+    width: 100%;
+}
+
+.sigl-dialog-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sigl-dialog-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sigl-col-full {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+    .sigl-dialog-grid-2,
+    .sigl-dialog-grid-3 {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 768px) {

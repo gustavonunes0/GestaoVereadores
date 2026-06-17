@@ -1,10 +1,25 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    IsUUID,
+    Matches,
+    MinLength,
+} from 'class-validator';
 
 export class CreateParliamentarianDto {
-    @ApiProperty()
-    @IsUUID()
-    tenantUserId: string;
+    @ApiProperty({ example: '123.456.789-09' })
+    @IsString()
+    @Matches(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, {
+        message: 'CPF inválido',
+    })
+    cpf: string;
+
+    @ApiProperty({ minLength: 8 })
+    @IsString()
+    @MinLength(8, { message: 'Senha deve ter ao menos 8 caracteres' })
+    password: string;
 
     @ApiPropertyOptional()
     @IsOptional()

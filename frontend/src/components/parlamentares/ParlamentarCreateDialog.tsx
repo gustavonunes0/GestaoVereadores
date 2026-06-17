@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
-import { Dropdown } from 'primereact/dropdown';
+import { InputMask } from 'primereact/inputmask';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { apiList } from '../../api/client';
@@ -11,6 +11,8 @@ import {
     type CreateParliamentarianInput,
 } from '../../api/legislative/parlamentares.api';
 import { useAppToast } from '../../hooks/useAppToast';
+import { Dropdown } from '../../components/ui';
+import { isValidCpf, normalizeCpf } from '../../utils/cpf';
 
 type Partido = { id: string; name: string; acronym: string };
 type PartidoOption = { id: string; label: string };
@@ -21,7 +23,9 @@ interface Props {
 }
 
 const emptyForm = () => ({
-    tenantUserId: '',
+    cpf: '',
+    password: '',
+    confirmPassword: '',
     parliamentaryName: '',
     politicalPartyId: '',
     officeNumber: '',
@@ -31,6 +35,8 @@ const emptyForm = () => ({
 export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
     const { showSuccess, showApiError } = useAppToast();
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [partidoOptions, setPartidoOptions] = useState<PartidoOption[]>([]);
     const [form, setForm] = useState(emptyForm);
 
@@ -48,12 +54,28 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
     const patch = (v: Partial<ReturnType<typeof emptyForm>>) =>
         setForm((f) => ({ ...f, ...v }));
 
+    const cpfValid = isValidCpf(form.cpf);
+    const passwordValid = form.password.length >= 8;
+    const passwordsMatch =
+        form.password.length > 0 && form.password === form.confirmPassword;
+    const canSubmit = useMemo(
+        () =>
+            Boolean(
+                form.parliamentaryName.trim() &&
+                    cpfValid &&
+                    passwordValid &&
+                    passwordsMatch,
+            ),
+        [form.parliamentaryName, cpfValid, passwordValid, passwordsMatch],
+    );
+
     async function handleSubmit() {
-        if (!form.tenantUserId.trim() || !form.parliamentaryName.trim()) return;
+        if (!canSubmit) return;
         setLoading(true);
         try {
             const body: CreateParliamentarianInput = {
-                tenantUserId: form.tenantUserId.trim(),
+                cpf: normalizeCpf(form.cpf),
+                password: form.password,
                 parliamentaryName: form.parliamentaryName.trim(),
                 politicalPartyId: form.politicalPartyId || undefined,
                 officeNumber: form.officeNumber.trim() || undefined,
@@ -78,7 +100,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                 icon="pi pi-check"
                 loading={loading}
                 onClick={() => void handleSubmit()}
-                disabled={!form.tenantUserId.trim() || !form.parliamentaryName.trim()}
+                disabled={!canSubmit}
             />
         </div>
     );
@@ -88,61 +110,125 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
             header="Novo Parlamentar"
             visible
             onHide={onClose}
-            style={{ width: 'min(90vw, 600px)' }}
+            style={{ width: 'min(90vw, 640px)' }}
             footer={footer}
             modal
         >
-            <div className="grid p-fluid">
-                <div className="col-12">
-                    <label htmlFor="pc-userId">ID do usuário do tenant *</label>
-                    <InputText
-                        id="pc-userId"
-                        value={form.tenantUserId}
-                        onChange={(e) => patch({ tenantUserId: e.target.value })}
-                        placeholder="UUID do TenantUser"
-                    />
+            <div className="sigl-dialog-body">
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Dados de acesso</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <label htmlFor="pc-cpf">CPF *</label>
+                            <InputMask
+                                id="pc-cpf"
+                                mask="999.999.999-99"
+                                value={form.cpf}
+                                onChange={(e) => patch({ cpf: e.value ?? '' })}
+                                placeholder="000.000.000-00"
+                                className={`w-full${form.cpf && !cpfValid ? ' p-invalid' : ''}`}
+                            />
+                            {form.cpf && !cpfValid ? (
+                                <small className="text-red-500">CPF inválido</small>
+                            ) : null}
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pc-senha">Senha *</label>
+                            <div className="p-inputgroup flex-1">
+                                <InputText
+                                    id="pc-senha"
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={form.password}
+                                    onChange={(e) => patch({ password: e.target.value })}
+                                    placeholder="Mínimo 8 caracteres"
+                                    className={`w-full${form.password && !passwordValid ? ' p-invalid' : ''}`}
+                                />
+                                <Button
+                                    type="button"
+                                    icon={showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'}
+                                    severity="secondary"
+                                    onClick={() => setShowPassword((v) => !v)}
+                                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                                />
+                            </div>
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pc-confirm-senha">Confirmar senha *</label>
+                            <div className="p-inputgroup flex-1">
+                                <InputText
+                                    id="pc-confirm-senha"
+                                    type={showConfirmPassword ? 'text' : 'password'}
+                                    value={form.confirmPassword}
+                                    onChange={(e) => patch({ confirmPassword: e.target.value })}
+                                    placeholder="Repita a senha"
+                                    className={`w-full${form.confirmPassword && !passwordsMatch ? ' p-invalid' : ''}`}
+                                />
+                                <Button
+                                    type="button"
+                                    icon={showConfirmPassword ? 'pi pi-eye-slash' : 'pi pi-eye'}
+                                    severity="secondary"
+                                    onClick={() => setShowConfirmPassword((v) => !v)}
+                                    aria-label={
+                                        showConfirmPassword
+                                            ? 'Ocultar confirmação'
+                                            : 'Mostrar confirmação'
+                                    }
+                                />
+                            </div>
+                            {form.confirmPassword && !passwordsMatch ? (
+                                <small className="text-red-500">As senhas não coincidem</small>
+                            ) : null}
+                        </div>
+                    </div>
                 </div>
-                <div className="col-12 md:col-8">
-                    <label htmlFor="pc-nome">Nome parlamentar *</label>
-                    <InputText
-                        id="pc-nome"
-                        value={form.parliamentaryName}
-                        onChange={(e) => patch({ parliamentaryName: e.target.value })}
-                        placeholder="Nome que aparecerá nos registros"
-                    />
+
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Identificação</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pc-nome">Nome parlamentar *</label>
+                            <InputText
+                                id="pc-nome"
+                                value={form.parliamentaryName}
+                                onChange={(e) => patch({ parliamentaryName: e.target.value })}
+                                placeholder="Nome que aparecerá nos registros"
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pc-gabinete">Gabinete / Sala</label>
+                            <InputText
+                                id="pc-gabinete"
+                                value={form.officeNumber}
+                                onChange={(e) => patch({ officeNumber: e.target.value })}
+                                placeholder="Ex.: Sala 05"
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <label htmlFor="pc-partido">Partido</label>
+                            <Dropdown
+                                id="pc-partido"
+                                value={form.politicalPartyId}
+                                options={partidoOptions.map((p) => ({ label: p.label, value: p.id }))}
+                                onChange={(v) => patch({ politicalPartyId: String(v) })}
+                                placeholder="Selecione o partido"
+                            />
+                        </div>
+                    </div>
                 </div>
-                <div className="col-12 md:col-4">
-                    <label htmlFor="pc-gabinete">Gabinete / Sala</label>
-                    <InputText
-                        id="pc-gabinete"
-                        value={form.officeNumber}
-                        onChange={(e) => patch({ officeNumber: e.target.value })}
-                        placeholder="Ex.: Sala 05"
-                    />
-                </div>
-                <div className="col-12">
-                    <label htmlFor="pc-partido">Partido</label>
-                    <Dropdown
-                        id="pc-partido"
-                        value={form.politicalPartyId}
-                        options={partidoOptions}
-                        optionLabel="label"
-                        optionValue="id"
-                        onChange={(e) => patch({ politicalPartyId: e.value })}
-                        placeholder="Selecione o partido"
-                        showClear
-                    />
-                </div>
-                <div className="col-12">
-                    <label htmlFor="pc-bio">Biografia</label>
-                    <InputTextarea
-                        id="pc-bio"
-                        value={form.biography}
-                        onChange={(e) => patch({ biography: e.target.value })}
-                        rows={4}
-                        placeholder="Resumo da trajetória do parlamentar"
-                        autoResize
-                    />
+
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Conteúdo</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="pc-bio">Biografia</label>
+                        <InputTextarea
+                            id="pc-bio"
+                            value={form.biography}
+                            onChange={(e) => patch({ biography: e.target.value })}
+                            rows={4}
+                            placeholder="Resumo da trajetória do parlamentar"
+                            autoResize
+                        />
+                    </div>
                 </div>
             </div>
         </Dialog>

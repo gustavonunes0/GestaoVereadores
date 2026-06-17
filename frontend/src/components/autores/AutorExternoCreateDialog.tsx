@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
-import { Dropdown } from 'primereact/dropdown';
 import { InputMask } from 'primereact/inputmask';
 import { InputText } from 'primereact/inputtext';
 import { autoresExternosApi, type CreateAutorExternoDto } from '../../api/autores-externos.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
+import { Dropdown, mapDropdownOptions } from '../../components/ui';
 
 const CATEGORIA_A_IDS = [2, 3, 4, 5, 6, 7, 10, 17, 20, 25, 26];
 const CATEGORIA_C_IDS = [13, 15];
@@ -123,113 +123,128 @@ export function AutorExternoCreateDialog({ onClose, onSaved, initialValues }: Pr
             footer={footer}
             modal
         >
-            <div className="grid p-fluid">
-                <div className="col-12">
-                    <label htmlFor="ae-tipo">Tipo de autor *</label>
-                    <Dropdown
-                        id="ae-tipo"
-                        value={tipoAutorId}
-                        options={tiposAutorExterno}
-                        optionLabel="nome"
-                        optionValue="id"
-                        onChange={(e) => handleTipoChange(e.value)}
-                        placeholder="Selecione o tipo"
-                        filter
-                    />
-                </div>
-                <div className="col-12 md:col-8">
-                    <label htmlFor="ae-nome">{nomeLabelPrefix} *</label>
-                    <InputText
-                        id="ae-nome"
-                        value={nome}
-                        onChange={(e) => setNome(e.target.value)}
-                        placeholder={nomeLabelPrefix}
-                    />
-                </div>
-                {showCpf && (
-                    <div className="col-12 md:col-4">
-                        <label htmlFor="ae-cpf">CPF</label>
-                        <InputMask
-                            id="ae-cpf"
-                            value={cpf}
-                            onChange={(e) => setCpf(e.target.value ?? '')}
-                            mask="999.999.999-99"
-                            placeholder="000.000.000-00"
-                        />
-                    </div>
-                )}
-                {showCargo && (
-                    <div className="col-12 md:col-6">
-                        <label htmlFor="ae-cargo">Cargo / função</label>
-                        <InputText
-                            id="ae-cargo"
-                            value={cargo}
-                            onChange={(e) => setCargo(e.target.value)}
-                        />
-                    </div>
-                )}
-                {showInstituicao && (
-                    <div className="col-12 md:col-6">
-                        <label htmlFor="ae-inst">Instituição</label>
-                        <InputText
-                            id="ae-inst"
-                            value={instituicao}
-                            onChange={(e) => setInstituicao(e.target.value)}
-                        />
-                    </div>
-                )}
-                {showRegistro && (
-                    <div className="col-12 md:col-6">
-                        <label htmlFor="ae-reg">Nº OAB / CRM</label>
-                        <InputText
-                            id="ae-reg"
-                            value={registro}
-                            onChange={(e) => setRegistro(e.target.value)}
-                        />
-                    </div>
-                )}
-                {showPartido && (
-                    <div className="col-12 md:col-6">
-                        <label htmlFor="ae-partido">Partido</label>
-                        <InputText
-                            id="ae-partido"
-                            value={partido}
-                            onChange={(e) => setPartido(e.target.value)}
-                        />
-                    </div>
-                )}
-                {showUf && (
-                    <div className="col-12 md:col-3">
-                        <label htmlFor="ae-uf">UF</label>
+            <div className="sigl-dialog-body">
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Classificação</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="ae-tipo">Tipo de autor *</label>
                         <Dropdown
-                            id="ae-uf"
-                            value={uf}
-                            options={UF_OPTIONS}
-                            optionLabel="label"
-                            optionValue="value"
-                            onChange={(e) => setUf(e.value)}
-                            placeholder="UF"
+                            id="ae-tipo"
+                            value={tipoAutorId}
+                            options={mapDropdownOptions(tiposAutorExterno, 'nome', 'id')}
+                            onChange={(v) => handleTipoChange(String(v))}
+                            placeholder="Selecione o tipo"
                         />
                     </div>
-                )}
-                <div className="col-12 md:col-6">
-                    <label htmlFor="ae-email">E-mail</label>
-                    <InputText
-                        id="ae-email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
                 </div>
-                <div className="col-12 md:col-6">
-                    <label htmlFor="ae-tel">Telefone</label>
-                    <InputMask
-                        id="ae-tel"
-                        value={telefone}
-                        onChange={(e) => setTelefone(e.target.value ?? '')}
-                        mask="(99) 9 9999-9999"
-                        placeholder="(00) 0 0000-0000"
-                    />
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Identificação</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className={`sigl-filtro-campo${showCpf ? '' : ' sigl-col-full'}`}>
+                            <label htmlFor="ae-nome">{nomeLabelPrefix} *</label>
+                            <InputText
+                                id="ae-nome"
+                                value={nome}
+                                onChange={(e) => setNome(e.target.value)}
+                                placeholder={nomeLabelPrefix}
+                            />
+                        </div>
+                        {showCpf && (
+                            <div className="sigl-filtro-campo">
+                                <label htmlFor="ae-cpf">CPF</label>
+                                <InputMask
+                                    id="ae-cpf"
+                                    value={cpf}
+                                    onChange={(e) => setCpf(e.target.value ?? '')}
+                                    mask="999.999.999-99"
+                                    placeholder="000.000.000-00"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+                {(showCargo || showInstituicao || showRegistro || showPartido || showUf) && (
+                    <div className="sigl-dialog-secao">
+                        <span className="sigl-dialog-secao-titulo">Dados profissionais</span>
+                        <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                            {showCargo && (
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="ae-cargo">Cargo / função</label>
+                                    <InputText
+                                        id="ae-cargo"
+                                        value={cargo}
+                                        onChange={(e) => setCargo(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            {showInstituicao && (
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="ae-inst">Instituição</label>
+                                    <InputText
+                                        id="ae-inst"
+                                        value={instituicao}
+                                        onChange={(e) => setInstituicao(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            {showRegistro && (
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="ae-reg">Nº OAB / CRM</label>
+                                    <InputText
+                                        id="ae-reg"
+                                        value={registro}
+                                        onChange={(e) => setRegistro(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            {showPartido && (
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="ae-partido">Partido</label>
+                                    <InputText
+                                        id="ae-partido"
+                                        value={partido}
+                                        onChange={(e) => setPartido(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            {showUf && (
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="ae-uf">UF</label>
+                                    <Dropdown
+                                        id="ae-uf"
+                                        value={uf}
+                                        options={UF_OPTIONS}
+                                        onChange={(v) => setUf(String(v))}
+                                        placeholder="UF"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Contato</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="ae-email">E-mail</label>
+                            <InputText
+                                id="ae-email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="ae-tel">Telefone</label>
+                            <InputMask
+                                id="ae-tel"
+                                value={telefone}
+                                onChange={(e) => setTelefone(e.target.value ?? '')}
+                                mask="(99) 9 9999-9999"
+                                placeholder="(00) 0 0000-0000"
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </Dialog>

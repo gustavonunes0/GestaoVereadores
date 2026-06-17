@@ -5,8 +5,8 @@ type Props = {
     label?: string;
 };
 
-/** Campo observações/mensagem presente nos formulários SIGL IntGest. */
-export function IntGestMensagemField({
+/** Campo de observações/mensagem nos formulários de sessão plenária. */
+export function SessaoMensagemField({
     id = 'mensagem',
     value,
     onChange,

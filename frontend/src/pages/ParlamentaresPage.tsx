@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
-import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Tag } from 'primereact/tag';
 import { apiList } from '../api/client';
@@ -17,6 +16,7 @@ import { FiltroLayout } from '../components/common/FiltroLayout';
 import { PageHeader } from '../components/PageHeader';
 import { ParlamentarCreateDialog } from '../components/parlamentares/ParlamentarCreateDialog';
 import { ParlamentarEditDialog } from '../components/parlamentares/ParlamentarEditDialog';
+import { Dropdown } from '../components/ui';
 import { useAppToast } from '../hooks/useAppToast';
 import { usePermissions } from '../hooks/usePermissions';
 
@@ -43,7 +43,7 @@ const STATUS_SEVERITY: Record<string, StatusSeverity> = {
 const EMPTY_FILTROS = { search: '', politicalPartyId: '', status: '' };
 
 export function ParlamentaresPage() {
-    const { canWrite, canEdit, canDelete } = usePermissions();
+    const { canEdit, canDelete } = usePermissions();
     const { showApiError } = useAppToast();
 
     const [items, setItems] = useState<Parliamentarian[]>([]);
@@ -146,23 +146,24 @@ export function ParlamentaresPage() {
     );
 
     return (
-        <section className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.parlamentares}
                 title="Parlamentares"
                 subtitle="Vereadores e deputados vinculados ao tenant."
                 actions={
-                    canWrite ? (
+                    (
                         <Button
                             label="Novo Parlamentar"
                             icon="pi pi-plus"
                             onClick={() => setDialogCriar(true)}
                         />
-                    ) : undefined
+                    ) 
                 }
             />
 
-            <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+            <section aria-label="Filtros de pesquisa" className="pt-4">
+                <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
                 <div className="sigl-filtro-campo">
                     <label htmlFor="pf-search">Nome / busca</label>
                     <InputText
@@ -177,10 +178,8 @@ export function ParlamentaresPage() {
                     <Dropdown
                         id="pf-partido"
                         value={filtros.politicalPartyId}
-                        options={partidoOptions}
-                        optionLabel="label"
-                        optionValue="id"
-                        onChange={(e) => setFiltros((f) => ({ ...f, politicalPartyId: e.value }))}
+                        options={partidoOptions.map((p) => ({ label: p.label, value: p.id }))}
+                        onChange={(v) => setFiltros((f) => ({ ...f, politicalPartyId: String(v) }))}
                     />
                 </div>
                 <div className="sigl-filtro-campo">
@@ -189,14 +188,14 @@ export function ParlamentaresPage() {
                         id="pf-status"
                         value={filtros.status}
                         options={STATUS_OPTIONS}
-                        optionLabel="label"
-                        optionValue="value"
-                        onChange={(e) => setFiltros((f) => ({ ...f, status: e.value }))}
+                        onChange={(v) => setFiltros((f) => ({ ...f, status: String(v) }))}
                     />
                 </div>
-            </FiltroLayout>
+                </FiltroLayout>
+            </section>
 
-            <DataTableLayout<Parliamentarian>
+            <section aria-label="Lista de parlamentares">
+                <DataTableLayout<Parliamentarian>
                 items={items}
                 total={total}
                 loading={loading}
@@ -206,7 +205,8 @@ export function ParlamentaresPage() {
                 canWrite={canEdit}
                 onEditar={canEdit ? setDialogEditar : undefined}
                 onDeletar={canDelete ? setDialogDeletar : undefined}
-            />
+                />
+            </section>
 
             {dialogCriar && (
                 <ParlamentarCreateDialog
@@ -233,6 +233,6 @@ export function ParlamentaresPage() {
                     }}
                 />
             )}
-        </section>
+        </main>
     );
 }

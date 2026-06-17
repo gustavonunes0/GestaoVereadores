@@ -148,22 +148,21 @@ export function ComissoesPage() {
     const editing = creating || !!selectedId;
 
     return (
-        <div className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.comissoes}
                 title="Comissões"
                 subtitle="Comissões permanentes e temporárias da casa legislativa."
                 actions={
-                    canWrite ? (
-                        <Button
-                            label="Adicionar comissão"
-                            icon="pi pi-plus"
-                            onClick={startCreate}
-                        />
-                    ) : undefined
+                    <Button
+                        label="Adicionar comissão"
+                        icon="pi pi-plus"
+                        onClick={startCreate}
+                    />
                 }
             />
 
+            <section aria-label="Lista de comissões" className="pt-4">
             <div className="list-panel">
                 <div className="list-panel__body">
                     <div className="list-panel__scroll table-wrap">
@@ -217,6 +216,7 @@ export function ComissoesPage() {
                     )}
                 </div>
             </div>
+            </section>
 
             <NavDrawer
                     visible={editing}
@@ -229,128 +229,151 @@ export function ComissoesPage() {
                     }
                 >
                     <form onSubmit={handleSubmit} className="form-stack">
-                        <div className="form-grid-2">
-                            <label>
-                                Nome *
-                                <input
-                                    value={form.name}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            name: e.target.value,
-                                        }))
-                                    }
-                                    required
-                                />
-                            </label>
-                            <label>
-                                Sigla
-                                <input
-                                    value={form.acronym}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            acronym: e.target.value,
-                                        }))
-                                    }
-                                />
-                            </label>
+                        <div className="sigl-dialog-body">
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Identificação</span>
+                                <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="com-nome">Nome *</label>
+                                        <input
+                                            id="com-nome"
+                                            value={form.name}
+                                            onChange={(e) =>
+                                                setForm((f) => ({
+                                                    ...f,
+                                                    name: e.target.value,
+                                                }))
+                                            }
+                                            required
+                                        />
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="com-sigla">Sigla</label>
+                                        <input
+                                            id="com-sigla"
+                                            value={form.acronym}
+                                            onChange={(e) =>
+                                                setForm((f) => ({
+                                                    ...f,
+                                                    acronym: e.target.value,
+                                                }))
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Classificação</span>
+                                <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="com-tipo">Tipo *</label>
+                                        <select
+                                            id="com-tipo"
+                                            value={form.type}
+                                            onChange={(e) =>
+                                                setForm((f) => ({
+                                                    ...f,
+                                                    type: e.target.value as CommitteeType,
+                                                }))
+                                            }
+                                        >
+                                            {TYPE_OPTIONS.map((t) => (
+                                                <option key={t.value} value={t.value}>
+                                                    {t.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="com-status">Situação</label>
+                                        <select
+                                            id="com-status"
+                                            value={form.status}
+                                            onChange={(e) =>
+                                                setForm((f) => ({
+                                                    ...f,
+                                                    status: e.target.value as CommitteeStatus,
+                                                }))
+                                            }
+                                        >
+                                            {STATUS_OPTIONS.map((s) => (
+                                                <option key={s.value} value={s.value}>
+                                                    {s.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Conteúdo</span>
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="com-finalidade">Finalidade *</label>
+                                    <textarea
+                                        id="com-finalidade"
+                                        value={form.purpose}
+                                        onChange={(e) =>
+                                            setForm((f) => ({
+                                                ...f,
+                                                purpose: e.target.value,
+                                            }))
+                                        }
+                                        rows={3}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Período</span>
+                                <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="com-inicio">Início</label>
+                                        <input
+                                            id="com-inicio"
+                                            type="date"
+                                            value={form.startDate}
+                                            onChange={(e) =>
+                                                setForm((f) => ({
+                                                    ...f,
+                                                    startDate: e.target.value,
+                                                }))
+                                            }
+                                        />
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="com-fim">Fim</label>
+                                        <input
+                                            id="com-fim"
+                                            type="date"
+                                            value={form.endDate}
+                                            onChange={(e) =>
+                                                setForm((f) => ({
+                                                    ...f,
+                                                    endDate: e.target.value,
+                                                }))
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Observações</span>
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="com-obs">Observações</label>
+                                    <textarea
+                                        id="com-obs"
+                                        value={form.notes}
+                                        onChange={(e) =>
+                                            setForm((f) => ({
+                                                ...f,
+                                                notes: e.target.value,
+                                            }))
+                                        }
+                                        rows={2}
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div className="form-grid-2">
-                            <label>
-                                Tipo *
-                                <select
-                                    value={form.type}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            type: e.target
-                                                .value as CommitteeType,
-                                        }))
-                                    }
-                                >
-                                    {TYPE_OPTIONS.map((t) => (
-                                        <option key={t.value} value={t.value}>
-                                            {t.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-                            <label>
-                                Situação
-                                <select
-                                    value={form.status}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            status: e.target
-                                                .value as CommitteeStatus,
-                                        }))
-                                    }
-                                >
-                                    {STATUS_OPTIONS.map((s) => (
-                                        <option key={s.value} value={s.value}>
-                                            {s.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-                        </div>
-                        <label>
-                            Finalidade *
-                            <textarea
-                                value={form.purpose}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        purpose: e.target.value,
-                                    }))
-                                }
-                                rows={3}
-                                required
-                            />
-                        </label>
-                        <div className="form-grid-2">
-                            <label>
-                                Início
-                                <input
-                                    type="date"
-                                    value={form.startDate}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            startDate: e.target.value,
-                                        }))
-                                    }
-                                />
-                            </label>
-                            <label>
-                                Fim
-                                <input
-                                    type="date"
-                                    value={form.endDate}
-                                    onChange={(e) =>
-                                        setForm((f) => ({
-                                            ...f,
-                                            endDate: e.target.value,
-                                        }))
-                                    }
-                                />
-                            </label>
-                        </div>
-                        <label>
-                            Observações
-                            <textarea
-                                value={form.notes}
-                                onChange={(e) =>
-                                    setForm((f) => ({
-                                        ...f,
-                                        notes: e.target.value,
-                                    }))
-                                }
-                                rows={2}
-                            />
-                        </label>
                         <div className="modal-actions">
                             {!creating && selectedId && canWrite && (
                                 <button
@@ -380,6 +403,6 @@ export function ComissoesPage() {
                         </div>
                     </form>
             </NavDrawer>
-        </div>
+        </main>
     );
 }

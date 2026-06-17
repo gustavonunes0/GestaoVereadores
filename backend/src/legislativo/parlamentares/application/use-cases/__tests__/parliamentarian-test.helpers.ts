@@ -56,6 +56,7 @@ export function buildParliamentarianRepositoryMock() {
 export function buildTenantUserRepositoryMock() {
     return {
         findByIdForTenant: jest.fn(),
+        create: jest.fn(),
     };
 }
 

@@ -7,11 +7,9 @@ import {
 } from '../api/legislative/legislaturas.api';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
-import { usePermissions } from '../hooks/usePermissions';
 import { useLegislatura } from '../contexts/LegislaturaContext';
 
 export function LegislaturasPage() {
-    const { canWrite } = usePermissions();
     const { refresh } = useLegislatura();
     const [items, setItems] = useState<Legislature[]>([]);
     const [open, setOpen] = useState(false);
@@ -40,21 +38,20 @@ export function LegislaturasPage() {
     }
 
     return (
-        <div className="page">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.legislaturas}
                 title="Legislaturas"
                 subtitle="Períodos legislativos e legislatura vigente da câmara."
                 actions={
-                    canWrite ? (
-                        <Button
-                            label="Nova legislatura"
-                            icon="pi pi-plus"
-                            onClick={() => setOpen(true)}
-                        />
-                    ) : undefined
+                    <Button
+                        label="Nova legislatura"
+                        icon="pi pi-plus"
+                        onClick={() => setOpen(true)}
+                    />
                 }
             />
+            <section aria-label="Lista de legislaturas" className="pt-4">
             <div className="card table-wrap">
                 <table>
                     <thead>
@@ -87,46 +84,49 @@ export function LegislaturasPage() {
                     </tbody>
                 </table>
             </div>
+            </section>
             {open && (
                 <Modal title="Nova legislatura" onClose={() => setOpen(false)}>
                     <form onSubmit={handleCreate}>
-                        <div className="form-grid">
-                            <label>
-                                Número *
-                                <input
-                                    type="number"
-                                    value={number}
-                                    onChange={(e) => setNumber(e.target.value)}
-                                    required
-                                />
-                            </label>
-                            <label>
-                                Data início *
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) =>
-                                        setStartDate(e.target.value)
-                                    }
-                                    required
-                                />
-                            </label>
+                        <div className="sigl-dialog-body">
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Período</span>
+                                <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="leg-numero">Número *</label>
+                                        <input
+                                            id="leg-numero"
+                                            type="number"
+                                            value={number}
+                                            onChange={(e) => setNumber(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="leg-inicio">Data início *</label>
+                                        <input
+                                            id="leg-inicio"
+                                            type="date"
+                                            value={startDate}
+                                            onChange={(e) => setStartDate(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">Status</span>
+                                <div className="sigl-filtro-campo flex align-items-center gap-2">
+                                    <input
+                                        id="leg-atual"
+                                        type="checkbox"
+                                        checked={isCurrent}
+                                        onChange={(e) => setIsCurrent(e.target.checked)}
+                                    />
+                                    <label htmlFor="leg-atual">Legislatura em exercício</label>
+                                </div>
+                            </div>
                         </div>
-                        <label
-                            style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                marginTop: '0.75rem',
-                            }}
-                        >
-                            <input
-                                type="checkbox"
-                                checked={isCurrent}
-                                onChange={(e) => setIsCurrent(e.target.checked)}
-                            />
-                            Legislatura em exercício
-                        </label>
                         <div className="modal-actions">
                             <button
                                 type="button"
@@ -142,6 +142,6 @@ export function LegislaturasPage() {
                     </form>
                 </Modal>
             )}
-        </div>
+        </main>
     );
 }

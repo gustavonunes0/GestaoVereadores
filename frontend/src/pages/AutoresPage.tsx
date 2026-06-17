@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { MODULE_ICONS } from '../app/navigation';
@@ -12,6 +11,7 @@ import { DeleteDialog } from '../components/common/DeleteDialog';
 import { AutorExternoCreateDialog } from '../components/autores/AutorExternoCreateDialog';
 import { AutorExternoVerDialog } from '../components/autores/AutorExternoVerDialog';
 import { AutorExternoEditDialog } from '../components/autores/AutorExternoEditDialog';
+import { Dropdown, mapDropdownOptions, withEmptyOption } from '../components/ui';
 import { useAppToast } from '../hooks/useAppToast';
 import { useDominios } from '../hooks/useDominios';
 import { usePermissions } from '../hooks/usePermissions';
@@ -105,30 +105,28 @@ export function AutoresPage() {
                 title="Autores externos"
                 subtitle="Pessoas e entidades externas à câmara que podem ser vinculadas como autores em matérias."
                 actions={
-                    canManagePessoas ? (
+                     (
                         <Button
                             label="Cadastrar autor"
                             icon="pi pi-plus"
                             onClick={() => setDialogCriar(true)}
                         />
-                    ) : undefined
+                    ) 
                 }
             />
 
-            <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
-                <div className="col-12 md:col-6 lg:col-3">
+            <section aria-label="Filtros de pesquisa" className="pt-4">
+                <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+                <div className="sigl-filtro-campo">
                     <label htmlFor="af-tipo">Tipo de autor</label>
                     <Dropdown
                         id="af-tipo"
                         value={filtros.tipoAutorId ?? ''}
-                        options={[{ id: '', nome: 'Todos' }, ...tiposAutorExterno]}
-                        optionLabel="nome"
-                        optionValue="id"
-                        onChange={(e) => setFiltros((f) => ({ ...f, tipoAutorId: e.value || undefined }))}
-                        filter
+                        options={withEmptyOption(mapDropdownOptions(tiposAutorExterno, 'nome', 'id'))}
+                        onChange={(v) => setFiltros((f) => ({ ...f, tipoAutorId: v ? String(v) : undefined }))}
                     />
                 </div>
-                <div className="col-12 md:col-6 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="af-nome">Nome</label>
                     <InputText
                         id="af-nome"
@@ -137,7 +135,7 @@ export function AutoresPage() {
                         placeholder="Nome do autor"
                     />
                 </div>
-                <div className="col-12 md:col-6 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="af-cargo">Cargo / função</label>
                     <InputText
                         id="af-cargo"
@@ -146,7 +144,7 @@ export function AutoresPage() {
                         placeholder="Cargo ou função"
                     />
                 </div>
-                <div className="col-12 md:col-6 lg:col-3">
+                <div className="sigl-filtro-campo">
                     <label htmlFor="af-inst">Instituição</label>
                     <InputText
                         id="af-inst"
@@ -155,9 +153,11 @@ export function AutoresPage() {
                         placeholder="Instituição"
                     />
                 </div>
-            </FiltroLayout>
+                </FiltroLayout>
+            </section>
 
-            <DataTableLayout<AutorExterno>
+            <section aria-label="Lista de autores externos">
+                <DataTableLayout<AutorExterno>
                 items={items}
                 total={total}
                 loading={loading}
@@ -168,7 +168,8 @@ export function AutoresPage() {
                 onVer={(item) => setDialogVer(item)}
                 onEditar={canManagePessoas ? (item) => setDialogEditar(item) : undefined}
                 onDeletar={canManagePessoas ? (item) => setDialogDeletar(item) : undefined}
-            />
+                />
+            </section>
 
             {dialogCriar && (
                 <AutorExternoCreateDialog

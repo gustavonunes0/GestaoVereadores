@@ -25,7 +25,8 @@ export type Parliamentarian = {
 };
 
 export type CreateParliamentarianInput = {
-    tenantUserId: string;
+    cpf: string;
+    password: string;
     politicalPartyId?: string;
     parliamentaryName: string;
     officeNumber?: string;
@@ -33,9 +34,7 @@ export type CreateParliamentarianInput = {
     biography?: string;
 };
 
-export type UpdateParliamentarianInput = Partial<
-    Omit<CreateParliamentarianInput, 'tenantUserId'>
->;
+export type UpdateParliamentarianInput = Partial<CreateParliamentarianInput>;
 
 export const parlamentaresApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>

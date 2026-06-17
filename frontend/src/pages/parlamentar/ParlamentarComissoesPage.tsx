@@ -77,7 +77,8 @@ export function ParlamentarComissoesPage() {
                 subtitle="Comissões das quais você participa."
             />
 
-            <DataTableLayout<Comissao>
+            <section aria-label="Lista de comissões">
+                <DataTableLayout<Comissao>
                 items={items}
                 total={total}
                 loading={loading}
@@ -85,7 +86,8 @@ export function ParlamentarComissoesPage() {
                 onPageChange={setPage}
                 columns={columns}
                 canWrite={false}
-            />
+                />
+            </section>
         </main>
     );
 }

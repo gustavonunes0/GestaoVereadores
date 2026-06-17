@@ -24,7 +24,8 @@ import {
     PoliticalPartyNotFoundForParliamentarianError,
     PoliticalPartyRemovedForParliamentarianError,
     TenantUserNotFoundForParliamentarianError,
-    TenantUserNotParliamentarianError } from '../errors/parliamentarian.errors';
+    TenantUserNotParliamentarianError,
+    ParliamentarianCpfAlreadyInUseError } from '../errors/parliamentarian.errors';
 import { CreateParliamentarianUseCase } from '../use-cases/create-parliamentarian.use-case';
 import { GetParliamentarianByIdUseCase } from '../use-cases/get-parliamentarian-by-id.use-case';
 import { ListParliamentariansUseCase } from '../use-cases/list-parliamentarians.use-case';
@@ -127,6 +128,9 @@ export class ParliamentariansController {
             throw new NotFoundException(error.message);
         }
         if (error instanceof ParliamentarianAlreadyExistsError) {
+            throw new ConflictException(error.message);
+        }
+        if (error instanceof ParliamentarianCpfAlreadyInUseError) {
             throw new ConflictException(error.message);
         }
         if (error instanceof TenantUserNotParliamentarianError) {

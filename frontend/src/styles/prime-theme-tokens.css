@@ -1,5 +1,44 @@
 :root {
-    /* Brand — identidade SIGL (#0E1E46) */
+    /* ── Layout geral (task-cursor5) ── */
+    --page-bg: #f5f6f8;
+    --topbar-bg: #ffffff;
+    --topbar-border: #eef0f3;
+
+    /* Cards e painéis */
+    --card-bg: #ffffff;
+    --card-border: #eef0f3;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --card-radius: 10px;
+
+    /* Inputs e selects */
+    --input-bg: #fafbfc;
+    --input-border: #dde2ea;
+    --input-border-focus: #2563a8;
+    --input-placeholder: #b0bac8;
+
+    /* Tipografia de layout */
+    --text-heading: #1c2f4a;
+    --text-body: #374151;
+    --text-muted: #8492a6;
+    --text-placeholder: #b0bac8;
+
+    /* Accent institucional — coerente com a sidebar */
+    --accent: #2563a8;
+    --accent-hover: #1d4f8a;
+    --accent-icon: #4a7ab5;
+
+    /* Tabela */
+    --table-header-bg: #f8f9fb;
+    --table-header-text: #8492a6;
+    --table-border: #eef0f3;
+    --table-row-hover: #f5f7fb;
+
+    /* Paginação */
+    --pagination-btn-bg: #f0f4fa;
+    --pagination-btn-text: #4a7ab5;
+    --pagination-btn-hover: #dde8f5;
+
+    /* Brand — identidade SIGL (login e contextos legados) */
     --brand-night-blue: #0e1e46;
     --brand-blue-iris: var(--brand-night-blue);
     --brand-blue-iris-soft: #152952;
@@ -7,15 +46,12 @@
     --brand-safety-orange: #c97a5a;
     --brand-pale-purple: #c8cad4;
 
-    /* Bordas de cards e painéis (neutro; botões usam --brand-night-blue) */
-    --card-border-color: var(--bg-border);
-
     /* Text / neutral scale — institucional */
-    --text-primary: #1c1f26;
+    --text-primary: var(--text-heading);
     --text-900: #2a2e38;
-    --text-800: #3d424d;
+    --text-800: var(--text-body);
     --text-700: #525863;
-    --text-600: #6b7280;
+    --text-600: var(--text-muted);
     --text-500: #868b96;
     --text-400: #a1a6b0;
     --text-300: #bcc0c8;
@@ -23,13 +59,16 @@
     --text-inverse: #ffffff;
 
     /* Background — neutros confortáveis */
-    --bg-app: #f4f5f7;
+    --bg-app: var(--page-bg);
     --bg-soft: #eceef2;
     --bg-muted: #e4e7ec;
-    --bg-border: #d8dce3;
-    --bg-card: #ffffff;
-    --bg-elevated: #ffffff;
-    --bg-subtle: #f8f9fa;
+    --bg-border: var(--card-border);
+    --bg-card: var(--card-bg);
+    --bg-elevated: var(--card-bg);
+    --bg-subtle: #f8f9fb;
+
+    /* Bordas de cards e painéis */
+    --card-border-color: var(--card-border);
 
     /* Domínios do pipeline (acentos discretos) */
     --domain-normative: #4a6278;
@@ -61,51 +100,65 @@
     --warning-border: rgba(217, 160, 62, 0.28);
 
     /* PrimeReact compatibility */
-    --primary-color: var(--brand-night-blue);
+    --primary-color: var(--accent);
     --primary-color-text: var(--text-inverse);
-    --surface-ground: var(--bg-app);
+    --surface-ground: var(--page-bg);
     --surface-section: var(--bg-soft);
-    --surface-card: var(--bg-card);
-    --surface-border: var(--bg-border);
-    --text-color: var(--text-primary);
-    --text-color-secondary: var(--text-600);
+    --surface-card: var(--card-bg);
+    --surface-border: var(--card-border);
+    --text-color: var(--text-heading);
+    --text-color-secondary: var(--text-muted);
 
     /* Layout */
-    --layout-page-bg: var(--bg-app);
-    --layout-card-bg: var(--bg-card);
-    --layout-border-color: var(--bg-border);
-    --layout-radius-sm: 8px;
-    --layout-radius-md: 12px;
+    --layout-page-bg: var(--page-bg);
+    --layout-card-bg: var(--card-bg);
+    --layout-border-color: var(--card-border);
+    --layout-radius-sm: 7px;
+    --layout-radius-md: var(--card-radius);
     --layout-radius-lg: 16px;
-    --layout-shadow-sm: 0 1px 2px rgba(14, 30, 70, 0.04);
+    --layout-shadow-sm: var(--card-shadow);
     --layout-shadow-md: 0 6px 20px rgba(14, 30, 70, 0.06);
     --layout-shadow-lg: 0 12px 32px rgba(14, 30, 70, 0.08);
 
     /* Focus & interaction */
-    --focus-ring-color: rgba(14, 30, 70, 0.22);
+    --focus-ring-color: rgba(37, 99, 168, 0.12);
     --focus-ring-offset: 2px;
     --transition-fast: 0.15s ease;
     --transition-base: 0.2s ease;
 
-    /* Sidebar — claro, neutro e leve */
-    --sidebar-bg-base: #fbfbfc;
-    --sidebar-bg-top: #ffffff;
-    --sidebar-bg-bottom: #f5f6f8;
-    --sidebar-border: #e8ebf0;
-    --sidebar-brand-surface: #ffffff;
-    --sidebar-text: var(--text-primary);
-    --sidebar-text-muted: var(--text-600);
-    --sidebar-section-label: var(--text-500);
-    --sidebar-icon: var(--text-600);
-    --sidebar-hover-bg: #e8eef7;
-    --sidebar-hover-text: var(--brand-night-blue);
-    --sidebar-hover-icon: var(--brand-night-blue);
-    --sidebar-active-bg: #dce6f4;
-    --sidebar-active-border: var(--brand-night-blue);
-    --sidebar-active-shadow: 0 1px 3px rgba(28, 31, 38, 0.06);
+    /* Sidebar — paleta institucional clara */
+    --sidebar-bg: #f8f9fb;
+    --sidebar-border: #eef0f3;
+    --sidebar-logo-area-bg: #f8f9fb;
+    --sidebar-logo-text: #1c3557;
+    --sidebar-logo-sub: #6b7280;
+    --sidebar-group-label: #6b7280;
+    --sidebar-item-text: #6b7280;
+    --sidebar-item-icon: #9ca3af;
+    --sidebar-item-active-bg: #e8edf5;
+    --sidebar-item-active-text: #1c3557;
+    --sidebar-item-active-icon: #1c3557;
+    --sidebar-item-hover-bg: #f0f2f7;
+    --sidebar-item-hover-text: #374151;
     --sidebar-focus-ring: var(--focus-ring-color);
-    --sidebar-pipeline-line: #e2e6ec;
+    --sidebar-pipeline-line: #e5e7eb;
     --sidebar-hint-bg: #f3f4f6;
+
+    /* Aliases legados (outros estilos do app) */
+    --sidebar-bg-base: var(--sidebar-bg);
+    --sidebar-bg-top: var(--sidebar-bg);
+    --sidebar-bg-bottom: var(--sidebar-bg);
+    --sidebar-brand-surface: var(--sidebar-logo-area-bg);
+    --sidebar-text: var(--sidebar-item-active-text);
+    --sidebar-text-muted: var(--sidebar-item-text);
+    --sidebar-section-label: var(--sidebar-group-label);
+    --sidebar-icon: var(--sidebar-item-icon);
+    --sidebar-hover-bg: var(--sidebar-item-hover-bg);
+    --sidebar-hover-text: var(--sidebar-item-hover-text);
+    --sidebar-hover-icon: var(--sidebar-item-hover-text);
+    --sidebar-active-bg: var(--sidebar-item-active-bg);
+    --sidebar-active-border: transparent;
+    --sidebar-active-shadow: none;
 
     /* Typography — Lato (família única da interface) */
     --font-family-sans:

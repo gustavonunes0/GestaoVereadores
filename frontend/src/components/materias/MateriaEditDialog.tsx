@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
-import { Calendar } from 'primereact/calendar';
 import { Dialog } from 'primereact/dialog';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { MultiSelect } from 'primereact/multiselect';
@@ -8,6 +7,7 @@ import { materiasApi } from '../../api/legislative/materias.api';
 import { autoresExternosApi } from '../../api/autores-externos.api';
 import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
 import { useAppToast } from '../../hooks/useAppToast';
+import { DatePicker } from '../../components/ui';
 import type { LookupOption } from '../../api/dominios.api';
 import type { Materia } from '../../api/legislative/materias.api';
 
@@ -87,68 +87,77 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
             footer={footer}
             modal
         >
-            <div className="grid p-fluid">
-                <div className="col-12 md:col-8">
-                    <label className="text-xs text-color-secondary">Tipo de Matéria</label>
-                    <p className="font-semibold m-0 mt-1">{materia.tipo.nome}</p>
-                </div>
-                <div className="col-12 md:col-4">
-                    <label className="text-xs text-color-secondary">Número / Ano</label>
-                    <p className="font-semibold m-0 mt-1">
-                        {materia.numero} / {materia.ano}
-                    </p>
-                </div>
-
-                <div className="col-12 md:col-6">
-                    <label className="text-xs text-color-secondary">Autor</label>
-                    <p className="m-0 mt-1">{materia.autor?.nome ?? '—'}</p>
-                </div>
-                <div className="col-12 md:col-6">
-                    <label htmlFor="edit-data-protocolo">Data Protocolo</label>
-                    <Calendar
-                        id="edit-data-protocolo"
-                        value={dataProtocolo}
-                        onChange={(e) => setDataProtocolo(e.value ?? null)}
-                        dateFormat="dd/mm/yy"
-                        showButtonBar
-                    />
+            <div className="sigl-dialog-body">
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Identificação</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label className="text-xs text-color-secondary">Tipo de Matéria</label>
+                            <p className="font-semibold m-0">{materia.tipo.nome}</p>
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label className="text-xs text-color-secondary">Número / Ano</label>
+                            <p className="font-semibold m-0">
+                                {materia.numero} / {materia.ano}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="col-12">
-                    <label htmlFor="edit-relatores">Relator(es)</label>
-                    <MultiSelect
-                        id="edit-relatores"
-                        value={relatorIds}
-                        options={parlamentares}
-                        optionLabel="nome"
-                        optionValue="id"
-                        placeholder="Selecione relatores"
-                        onChange={(e) => setRelatorIds(e.value ?? [])}
-                        display="chip"
-                        filter
-                    />
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Autoria</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label className="text-xs text-color-secondary">Autor</label>
+                            <p className="m-0">{materia.autor?.nome ?? '—'}</p>
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <DatePicker
+                                id="edit-data-protocolo"
+                                label="Data Protocolo"
+                                value={dataProtocolo}
+                                onChange={setDataProtocolo}
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <label htmlFor="edit-relatores">Relator(es)</label>
+                            <MultiSelect
+                                id="edit-relatores"
+                                value={relatorIds}
+                                options={parlamentares}
+                                optionLabel="nome"
+                                optionValue="id"
+                                placeholder="Selecione relatores"
+                                onChange={(e) => setRelatorIds(e.value ?? [])}
+                                display="chip"
+                                filter
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                <div className="col-12">
-                    <label htmlFor="edit-ementa">Ementa *</label>
-                    <InputTextarea
-                        id="edit-ementa"
-                        value={ementa}
-                        onChange={(e) => setEmenta(e.target.value)}
-                        rows={3}
-                        autoResize
-                    />
-                </div>
-
-                <div className="col-12">
-                    <label htmlFor="edit-justificativa">Justificativa</label>
-                    <InputTextarea
-                        id="edit-justificativa"
-                        value={justificativa}
-                        onChange={(e) => setJustificativa(e.target.value)}
-                        rows={5}
-                        autoResize
-                    />
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Conteúdo</span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="edit-ementa">Ementa *</label>
+                        <InputTextarea
+                            id="edit-ementa"
+                            value={ementa}
+                            onChange={(e) => setEmenta(e.target.value)}
+                            rows={3}
+                            autoResize
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="edit-justificativa">Justificativa</label>
+                        <InputTextarea
+                            id="edit-justificativa"
+                            value={justificativa}
+                            onChange={(e) => setJustificativa(e.target.value)}
+                            rows={5}
+                            autoResize
+                        />
+                    </div>
                 </div>
             </div>
 

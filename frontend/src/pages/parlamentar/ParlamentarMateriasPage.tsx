@@ -70,7 +70,8 @@ export function ParlamentarMateriasPage() {
                 subtitle="Matérias onde você é autor, coautor ou relator."
             />
 
-            <DataTableLayout<Materia>
+            <section aria-label="Lista de matérias">
+                <DataTableLayout<Materia>
                 items={items}
                 total={total}
                 loading={loading}
@@ -79,7 +80,8 @@ export function ParlamentarMateriasPage() {
                 columns={columns}
                 canWrite={false}
                 onVer={(item) => setDialogVer(item)}
-            />
+                />
+            </section>
 
             {dialogVer && (
                 <MateriaVerDialog

@@ -3,7 +3,7 @@ import { ModuleTitle } from './common/ModuleTitle';
 
 type Props = {
     title: string;
-    icon?: string;
+    icon?: string | ReactNode;
     subtitle?: string;
     actions?: ReactNode;
     /** Dentro de /camara — evita título duplicado do layout pai. */

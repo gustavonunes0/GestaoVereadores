@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
-import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { MODULE_ICONS } from '../app/navigation';
@@ -12,13 +11,14 @@ import { DeleteDialog } from '../components/common/DeleteDialog';
 import { AtoVerDialog } from '../components/atos/AtoVerDialog';
 import { AtoCreateDialog } from '../components/atos/AtoCreateDialog';
 import { ModulePipelineFooter } from '../components/workflow/ModulePipelineFooter';
+import { Dropdown, mapDropdownOptions, withEmptyOption } from '../components/ui';
 import { useAppToast } from '../hooks/useAppToast';
 import { useDominios } from '../hooks/useDominios';
 import { usePermissions } from '../hooks/usePermissions';
 import { formatDatePt } from '../utils/formatDate';
 
 export function AtosPage() {
-    const { canWrite, canDelete } = usePermissions();
+    const { canDelete } = usePermissions();
     const { showApiError } = useAppToast();
     const { tiposAto } = useDominios();
 
@@ -101,32 +101,31 @@ export function AtosPage() {
     );
 
     return (
-        <section className="page page--atos">
+        <main>
             <PageHeader
                 icon={MODULE_ICONS.atos}
                 title="Atos administrativos"
                 subtitle="Portarias, nomeações, exonerações, designações e demais atos de gestão administrativa."
                 actions={
-                    canWrite ? (
+                     (
                         <Button
                             label="Registrar ato"
                             icon="pi pi-plus"
                             onClick={() => setDialogCriar(true)}
                         />
-                    ) : undefined
+                    ) 
                 }
             />
 
-            <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+            <section aria-label="Filtros de pesquisa" className="pt-4">
+                <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
                 <div className="sigl-filtro-campo">
                     <label htmlFor="af-tipo">Tipo</label>
                     <Dropdown
                         id="af-tipo"
                         value={filtros.tipoId ?? ''}
-                        options={[{ id: '', nome: 'Todos' }, ...tiposAto]}
-                        optionLabel="nome"
-                        optionValue="id"
-                        onChange={(e) => setFiltros((f) => ({ ...f, tipoId: e.value || undefined }))}
+                        options={withEmptyOption(mapDropdownOptions(tiposAto, 'nome', 'id'))}
+                        onChange={(v) => setFiltros((f) => ({ ...f, tipoId: v ? String(v) : undefined }))}
                     />
                 </div>
 
@@ -148,9 +147,11 @@ export function AtosPage() {
                         placeholder="Texto da ementa"
                     />
                 </div>
-            </FiltroLayout>
+                </FiltroLayout>
+            </section>
 
-            <DataTableLayout<Ato>
+            <section aria-label="Lista de atos administrativos">
+                <DataTableLayout<Ato>
                 items={items}
                 total={total}
                 loading={loading}
@@ -160,7 +161,8 @@ export function AtosPage() {
                 canWrite={canDelete}
                 onVer={(item) => setDialogVer(item)}
                 onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
-            />
+                />
+            </section>
 
             {dialogCriar && (
                 <AtoCreateDialog
@@ -190,6 +192,6 @@ export function AtosPage() {
             )}
 
             <ModulePipelineFooter current="atos" />
-        </section>
+        </main>
     );
 }

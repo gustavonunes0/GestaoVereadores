@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Tag } from 'primereact/tag';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,15 +38,14 @@ export function Layout() {
                     />
 
                     <aside className="sidebar" id="app-sidebar">
-                        <div className="sidebar-brand">
-                            <h1 className="sidebar-brand__heading">
+                        <div className="sidebar-logo-area">
+                            <h1 className="sidebar-logo-area__heading">
                                 <img
                                     src={logoSrc}
-                                    alt="SIGL"
+                                    alt="Câmara Municipal de Baturité — SIGL"
                                     className="sidebar-brand__logo"
                                 />
                             </h1>
-                            
                         </div>
 
                         <SidebarNav />
@@ -82,12 +82,17 @@ export function Layout() {
                                         </span>
                                     )}
                                 </span>
-                                <SiglButton
-                                    label="Sair"
-                                    icon="pi pi-sign-out"
-                                    severity="secondary"
+                                <button
+                                    type="button"
+                                    className="btn-sair"
                                     onClick={logout}
-                                />
+                                >
+                                    <LogoutOutlined
+                                        sx={{ fontSize: 16 }}
+                                        aria-hidden="true"
+                                    />
+                                    Sair
+                                </button>
                             </div>
                         </header>
 

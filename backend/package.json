@@ -1,7 +1,7 @@
 {
     "name": "gestao-vereadores-api",
     "version": "1.0.0",
-    "description": "API NestJS — Atividade Legislativa (SIGL / IntGest)",
+    "description": "API NestJS — Atividade Legislativa (SIGL)",
     "private": true,
     "scripts": {
         "build": "nest build",
