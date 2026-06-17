@@ -6,6 +6,7 @@ type ParlamentarianUserProps = {
     tenantId: string;
     parliamentarianId: string;
     userId: string;
+    politicalPartyId: string | null;
     status: ParlamentarianUserStatus;
     lastAccessAt: Date | null;
     isRemoved: boolean;
@@ -20,6 +21,7 @@ export type CreateParlamentarianUserParams = {
     tenantId: string;
     parliamentarianId: string;
     userId: string;
+    politicalPartyId?: string | null;
 };
 
 export class ParlamentarianUserEntity {
@@ -32,6 +34,7 @@ export class ParlamentarianUserEntity {
             tenantId: params.tenantId,
             parliamentarianId: params.parliamentarianId,
             userId: params.userId,
+            politicalPartyId: params.politicalPartyId ?? null,
             status: ParlamentarianUserStatus.ACTIVE,
             lastAccessAt: null,
             isRemoved: false,
@@ -47,6 +50,11 @@ export class ParlamentarianUserEntity {
 
     deactivate() {
         this.props.status = ParlamentarianUserStatus.INACTIVE;
+        this.props.updatedAt = new Date();
+    }
+
+    updatePoliticalParty(politicalPartyId: string | null) {
+        this.props.politicalPartyId = politicalPartyId;
         this.props.updatedAt = new Date();
     }
 

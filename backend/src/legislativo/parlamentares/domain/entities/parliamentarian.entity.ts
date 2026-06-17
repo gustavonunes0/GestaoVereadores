@@ -4,7 +4,6 @@ import { ParliamentarianStatus } from '../enums/parliamentarian-status.enum';
 type ParliamentarianProps = {
     id: string;
     tenantId: string;
-    politicalPartyId: string | null;
     parliamentaryName: string;
     officeNumber: string | null;
     photoUrl: string | null;
@@ -20,7 +19,6 @@ export type ParliamentarianPrimitives = ParliamentarianProps;
 
 export type CreateParliamentarianParams = {
     tenantId: string;
-    politicalPartyId?: string | null;
     parliamentaryName: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
@@ -28,7 +26,6 @@ export type CreateParliamentarianParams = {
 };
 
 export type UpdateParliamentarianParams = {
-    politicalPartyId?: string | null;
     parliamentaryName?: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
@@ -44,7 +41,6 @@ export class ParliamentarianEntity {
         const entity = new ParliamentarianEntity({
             id: randomUUID(),
             tenantId: params.tenantId,
-            politicalPartyId: params.politicalPartyId ?? null,
             parliamentaryName: params.parliamentaryName.trim(),
             officeNumber: ParliamentarianEntity.normalizeOptional(
                 params.officeNumber,
@@ -81,14 +77,7 @@ export class ParliamentarianEntity {
         return this.props.tenantId;
     }
 
-    get politicalPartyId() {
-        return this.props.politicalPartyId;
-    }
-
     update(params: UpdateParliamentarianParams) {
-        if (params.politicalPartyId !== undefined) {
-            this.props.politicalPartyId = params.politicalPartyId;
-        }
         if (params.parliamentaryName !== undefined) {
             this.props.parliamentaryName = params.parliamentaryName.trim();
         }

@@ -219,7 +219,7 @@ model PoliticalParty {
     updatedAt DateTime @updatedAt
 
     tenant         Tenant            @relation(fields: [tenantId], references: [id])
-    parliamentarians Parliamentarian[]
+    parliamentarianUsers ParlamentarianUser[]
 
     @@unique([tenantId, acronym])
     @@unique([tenantId, name])
@@ -229,9 +229,8 @@ model PoliticalParty {
 }
 
 model Parliamentarian {
-    id               String @id @default(uuid())
-    tenantId         String
-    politicalPartyId String?
+    id       String @id @default(uuid())
+    tenantId String
 
     parliamentaryName String
     officeNumber      String?
@@ -247,7 +246,6 @@ model Parliamentarian {
     updatedAt DateTime @updatedAt
 
     tenant              Tenant               @relation(fields: [tenantId], references: [id])
-    politicalParty      PoliticalParty?      @relation(fields: [politicalPartyId], references: [id])
     parliamentarianUser ParlamentarianUser?
 
     mandates ParliamentarianMandate[]
@@ -263,7 +261,6 @@ model Parliamentarian {
 
     @@index([tenantId])
     @@index([tenantId, status])
-    @@index([tenantId, politicalPartyId])
     @@index([tenantId, isRemoved])
     @@map("parliamentarians")
 }
@@ -273,6 +270,7 @@ model ParlamentarianUser {
     tenantId          String
     parliamentarianId String @unique
     userId            String @unique
+    politicalPartyId  String?
 
     status       ParlamentarianUserStatus @default(ACTIVE)
     lastAccessAt DateTime?
@@ -285,9 +283,11 @@ model ParlamentarianUser {
     tenant          Tenant          @relation(fields: [tenantId], references: [id])
     parliamentarian Parliamentarian @relation(fields: [parliamentarianId], references: [id])
     user            User            @relation(fields: [userId], references: [id])
+    politicalParty  PoliticalParty? @relation(fields: [politicalPartyId], references: [id])
 
     @@index([tenantId])
     @@index([tenantId, isRemoved])
+    @@index([tenantId, politicalPartyId])
     @@map("parliamentarian_users")
 }
 

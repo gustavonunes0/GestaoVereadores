@@ -1,5 +1,9 @@
 import AccountBalance from '@mui/icons-material/AccountBalance';
 import AccountBalanceOutlined from '@mui/icons-material/AccountBalanceOutlined';
+import Article from '@mui/icons-material/Article';
+import ArticleOutlined from '@mui/icons-material/ArticleOutlined';
+import Badge from '@mui/icons-material/Badge';
+import BadgeOutlined from '@mui/icons-material/BadgeOutlined';
 import BarChart from '@mui/icons-material/BarChart';
 import BarChartOutlined from '@mui/icons-material/BarChartOutlined';
 import Balance from '@mui/icons-material/Balance';
@@ -36,6 +40,8 @@ export interface SidebarIconPair {
 }
 
 export const SIDEBAR_ICONS = {
+    badge: { icon: BadgeOutlined, iconActive: Badge },
+    article: { icon: ArticleOutlined, iconActive: Article },
     dashboard: { icon: DashboardOutlined, iconActive: Dashboard },
     gavel: { icon: GavelOutlined, iconActive: Gavel },
     description: { icon: DescriptionOutlined, iconActive: Description },

@@ -2,6 +2,7 @@ import { UserEntity } from '../../../../identidade/users/domain/user.entity';
 import { CreateParliamentarianUseCase } from './create-parliamentarian.use-case';
 import {
     ParliamentarianCpfAlreadyInUseError,
+    ParliamentarianEmailAlreadyInUseError,
     PoliticalPartyNotFoundForParliamentarianError,
     PoliticalPartyRemovedForParliamentarianError,
 } from '../errors/parliamentarian.errors';
@@ -95,6 +96,57 @@ describe('CreateParliamentarianUseCase', () => {
         );
         expect(result.hasAccess).toBe(true);
         expect(result.user?.email).toBe('parlamentar.52998224725@interno.sigl.local');
+    });
+
+    it('usa e-mail informado no cadastro', async () => {
+        const { useCase, userRepository, parliamentarianRepository } = buildUseCase();
+        const withEmail = buildParliamentarianWithRelations({
+            user: {
+                id: 'user-1',
+                firstName: 'Vereador',
+                lastName: 'Teste',
+                email: 'vereador@camara.gov.br',
+            },
+        });
+        parliamentarianRepository.findById.mockResolvedValue(withEmail);
+
+        const result = await useCase.execute('tenant-1', {
+            ...dto,
+            email: 'vereador@camara.gov.br',
+        });
+        const createdUser = userRepository.create.mock.calls[0][0] as UserEntity;
+
+        expect(createdUser.email).toBe('vereador@camara.gov.br');
+        expect(result.user?.email).toBe('vereador@camara.gov.br');
+    });
+
+    it('bloqueia e-mail já cadastrado', async () => {
+        const userRepository = buildUserRepositoryMock();
+        userRepository.findByEmail.mockResolvedValue(
+            UserEntity.restore({
+                id: 'user-3',
+                firstName: 'Outro',
+                lastName: 'Usuario',
+                cpf: '11144477735',
+                email: 'vereador@camara.gov.br',
+                passwordHash: 'hash',
+                profilePicture: null,
+                createdAt: new Date(),
+                createdBy: null,
+                modifiedAt: new Date(),
+                modifiedBy: null,
+                isRemoved: false,
+            }),
+        );
+
+        const { useCase } = buildUseCase({ userRepository });
+
+        await expect(
+            useCase.execute('tenant-1', {
+                ...dto,
+                email: 'vereador@camara.gov.br',
+            }),
+        ).rejects.toBeInstanceOf(ParliamentarianEmailAlreadyInUseError);
     });
 
     it('bloqueia CPF já cadastrado', async () => {

@@ -1,152 +1,66 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/dialog';
+import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea';
 import { Tag } from 'primereact/tag';
+import {
+    frentesApi,
+    type CreateFrontInput,
+    type FrenteFiltros,
+    type ParliamentaryFront,
+} from '../api/legislative/frentes.api';
 import { MODULE_ICONS } from '../app/navigation';
-import { frentesApi, type ParliamentaryFront, type CreateFrontInput, type FrontStatus } from '../api/legislative/frentes.api';
-import { PageHeader } from '../components/PageHeader';
 import { DataTableLayout } from '../components/common/DataTableLayout';
 import { DeleteDialog } from '../components/common/DeleteDialog';
+import { FiltroLayout } from '../components/common/FiltroLayout';
+import { PageHeader } from '../components/PageHeader';
+import {
+    emptyFrenteForm,
+    FrenteFormDialog,
+    STATUS_OPTIONS,
+    type FrenteFormState,
+} from '../components/frentes/FrenteFormDialog';
+import { FrenteVerDialog } from '../components/frentes/FrenteVerDialog';
+import { Dropdown, withEmptyOption } from '../components/ui';
 import { useAppToast } from '../hooks/useAppToast';
 import { usePermissions } from '../hooks/usePermissions';
 import { formatDatePt } from '../utils/formatDate';
 
 type Severity = 'success' | 'secondary' | 'danger';
 
-const STATUS_LABEL: Record<FrontStatus, string> = {
-    ACTIVE: 'Ativa',
-    INACTIVE: 'Inativa',
-    FINISHED: 'Encerrada',
-};
-
-const STATUS_SEVERITY: Record<FrontStatus, Severity> = {
+const STATUS_SEVERITY: Record<ParliamentaryFront['status'], Severity> = {
     ACTIVE: 'success',
     INACTIVE: 'secondary',
     FINISHED: 'danger',
 };
 
-const STATUS_OPTIONS: { label: string; value: FrontStatus }[] = [
-    { label: 'Ativa', value: 'ACTIVE' },
-    { label: 'Inativa', value: 'INACTIVE' },
-    { label: 'Encerrada', value: 'FINISHED' },
-];
+const STATUS_LABEL: Record<ParliamentaryFront['status'], string> = {
+    ACTIVE: 'Ativa',
+    INACTIVE: 'Inativa',
+    FINISHED: 'Encerrada',
+};
 
-interface FrenteFormState {
-    name: string;
-    theme: string;
-    description: string;
-    startDate: string;
-    endDate: string;
-    status: FrontStatus;
-}
+const EMPTY_FILTROS: FrenteFiltros = {
+    search: '',
+    theme: '',
+    status: undefined,
+    page: 1,
+    limit: 20,
+};
 
-function emptyForm(): FrenteFormState {
-    return { name: '', theme: '', description: '', startDate: '', endDate: '', status: 'ACTIVE' };
-}
-
-function FrenteDialog({
-    title,
-    initial,
-    loading,
-    onClose,
-    onSubmit,
-}: {
-    title: string;
-    initial: FrenteFormState;
-    loading: boolean;
-    onClose: () => void;
-    onSubmit: (form: FrenteFormState) => void;
-}) {
-    const [form, setForm] = useState<FrenteFormState>(initial);
-    const patch = (v: Partial<FrenteFormState>) => setForm((f) => ({ ...f, ...v }));
-
-    const footer = (
-        <div className="flex justify-content-end gap-2">
-            <Button label="Cancelar" severity="secondary" onClick={onClose} disabled={loading} />
-            <Button
-                label="Salvar"
-                icon="pi pi-check"
-                loading={loading}
-                onClick={() => onSubmit(form)}
-                disabled={!form.name.trim() || !form.theme.trim()}
-            />
-        </div>
-    );
-
-    return (
-        <Dialog header={title} visible onHide={onClose} style={{ width: 'min(90vw, 600px)' }} footer={footer} modal>
-            <div className="sigl-dialog-body">
-                <div className="sigl-dialog-secao">
-                    <span className="sigl-dialog-secao-titulo">Identificação</span>
-                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="fr-nome">Nome *</label>
-                            <InputText id="fr-nome" value={form.name} onChange={(e) => patch({ name: e.target.value })} />
-                        </div>
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="fr-status">Situação</label>
-                            <select
-                                id="fr-status"
-                                value={form.status}
-                                onChange={(e) => patch({ status: e.target.value as FrontStatus })}
-                                className="p-inputtext w-full"
-                            >
-                                {STATUS_OPTIONS.map((o) => (
-                                    <option key={o.value} value={o.value}>{o.label}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div className="sigl-dialog-secao">
-                    <span className="sigl-dialog-secao-titulo">Conteúdo</span>
-                    <div className="sigl-filtro-campo">
-                        <label htmlFor="fr-tema">Tema *</label>
-                        <InputText id="fr-tema" value={form.theme} onChange={(e) => patch({ theme: e.target.value })} />
-                    </div>
-                    <div className="sigl-filtro-campo">
-                        <label htmlFor="fr-desc">Descrição</label>
-                        <InputTextarea
-                            id="fr-desc"
-                            value={form.description}
-                            onChange={(e) => patch({ description: e.target.value })}
-                            rows={3}
-                        />
-                    </div>
-                </div>
-                <div className="sigl-dialog-secao">
-                    <span className="sigl-dialog-secao-titulo">Período</span>
-                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="fr-inicio">Data de início</label>
-                            <InputText
-                                id="fr-inicio"
-                                type="date"
-                                value={form.startDate}
-                                onChange={(e) => patch({ startDate: e.target.value })}
-                            />
-                        </div>
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="fr-fim">Data de fim</label>
-                            <InputText
-                                id="fr-fim"
-                                type="date"
-                                value={form.endDate}
-                                onChange={(e) => patch({ endDate: e.target.value })}
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </Dialog>
-    );
+function toCreatePayload(form: FrenteFormState): CreateFrontInput {
+    return {
+        name: form.name.trim(),
+        theme: form.theme.trim(),
+        description: form.description.trim() || undefined,
+        startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
+        endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+        status: form.status,
+    };
 }
 
 export function FrentesPage() {
-    const { canEdit, canDelete } = usePermissions();
+    const { canWrite, canEdit, canDelete } = usePermissions();
     const { showSuccess, showApiError } = useAppToast();
 
     const [items, setItems] = useState<ParliamentaryFront[]>([]);
@@ -155,14 +69,22 @@ export function FrentesPage() {
     const [page, setPage] = useState(1);
     const [saving, setSaving] = useState(false);
 
+    const [filtros, setFiltros] = useState<FrenteFiltros>({ ...EMPTY_FILTROS });
+    const [filtrosApplied, setFiltrosApplied] = useState<FrenteFiltros>({ ...EMPTY_FILTROS });
+
     const [dialogCriar, setDialogCriar] = useState(false);
+    const [dialogVerId, setDialogVerId] = useState<string | null>(null);
     const [dialogEditar, setDialogEditar] = useState<ParliamentaryFront | null>(null);
     const [dialogDeletar, setDialogDeletar] = useState<ParliamentaryFront | null>(null);
 
     const buscar = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await frentesApi.list({ page, limit: 20 });
+            const res = await frentesApi.list({
+                ...filtrosApplied,
+                page,
+                limit: 20,
+            });
             setItems(res.data);
             setTotal(res.meta.total);
         } catch (err) {
@@ -170,24 +92,27 @@ export function FrentesPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, showApiError]);
+    }, [filtrosApplied, page, showApiError]);
 
     useEffect(() => {
         void buscar();
     }, [buscar]);
 
+    function aplicarFiltros() {
+        setPage(1);
+        setFiltrosApplied({ ...filtros });
+    }
+
+    function limparFiltros() {
+        setFiltros({ ...EMPTY_FILTROS });
+        setFiltrosApplied({ ...EMPTY_FILTROS });
+        setPage(1);
+    }
+
     async function handleCreate(form: FrenteFormState) {
         setSaving(true);
-        const body: CreateFrontInput = {
-            name: form.name.trim(),
-            theme: form.theme.trim(),
-            description: form.description.trim() || undefined,
-            startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
-            endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
-            status: form.status,
-        };
         try {
-            await frentesApi.create(body);
+            await frentesApi.create(toCreatePayload(form));
             showSuccess('Frente parlamentar cadastrada.');
             setDialogCriar(false);
             void buscar();
@@ -202,14 +127,7 @@ export function FrentesPage() {
         if (!dialogEditar) return;
         setSaving(true);
         try {
-            await frentesApi.update(dialogEditar.id, {
-                name: form.name.trim(),
-                theme: form.theme.trim(),
-                description: form.description.trim() || undefined,
-                startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
-                endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
-                status: form.status,
-            });
+            await frentesApi.update(dialogEditar.id, toCreatePayload(form));
             showSuccess('Frente atualizada.');
             setDialogEditar(null);
             void buscar();
@@ -220,19 +138,35 @@ export function FrentesPage() {
         }
     }
 
-    const columns = (
+    const colunas = (
         <>
-            <Column header="Nome" body={(row: ParliamentaryFront) => <span className="font-medium">{row.name}</span>} />
+            <Column
+                header="Nome"
+                body={(row: ParliamentaryFront) => (
+                    <span className="font-medium">{row.name}</span>
+                )}
+            />
             <Column header="Tema" body={(row: ParliamentaryFront) => row.theme} style={{ width: '14rem' }} />
             <Column
                 header="Situação"
                 body={(row: ParliamentaryFront) => (
-                    <Tag value={STATUS_LABEL[row.status]} severity={STATUS_SEVERITY[row.status]} />
+                    <Tag
+                        value={STATUS_LABEL[row.status]}
+                        severity={STATUS_SEVERITY[row.status]}
+                    />
                 )}
                 style={{ width: '7rem' }}
             />
-            <Column header="Início" body={(row: ParliamentaryFront) => formatDatePt(row.startDate)} style={{ width: '7rem' }} />
-            <Column header="Fim" body={(row: ParliamentaryFront) => formatDatePt(row.endDate)} style={{ width: '7rem' }} />
+            <Column
+                header="Início"
+                body={(row: ParliamentaryFront) => formatDatePt(row.startDate)}
+                style={{ width: '7rem' }}
+            />
+            <Column
+                header="Fim"
+                body={(row: ParliamentaryFront) => formatDatePt(row.endDate)}
+                style={{ width: '7rem' }}
+            />
         </>
     );
 
@@ -241,38 +175,84 @@ export function FrentesPage() {
             <PageHeader
                 icon={MODULE_ICONS.frentes}
                 title="Frentes parlamentares"
-                subtitle="Grupos temáticos de parlamentares com objetivo legislativo comum."
                 actions={
-                    <Button label="Adicionar frente" icon="pi pi-plus" onClick={() => setDialogCriar(true)} />
+                    canWrite ? (
+                        <Button
+                            label="Nova frente"
+                            icon="pi pi-plus"
+                            onClick={() => setDialogCriar(true)}
+                        />
+                    ) : undefined
                 }
             />
 
-            <section aria-label="Lista de frentes parlamentares" className="pt-4">
-                <DataTableLayout<ParliamentaryFront>
-                items={items}
-                total={total}
-                loading={loading}
-                page={page}
-                onPageChange={setPage}
-                columns={columns}
-                canWrite={canEdit}
-                onEditar={canEdit ? (item) => setDialogEditar(item) : undefined}
-                onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
+            <section aria-label="Filtros de pesquisa" className="pt-4">
+                <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="ff-nome">Nome contém</label>
+                        <InputText
+                            id="ff-nome"
+                            value={filtros.search ?? ''}
+                            onChange={(e) => setFiltros((f) => ({ ...f, search: e.target.value }))}
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="ff-tema">Tema contém</label>
+                        <InputText
+                            id="ff-tema"
+                            value={filtros.theme ?? ''}
+                            onChange={(e) => setFiltros((f) => ({ ...f, theme: e.target.value }))}
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="ff-status">Situação</label>
+                        <Dropdown
+                            id="ff-status"
+                            value={filtros.status ?? ''}
+                            options={withEmptyOption(STATUS_OPTIONS)}
+                            onChange={(v) =>
+                                setFiltros((f) => ({
+                                    ...f,
+                                    status: v ? (String(v) as ParliamentaryFront['status']) : undefined,
+                                }))
+                            }
+                            placeholder="Todas"
+                        />
+                    </div>
+                </FiltroLayout>
+            </section>
+
+            <section aria-label="Lista de frentes parlamentares" className="frentes-table-section">
+                <DataTableLayout
+                    items={items}
+                    total={total}
+                    loading={loading}
+                    page={page}
+                    onPageChange={setPage}
+                    columns={colunas}
+                    canWrite={canEdit}
+                    onVer={(item) => setDialogVerId(item.id)}
+                    onEditar={canEdit ? (item) => setDialogEditar(item) : undefined}
+                    onDeletar={canDelete ? (item) => setDialogDeletar(item) : undefined}
                 />
             </section>
 
             {dialogCriar && (
-                <FrenteDialog
+                <FrenteFormDialog
                     title="Nova frente parlamentar"
-                    initial={emptyForm()}
+                    initial={emptyFrenteForm()}
                     loading={saving}
                     onClose={() => setDialogCriar(false)}
                     onSubmit={(form) => void handleCreate(form)}
                 />
             )}
 
+            {dialogVerId && (
+                <FrenteVerDialog frenteId={dialogVerId} onClose={() => setDialogVerId(null)} />
+            )}
+
             {dialogEditar && (
-                <FrenteDialog
+                <FrenteFormDialog
                     title={`Editar — ${dialogEditar.name}`}
                     initial={{
                         name: dialogEditar.name,
@@ -293,11 +273,11 @@ export function FrentesPage() {
                     visible
                     title="Excluir frente parlamentar"
                     message={`Deseja excluir a frente "${dialogDeletar.name}"? Esta ação não pode ser desfeita.`}
-                    onConfirm={() => frentesApi.remove(dialogDeletar.id)}
-                    onClose={() => {
-                        setDialogDeletar(null);
+                    onConfirm={async () => {
+                        await frentesApi.remove(dialogDeletar.id);
                         void buscar();
                     }}
+                    onClose={() => setDialogDeletar(null)}
                 />
             )}
         </main>

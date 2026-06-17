@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsUUID } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsUUID } from 'class-validator';
 
 export class SetAutorParlamentarDto {
     @ApiProperty()
@@ -8,16 +8,9 @@ export class SetAutorParlamentarDto {
 }
 
 export class SetAutorExternoDto {
-    @ApiProperty({ description: 'GuestUser que representa o autor externo' })
+    @ApiProperty({ description: 'Autor externo cadastrado no tenant' })
     @IsUUID()
-    guestUserId!: string;
-
-    @ApiPropertyOptional({
-        description: 'Tipo de autor legado (Popular, Executivo). Padrão: Popular',
-    })
-    @IsOptional()
-    @IsUUID()
-    tipoAutorId?: string;
+    autorExternoId!: string;
 }
 
 export class AddCoautorMateriaDto {

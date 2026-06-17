@@ -9,6 +9,7 @@ import {
 import * as bcrypt from 'bcryptjs';
 import { randomBytes, scrypt as scryptCallback } from 'crypto';
 import { promisify } from 'util';
+import { BRAZILIAN_POLITICAL_PARTIES } from './data/brazilian-political-parties';
 
 const prisma = new PrismaClient();
 const scrypt = promisify(scryptCallback);
@@ -37,6 +38,30 @@ async function main() {
             status: TenantStatus.ACTIVE,
         },
     });
+
+    for (const party of BRAZILIAN_POLITICAL_PARTIES) {
+        await prisma.politicalParty.upsert({
+            where: {
+                tenantId_acronym: {
+                    tenantId: DEMO_TENANT_ID,
+                    acronym: party.sigla,
+                },
+            },
+            update: {
+                name: party.nome,
+                isRemoved: false,
+                removedAt: null,
+            },
+            create: {
+                tenantId: DEMO_TENANT_ID,
+                acronym: party.sigla,
+                name: party.nome,
+            },
+        });
+    }
+    console.log(
+        `Partidos políticos: ${BRAZILIAN_POLITICAL_PARTIES.length} cadastrados/atualizados`,
+    );
 
     // --- Usuário SIGL master ---
     const passwordHash = await bcrypt.hash('admin', 10);

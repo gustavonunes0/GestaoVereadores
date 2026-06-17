@@ -39,8 +39,16 @@ export type CommitteeInput = {
     notes?: string;
 };
 
+export type ComissaoFiltros = {
+    search?: string;
+    type?: CommitteeType;
+    status?: CommitteeStatus;
+    page?: number;
+    limit?: number;
+};
+
 export const comissoesApi = {
-    list: (params?: Record<string, string | number | boolean | undefined>) =>
+    list: (params?: ComissaoFiltros) =>
         apiList<Committee>(API_PATHS.comissoes, params),
 
     getById: (id: string) =>

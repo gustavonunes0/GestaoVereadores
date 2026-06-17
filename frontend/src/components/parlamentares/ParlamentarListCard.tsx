@@ -1,5 +1,4 @@
 import { Avatar } from 'primereact/avatar';
-import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import type { Parliamentarian } from '../../api/legislative/parlamentares.api';
 
@@ -19,117 +18,118 @@ const MANDATE_STATUS_LABEL: Record<string, string> = {
 
 type Props = {
     row: Parliamentarian;
-    onVerMandatos?: (row: Parliamentarian) => void;
-    onVerComissoes?: (row: Parliamentarian) => void;
 };
 
-function truncate(text: string | undefined, max = 120) {
-    if (!text?.trim()) return null;
-    const t = text.trim();
-    return t.length > max ? `${t.slice(0, max)}…` : t;
+const EMPTY = '—';
+
+function formatPartyLabel(acronym: string, name: string): string {
+    const sigla = acronym.trim();
+    const nome = name.trim();
+    if (!sigla && !nome) return EMPTY;
+    if (!sigla) return nome;
+    if (!nome) return sigla;
+    if (sigla.toUpperCase() === nome.toUpperCase()) return sigla;
+    return `${sigla} — ${nome}`;
 }
 
-export function ParlamentarListCard({ row, onVerMandatos, onVerComissoes }: Props) {
-    const email = row.user?.email;
-    const partyLabel = row.politicalParty
-        ? `${row.politicalParty.acronym} — ${row.politicalParty.name}`
+/** Coluna principal — foto e identificação do parlamentar (listagem). */
+export function ParlamentarListCard({ row }: Props) {
+    const displayName = row.parliamentaryName?.trim() || 'Sem nome';
+    const email = row.user?.email?.trim() || null;
+    const party = row.user?.politicalParty;
+    const partyLabel = party
+        ? formatPartyLabel(party.acronym, party.name)
         : null;
     const mandateBadge = row.activeMandate?.status
         ? MANDATE_STATUS_LABEL[row.activeMandate.status] ?? row.activeMandate.status
         : row.activeMandatesCount
           ? 'Com mandato'
           : null;
-    const stats = row.stats;
+    const initial = displayName.charAt(0).toUpperCase();
 
     return (
         <div className="parlamentar-list-card">
-            <div className="parlamentar-list-card__header">
+            <div className="parlamentar-list-card__avatar" aria-hidden>
                 {row.photoUrl ? (
-                    <Avatar image={row.photoUrl} size="xlarge" shape="circle" />
+                    <Avatar image={row.photoUrl} shape="circle" />
                 ) : (
-                    <Avatar
-                        label={row.parliamentaryName.charAt(0).toUpperCase()}
-                        size="xlarge"
-                        shape="circle"
-                    />
+                    <Avatar label={initial} shape="circle" />
                 )}
-                <div className="parlamentar-list-card__identity">
-                    <div className="parlamentar-list-card__name-row">
-                        <strong className="parlamentar-list-card__name">
-                            {row.parliamentaryName}
-                        </strong>
-                        {mandateBadge && (
+            </div>
+            <div className="parlamentar-list-card__identity">
+                <div className="parlamentar-list-card__name-row">
+                    <strong className="parlamentar-list-card__name">
+                        {displayName}
+                    </strong>
+                    <div className="parlamentar-list-card__badges">
+                        {mandateBadge ? (
                             <Tag value={mandateBadge} severity="info" className="text-xs" />
-                        )}
+                        ) : null}
                         <Tag
                             value={STATUS_LABEL[row.status] ?? row.status}
                             severity={row.status === 'ACTIVE' ? 'success' : 'secondary'}
                             className="text-xs"
                         />
                     </div>
-                    <p className="parlamentar-list-card__email">
-                        {email ?? 'E-mail não informado'}
-                    </p>
-                    {partyLabel && (
-                        <p className="parlamentar-list-card__party">{partyLabel}</p>
-                    )}
-                    <p className="parlamentar-list-card__meta">
-                        <span>
-                            Núm. de Gabinete:{' '}
-                            {row.officeNumber?.trim() ? row.officeNumber : 'Não informado'}
-                        </span>
-                    </p>
-                    <p className="parlamentar-list-card__bio">
-                        {truncate(row.biography) ?? 'Biografia não informada'}
-                    </p>
                 </div>
+                <p className="parlamentar-list-card__line">
+                    {email ?? EMPTY}
+                </p>
+                {partyLabel ? (
+                    <p className="parlamentar-list-card__line parlamentar-list-card__party">
+                        {party?.flagUrl ? (
+                            <img
+                                src={party.flagUrl}
+                                alt=""
+                                className="parlamentar-list-card__party-flag"
+                            />
+                        ) : (
+                            <span
+                                className="parlamentar-list-card__party-flag parlamentar-list-card__party-flag--placeholder"
+                                aria-hidden
+                            >
+                                {party?.acronym?.slice(0, 2).toUpperCase() || '—'}
+                            </span>
+                        )}
+                        <span>{partyLabel}</span>
+                    </p>
+                ) : null}
             </div>
+        </div>
+    );
+}
 
-            {stats && (
-                <div className="parlamentar-list-card__stats">
-                    <div className="parlamentar-list-card__stat">
-                        <span className="parlamentar-list-card__stat-label">
-                            Proposições própria autoria
-                        </span>
-                        <strong>{stats.authoredMattersCount}</strong>
-                    </div>
-                    <div className="parlamentar-list-card__stat">
-                        <span className="parlamentar-list-card__stat-label">
-                            Participação em proposições
-                        </span>
-                        <strong>{stats.coauthoredMattersCount}</strong>
-                    </div>
-                    <div className="parlamentar-list-card__stat">
-                        <span className="parlamentar-list-card__stat-label">
-                            Participação em sessões
-                        </span>
-                        <strong>{stats.sessionVotesCount}</strong>
-                    </div>
-                </div>
-            )}
+type StatCellProps = {
+    value: number;
+};
 
-            <div className="parlamentar-list-card__links">
-                <div className="parlamentar-list-card__link-item">
-                    <span>{row.activeMandatesCount ?? 0} Mandato(s)</span>
-                    <Button
-                        label="Ver"
-                        link
-                        size="small"
-                        onClick={() => onVerMandatos?.(row)}
-                        disabled={!row.activeMandatesCount}
-                    />
-                </div>
-                <div className="parlamentar-list-card__link-item">
-                    <span>{stats?.committeeMembersCount ?? 0} Comissão(ões)</span>
-                    <Button
-                        label="Ver"
-                        link
-                        size="small"
-                        onClick={() => onVerComissoes?.(row)}
-                        disabled={!stats?.committeeMembersCount}
-                    />
-                </div>
-            </div>
+export function ParlamentarTableStatCell({ value }: StatCellProps) {
+    return (
+        <div className="parlamentar-table-stat">
+            <strong className="parlamentar-table-stat__value">{value}</strong>
+        </div>
+    );
+}
+
+type LinkCellProps = {
+    count: number;
+    label: string;
+    onVer: () => void;
+};
+
+export function ParlamentarTableLinkCell({ count, label, onVer }: LinkCellProps) {
+    return (
+        <div className="parlamentar-table-link">
+            <span className="parlamentar-table-link__count">{count}</span>
+            <span className="parlamentar-table-link__label">{label}</span>
+            <button
+                type="button"
+                className="parlamentar-table-link__btn"
+                onClick={onVer}
+                disabled={count === 0}
+            >
+                Ver
+            </button>
         </div>
     );
 }

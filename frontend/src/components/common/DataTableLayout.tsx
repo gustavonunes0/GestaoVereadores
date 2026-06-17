@@ -1,6 +1,25 @@
+import { Children, Fragment, isValidElement, type ReactNode } from 'react';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
+
+/** PrimeReact só reconhece <Column> como filhos diretos do DataTable. */
+function flattenColumns(columns: ReactNode): ReactNode[] {
+    const result: ReactNode[] = [];
+    Children.forEach(columns, (child) => {
+        if (isValidElement(child) && child.type === Fragment) {
+            Children.forEach(
+                (child.props as { children?: ReactNode }).children,
+                (nested) => {
+                    if (nested != null && nested !== false) result.push(nested);
+                },
+            );
+            return;
+        }
+        if (child != null && child !== false) result.push(child);
+    });
+    return result;
+}
 
 interface DataTableLayoutProps<T extends object> {
     items: T[];
@@ -8,12 +27,21 @@ interface DataTableLayoutProps<T extends object> {
     loading: boolean;
     page: number;
     limit?: number;
+    dataKey?: string;
     onPageChange: (page: number) => void;
     columns: React.ReactNode;
+    enableSort?: boolean;
+    sortField?: string;
+    sortOrder?: 1 | -1 | 0 | null;
     canWrite?: boolean;
+    canEdit?: boolean;
+    canDelete?: boolean;
     onVer?: (item: T) => void;
     onEditar?: (item: T) => void;
     onDeletar?: (item: T) => void;
+    tableClassName?: string;
+    actionsColumnWidth?: string;
+    hideActionsColumn?: boolean;
 }
 
 export function DataTableLayout<T extends object>({
@@ -22,16 +50,29 @@ export function DataTableLayout<T extends object>({
     loading,
     page,
     limit = 20,
+    dataKey = 'id',
     onPageChange,
     columns,
+    enableSort = true,
+    sortField = 'createdAt',
+    sortOrder = -1,
     canWrite,
+    canEdit,
+    canDelete,
     onVer,
     onEditar,
     onDeletar,
+    tableClassName,
+    actionsColumnWidth = '8rem',
+    hideActionsColumn = false,
 }: DataTableLayoutProps<T>) {
+    const allowEdit = canEdit ?? canWrite ?? false;
+    const allowDelete = canDelete ?? canWrite ?? false;
+
     return (
         <DataTable
             value={items}
+            dataKey={dataKey}
             size="small"
             paginator
             rows={limit}
@@ -40,15 +81,15 @@ export function DataTableLayout<T extends object>({
             onPage={(e) => onPageChange(Math.floor(e.first / limit) + 1)}
             lazy
             loading={loading}
-            sortField="createdAt"
-            sortOrder={-1}
+            {...(enableSort ? { sortField, sortOrder } : {})}
             emptyMessage="Nenhum registro encontrado"
-            className="sigl-datatable"
+            className={tableClassName ? `sigl-datatable ${tableClassName}` : 'sigl-datatable'}
         >
-            {columns}
+            {flattenColumns(columns)}
+            {!hideActionsColumn && (
             <Column
                 header="Ações"
-                style={{ width: '8rem' }}
+                style={{ width: actionsColumnWidth }}
                 body={(row: T) => (
                     <div className="flex gap-1">
                         {onVer && (
@@ -61,7 +102,7 @@ export function DataTableLayout<T extends object>({
                                 onClick={() => onVer(row)}
                             />
                         )}
-                        {canWrite && onEditar && (
+                        {allowEdit && onEditar && (
                             <Button
                                 icon="pi pi-pencil"
                                 rounded
@@ -71,7 +112,7 @@ export function DataTableLayout<T extends object>({
                                 onClick={() => onEditar(row)}
                             />
                         )}
-                        {canWrite && onDeletar && (
+                        {allowDelete && onDeletar && (
                             <Button
                                 icon="pi pi-trash"
                                 rounded
@@ -85,6 +126,7 @@ export function DataTableLayout<T extends object>({
                     </div>
                 )}
             />
+            )}
         </DataTable>
     );
 }

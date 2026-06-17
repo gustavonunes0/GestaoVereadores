@@ -35,7 +35,9 @@ import {
     ParliamentarianAccessNotFoundError,
 } from '../errors/parliamentarian-access.errors';
 import {
+    ParliamentarianAccessRequiredForPartyError,
     ParliamentarianCpfAlreadyInUseError,
+    ParliamentarianEmailAlreadyInUseError,
     ParliamentarianNotFoundError,
     PoliticalPartyNotFoundForParliamentarianError,
     PoliticalPartyRemovedForParliamentarianError,
@@ -205,12 +207,16 @@ export class ParliamentariansController {
         }
         if (
             error instanceof ParliamentarianCpfAlreadyInUseError ||
+            error instanceof ParliamentarianEmailAlreadyInUseError ||
             error instanceof ParliamentarianAccessAlreadyGrantedError
         ) {
             throw new ConflictException(error.message);
         }
         if (error instanceof ParliamentarianAccessNotFoundError) {
             throw new NotFoundException(error.message);
+        }
+        if (error instanceof ParliamentarianAccessRequiredForPartyError) {
+            throw new BadRequestException(error.message);
         }
         if (error instanceof Error && error.message.includes('Informe userId')) {
             throw new BadRequestException(error.message);

@@ -4,6 +4,7 @@ import { GuestUsersModule } from './guest-users';
 import { TenantUsersModule } from './tenant-users/tenant-users.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { UsersModule } from './users/users.module';
+import { UsuariosIdentidadeModule } from './usuarios/usuarios.module';
 
 @Module({
     imports: [
@@ -12,6 +13,7 @@ import { UsersModule } from './users/users.module';
         TenantsModule,
         TenantUsersModule,
         GuestUsersModule,
+        UsuariosIdentidadeModule,
     ],
     exports: [
         UsersModule,

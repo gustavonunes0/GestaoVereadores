@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+    IsEmail,
     IsNotEmpty,
     IsOptional,
     IsString,
@@ -20,6 +21,11 @@ export class CreateParliamentarianDto {
     @IsString()
     @MinLength(8, { message: 'Senha deve ter ao menos 8 caracteres' })
     password: string;
+
+    @ApiPropertyOptional({ example: 'vereador@camara.gov.br' })
+    @IsOptional()
+    @IsEmail({}, { message: 'E-mail inválido' })
+    email?: string;
 
     @ApiPropertyOptional()
     @IsOptional()

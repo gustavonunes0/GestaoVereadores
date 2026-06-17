@@ -21,6 +21,12 @@ export const API_PATHS = {
 
     // ── Matérias ──────────────────────────────────────────────────────────
     materias:            '/legislative/materias',
+    materiasOpcoesAutor: '/legislative/materias/opcoes-autor',
+    materiasAutoresExternos: '/legislative/materias/autores-externos',
+    materiasTextoOriginal: (id: string) => `/legislative/materias/${id}/texto-original`,
+    materiasAutoria:     (id: string) => `/legislative/materias/${id}/autoria`,
+    materiasAutoriaParlamentar: (id: string) => `/legislative/materias/${id}/autoria/autor-parlamentar`,
+    materiasAutoriaExterno: (id: string) => `/legislative/materias/${id}/autoria/autor-externo`,
     materiasTramitar:    (id: string) => `/legislative/materias/${id}/tramitar`,
     materiasAutores:     (id: string) => `/legislative/materias/${id}/autores`,
     materiasAutor:       (id: string, autorId: string) => `/legislative/materias/${id}/autores/${autorId}`,

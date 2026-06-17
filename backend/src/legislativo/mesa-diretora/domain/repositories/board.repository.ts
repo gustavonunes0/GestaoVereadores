@@ -11,10 +11,19 @@ export type LegislatureBoardSummary = {
     isCurrent: boolean;
 };
 
+export type PoliticalPartyBoardSummary = {
+    id: string;
+    name: string;
+    acronym: string;
+    flagUrl: string | null;
+};
+
 export type ParliamentarianBoardSummary = {
     id: string;
     parliamentaryName: string;
     officeNumber: string | null;
+    photoUrl: string | null;
+    politicalParty: PoliticalPartyBoardSummary | null;
 };
 
 export type BoardRoleSummary = {

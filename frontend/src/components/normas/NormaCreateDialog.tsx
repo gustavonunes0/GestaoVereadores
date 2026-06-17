@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
+import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Message } from 'primereact/message';
@@ -9,32 +10,72 @@ import { normasApi, type CreateNormaDto } from '../../api/normas.api';
 import { materiasApi } from '../../api/legislative/materias.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { DatePicker, Dropdown, mapDropdownOptions, withEmptyOption } from '../../components/ui';
+import {
+    DatePicker,
+    Dropdown,
+    FileUpload,
+    mapDropdownOptions,
+    withEmptyOption,
+} from '../../components/ui';
+import {
+    findTipoNormaIdByNome,
+    isLeiComplementarTipo,
+    LEI_COMPLEMENTAR_TIPO_NOME,
+    LEI_TIPO_NOME,
+    resolveDefaultTipoNormaId,
+} from '../../utils/normaDisplay';
 
 interface Props {
     onClose: () => void;
     onSaved: () => void;
 }
 
+function buildCreatePayload(form: Partial<CreateNormaDto>): CreateNormaDto {
+    return {
+        tipoId: form.tipoId!,
+        numero: form.numero!.trim(),
+        anoId: form.anoId!,
+        esferaFederacaoId: form.esferaFederacaoId!,
+        ementa: form.ementa!.trim(),
+        complementar: !!form.complementar,
+        ...(form.materiaOrigemId ? { materiaOrigemId: form.materiaOrigemId } : {}),
+        ...(form.dataPublicacao ? { dataPublicacao: form.dataPublicacao } : {}),
+        ...(form.veiculoPublicacao?.trim()
+            ? { veiculoPublicacao: form.veiculoPublicacao.trim() }
+            : {}),
+        ...(form.identificadorId ? { identificadorId: form.identificadorId } : {}),
+        ...(form.urlExternaPublicacao?.trim()
+            ? { urlExternaPublicacao: form.urlExternaPublicacao.trim() }
+            : {}),
+        ...(form.paginaInicio != null ? { paginaInicio: form.paginaInicio } : {}),
+        ...(form.paginaFim != null ? { paginaFim: form.paginaFim } : {}),
+    };
+}
+
 export function NormaCreateDialog({ onClose, onSaved }: Props) {
     const { showSuccess, showApiError } = useAppToast();
-    const { tiposNorma, anos, esferasFederacao } = useDominios();
+    const { tiposNorma, anos, esferasFederacao, identificadoresNorma } = useDominios();
     const [loading, setLoading] = useState(false);
-    const [materiasAprovadas, setMateriasAprovadas] = useState<{ id: string; identificacao?: string; ementa: string }[]>([]);
+    const [materiasAprovadas, setMateriasAprovadas] = useState<
+        { id: string; identificacao?: string; ementa: string }[]
+    >([]);
+    const [textoIntegral, setTextoIntegral] = useState<File | null>(null);
+    const [audio, setAudio] = useState<File | null>(null);
 
     const [form, setForm] = useState<Partial<CreateNormaDto>>({
         complementar: false,
     });
 
     useEffect(() => {
-        materiasApi.list({ status: 'APROVADA', limit: 200 })
+        materiasApi
+            .list({ status: 'APROVADA', limit: 200 })
             .then((r) => setMateriasAprovadas(r.data as unknown as typeof materiasAprovadas))
             .catch(() => setMateriasAprovadas([]));
     }, []);
 
     useEffect(() => {
-        if (tiposNorma[0] && !form.tipoId) {
-            setForm((f) => ({ ...f, tipoId: tiposNorma[0].id }));
+        if (tiposNorma.length > 0 && !form.tipoId) {
+            setForm((f) => ({ ...f, tipoId: resolveDefaultTipoNormaId(tiposNorma) }));
         }
         if (anos[0] && !form.anoId) {
             setForm((f) => ({ ...f, anoId: anos[0].id }));
@@ -44,17 +85,72 @@ export function NormaCreateDialog({ onClose, onSaved }: Props) {
         }
     }, [tiposNorma, anos, esferasFederacao, form.tipoId, form.anoId, form.esferaFederacaoId]);
 
+    function handleTipoChange(tipoId: string) {
+        const complementar = isLeiComplementarTipo(tiposNorma, tipoId);
+        patch({ tipoId, complementar });
+    }
+
+    function handleComplementarChange(checked: boolean) {
+        if (checked) {
+            const leiComplementarId = findTipoNormaIdByNome(
+                tiposNorma,
+                LEI_COMPLEMENTAR_TIPO_NOME,
+            );
+            patch({
+                complementar: true,
+                ...(leiComplementarId ? { tipoId: leiComplementarId } : {}),
+            });
+            return;
+        }
+
+        const nextPatch: Partial<CreateNormaDto> = { complementar: false };
+        if (isLeiComplementarTipo(tiposNorma, form.tipoId)) {
+            const leiId = findTipoNormaIdByNome(tiposNorma, LEI_TIPO_NOME);
+            if (leiId) nextPatch.tipoId = leiId;
+        }
+        patch(nextPatch);
+    }
+
     function patch(values: Partial<CreateNormaDto>) {
         setForm((f) => ({ ...f, ...values }));
     }
 
     async function handleSubmit() {
-        if (!form.tipoId || !form.numero?.trim() || !form.anoId || !form.esferaFederacaoId || !form.ementa?.trim()) {
+        if (
+            !form.tipoId ||
+            !form.numero?.trim() ||
+            !form.anoId ||
+            !form.esferaFederacaoId ||
+            !form.ementa?.trim()
+        ) {
+            showApiError(
+                new Error(
+                    'Preencha os campos obrigatórios: espécie, número, ano, esfera e ementa.',
+                ),
+            );
+            return;
+        }
+        if (
+            form.paginaInicio != null &&
+            form.paginaFim != null &&
+            form.paginaFim < form.paginaInicio
+        ) {
+            showApiError(
+                new Error('A página fim deve ser maior ou igual à página início.'),
+            );
             return;
         }
         setLoading(true);
         try {
-            await normasApi.create(form as CreateNormaDto);
+            const created = await normasApi.create(buildCreatePayload(form));
+
+            if (textoIntegral) {
+                await normasApi.uploadTextoIntegral(created.id, textoIntegral);
+            }
+            if (audio) {
+                await normasApi.uploadAudio(created.id, audio);
+            }
+
             showSuccess('Norma jurídica registrada com sucesso.');
             onSaved();
             onClose();
@@ -82,7 +178,7 @@ export function NormaCreateDialog({ onClose, onSaved }: Props) {
             header="Registrar Norma Jurídica"
             visible
             onHide={onClose}
-            style={{ width: 'min(90vw, 700px)' }}
+            style={{ width: 'min(90vw, 760px)' }}
             footer={footer}
             modal
         >
@@ -96,7 +192,7 @@ export function NormaCreateDialog({ onClose, onSaved }: Props) {
                                 id="n-tipo"
                                 value={form.tipoId ?? ''}
                                 options={mapDropdownOptions(tiposNorma, 'nome', 'id')}
-                                onChange={(v) => patch({ tipoId: String(v) })}
+                                onChange={(v) => handleTipoChange(String(v))}
                                 placeholder="Selecione"
                             />
                         </div>
@@ -131,18 +227,43 @@ export function NormaCreateDialog({ onClose, onSaved }: Props) {
                                 placeholder="Selecione"
                             />
                         </div>
-                        <div className="sigl-filtro-campo flex align-items-end">
-                            <div className="flex align-items-center gap-2">
-                                <Checkbox
-                                    inputId="n-complementar"
-                                    checked={form.complementar ?? false}
-                                    onChange={(e) => patch({ complementar: e.checked ?? false })}
-                                />
-                                <label htmlFor="n-complementar">Lei Complementar</label>
-                            </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="n-identificador">Identificador</label>
+                            <Dropdown
+                                id="n-identificador"
+                                value={form.identificadorId ?? ''}
+                                options={withEmptyOption(
+                                    mapDropdownOptions(identificadoresNorma, 'nome', 'id'),
+                                    'Nenhum',
+                                )}
+                                onChange={(v) =>
+                                    patch({ identificadorId: v ? String(v) : undefined })
+                                }
+                                placeholder="Selecione"
+                            />
                         </div>
                     </div>
+                    <div className="sigl-filtro-campo">
+                        <div className="flex align-items-center gap-2">
+                            <Checkbox
+                                inputId="n-complementar"
+                                checked={
+                                    form.complementar ??
+                                    isLeiComplementarTipo(tiposNorma, form.tipoId)
+                                }
+                                onChange={(e) =>
+                                    handleComplementarChange(e.checked ?? false)
+                                }
+                            />
+                            <label htmlFor="n-complementar">Complementar?</label>
+                        </div>
+                        <small className="text-color-secondary">
+                            Marca como lei complementar e seleciona a espécie &quot;Lei
+                            Complementar&quot;.
+                        </small>
+                    </div>
                 </div>
+
                 <div className="sigl-dialog-secao">
                     <span className="sigl-dialog-secao-titulo">Conteúdo</span>
                     <div className="sigl-filtro-campo">
@@ -156,6 +277,7 @@ export function NormaCreateDialog({ onClose, onSaved }: Props) {
                         />
                     </div>
                 </div>
+
                 <div className="sigl-dialog-secao">
                     <span className="sigl-dialog-secao-titulo">Publicação</span>
                     <div className="sigl-dialog-grid sigl-dialog-grid-2">
@@ -165,7 +287,11 @@ export function NormaCreateDialog({ onClose, onSaved }: Props) {
                                 label="Data de publicação"
                                 value={form.dataPublicacao ? new Date(form.dataPublicacao) : null}
                                 onChange={(d) =>
-                                    patch({ dataPublicacao: d ? d.toISOString().split('T')[0] : undefined })
+                                    patch({
+                                        dataPublicacao: d
+                                            ? d.toISOString().split('T')[0]
+                                            : undefined,
+                                    })
                                 }
                             />
                         </div>
@@ -178,8 +304,65 @@ export function NormaCreateDialog({ onClose, onSaved }: Props) {
                                 placeholder="Ex.: Diário Oficial"
                             />
                         </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="n-pg-ini">Página início</label>
+                            <InputNumber
+                                id="n-pg-ini"
+                                value={form.paginaInicio ?? null}
+                                onValueChange={(e) =>
+                                    patch({ paginaInicio: e.value ?? undefined })
+                                }
+                                placeholder="Ex.: 12"
+                                useGrouping={false}
+                                min={1}
+                                max={2147483647}
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="n-pg-fim">Página fim</label>
+                            <InputNumber
+                                id="n-pg-fim"
+                                value={form.paginaFim ?? null}
+                                onValueChange={(e) => patch({ paginaFim: e.value ?? undefined })}
+                                placeholder="Ex.: 15"
+                                useGrouping={false}
+                                min={1}
+                                max={2147483647}
+                            />
+                        </div>
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <label htmlFor="n-url">URL externa</label>
+                            <InputText
+                                id="n-url"
+                                value={form.urlExternaPublicacao ?? ''}
+                                onChange={(e) =>
+                                    patch({ urlExternaPublicacao: e.target.value })
+                                }
+                                placeholder="https://..."
+                            />
+                        </div>
                     </div>
                 </div>
+
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Documentos</span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <FileUpload
+                            id="n-texto-integral"
+                            label="Texto integral"
+                            value={textoIntegral}
+                            onChange={setTextoIntegral}
+                        />
+                        <FileUpload
+                            id="n-audio"
+                            label="Áudio"
+                            accept=".mp3,.wav,.m4a,.ogg"
+                            value={audio}
+                            onChange={setAudio}
+                        />
+                    </div>
+                </div>
+
                 <div className="sigl-dialog-secao">
                     <span className="sigl-dialog-secao-titulo">Vínculo</span>
                     <div className="sigl-filtro-campo">
@@ -198,7 +381,9 @@ export function NormaCreateDialog({ onClose, onSaved }: Props) {
                                 mapDropdownOptions(materiasAprovadas, 'ementa', 'id'),
                                 'Nenhuma',
                             )}
-                            onChange={(v) => patch({ materiaOrigemId: v ? String(v) : undefined })}
+                            onChange={(v) =>
+                                patch({ materiaOrigemId: v ? String(v) : undefined })
+                            }
                             placeholder="Opcional — vincule a matéria aprovada"
                             disabled={materiasAprovadas.length === 0}
                         />

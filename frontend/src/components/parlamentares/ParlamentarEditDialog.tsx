@@ -12,7 +12,7 @@ import {
 } from '../../api/legislative/parlamentares.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { Dropdown, FileUpload } from '../../components/ui';
-import { fileToDataUrl, MAX_PHOTO_BYTES } from '../../utils/fileToDataUrl';
+import { MAX_PHOTO_BYTES, preparePhotoDataUrl } from '../../utils/fileToDataUrl';
 
 type Partido = { id: string; name: string; acronym: string };
 type PartidoOption = { id: string; label: string };
@@ -29,7 +29,7 @@ export function ParlamentarEditDialog({ parlamentar, onClose, onSaved }: Props) 
     const [partidoOptions, setPartidoOptions] = useState<PartidoOption[]>([]);
     const [form, setForm] = useState({
         parliamentaryName: parlamentar.parliamentaryName,
-        politicalPartyId: parlamentar.politicalParty?.id ?? '',
+        politicalPartyId: parlamentar.user?.politicalParty?.id ?? '',
         officeNumber: parlamentar.officeNumber ?? '',
         biography: parlamentar.biography ?? '',
         photoFile: null as File | null,
@@ -60,7 +60,7 @@ export function ParlamentarEditDialog({ parlamentar, onClose, onSaved }: Props) 
                     setLoading(false);
                     return;
                 }
-                photoUrl = await fileToDataUrl(form.photoFile);
+                photoUrl = await preparePhotoDataUrl(form.photoFile);
             }
 
             const body: UpdateParliamentarianInput = {
@@ -132,7 +132,13 @@ export function ParlamentarEditDialog({ parlamentar, onClose, onSaved }: Props) 
                                 options={partidoOptions.map((p) => ({ label: p.label, value: p.id }))}
                                 onChange={(v) => patch({ politicalPartyId: String(v) })}
                                 placeholder="Selecione o partido"
+                                disabled={!parlamentar.hasAccess}
                             />
+                            {!parlamentar.hasAccess ? (
+                                <small className="text-500">
+                                    Partido vinculado ao acesso do parlamentar no sistema.
+                                </small>
+                            ) : null}
                         </div>
                     </div>
                 </div>
@@ -147,7 +153,7 @@ export function ParlamentarEditDialog({ parlamentar, onClose, onSaved }: Props) 
                             patch({ photoFile: file, photoUrl: file ? '' : form.photoUrl })
                         }
                     />
-                    <div className="sigl-filtro-campo mt-2">
+                    {/* <div className="sigl-filtro-campo mt-2">
                         <label htmlFor="pe-foto-url">Ou informe URL da foto</label>
                         <InputText
                             id="pe-foto-url"
@@ -158,7 +164,7 @@ export function ParlamentarEditDialog({ parlamentar, onClose, onSaved }: Props) 
                             placeholder="https://..."
                             disabled={!!form.photoFile}
                         />
-                    </div>
+                    </div> */}
                 </div>
                 <div className="sigl-dialog-secao">
                     <span className="sigl-dialog-secao-titulo">Conteúdo</span>

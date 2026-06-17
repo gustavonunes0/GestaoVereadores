@@ -20,6 +20,7 @@ export class PrismaParlamentarianUserRepository extends ParlamentarianUserReposi
                 tenantId: p.tenantId,
                 parliamentarianId: p.parliamentarianId,
                 userId: p.userId,
+                politicalPartyId: p.politicalPartyId,
                 status: p.status as PrismaStatus,
             },
         });
@@ -78,11 +79,40 @@ export class PrismaParlamentarianUserRepository extends ParlamentarianUserReposi
         return this.toEntity(row);
     }
 
+    async updatePoliticalParty(
+        tenantId: string,
+        parliamentarianId: string,
+        politicalPartyId: string | null,
+    ) {
+        const result = await this.prisma.parlamentarianUser.updateMany({
+            where: {
+                tenantId,
+                parliamentarianId,
+                isRemoved: false,
+            },
+            data: { politicalPartyId },
+        });
+        assertTenantScopedUpdate(
+            result.count,
+            'Parlamentar não possui acesso ao sistema',
+        );
+
+        const row = await this.prisma.parlamentarianUser.findFirst({
+            where: { tenantId, parliamentarianId, isRemoved: false },
+            orderBy: { updatedAt: 'desc' },
+        });
+        if (!row) {
+            throw new Error('Parlamentar não possui acesso ao sistema');
+        }
+        return this.toEntity(row);
+    }
+
     private toEntity(row: {
         id: string;
         tenantId: string;
         parliamentarianId: string;
         userId: string;
+        politicalPartyId: string | null;
         status: PrismaStatus;
         lastAccessAt: Date | null;
         isRemoved: boolean;
@@ -95,6 +125,7 @@ export class PrismaParlamentarianUserRepository extends ParlamentarianUserReposi
             tenantId: row.tenantId,
             parliamentarianId: row.parliamentarianId,
             userId: row.userId,
+            politicalPartyId: row.politicalPartyId,
             status: row.status as ParlamentarianUserStatus,
             lastAccessAt: row.lastAccessAt,
             isRemoved: row.isRemoved,

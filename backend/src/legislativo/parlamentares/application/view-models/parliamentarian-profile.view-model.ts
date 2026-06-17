@@ -38,18 +38,18 @@ type ProfileRow = {
     photoUrl: string | null;
     biography: string | null;
     status: string;
-    politicalParty: {
-        id: string;
-        name: string;
-        acronym: string;
-        flagUrl: string | null;
-    } | null;
     parliamentarianUser: {
         user: {
             firstName: string;
             lastName: string;
             email: string;
         };
+        politicalParty: {
+            id: string;
+            name: string;
+            acronym: string;
+            flagUrl: string | null;
+        } | null;
     } | null;
     mandates: Array<{
         id: string;
@@ -68,7 +68,9 @@ type ProfileRow = {
 
 export class ParliamentarianProfileViewModel {
     static toHttp(row: ProfileRow): ParliamentarianProfileHttp {
-        const user = row.parliamentarianUser?.user;
+        const parlUser = row.parliamentarianUser;
+        const user = parlUser?.user;
+        const party = parlUser?.politicalParty;
         return {
             id: row.id,
             parliamentaryName: row.parliamentaryName,
@@ -82,14 +84,14 @@ export class ParliamentarianProfileViewModel {
                       email: user.email,
                   }
                 : {}),
-            ...(row.politicalParty
+            ...(party
                 ? {
                       partido: {
-                          id: row.politicalParty.id,
-                          nome: row.politicalParty.name,
-                          sigla: row.politicalParty.acronym,
-                          ...(row.politicalParty.flagUrl
-                              ? { flagUrl: row.politicalParty.flagUrl }
+                          id: party.id,
+                          nome: party.name,
+                          sigla: party.acronym,
+                          ...(party.flagUrl
+                              ? { flagUrl: party.flagUrl }
                               : {}),
                       },
                   }

@@ -16,7 +16,11 @@ import { PageHeader } from '../components/PageHeader';
 import { ParlamentarComissoesDialog } from '../components/parlamentares/ParlamentarComissoesDialog';
 import { ParlamentarCreateDialog } from '../components/parlamentares/ParlamentarCreateDialog';
 import { ParlamentarEditDialog } from '../components/parlamentares/ParlamentarEditDialog';
-import { ParlamentarListCard } from '../components/parlamentares/ParlamentarListCard';
+import {
+    ParlamentarListCard,
+    ParlamentarTableLinkCell,
+    ParlamentarTableStatCell,
+} from '../components/parlamentares/ParlamentarListCard';
 import { ParlamentarMandatosDialog } from '../components/parlamentares/ParlamentarMandatosDialog';
 import { Dropdown } from '../components/ui';
 import { useAppToast } from '../hooks/useAppToast';
@@ -68,7 +72,7 @@ export function ParlamentaresPage() {
     useEffect(() => { void buscar(); }, [buscar]);
 
     useEffect(() => {
-        apiList<Partido>(API_PATHS.partidosPoliticos, { limit: 50 })
+        apiList<Partido>(API_PATHS.partidosPoliticos, { limit: 100 })
             .then((r) =>
                 setPartidoOptions([
                     { id: '', label: 'Todos' },
@@ -92,19 +96,6 @@ export function ParlamentaresPage() {
         setFiltrosApplied({});
         setPage(1);
     }
-
-    const columns = (
-        <Column
-            header="Parlamentar"
-            body={(row: Parliamentarian) => (
-                <ParlamentarListCard
-                    row={row}
-                    onVerMandatos={setDialogMandatos}
-                    onVerComissoes={setDialogComissoes}
-                />
-            )}
-        />
-    );
 
     return (
         <main>
@@ -155,14 +146,91 @@ export function ParlamentaresPage() {
                 </FiltroLayout>
             </section>
 
-            <section aria-label="Lista de parlamentares" className="parlamentares-table-section">
+            <section aria-label="Lista de parlamentares" className="parlamentares-table-section pt-3">
                 <DataTableLayout<Parliamentarian>
                     items={items}
                     total={total}
                     loading={loading}
                     page={page}
                     onPageChange={setPage}
-                    columns={columns}
+                    enableSort={false}
+                    columns={
+                        <>
+                            <Column
+                                field="parliamentaryName"
+                                header="Parlamentar"
+                                bodyClassName="parlamentares-table-section__cell-parlamentar"
+                                style={{ minWidth: '18rem' }}
+                                body={(row: Parliamentarian) => (
+                                    <ParlamentarListCard row={row} />
+                                )}
+                            />
+                            <Column
+                                field="stats.authoredMattersCount"
+                                header="Proposições própria autoria"
+                                headerClassName="parlamentar-table-col--stat"
+                                bodyClassName="parlamentar-table-col--stat"
+                                style={{ minWidth: '11rem' }}
+                                body={(row: Parliamentarian) => (
+                                    <ParlamentarTableStatCell
+                                        value={row.stats?.authoredMattersCount ?? 0}
+                                    />
+                                )}
+                            />
+                            <Column
+                                field="stats.coauthoredMattersCount"
+                                header="Participação em proposições"
+                                headerClassName="parlamentar-table-col--stat"
+                                bodyClassName="parlamentar-table-col--stat"
+                                style={{ minWidth: '11rem' }}
+                                body={(row: Parliamentarian) => (
+                                    <ParlamentarTableStatCell
+                                        value={row.stats?.coauthoredMattersCount ?? 0}
+                                    />
+                                )}
+                            />
+                            <Column
+                                field="stats.sessionVotesCount"
+                                header="Participação em sessões"
+                                headerClassName="parlamentar-table-col--stat"
+                                bodyClassName="parlamentar-table-col--stat"
+                                style={{ minWidth: '10rem' }}
+                                body={(row: Parliamentarian) => (
+                                    <ParlamentarTableStatCell
+                                        value={row.stats?.sessionVotesCount ?? 0}
+                                    />
+                                )}
+                            />
+                            <Column
+                                field="activeMandatesCount"
+                                header="Mandato(s)"
+                                headerClassName="parlamentar-table-col--link"
+                                bodyClassName="parlamentar-table-col--link"
+                                style={{ minWidth: '6.5rem', width: '7rem' }}
+                                body={(row: Parliamentarian) => (
+                                    <ParlamentarTableLinkCell
+                                        count={row.activeMandatesCount ?? 0}
+                                        label="Mandato(s)"
+                                        onVer={() => setDialogMandatos(row)}
+                                    />
+                                )}
+                            />
+                            <Column
+                                field="stats.committeeMembersCount"
+                                header="Comissão(ões)"
+                                headerClassName="parlamentar-table-col--link"
+                                bodyClassName="parlamentar-table-col--link"
+                                style={{ minWidth: '6.5rem', width: '7rem' }}
+                                body={(row: Parliamentarian) => (
+                                    <ParlamentarTableLinkCell
+                                        count={row.stats?.committeeMembersCount ?? 0}
+                                        label="Comissão(ões)"
+                                        onVer={() => setDialogComissoes(row)}
+                                    />
+                                )}
+                            />
+                        </>
+                    }
                     canWrite={canEdit}
                     onEditar={canEdit ? setDialogEditar : undefined}
                     onDeletar={canDelete ? setDialogDeletar : undefined}

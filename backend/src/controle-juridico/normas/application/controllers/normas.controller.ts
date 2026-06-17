@@ -10,8 +10,10 @@ import {
     Patch,
     Post,
     Query,
+    Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import type { FastifyRequest } from 'fastify';
 import { Public } from '../../../../auth/decorators/public.decorator';
 import { TenantRoles } from '../../../../common/decorators/tenant-roles.decorator';
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
@@ -46,6 +48,8 @@ import { RegistrarVetoUseCase } from '../use-cases/registrar-veto.use-case';
 import { RemoveNormaUseCase } from '../use-cases/remove-norma.use-case';
 import { RevogarNormaUseCase } from '../use-cases/revogar-norma.use-case';
 import { UpdateNormaUseCase } from '../use-cases/update-norma.use-case';
+import { UploadNormaAudioUseCase } from '../use-cases/upload-norma-audio.use-case';
+import { UploadNormaTextoIntegralUseCase } from '../use-cases/upload-norma-texto-integral.use-case';
 
 @ApiTags('normas')
 @ApiBearerAuth()
@@ -63,6 +67,8 @@ export class NormasController {
         private readonly registrarPromulgacaoUseCase: RegistrarPromulgacaoUseCase,
         private readonly registrarPublicacaoUseCase: RegistrarPublicacaoUseCase,
         private readonly revogarNormaUseCase: RevogarNormaUseCase,
+        private readonly uploadNormaTextoIntegralUseCase: UploadNormaTextoIntegralUseCase,
+        private readonly uploadNormaAudioUseCase: UploadNormaAudioUseCase,
     ) {}
 
     @Public()
@@ -150,6 +156,44 @@ export class NormasController {
         @Body() dto: RegistrarPublicacaoDto,
     ) {
         return this.registrarPublicacaoUseCase.execute(tenantId, id, dto);
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/texto-integral')
+    async uploadTextoIntegral(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Req() req: FastifyRequest,
+    ) {
+        try {
+            const file = await req.file();
+            return await this.uploadNormaTextoIntegralUseCase.execute(
+                tenantId,
+                id,
+                file,
+            );
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/audio')
+    async uploadAudio(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Req() req: FastifyRequest,
+    ) {
+        try {
+            const file = await req.file();
+            return await this.uploadNormaAudioUseCase.execute(
+                tenantId,
+                id,
+                file,
+            );
+        } catch (error) {
+            this.handleError(error);
+        }
     }
 
     @TenantRoles(...ADMIN_ONLY)

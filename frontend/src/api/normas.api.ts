@@ -2,13 +2,19 @@ import { api, apiFormData, apiList } from './client';
 import { API_PATHS } from './paths';
 import type { NormaStatus } from '../types/legislative';
 
+export interface NormaAnoRef {
+    id: string;
+    valor: number;
+    createdAt?: string;
+}
+
 export interface Norma {
     id: string;
     tipo: { id: string; nome: string };
     numero: string;
-    ano: number;
+    ano?: NormaAnoRef;
     ementa: string;
-    statusDerived: NormaStatus;
+    status: NormaStatus;
     dataSancao?: string;
     dataVeto?: string;
     dataPromulgacao?: string;
@@ -41,13 +47,11 @@ export interface CreateNormaDto {
 export interface NormaFiltros {
     tipoId?: string;
     numero?: string;
-    ano?: number;
+    search?: string;
+    anoId?: string;
     dataInicio?: string;
     dataFim?: string;
-    dataPublicacaoInicio?: string;
-    dataPublicacaoFim?: string;
     esferaFederacaoId?: string;
-    ementa?: string;
     page?: number;
     limit?: number;
 }

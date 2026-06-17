@@ -1,27 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { MultiSelect } from 'primereact/multiselect';
-import { apiFormData } from '../../api/client';
-import { API_PATHS } from '../../api/paths';
-import { autoresExternosApi } from '../../api/autores-externos.api';
-import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
+import { materiasApi } from '../../api/legislative/materias.api';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { DatePicker, Dropdown, FileUpload, mapDropdownOptions } from '../../components/ui';
+import { DatePicker, Dropdown, FileUpload, MultiSelect, mapDropdownOptions } from '../../components/ui';
 import type { LookupOption } from '../../api/dominios.api';
-import type { Materia } from '../../api/legislative/materias.api';
 
 interface Props {
     onClose: () => void;
     onSaved: () => void;
 }
 
-function isTipoAutorParlamentar(nome: string): boolean {
-    const lower = nome.toLowerCase();
-    return lower.includes('vereador') || lower.includes('parlamentar') || lower.includes('presidente da câmara');
+/** idNegocio global do tipo Parlamentar (seed). */
+export const PARLAMENTAR_TIPO_AUTOR_ID_NEGOCIO = '1';
+
+function findParlamentarTipoId(tiposAutor: LookupOption[]): string {
+    const match = tiposAutor.find(
+        (t) =>
+            t.codigo === PARLAMENTAR_TIPO_AUTOR_ID_NEGOCIO ||
+            t.nome.trim().toLowerCase() === 'parlamentar',
+    );
+    return match?.id ?? '';
 }
 
 export function MateriaCreateDialog({ onClose, onSaved }: Props) {
@@ -29,80 +31,99 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
     const { showSuccess, showApiError } = useAppToast();
     const { tiposMateria, tiposAutor } = useDominios();
 
+    const parlamentarTipoId = useMemo(
+        () => findParlamentarTipoId(tiposAutor),
+        [tiposAutor],
+    );
+
     const [saving, setSaving] = useState(false);
     const [tipoId, setTipoId] = useState('');
     const [dataProtocolo, setDataProtocolo] = useState<Date | null>(null);
     const [tipoAutorId, setTipoAutorId] = useState('');
-    const [autorParlamentarianId, setAutorParlamentarianId] = useState('');
-    const [autorExternoId, setAutorExternoId] = useState('');
+    const [autorId, setAutorId] = useState('');
+    const [authorKind, setAuthorKind] = useState<'parliamentarian' | 'external' | null>(null);
     const [coautorIds, setCoautorIds] = useState<string[]>([]);
     const [relatorIds, setRelatorIds] = useState<string[]>([]);
     const [ementa, setEmenta] = useState('');
     const [justificativa, setJustificativa] = useState('');
     const [textoOriginal, setTextoOriginal] = useState<File | null>(null);
 
-    const [parlamentares, setParlamentares] = useState<LookupOption[]>([]);
-    const [autoresExternos, setAutoresExternos] = useState<LookupOption[]>([]);
+    const [autorOptions, setAutorOptions] = useState<LookupOption[]>([]);
+    const [relatorOptions, setRelatorOptions] = useState<LookupOption[]>([]);
+    const [loadingAutores, setLoadingAutores] = useState(false);
 
-    const tipoAutorSelecionado = tiposAutor.find((t) => t.id === tipoAutorId);
-    const isParlamentarType = tipoAutorSelecionado
-        ? isTipoAutorParlamentar(tipoAutorSelecionado.nome)
-        : false;
-
-    useEffect(() => {
-        parlamentaresApi.list({ limit: 200 }).then((r) =>
-            setParlamentares(
-                r.data.map((p) => ({
-                    id: p.id,
-                    nome: p.parliamentaryName || (p.user ? `${p.user.firstName} ${p.user.lastName}`.trim() : p.parliamentaryName),
-                })),
-            ),
-        );
-        autoresExternosApi.list({ limit: 200 }).then((r) =>
-            setAutoresExternos(r.data.map((a) => ({ id: a.id, nome: a.nome }))),
-        );
-    }, []);
+    const isParlamentarType = authorKind === 'parliamentarian';
+    const isAutorDisabled = canVotar && isParlamentarType && !!parliamentarianId;
 
     useEffect(() => {
-        if (canVotar && parliamentarianId) {
-            setAutorParlamentarianId(parliamentarianId);
+        if (!parlamentarTipoId) return;
+        void materiasApi.listOpcoesAutor(parlamentarTipoId).then((res) => {
+            setRelatorOptions(
+                res.options.map((o) => ({ id: o.id, nome: o.label })),
+            );
+        });
+    }, [parlamentarTipoId]);
+
+    useEffect(() => {
+        if (!tipoAutorId) {
+            setAutorOptions([]);
+            setAuthorKind(null);
+            return;
         }
-    }, [canVotar, parliamentarianId]);
+
+        setLoadingAutores(true);
+        void materiasApi
+            .listOpcoesAutor(tipoAutorId)
+            .then((res) => {
+                setAuthorKind(res.kind);
+                setAutorOptions(
+                    res.options.map((o) => ({ id: o.id, nome: o.label })),
+                );
+            })
+            .catch(showApiError)
+            .finally(() => setLoadingAutores(false));
+    }, [tipoAutorId, showApiError]);
 
     useEffect(() => {
-        setAutorParlamentarianId('');
-        setAutorExternoId('');
+        if (canVotar && parliamentarianId && isParlamentarType) {
+            setAutorId(parliamentarianId);
+        }
+    }, [canVotar, parliamentarianId, isParlamentarType]);
+
+    useEffect(() => {
+        setAutorId('');
         setCoautorIds([]);
     }, [tipoAutorId]);
 
-    const autorOptions = isParlamentarType ? parlamentares : autoresExternos;
-    const autorValue = isParlamentarType ? autorParlamentarianId : autorExternoId;
-    const setAutorValue = isParlamentarType ? setAutorParlamentarianId : setAutorExternoId;
-    const isAutorDisabled = canVotar && isParlamentarType && !!parliamentarianId;
-
     async function handleSubmit() {
-        if (!tipoId || !tipoAutorId || !autorValue || !ementa.trim()) {
-            showApiError(new Error('Preencha os campos obrigatórios: Tipo, Tipo de Autor, Autor e Ementa.'));
+        if (!tipoId || !tipoAutorId || !autorId || !ementa.trim()) {
+            showApiError(
+                new Error('Preencha os campos obrigatórios: Tipo, Tipo de Autor, Autor e Ementa.'),
+            );
             return;
         }
         setSaving(true);
         try {
-            const fd = new FormData();
-            fd.append('tipoId', tipoId);
-            fd.append('ementa', ementa.trim());
-            if (tipoAutorId) fd.append('tipoAutorId', tipoAutorId);
-            if (isParlamentarType && autorParlamentarianId) {
-                fd.append('autorParliamentarianId', autorParlamentarianId);
-            } else if (!isParlamentarType && autorExternoId) {
-                fd.append('autorExternoId', autorExternoId);
-            }
-            if (dataProtocolo) fd.append('dataProtocolo', dataProtocolo.toISOString());
-            if (justificativa.trim()) fd.append('justificativa', justificativa.trim());
-            coautorIds.forEach((id) => fd.append('coautorIds[]', id));
-            relatorIds.forEach((id) => fd.append('relatorIds[]', id));
-            if (textoOriginal) fd.append('textoOriginal', textoOriginal);
+            const created = await materiasApi.create({
+                tipoId,
+                ementa: ementa.trim(),
+                ...(isParlamentarType
+                    ? { authorParliamentarianId: autorId }
+                    : { autorExternoId: autorId }),
+                ...(dataProtocolo
+                    ? { dataProtocolo: dataProtocolo.toISOString() }
+                    : {}),
+                ...(justificativa.trim()
+                    ? { justificativa: justificativa.trim() }
+                    : {}),
+                ...(coautorIds.length ? { coautorIds } : {}),
+                ...(relatorIds.length ? { relatoresIds: relatorIds } : {}),
+            });
 
-            await apiFormData<Materia>(API_PATHS.materias, fd);
+            if (textoOriginal) {
+                await materiasApi.uploadTextoOriginal(created.id, textoOriginal);
+            }
+
             showSuccess('Matéria criada com sucesso.');
             onSaved();
             onClose();
@@ -112,6 +133,10 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
             setSaving(false);
         }
     }
+
+    const coautorSelectOptions = isParlamentarType
+        ? autorOptions.filter((p) => p.id !== autorId)
+        : [];
 
     const footer = (
         <div className="flex justify-content-end gap-2">
@@ -171,42 +196,41 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
                             <label htmlFor="mat-autor">Autor *</label>
                             <Dropdown
                                 id="mat-autor"
-                                value={autorValue}
+                                value={autorId}
                                 options={mapDropdownOptions(autorOptions, 'nome', 'id')}
-                                placeholder={tipoAutorId ? 'Selecione o autor' : 'Selecione o tipo primeiro'}
-                                onChange={(v) => setAutorValue(String(v))}
-                                disabled={!tipoAutorId || isAutorDisabled}
-                            />
-                        </div>
-                        <div className="sigl-filtro-campo sigl-col-full">
-                            <label htmlFor="mat-coautores">Coautor(es)</label>
-                            <MultiSelect
-                                id="mat-coautores"
-                                value={coautorIds}
-                                options={isParlamentarType
-                                    ? parlamentares.filter((p) => p.id !== autorParlamentarianId)
-                                    : autoresExternos.filter((a) => a.id !== autorExternoId)
+                                placeholder={
+                                    loadingAutores
+                                        ? 'Carregando...'
+                                        : tipoAutorId
+                                          ? 'Selecione o autor'
+                                          : 'Selecione o tipo primeiro'
                                 }
-                                optionLabel="nome"
-                                optionValue="id"
-                                placeholder="Selecione coautores (opcional)"
-                                onChange={(e) => setCoautorIds(e.value ?? [])}
-                                display="chip"
-                                filter
-                                disabled={!tipoAutorId}
+                                onChange={(v) => setAutorId(String(v))}
+                                disabled={!tipoAutorId || isAutorDisabled || loadingAutores}
                             />
                         </div>
+                        {isParlamentarType && (
+                            <div className="sigl-filtro-campo sigl-col-full">
+                                <MultiSelect
+                                    id="mat-coautores"
+                                    label="Coautor(es)"
+                                    value={coautorIds}
+                                    options={mapDropdownOptions(coautorSelectOptions, 'nome', 'id')}
+                                    placeholder="Selecione coautores (opcional)"
+                                    onChange={(ids) => setCoautorIds(ids.map(String))}
+                                    filter
+                                    disabled={!tipoAutorId || loadingAutores}
+                                />
+                            </div>
+                        )}
                         <div className="sigl-filtro-campo sigl-col-full">
-                            <label htmlFor="mat-relatores">Relator(es)</label>
                             <MultiSelect
                                 id="mat-relatores"
+                                label="Relator(es)"
                                 value={relatorIds}
-                                options={parlamentares}
-                                optionLabel="nome"
-                                optionValue="id"
+                                options={mapDropdownOptions(relatorOptions, 'nome', 'id')}
                                 placeholder="Selecione relatores (opcional)"
-                                onChange={(e) => setRelatorIds(e.value ?? [])}
-                                display="chip"
+                                onChange={(ids) => setRelatorIds(ids.map(String))}
                                 filter
                             />
                         </div>

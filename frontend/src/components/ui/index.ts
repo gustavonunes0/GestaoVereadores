@@ -3,6 +3,9 @@ export { tokens } from './tokens';
 export { Dropdown } from './Dropdown';
 export type { DropdownOption, DropdownProps } from './Dropdown';
 
+export { MultiSelect } from './MultiSelect';
+export type { MultiSelectProps } from './MultiSelect';
+
 export { mapDropdownOptions, withEmptyOption } from './dropdown-utils';
 
 export { DateRangePicker } from './DateRangePicker';

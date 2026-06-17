@@ -136,24 +136,61 @@ export function flattenStaffNavItems(): NavItemDef[] {
 /** @deprecated Use STAFF_NAV_MENU na sidebar; mantido para scripts de validação. */
 export const STAFF_NAV_GROUPS = flattenStaffNavItems();
 
-/**
- * Menu lateral Parlamentar — "Perfil" é accordion expandido por padrão.
- */
-export const PARLAMENTAR_NAV_ITEMS: NavItemDef[] = [
+/** Menu lateral do portal parlamentar — mesma estrutura de grupos do staff. */
+export const PARLAMENTAR_NAV_MENU: NavGroupDef[] = [
     {
         label: 'Perfil',
-        icon: 'pi-user',
-        children: [
-            { label: 'Perfil Parlamentar', route: ROUTES.parlamentar.perfil,    icon: 'pi-id-card' },
-            { label: 'Biografia',          route: ROUTES.parlamentar.biografia,  icon: 'pi-align-left' },
-            { label: 'Dashboard',          route: ROUTES.parlamentar.dashboard,  icon: 'pi-home' },
+        items: [
+            {
+                label: 'Perfil Parlamentar',
+                route: ROUTES.parlamentar.perfil,
+                sidebarIcon: 'badge',
+            },
+            {
+                label: 'Biografia',
+                route: ROUTES.parlamentar.biografia,
+                sidebarIcon: 'article',
+            },
+            {
+                label: 'Dashboard',
+                route: ROUTES.parlamentar.dashboard,
+                sidebarIcon: 'dashboard',
+            },
         ],
     },
-    { label: 'Matérias',  route: ROUTES.parlamentar.materias,  icon: 'pi-file-edit' },
-    { label: 'Comissões', route: ROUTES.parlamentar.comissoes, icon: 'pi-sitemap' },
-    { label: 'Mandato',   route: ROUTES.parlamentar.mandato,   icon: 'pi-calendar' },
-    { label: 'Filiação',  route: ROUTES.parlamentar.filiacao,  icon: 'pi-flag' },
+    {
+        label: 'Atuação',
+        items: [
+            {
+                label: 'Matérias',
+                route: ROUTES.parlamentar.materias,
+                sidebarIcon: 'description',
+            },
+            {
+                label: 'Comissões',
+                route: ROUTES.parlamentar.comissoes,
+                sidebarIcon: 'people',
+            },
+            {
+                label: 'Mandato',
+                route: ROUTES.parlamentar.mandato,
+                sidebarIcon: 'calendar_month',
+            },
+            {
+                label: 'Filiação',
+                route: ROUTES.parlamentar.filiacao,
+                sidebarIcon: 'flag',
+            },
+        ],
+    },
 ];
+
+export function flattenParlamentarNavItems(): NavItemDef[] {
+    return PARLAMENTAR_NAV_MENU.flatMap((group) => group.items);
+}
+
+/** @deprecated Use PARLAMENTAR_NAV_MENU na sidebar. */
+export const PARLAMENTAR_NAV_ITEMS = flattenParlamentarNavItems();
 
 export const LEGACY_REDIRECTS: { from: string; to: string }[] = [
     { from: 'parlamentares', to: ROUTES.camara.parlamentares },

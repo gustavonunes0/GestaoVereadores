@@ -13,7 +13,7 @@ import {
 import { useAppToast } from '../../hooks/useAppToast';
 import { Dropdown, FileUpload } from '../../components/ui';
 import { isValidCpf, normalizeCpf } from '../../utils/cpf';
-import { fileToDataUrl, MAX_PHOTO_BYTES } from '../../utils/fileToDataUrl';
+import { MAX_PHOTO_BYTES, preparePhotoDataUrl } from '../../utils/fileToDataUrl';
 
 type Partido = { id: string; name: string; acronym: string };
 type PartidoOption = { id: string; label: string };
@@ -27,6 +27,7 @@ const emptyForm = () => ({
     cpf: '',
     password: '',
     confirmPassword: '',
+    email: '',
     parliamentaryName: '',
     politicalPartyId: '',
     officeNumber: '',
@@ -34,6 +35,11 @@ const emptyForm = () => ({
     photoFile: null as File | null,
     photoUrl: '',
 });
+
+function isValidEmail(value: string) {
+    if (!value.trim()) return true;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
 
 export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
     const { showSuccess, showApiError } = useAppToast();
@@ -58,6 +64,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
         setForm((f) => ({ ...f, ...v }));
 
     const cpfValid = isValidCpf(form.cpf);
+    const emailValid = isValidEmail(form.email);
     const passwordValid = form.password.length >= 8;
     const passwordsMatch =
         form.password.length > 0 && form.password === form.confirmPassword;
@@ -66,10 +73,11 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
             Boolean(
                 form.parliamentaryName.trim() &&
                     cpfValid &&
+                    emailValid &&
                     passwordValid &&
                     passwordsMatch,
             ),
-        [form.parliamentaryName, cpfValid, passwordValid, passwordsMatch],
+        [form.parliamentaryName, cpfValid, emailValid, passwordValid, passwordsMatch],
     );
 
     async function handleSubmit() {
@@ -83,7 +91,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                     setLoading(false);
                     return;
                 }
-                photoUrl = await fileToDataUrl(form.photoFile);
+                photoUrl = await preparePhotoDataUrl(form.photoFile);
             } else if (form.photoUrl.trim()) {
                 photoUrl = form.photoUrl.trim();
             }
@@ -91,6 +99,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
             const body: CreateParliamentarianInput = {
                 cpf: normalizeCpf(form.cpf),
                 password: form.password,
+                ...(form.email.trim() ? { email: form.email.trim() } : {}),
                 parliamentaryName: form.parliamentaryName.trim(),
                 politicalPartyId: form.politicalPartyId || undefined,
                 officeNumber: form.officeNumber.trim() || undefined,
@@ -115,8 +124,8 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                 label="Cadastrar"
                 icon="pi pi-check"
                 loading={loading}
+                disabled={!canSubmit || loading}
                 onClick={() => void handleSubmit()}
-                disabled={!canSubmit}
             />
         </div>
     );
@@ -142,11 +151,32 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                                 value={form.cpf}
                                 onChange={(e) => patch({ cpf: e.value ?? '' })}
                                 placeholder="000.000.000-00"
-                                className={`w-full${form.cpf && !cpfValid ? ' p-invalid' : ''}`}
+                                className="w-full"
                             />
-                            {form.cpf && !cpfValid ? (
-                                <small className="text-red-500">CPF inválido</small>
+                        </div>
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <label htmlFor="pc-email">E-mail</label>
+                            <InputText
+                                id="pc-email"
+                                type="email"
+                                value={form.email}
+                                onChange={(e) => patch({ email: e.target.value })}
+                                placeholder="vereador@camara.gov.br"
+                                className={`w-full${form.email && !emailValid ? ' p-invalid' : ''}`}
+                            />
+                            {form.email && !emailValid ? (
+                                <small className="text-red-500">E-mail inválido</small>
                             ) : null}
+                        </div>
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <label htmlFor="pc-partido">Partido</label>
+                            <Dropdown
+                                id="pc-partido"
+                                value={form.politicalPartyId}
+                                options={partidoOptions.map((p) => ({ label: p.label, value: p.id }))}
+                                onChange={(v) => patch({ politicalPartyId: String(v) })}
+                                placeholder="Selecione o partido"
+                            />
                         </div>
                         <div className="sigl-filtro-campo">
                             <label htmlFor="pc-senha">Senha *</label>
@@ -219,16 +249,6 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                                 placeholder="Ex.: Sala 05"
                             />
                         </div>
-                        <div className="sigl-filtro-campo sigl-col-full">
-                            <label htmlFor="pc-partido">Partido</label>
-                            <Dropdown
-                                id="pc-partido"
-                                value={form.politicalPartyId}
-                                options={partidoOptions.map((p) => ({ label: p.label, value: p.id }))}
-                                onChange={(v) => patch({ politicalPartyId: String(v) })}
-                                placeholder="Selecione o partido"
-                            />
-                        </div>
                     </div>
                 </div>
 
@@ -243,7 +263,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                             patch({ photoFile: file, photoUrl: file ? '' : form.photoUrl })
                         }
                     />
-                    <div className="sigl-filtro-campo mt-2">
+                    {/* <div className="sigl-filtro-campo mt-2">
                         <label htmlFor="pc-foto-url">Ou informe URL da foto</label>
                         <InputText
                             id="pc-foto-url"
@@ -254,7 +274,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                             placeholder="https://..."
                             disabled={!!form.photoFile}
                         />
-                    </div>
+                    </div> */}
                 </div>
 
                 <div className="sigl-dialog-secao">

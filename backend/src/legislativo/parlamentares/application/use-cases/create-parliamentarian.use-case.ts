@@ -17,6 +17,7 @@ import {
 import { CreateParliamentarianDto } from '../dto/create-parliamentarian.dto';
 import {
     ParliamentarianCpfAlreadyInUseError,
+    ParliamentarianEmailAlreadyInUseError,
     PoliticalPartyNotFoundForParliamentarianError,
     PoliticalPartyRemovedForParliamentarianError,
 } from '../errors/parliamentarian.errors';
@@ -51,7 +52,6 @@ export class CreateParliamentarianUseCase {
 
         const saved = await this.parliamentarianRepository.create({
             tenantId,
-            politicalPartyId: dto.politicalPartyId ?? null,
             parliamentaryName: dto.parliamentaryName.trim(),
             officeNumber: dto.officeNumber ?? null,
             photoUrl: dto.photoUrl ?? null,
@@ -65,6 +65,8 @@ export class CreateParliamentarianUseCase {
                 dto.cpf,
                 dto.password,
                 dto.parliamentaryName,
+                dto.email,
+                dto.politicalPartyId ?? null,
             );
             const withAccess = await this.parliamentarianRepository.findById(
                 tenantId,
@@ -84,6 +86,8 @@ export class CreateParliamentarianUseCase {
         cpf: string,
         password: string,
         parliamentaryName: string,
+        email?: string,
+        politicalPartyId?: string | null,
     ) {
         const normalizedCpf = cpf.replace(/\D/g, '');
         const existingUser =
@@ -101,14 +105,23 @@ export class CreateParliamentarianUseCase {
 
         const { firstName, lastName } =
             this.provisioningService.splitParliamentaryName(parliamentaryName);
-        const email = this.provisioningService.buildEmailFromCpf(normalizedCpf);
+        const resolvedEmail = email?.trim()
+            ? email.trim().toLowerCase()
+            : this.provisioningService.buildEmailFromCpf(normalizedCpf);
+
+        const existingEmailUser =
+            await this.userRepository.findByEmail(resolvedEmail);
+        if (existingEmailUser) {
+            throw new ParliamentarianEmailAlreadyInUseError();
+        }
+
         const passwordHash = await this.passwordHasher.hash(password);
 
         const user = UserEntity.create({
             firstName,
             lastName,
             cpf: normalizedCpf,
-            email,
+            email: resolvedEmail,
             passwordHash,
         });
         const createdUser = await this.userRepository.create(user);
@@ -117,6 +130,7 @@ export class CreateParliamentarianUseCase {
             tenantId,
             parliamentarianId,
             userId: createdUser.id,
+            politicalPartyId: politicalPartyId ?? null,
         });
         await this.parlamentarianUserRepository.create(parlUser);
     }

@@ -18,6 +18,11 @@ describe('GetParliamentarianByIdUseCase', () => {
             firstName: 'João',
             lastName: 'Silva',
             email: 'parlamentar.52998224725@interno.sigl.local',
+            politicalParty: {
+                id: 'party-1',
+                name: 'Partido Teste',
+                acronym: 'PT',
+            },
         });
         expect(result.hasAccess).toBe(true);
     });

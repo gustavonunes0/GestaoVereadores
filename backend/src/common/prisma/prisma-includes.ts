@@ -27,8 +27,13 @@ export const materiaParliamentarianSelect = {
     id: true,
     parliamentaryName: true,
     officeNumber: true,
-    politicalParty: {
-        select: { id: true, name: true, acronym: true },
+    photoUrl: true,
+    parliamentarianUser: {
+        select: {
+            politicalParty: {
+                select: { id: true, name: true, acronym: true },
+            },
+        },
     },
 } as const;
 
@@ -37,7 +42,19 @@ export const materiaRelationsInclude = {
     ano: true,
     tematica: true,
     origem: true,
-    autor: true,
+    autor: {
+        include: {
+            autorExterno: {
+                select: {
+                    id: true,
+                    nome: true,
+                    cargo: true,
+                    instituicao: true,
+                },
+            },
+            tipoAutor: { select: { id: true, nome: true } },
+        },
+    },
     materiaAutores: materiaAutoresInclude,
     representantes: materiaParlamentaresVinculoInclude,
     coautores: materiaParlamentaresVinculoInclude,
@@ -63,6 +80,9 @@ export const materiaAutoriaInclude = {
         include: {
             guestUser: {
                 select: { id: true, fullName: true, type: true },
+            },
+            autorExterno: {
+                select: { id: true, nome: true, tipoAutorId: true },
             },
             parliamentarian: { select: materiaParliamentarianSelect },
         },

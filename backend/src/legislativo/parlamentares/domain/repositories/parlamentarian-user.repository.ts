@@ -19,4 +19,10 @@ export abstract class ParlamentarianUserRepository {
         tenantId: string,
         parliamentarianId: string,
     ): Promise<ParlamentarianUserEntity>;
+
+    abstract updatePoliticalParty(
+        tenantId: string,
+        parliamentarianId: string,
+        politicalPartyId: string | null,
+    ): Promise<ParlamentarianUserEntity>;
 }

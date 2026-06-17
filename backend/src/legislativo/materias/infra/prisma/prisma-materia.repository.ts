@@ -114,25 +114,83 @@ export class PrismaMateriaRepository implements MateriaRepository {
         });
     }
 
+    private async assertParliamentarianOfTenant(
+        tenantId: string,
+        parliamentarianId: string,
+    ) {
+        const row = await this.prisma.parliamentarian.findFirst({
+            where: {
+                id: parliamentarianId,
+                ...tenantWhere(tenantId),
+                isRemoved: false,
+            },
+        });
+        if (!row) {
+            throw new NotFoundException(
+                'Parlamentar não encontrado nesta Câmara',
+            );
+        }
+        return row;
+    }
+
+    private async assertParliamentariansWithUser(
+        tenantId: string,
+        parliamentarianIds: string[],
+    ) {
+        const count = await this.prisma.parliamentarian.count({
+            where: {
+                id: { in: parliamentarianIds },
+                ...tenantWhere(tenantId),
+                isRemoved: false,
+                parliamentarianUser: { isRemoved: false },
+            },
+        });
+        if (count !== parliamentarianIds.length) {
+            throw new BadRequestException(
+                'Um ou mais parlamentares não possuem vínculo de usuário ativo',
+            );
+        }
+    }
+
     private async syncCoautores(
         tenantId: string,
-        materiaId: string,
+        matterId: string,
         coautorIds?: string[],
-        autorParlamentarId?: string | null,
+        authorParliamentarianId?: string | null,
     ) {
         if (coautorIds === undefined) return;
-        await this.prisma.materiaCoautor.deleteMany({ where: { materiaId } });
-        const ids = coautorIds.filter((id) => id !== autorParlamentarId);
+        await this.prisma.matterCoauthor.deleteMany({ where: { matterId } });
+        const ids = coautorIds.filter((id) => id !== authorParliamentarianId);
         if (!ids.length) return;
 
-        await this.assertParlamentaresDoTenant(tenantId, ids);
-        await this.prisma.materiaCoautor.createMany({
-            data: ids.map((parlamentarId, index) => ({
-                materiaId,
-                parlamentarId,
+        await this.assertParliamentariansWithUser(tenantId, ids);
+        await this.prisma.matterCoauthor.createMany({
+            data: ids.map((parliamentarianId, index) => ({
+                tenantId,
+                matterId,
+                parliamentarianId,
                 ordem: index + 1,
             })),
         });
+    }
+
+    async replaceCoautores(
+        tenantId: string,
+        matterId: string,
+        coautorIds: string[],
+    ) {
+        const matter = await this.findAutoriaOrThrow(tenantId, matterId);
+        await this.syncCoautores(
+            tenantId,
+            matterId,
+            coautorIds,
+            matter.authorParliamentarianId,
+        );
+        return this.findAutoriaOrThrow(tenantId, matterId);
+    }
+
+    async getAutoria(tenantId: string, matterId: string) {
+        return this.findAutoriaOrThrow(tenantId, matterId);
     }
 
     private async assertNumeroUnico(
@@ -159,6 +217,43 @@ export class PrismaMateriaRepository implements MateriaRepository {
         }
     }
 
+    private async getNextNumeroProtocolo(
+        tenantId: string,
+        anoId?: string | null,
+    ): Promise<number> {
+        const aggregate = await this.prisma.materia.aggregate({
+            where: {
+                tenantId,
+                isRemoved: false,
+                ...(anoId ? { anoId } : {}),
+            },
+            _max: { numeroProtocolo: true },
+        });
+        return (aggregate._max.numeroProtocolo ?? 0) + 1;
+    }
+
+    private async backfillMissingProtocolNumbers<
+        T extends {
+            id: string;
+            numero: number | null;
+            numeroProtocolo: number | null;
+            anoId: string | null;
+        },
+    >(tenantId: string, items: T[]): Promise<void> {
+        for (const item of items) {
+            if (item.numero != null || item.numeroProtocolo != null) continue;
+            const numeroProtocolo = await this.getNextNumeroProtocolo(
+                tenantId,
+                item.anoId,
+            );
+            await this.prisma.materia.update({
+                where: { id: item.id },
+                data: { numeroProtocolo },
+            });
+            item.numeroProtocolo = numeroProtocolo;
+        }
+    }
+
     async create(tenantId: string, dto: CreateMateriaDto) {
         const status = this.resolveStatus(dto);
         if (dto.numero !== undefined && dto.anoId) {
@@ -176,17 +271,30 @@ export class PrismaMateriaRepository implements MateriaRepository {
             status: _status,
             emTramitacao: _em,
             representanteIds,
-            coautorIds,
+            coautorIds: _coautorIds,
+            relatoresIds: _relatoresIds,
             ...rest
         } = dto;
         const { dataApresentacaoInicio, dataApresentacaoFim } =
             this.mapPresentationDates(dto);
 
         const primeiroAutorId = representanteIds?.[0] ?? rest.primeiroAutorId;
+        const dataProtocolo = rest.dataProtocolo
+            ? new Date(rest.dataProtocolo)
+            : undefined;
+        const { dataProtocolo: _dataProtocolo, ...matterFields } = rest;
+
+        const numeroProtocolo =
+            matterFields.numeroProtocolo ??
+            (matterFields.numero == null
+                ? await this.getNextNumeroProtocolo(tenantId, matterFields.anoId)
+                : undefined);
 
         const materia = await this.prisma.materia.create({
             data: {
-                ...rest,
+                ...matterFields,
+                ...(numeroProtocolo != null ? { numeroProtocolo } : {}),
+                dataProtocolo,
                 primeiroAutorId,
                 tenantId,
                 dataApresentacaoInicio,
@@ -202,12 +310,6 @@ export class PrismaMateriaRepository implements MateriaRepository {
         });
 
         await this.syncRepresentantes(tenantId, materia.id, representanteIds);
-        await this.syncCoautores(
-            tenantId,
-            materia.id,
-            coautorIds,
-            primeiroAutorId,
-        );
         return this.findOne(tenantId, materia.id);
     }
 
@@ -232,14 +334,17 @@ export class PrismaMateriaRepository implements MateriaRepository {
         }
         return paginatedQuery(
             () => this.prisma.materia.count({ where }),
-            (skip, take) =>
-                this.prisma.materia.findMany({
+            async (skip, take) => {
+                const rows = await this.prisma.materia.findMany({
                     where,
                     include: materiaRelationsInclude,
                     orderBy: { createdAt: 'desc' },
                     skip,
                     take,
-                }),
+                });
+                await this.backfillMissingProtocolNumbers(tenantId, rows);
+                return rows;
+            },
             filters,
         );
     }
@@ -257,6 +362,7 @@ export class PrismaMateriaRepository implements MateriaRepository {
             },
         });
         if (!item) throw new NotFoundException('Matéria não encontrada');
+        await this.backfillMissingProtocolNumbers(tenantId, [item]);
         return item;
     }
 
@@ -316,7 +422,7 @@ export class PrismaMateriaRepository implements MateriaRepository {
             tenantId,
             id,
             coautorIds,
-            primeiroAutorId ?? atual.primeiroAutorId,
+            atual.authorParliamentarianId,
         );
         return this.findOne(tenantId, id);
     }
@@ -477,7 +583,7 @@ export class PrismaMateriaRepository implements MateriaRepository {
         return item as MatterAuthorshipPayload;
     }
 
-    private async assertParliamentarianOfTenant(
+    private async assertParliamentarianAuthorEligible(
         tenantId: string,
         parliamentarianId: string,
     ) {
@@ -486,64 +592,15 @@ export class PrismaMateriaRepository implements MateriaRepository {
                 id: parliamentarianId,
                 ...tenantWhere(tenantId),
                 isRemoved: false,
+                parliamentarianUser: { isRemoved: false },
             },
         });
         if (!row) {
             throw new NotFoundException(
-                'Parlamentar não encontrado nesta Câmara',
+                'Parlamentar sem vínculo de usuário não pode ser autor desta matéria',
             );
         }
         return row;
-    }
-
-    private async assertGuestUserOfTenant(
-        tenantId: string,
-        guestUserId: string,
-    ) {
-        const row = await this.prisma.guestUser.findFirst({
-            where: {
-                id: guestUserId,
-                ...tenantWhere(tenantId),
-                isRemoved: false,
-            },
-        });
-        if (!row) {
-            throw new NotFoundException(
-                'Autor externo (GuestUser) não encontrado nesta Câmara',
-            );
-        }
-        return row;
-    }
-
-    private async resolveTipoAutorExterno(
-        tenantId: string,
-        tipoAutorId?: string,
-    ) {
-        if (tipoAutorId) {
-            const tipo = await this.prisma.tipoAutor.findFirst({
-                where: { id: tipoAutorId, ...tenantWhere(tenantId) },
-            });
-            if (!tipo) {
-                throw new NotFoundException(
-                    'Tipo de autor não configurado para esta Câmara',
-                );
-            }
-            return tipo;
-        }
-
-        const popular = await this.prisma.tipoAutor.findFirst({
-            where: { tenantId, nome: 'Popular' },
-        });
-        if (!popular) {
-            throw new NotFoundException(
-                'Tipo de autor não configurado para esta Câmara',
-            );
-        }
-        return popular;
-    }
-
-    async getAutoria(tenantId: string, matterId: string) {
-        return this.findAutoriaOrThrow(tenantId, matterId);
     }
 
     async setAutorParlamentar(
@@ -552,7 +609,10 @@ export class PrismaMateriaRepository implements MateriaRepository {
         dto: SetAutorParlamentarDto,
     ) {
         await this.findAutoriaOrThrow(tenantId, matterId);
-        await this.assertParliamentarianOfTenant(tenantId, dto.parliamentarianId);
+        await this.assertParliamentarianAuthorEligible(
+            tenantId,
+            dto.parliamentarianId,
+        );
 
         await this.prisma.materia.update({
             where: { id: matterId },
@@ -571,19 +631,23 @@ export class PrismaMateriaRepository implements MateriaRepository {
         dto: SetAutorExternoDto,
     ) {
         await this.findAutoriaOrThrow(tenantId, matterId);
-        const guest = await this.assertGuestUserOfTenant(
-            tenantId,
-            dto.guestUserId,
-        );
-        const tipoAutor = await this.resolveTipoAutorExterno(
-            tenantId,
-            dto.tipoAutorId,
-        );
+        const autorExterno = await this.prisma.autorExterno.findFirst({
+            where: {
+                id: dto.autorExternoId,
+                ...tenantWhere(tenantId),
+                isRemoved: false,
+            },
+        });
+        if (!autorExterno) {
+            throw new NotFoundException(
+                'Autor externo não encontrado nesta Câmara',
+            );
+        }
 
         let autor = await this.prisma.autor.findFirst({
             where: {
                 tenantId,
-                guestUserId: dto.guestUserId,
+                autorExternoId: dto.autorExternoId,
                 isRemoved: false,
             },
         });
@@ -592,9 +656,9 @@ export class PrismaMateriaRepository implements MateriaRepository {
             autor = await this.prisma.autor.create({
                 data: {
                     tenantId,
-                    nome: guest.fullName,
-                    tipoAutorId: tipoAutor.id,
-                    guestUserId: dto.guestUserId,
+                    nome: autorExterno.nome,
+                    tipoAutorId: autorExterno.tipoAutorId,
+                    autorExternoId: autorExterno.id,
                 },
             });
         }
@@ -616,7 +680,7 @@ export class PrismaMateriaRepository implements MateriaRepository {
         dto: AddCoautorMateriaDto,
     ) {
         const matter = await this.findAutoriaOrThrow(tenantId, matterId);
-        await this.assertParliamentarianOfTenant(
+        await this.assertParliamentarianAuthorEligible(
             tenantId,
             dto.parliamentarianId,
         );

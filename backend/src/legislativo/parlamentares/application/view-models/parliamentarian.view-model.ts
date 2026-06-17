@@ -13,12 +13,12 @@ export type ParliamentarianHttp = {
         firstName: string;
         lastName: string;
         email: string;
-    };
-    politicalParty?: {
-        id: string;
-        name: string;
-        acronym: string;
-        flagUrl?: string;
+        politicalParty?: {
+            id: string;
+            name: string;
+            acronym: string;
+            flagUrl?: string;
+        };
     };
     activeMandatesCount?: number;
     activeMandate?: {
@@ -43,27 +43,37 @@ export type ParliamentarianHttp = {
 export class ParliamentarianViewModel {
     static toHttp(data: ParliamentarianWithRelations): ParliamentarianHttp {
         const p = data.entity.toPrimitives();
+        const party = data.user?.politicalParty;
         return {
             id: p.id,
             parliamentaryName: p.parliamentaryName,
             status: p.status,
             hasAccess: !!data.user,
-            ...(data.user ? { user: data.user } : {}),
-            ...(p.officeNumber ? { officeNumber: p.officeNumber } : {}),
-            ...(p.photoUrl ? { photoUrl: p.photoUrl } : {}),
-            ...(p.biography ? { biography: p.biography } : {}),
-            ...(data.politicalParty
+            ...(data.user
                 ? {
-                      politicalParty: {
-                          id: data.politicalParty.id,
-                          name: data.politicalParty.name,
-                          acronym: data.politicalParty.acronym,
-                          ...(data.politicalParty.flagUrl
-                              ? { flagUrl: data.politicalParty.flagUrl }
+                      user: {
+                          id: data.user.id,
+                          firstName: data.user.firstName,
+                          lastName: data.user.lastName,
+                          email: data.user.email,
+                          ...(party
+                              ? {
+                                    politicalParty: {
+                                        id: party.id,
+                                        name: party.name,
+                                        acronym: party.acronym,
+                                        ...(party.flagUrl
+                                            ? { flagUrl: party.flagUrl }
+                                            : {}),
+                                    },
+                                }
                               : {}),
                       },
                   }
                 : {}),
+            ...(p.officeNumber ? { officeNumber: p.officeNumber } : {}),
+            ...(p.photoUrl ? { photoUrl: p.photoUrl } : {}),
+            ...(p.biography ? { biography: p.biography } : {}),
             ...(data.activeMandatesCount !== undefined
                 ? { activeMandatesCount: data.activeMandatesCount }
                 : {}),

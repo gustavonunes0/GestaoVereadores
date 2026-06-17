@@ -3,11 +3,19 @@ import ExpandLessOutlined from '@mui/icons-material/ExpandLessOutlined';
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import { NavLink, useLocation } from 'react-router-dom';
 import { SIDEBAR_ICONS } from '../app/sidebar-icons';
-import { STAFF_NAV_MENU, type NavItemDef } from '../app/navigation';
+import {
+    STAFF_NAV_MENU,
+    type NavGroupDef,
+    type NavItemDef,
+} from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { SidebarIcon } from './ui/SidebarIcon';
 
-export function SidebarNav() {
+type Props = {
+    menu?: NavGroupDef[];
+};
+
+export function SidebarNav({ menu = STAFF_NAV_MENU }: Props) {
     const { pathname } = useLocation();
     const { isAdminStaff } = useAuth();
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -105,7 +113,7 @@ export function SidebarNav() {
 
     return (
         <nav className="sidebar-nav" aria-label="Navegação principal">
-            {STAFF_NAV_MENU.map((group) => (
+            {menu.map((group) => (
                 <div key={group.label} className="sidebar-nav__group">
                     <div className="sidebar-group-label">{group.label}</div>
                     {group.items.map((item) => renderItem(item))}

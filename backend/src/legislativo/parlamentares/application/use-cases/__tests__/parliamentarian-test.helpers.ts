@@ -8,7 +8,6 @@ export function buildParliamentarianWithRelations(
     const entity = ParliamentarianEntity.restore({
         id: 'parl-1',
         tenantId: 'tenant-1',
-        politicalPartyId: 'party-1',
         parliamentaryName: 'Vereador Teste',
         officeNumber: '101',
         photoUrl: null,
@@ -27,12 +26,12 @@ export function buildParliamentarianWithRelations(
             firstName: 'João',
             lastName: 'Silva',
             email: 'parlamentar.52998224725@interno.sigl.local',
-        },
-        politicalParty: {
-            id: 'party-1',
-            name: 'Partido Teste',
-            acronym: 'PT',
-            flagUrl: null,
+            politicalParty: {
+                id: 'party-1',
+                name: 'Partido Teste',
+                acronym: 'PT',
+                flagUrl: null,
+            },
         },
         activeMandatesCount: 0,
         ...overrides,
@@ -56,6 +55,7 @@ export function buildParlamentarianUserRepositoryMock() {
         findActiveByParliamentarianId: jest.fn().mockResolvedValue(null),
         findActiveByUserId: jest.fn().mockResolvedValue(null),
         deactivate: jest.fn(),
+        updatePoliticalParty: jest.fn(),
     };
 }
 

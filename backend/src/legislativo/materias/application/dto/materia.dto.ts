@@ -56,12 +56,24 @@ export class CreateMateriaDto {
     dataApresentacaoFim?: string;
 
     @IsOptional()
+    @IsDateString()
+    dataProtocolo?: string;
+
+    @IsOptional()
+    @IsString()
+    justificativa?: string;
+
+    @IsOptional()
     @IsString()
     autorId?: string;
 
     @IsOptional()
-    @IsString()
+    @IsUUID()
     authorParliamentarianId?: string;
+
+    @IsOptional()
+    @IsUUID()
+    autorExternoId?: string;
 
     @IsOptional()
     @IsString()

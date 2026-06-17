@@ -71,8 +71,10 @@ import { CreatePublicacaoDto } from '../dto/create-publicacao.dto';
 import { TramitarMateriaUseCase } from '../use-cases/tramitar-materia.use-case';
 import { AddPublicacaoMateriaUseCase } from '../use-cases/add-publicacao-materia.use-case';
 import { ListAutoresExternosUseCase } from '../use-cases/list-autores-externos.use-case';
+import { ListMatterAuthorOptionsUseCase } from '../use-cases/list-matter-author-options.use-case';
+import { UploadMatterTextoOriginalUseCase } from '../use-cases/upload-matter-texto-original.use-case';
 import { Req } from '@nestjs/common';
-import { Request } from 'express';
+import type { FastifyRequest } from 'fastify';
 import { RequestWithTenant } from '../../../../common/types/authenticated-request';
 
 @ApiTags('legislative-materias')
@@ -101,6 +103,8 @@ export class MateriasController {
         private readonly tramitarMateria: TramitarMateriaUseCase,
         private readonly addPublicacao: AddPublicacaoMateriaUseCase,
         private readonly listAutoresExternos: ListAutoresExternosUseCase,
+        private readonly listMatterAuthorOptions: ListMatterAuthorOptionsUseCase,
+        private readonly uploadMatterTextoOriginal: UploadMatterTextoOriginalUseCase,
     ) {}
 
     @Get('status')
@@ -249,6 +253,25 @@ export class MateriasController {
         }
     }
 
+    @TenantRoles(...ALL_AUTHENTICATED)
+    @Post(':id/texto-original')
+    async uploadTextoOriginal(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Req() req: FastifyRequest,
+    ) {
+        try {
+            const file = await req.file();
+            return await this.uploadMatterTextoOriginal.execute(
+                tenantId,
+                id,
+                file,
+            );
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
     @TenantRoles(...ADMIN_ONLY)
     @Patch(':id')
     async update(
@@ -324,13 +347,21 @@ export class MateriasController {
         return this.listAutoresExternos.execute(tenantId, tipoAutorId);
     }
 
+    @Get('opcoes-autor')
+    listarOpcoesAutor(
+        @TenantId() tenantId: string,
+        @Query('tipoAutorId') tipoAutorId: string,
+    ) {
+        return this.listMatterAuthorOptions.execute(tenantId, tipoAutorId);
+    }
+
     @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/tramitar')
     async tramitar(
         @TenantId() tenantId: string,
         @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: TramitarMateriaDto,
-        @Req() req: Request & RequestWithTenant,
+        @Req() req: FastifyRequest & RequestWithTenant,
     ) {
         try {
             return await this.tramitarMateria.execute(

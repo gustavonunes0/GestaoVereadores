@@ -33,10 +33,16 @@ export class CreateNormaUseCase {
             dataPublicacaoInicio:
                 toOptionalDate(dto.dataPublicacaoInicio) ?? null,
             dataPublicacaoFim: toOptionalDate(dto.dataPublicacaoFim) ?? null,
+            dataPublicacao: toOptionalDate(dto.dataPublicacao) ?? null,
             esferaFederacaoId: dto.esferaFederacaoId ?? null,
             identificadorId: dto.identificadorId ?? null,
             materiaOrigemId: dto.materiaOrigemId ?? null,
             mensagem: dto.mensagem ?? null,
+            complementar: dto.complementar ?? false,
+            veiculoPublicacao: dto.veiculoPublicacao ?? null,
+            urlExternaPublicacao: dto.urlExternaPublicacao ?? null,
+            paginaInicio: dto.paginaInicio ?? null,
+            paginaFim: dto.paginaFim ?? null,
         });
 
         return NormaViewModel.toHttp(saved);

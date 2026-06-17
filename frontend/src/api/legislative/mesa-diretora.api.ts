@@ -9,6 +9,13 @@ export type BoardMember = {
         id: string;
         parliamentaryName: string;
         officeNumber?: string | null;
+        photoUrl?: string | null;
+        politicalParty?: {
+            id: string;
+            name: string;
+            acronym: string;
+            flagUrl?: string | null;
+        } | null;
     };
     boardRole: BoardRole;
 };
@@ -34,8 +41,15 @@ export type CreateBoardInput = {
     notes?: string;
 };
 
+export type MesaDiretoraFiltros = {
+    legislatureId?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+};
+
 export const mesaDiretoraApi = {
-    list: (params?: Record<string, string | number | boolean | undefined>) =>
+    list: (params?: MesaDiretoraFiltros) =>
         apiList<Board>(API_PATHS.mesaDiretora, params),
 
     getById: (id: string) =>

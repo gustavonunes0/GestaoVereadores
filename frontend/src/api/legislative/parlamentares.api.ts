@@ -14,12 +14,12 @@ export type Parliamentarian = {
         firstName: string;
         lastName: string;
         email: string;
-    };
-    politicalParty?: {
-        id: string;
-        name: string;
-        acronym: string;
-        flagUrl?: string;
+        politicalParty?: {
+            id: string;
+            name: string;
+            acronym: string;
+            flagUrl?: string;
+        };
     };
     activeMandatesCount?: number;
     activeMandate?: { id: string; status: string };
@@ -68,6 +68,7 @@ export type ParliamentarianProfile = {
 export type CreateParliamentarianInput = {
     cpf: string;
     password: string;
+    email?: string;
     politicalPartyId?: string;
     parliamentaryName: string;
     officeNumber?: string;

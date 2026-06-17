@@ -23,9 +23,20 @@ export type CreateFrontInput = {
     coordinatorParliamentarianId?: string;
 };
 
+export type FrenteFiltros = {
+    search?: string;
+    theme?: string;
+    status?: FrontStatus;
+    page?: number;
+    limit?: number;
+};
+
 export const frentesApi = {
-    list: (params?: Record<string, string | number | boolean | undefined>) =>
+    list: (params?: FrenteFiltros) =>
         apiList<ParliamentaryFront>(API_PATHS.frentes, params),
+
+    getById: (id: string) =>
+        api<ParliamentaryFront>(`${API_PATHS.frentes}/${id}`),
 
     create: (body: CreateFrontInput) =>
         api<ParliamentaryFront>(API_PATHS.frentes, {

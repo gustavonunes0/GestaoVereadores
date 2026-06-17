@@ -58,6 +58,28 @@ export class PrismaNormaRepository extends NormaRepository {
     }
 
     async create(tenantId: string, data: CreateNormaRepositoryInput) {
+        const publicacaoData = data.dataPublicacao
+            ? {
+                  publicacoesOficiais: {
+                      create: {
+                          tenantId,
+                          dataPublicacao: data.dataPublicacao,
+                          veiculo:
+                              data.veiculoPublicacao?.trim() || 'Não informado',
+                          ...(data.paginaInicio != null
+                              ? { paginaInicio: data.paginaInicio }
+                              : {}),
+                          ...(data.paginaFim != null
+                              ? { paginaFim: data.paginaFim }
+                              : {}),
+                          ...(data.urlExternaPublicacao
+                              ? { urlExterna: data.urlExternaPublicacao }
+                              : {}),
+                      },
+                  },
+              }
+            : {};
+
         const row = await this.prisma.norma.create({
             data: {
                 tenantId,
@@ -68,6 +90,7 @@ export class PrismaNormaRepository extends NormaRepository {
                 data: data.data ?? undefined,
                 dataPublicacaoInicio: data.dataPublicacaoInicio ?? undefined,
                 dataPublicacaoFim: data.dataPublicacaoFim ?? undefined,
+                dataPublicacao: data.dataPublicacao ?? undefined,
                 esferaFederacaoId: data.esferaFederacaoId ?? undefined,
                 identificadorId: data.identificadorId ?? undefined,
                 materiaOrigemId: data.materiaOrigemId ?? undefined,
@@ -76,6 +99,7 @@ export class PrismaNormaRepository extends NormaRepository {
                 textoIntegralUrl: data.textoIntegralUrl ?? undefined,
                 audioUrl: data.audioUrl ?? undefined,
                 textoUrl: data.textoUrl ?? undefined,
+                ...publicacaoData,
             },
             include: createUpdateInclude,
         });

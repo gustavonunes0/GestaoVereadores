@@ -1,5 +1,6 @@
 import AccountBalanceOutlined from '@mui/icons-material/AccountBalanceOutlined';
 import ArticleOutlined from '@mui/icons-material/ArticleOutlined';
+import BadgeOutlined from '@mui/icons-material/BadgeOutlined';
 import BalanceOutlined from '@mui/icons-material/BalanceOutlined';
 import BarChartOutlined from '@mui/icons-material/BarChartOutlined';
 import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined';
@@ -29,6 +30,7 @@ const MODULE_HEADER_ICON_MAP: Record<string, SvgIconComponent> = {
     'pi-briefcase': PeopleOutlined,
     'pi-flag': FlagOutlined,
     'pi-id-card': RecentActorsOutlined,
+    'pi-badge': BadgeOutlined,
     'pi-user-edit': PersonAddOutlined,
     'pi-history': HistoryOutlined,
     'pi-file': BalanceOutlined,

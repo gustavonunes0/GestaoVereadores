@@ -25,3 +25,19 @@ export class ParliamentarianCpfAlreadyInUseError extends Error {
         this.name = 'ParliamentarianCpfAlreadyInUseError';
     }
 }
+
+export class ParliamentarianEmailAlreadyInUseError extends Error {
+    constructor() {
+        super('Já existe um usuário cadastrado com este e-mail');
+        this.name = 'ParliamentarianEmailAlreadyInUseError';
+    }
+}
+
+export class ParliamentarianAccessRequiredForPartyError extends Error {
+    constructor() {
+        super(
+            'Partido político só pode ser definido para parlamentar com acesso ao sistema',
+        );
+        this.name = 'ParliamentarianAccessRequiredForPartyError';
+    }
+}

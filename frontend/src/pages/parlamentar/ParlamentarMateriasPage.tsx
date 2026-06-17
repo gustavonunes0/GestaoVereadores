@@ -2,12 +2,23 @@ import { useCallback, useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
 import { usePermissions } from '../../hooks/usePermissions';
 import { materiasApi, type Materia } from '../../api/legislative/materias.api';
+import { MateriaListCard } from '../../components/materias/MateriaListCard';
 import { MateriaVerDialog } from '../../components/materias/MateriaVerDialog';
-import { MateriaStatusBadge } from '../../components/materias/MateriaStatusBadge';
 import { DataTableLayout } from '../../components/common/DataTableLayout';
 import { PageHeader } from '../../components/PageHeader';
 import { MODULE_ICONS } from '../../app/navigation';
+import { PreviewImg } from '../../components/ui';
 import { useAppToast } from '../../hooks/useAppToast';
+import {
+    resolveMateriaTextoOriginalUrl,
+    resolveMateriaTitulo,
+} from '../../utils/materiaDisplay';
+
+type TextoOriginalPreview = {
+    src: string;
+    fileName: string;
+    mimeType?: string;
+};
 
 export function ParlamentarMateriasPage() {
     const { parliamentarianId } = usePermissions();
@@ -16,7 +27,24 @@ export function ParlamentarMateriasPage() {
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
-    const [dialogVer, setDialogVer] = useState<Materia | null>(null);
+    const [dialogVerId, setDialogVerId] = useState<string | null>(null);
+    const [previewTextoOriginal, setPreviewTextoOriginal] =
+        useState<TextoOriginalPreview | null>(null);
+
+    function handleVer(materia: Materia) {
+        const url = materia.textoOriginalUrl?.trim();
+        if (url) {
+            const resolved = resolveMateriaTextoOriginalUrl(url);
+            const isPdf = resolved.toLowerCase().includes('.pdf');
+            setPreviewTextoOriginal({
+                src: resolved,
+                fileName: `${resolveMateriaTitulo(materia)}${isPdf ? '.pdf' : ''}`,
+                mimeType: isPdf ? 'application/pdf' : undefined,
+            });
+            return;
+        }
+        setDialogVerId(materia.id);
+    }
 
     const buscar = useCallback(async () => {
         if (!parliamentarianId) return;
@@ -40,26 +68,14 @@ export function ParlamentarMateriasPage() {
     }, [buscar]);
 
     const columns = (
-        <>
-            <Column
-                header="Identificação"
-                body={(row: Materia) => <span className="font-medium">{row.identificacao}</span>}
-                style={{ width: '10rem' }}
-            />
-            <Column
-                header="Ementa"
-                body={(row: Materia) => (
-                    <span className="text-sm" title={row.ementa}>
-                        {row.ementa.length > 80 ? `${row.ementa.slice(0, 80)}…` : row.ementa}
-                    </span>
-                )}
-            />
-            <Column
-                header="Status"
-                body={(row: Materia) => <MateriaStatusBadge status={row.status} />}
-                style={{ width: '9rem' }}
-            />
-        </>
+        <Column
+            body={(row: Materia) => (
+                <MateriaListCard
+                    materia={row}
+                    onVer={() => handleVer(row)}
+                />
+            )}
+        />
     );
 
     return (
@@ -70,7 +86,7 @@ export function ParlamentarMateriasPage() {
                 subtitle="Matérias onde você é autor, coautor ou relator."
             />
 
-            <section aria-label="Lista de matérias">
+            <section aria-label="Lista de matérias" className="materias-table-section">
                 <DataTableLayout<Materia>
                 items={items}
                 total={total}
@@ -78,15 +94,25 @@ export function ParlamentarMateriasPage() {
                 page={page}
                 onPageChange={setPage}
                 columns={columns}
+                enableSort={false}
+                hideActionsColumn
+                tableClassName="materias-datatable materias-datatable--cards"
                 canWrite={false}
-                onVer={(item) => setDialogVer(item)}
                 />
             </section>
 
-            {dialogVer && (
+            {previewTextoOriginal && (
+                <PreviewImg
+                    src={previewTextoOriginal.src}
+                    fileName={previewTextoOriginal.fileName}
+                    mimeType={previewTextoOriginal.mimeType}
+                    onClose={() => setPreviewTextoOriginal(null)}
+                />
+            )}
+            {dialogVerId && (
                 <MateriaVerDialog
-                    materia={dialogVer}
-                    onClose={() => setDialogVer(null)}
+                    materiaId={dialogVerId}
+                    onClose={() => setDialogVerId(null)}
                 />
             )}
         </main>

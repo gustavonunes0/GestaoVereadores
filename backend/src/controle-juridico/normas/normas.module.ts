@@ -11,6 +11,8 @@ import { RegistrarVetoUseCase } from './application/use-cases/registrar-veto.use
 import { RemoveNormaUseCase } from './application/use-cases/remove-norma.use-case';
 import { RevogarNormaUseCase } from './application/use-cases/revogar-norma.use-case';
 import { UpdateNormaUseCase } from './application/use-cases/update-norma.use-case';
+import { UploadNormaAudioUseCase } from './application/use-cases/upload-norma-audio.use-case';
+import { UploadNormaTextoIntegralUseCase } from './application/use-cases/upload-norma-texto-integral.use-case';
 import { NormaRepository } from './domain/repositories/norma.repository';
 import { MateriaOrigemValidator } from './infra/integrations/materia-origem-validator';
 import { PrismaNormaRepository } from './infra/prisma/prisma-norma.repository';
@@ -29,6 +31,8 @@ import { PrismaNormaRepository } from './infra/prisma/prisma-norma.repository';
         RegistrarPromulgacaoUseCase,
         RegistrarPublicacaoUseCase,
         RevogarNormaUseCase,
+        UploadNormaTextoIntegralUseCase,
+        UploadNormaAudioUseCase,
         MateriaOrigemValidator,
         {
             provide: NormaRepository,

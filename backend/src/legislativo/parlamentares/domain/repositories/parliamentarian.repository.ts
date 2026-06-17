@@ -7,6 +7,7 @@ export type ParliamentarianUserSummary = {
     firstName: string;
     lastName: string;
     email: string;
+    politicalParty?: ParliamentarianPartySummary | null;
 };
 
 export type ParliamentarianPartySummary = {
@@ -26,7 +27,6 @@ export type ParliamentarianWithRelations = {
     entity: ParliamentarianEntity;
     /** Dados do User resolvidos via ParlamentarianUser (opcional — parlamentar pode não ter acesso). */
     user?: ParliamentarianUserSummary;
-    politicalParty: ParliamentarianPartySummary | null;
     activeMandatesCount?: number;
     stats?: {
         authoredMattersCount: number;
@@ -43,7 +43,6 @@ export type ParliamentarianWithRelations = {
 
 export type CreateParliamentarianRepositoryInput = {
     tenantId: string;
-    politicalPartyId?: string | null;
     parliamentaryName: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
@@ -51,7 +50,6 @@ export type CreateParliamentarianRepositoryInput = {
 };
 
 export type UpdateParliamentarianRepositoryInput = {
-    politicalPartyId?: string | null;
     parliamentaryName?: string;
     officeNumber?: string | null;
     photoUrl?: string | null;

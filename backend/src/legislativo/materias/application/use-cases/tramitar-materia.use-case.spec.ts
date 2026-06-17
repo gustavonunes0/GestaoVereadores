@@ -48,6 +48,7 @@ describe('TramitarMateriaUseCase', () => {
             addCoautor: jest.fn(),
             removeCoautor: jest.fn(),
             setRelator: jest.fn(),
+            replaceCoautores: jest.fn(),
             proximoNumero: jest.fn(),
             listAutoresExternos: jest.fn(),
             addPublicacao: jest.fn(),
