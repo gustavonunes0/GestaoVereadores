@@ -144,7 +144,6 @@ model Tenant {
     cargosMesa          CargoMesa[]
     mesasDiretoras      MesaDiretora[]
     agendasLegislativas AgendaLegislativa[]
-    courses             Course[]
     guestUsers          GuestUser[]
     politicalParties    PoliticalParty[]
     parliamentarians    Parliamentarian[]
@@ -1482,37 +1481,4 @@ model PresencaSessao {
     createdAt     DateTime         @default(now())
 
     @@unique([sessaoId, parlamentarId])
-}
-
-// --- Courses bounded context ---
-
-enum CourseStatus {
-    DRAFT
-    PUBLISHED
-    ARCHIVED
-}
-
-model Course {
-    id            String       @id @default(uuid())
-    tenantId      String
-    title         String
-    slug          String
-    description   String?
-    workloadHours Int
-    status        CourseStatus @default(DRAFT)
-    startDate     DateTime?
-    endDate       DateTime?
-
-    isRemoved     Boolean      @default(false)
-    removedAt     DateTime?
-
-    createdAt     DateTime     @default(now())
-    updatedAt     DateTime     @updatedAt
-
-    tenant        Tenant       @relation(fields: [tenantId], references: [id])
-
-    @@unique([tenantId, slug])
-    @@index([tenantId, isRemoved])
-    @@index([tenantId, status])
-    @@map("courses")
 }
