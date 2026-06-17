@@ -16,6 +16,7 @@ import { RelatoriosModule } from './relatorios/relatorios.module';
 import { IdentidadeModule } from './identidade/identidade.module';
 import { LegislativoModule } from './legislativo/legislativo.module';
 import { DominiosModule } from './common/dominios/dominios.module';
+import { PortalModule } from './portal/portal.module';
 
 @Module({
     providers: [
@@ -37,6 +38,7 @@ import { DominiosModule } from './common/dominios/dominios.module';
         IdentidadeModule,
         LegislativoModule,
         DominiosModule,
+        PortalModule,
     ],
 })
 export class AppModule {}

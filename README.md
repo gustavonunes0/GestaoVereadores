@@ -83,12 +83,13 @@ cd backend
 cp .env.example .env
 ```
 
-Edite `backend/.env` e ajuste a porta do banco para **5433** (mapeamento do Docker Compose):
+Copie o template de banco local (ou use `backend/.env.example`):
 
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/gestao_vereadores?schema=public"
-JWT_SECRET="altere-esta-chave-em-producao"
+```bash
+cp ../.env.docker.example .env
 ```
+
+O arquivo deve conter `SIGL_USE_LOCAL_DB=true` e `LOCAL_DATABASE_URL` apontando para `localhost:5433` (Postgres do Docker Compose). Isso garante que a API **não** use o banco remoto da Vercel durante o desenvolvimento local.
 
 **4.** Instale dependências, aplique o schema e popule o banco:
 

@@ -24,7 +24,13 @@ services:
     ports:
       - '3000:3000'
     environment:
+      # Banco local do serviço postgres (nunca Vercel)
+      SIGL_USE_LOCAL_DB: "true"
+      LOCAL_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/gestao_vereadores?schema=public
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/gestao_vereadores?schema=public
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/gestao_vereadores?schema=public
+      gestaovereadores_PRISMA_DATABASE_URL: ""
+      gestaovereadores_POSTGRES_URL: ""
       PORT: 3000
       JWT_SECRET: gestao-vereadores-jwt-dev-altere-em-producao
       CORS_ORIGIN: http://localhost:5173,http://localhost:8080,http://127.0.0.1:8080,http://localhost

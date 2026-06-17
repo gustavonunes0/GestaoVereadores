@@ -9,6 +9,7 @@ import './styles/typography.css';
 import './styles/spacing-layout.css';
 import './styles/prime-overrides.css';
 import './styles/sigl-ui-patterns.css';
+import './styles/portal-public.css';
 import './index.css';
 
 import App from './App';

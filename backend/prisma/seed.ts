@@ -30,12 +30,29 @@ async function main() {
             name: 'Câmara Municipal de Teste',
             status: TenantStatus.ACTIVE,
             isRemoved: false,
+            portalSlug: 'camara-demo',
+            settings: {
+                portal: {
+                    ativo: true,
+                    titulo: 'Câmara Municipal de Teste',
+                    secoes: {
+                        vereadores: true,
+                        mesaDiretora: true,
+                        comissoes: true,
+                        agenda: true,
+                        normas: true,
+                        materias: false,
+                        transmissao: true,
+                    },
+                },
+            },
         },
         create: {
             id: DEMO_TENANT_ID,
             name: 'Câmara Municipal de Teste',
             cnpj: '00000000000191',
             status: TenantStatus.ACTIVE,
+            portalSlug: 'camara-demo',
         },
     });
 

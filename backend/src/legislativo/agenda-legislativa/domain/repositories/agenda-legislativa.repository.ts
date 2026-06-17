@@ -54,6 +54,7 @@ export abstract class AgendaLegislativaRepository {
     ): Promise<PaginatedResult<AgendaLegislativaEntity>>;
 
     abstract findPublic(
+        tenantId: string,
         query: ListAgendasLegislativasQuery,
     ): Promise<PaginatedResult<AgendaLegislativaEntity>>;
 

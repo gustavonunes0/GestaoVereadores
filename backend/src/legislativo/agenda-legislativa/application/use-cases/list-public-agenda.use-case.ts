@@ -12,8 +12,8 @@ export class ListPublicAgendaUseCase {
         private readonly repository: AgendaLegislativaRepository,
     ) {}
 
-    async execute(query: FilterAgendaDto) {
-        const result = await this.repository.findPublic({
+    async execute(tenantId: string, query: FilterAgendaDto) {
+        const result = await this.repository.findPublic(tenantId, {
             tipo: query.tipo as AgendaEventType | undefined,
             dataInicioDe: query.dataInicioDe ? new Date(query.dataInicioDe) : undefined,
             dataInicioAte: query.dataInicioAte ? new Date(query.dataInicioAte) : undefined,

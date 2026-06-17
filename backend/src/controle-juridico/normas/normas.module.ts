@@ -39,6 +39,6 @@ import { PrismaNormaRepository } from './infra/prisma/prisma-norma.repository';
             useClass: PrismaNormaRepository,
         },
     ],
-    exports: [NormaRepository],
+    exports: [NormaRepository, ListPublicNormasUseCase],
 })
 export class NormasModule {}

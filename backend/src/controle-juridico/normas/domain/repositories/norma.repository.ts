@@ -93,6 +93,7 @@ export abstract class NormaRepository {
     ): Promise<PaginatedResult<NormaEntity>>;
 
     abstract findPublic(
+        tenantId: string,
         query: ListNormasRepositoryQuery,
     ): Promise<PaginatedResult<NormaEntity>>;
 

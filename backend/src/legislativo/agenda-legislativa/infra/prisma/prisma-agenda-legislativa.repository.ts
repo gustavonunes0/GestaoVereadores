@@ -64,8 +64,9 @@ export class PrismaAgendaLegislativaRepository extends AgendaLegislativaReposito
         );
     }
 
-    findPublic(query: ListAgendasLegislativasQuery) {
+    findPublic(tenantId: string, query: ListAgendasLegislativasQuery) {
         const where: Prisma.AgendaLegislativaWhereInput = {
+            tenantId,
             isRemoved: false,
             publicoExterno: true,
         };

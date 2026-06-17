@@ -14,7 +14,6 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { FastifyRequest } from 'fastify';
-import { Public } from '../../../../auth/decorators/public.decorator';
 import { TenantRoles } from '../../../../common/decorators/tenant-roles.decorator';
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
 import { ADMIN_ONLY, STAFF_AND_ABOVE } from '../../../../auth/guards/guard-combos';
@@ -71,10 +70,13 @@ export class NormasController {
         private readonly uploadNormaAudioUseCase: UploadNormaAudioUseCase,
     ) {}
 
-    @Public()
     @Get('public')
-    findPublic(@Query() query: ListNormasQueryDto) {
-        return this.listPublicNormasUseCase.execute(query);
+    @ApiBearerAuth()
+    findPublic(
+        @TenantId() tenantId: string,
+        @Query() query: ListNormasQueryDto,
+    ) {
+        return this.listPublicNormasUseCase.execute(tenantId, query);
     }
 
     @Get()

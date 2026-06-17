@@ -1,0 +1,508 @@
+/* Portal institucional público — /portal/:slug */
+
+.portal-public {
+    --portal-primary: var(--accent, #2563a8);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--page-bg, #f5f6f8);
+    color: var(--text-heading, #1c2f4a);
+}
+
+.portal-public--loading,
+.portal-public--not-found {
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.portal-public__header {
+    background: #fff;
+    border-bottom: 1px solid var(--card-border, #eef0f3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.portal-public__header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.portal-public__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.portal-public__logo {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+}
+
+.portal-public__title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--portal-primary);
+}
+
+.portal-public__subtitle {
+    margin: 0.15rem 0 0;
+    font-size: 0.875rem;
+    color: var(--text-muted, #8492a6);
+}
+
+.portal-public__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+}
+
+.portal-public__nav-link {
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: var(--text-muted, #8492a6);
+    transition: background 0.15s, color 0.15s;
+}
+
+.portal-public__nav-link:hover {
+    color: var(--portal-primary);
+    background: rgba(37, 99, 168, 0.06);
+}
+
+.portal-public__nav-link--active {
+    color: var(--portal-primary);
+    font-weight: 600;
+    background: rgba(37, 99, 168, 0.1);
+}
+
+.portal-public__banner {
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+}
+
+.portal-public__main {
+    flex: 1;
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 2.5rem;
+}
+
+.portal-public__footer {
+    background: #fff;
+    border-top: 1px solid var(--card-border, #eef0f3);
+    margin-top: auto;
+}
+
+.portal-public__footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.25rem;
+    font-size: 0.875rem;
+    color: var(--text-muted, #8492a6);
+}
+
+.portal-public__footer-title {
+    margin: 0 0 0.5rem;
+    font-weight: 600;
+    color: var(--text-heading, #1c2f4a);
+}
+
+.portal-public__footer-line {
+    margin: 0.2rem 0;
+}
+
+.portal-public__social {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.75rem;
+}
+
+.portal-public__social a {
+    color: var(--portal-primary);
+}
+
+.portal-public__btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--portal-primary);
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.portal-public__btn:hover {
+    filter: brightness(1.05);
+}
+
+.portal-public__not-found-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    max-width: 420px;
+    box-shadow: var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.04));
+}
+
+.portal-page__title {
+    margin: 0 0 1.25rem;
+    font-size: 1.5rem;
+    color: var(--portal-primary);
+}
+
+.portal-page__loading {
+    display: flex;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.portal-hero__text {
+    line-height: 1.6;
+    color: var(--text-body, #3d4f66);
+}
+
+.portal-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.portal-card {
+    background: #fff;
+    border: 1px solid var(--card-border, #eef0f3);
+    border-radius: 10px;
+    padding: 1.25rem;
+    transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.portal-card:hover {
+    border-color: var(--portal-primary);
+    box-shadow: 0 4px 12px rgba(37, 99, 168, 0.12);
+}
+
+.portal-card h3 {
+    margin: 0 0 0.35rem;
+    color: var(--portal-primary);
+}
+
+.portal-card p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-muted, #8492a6);
+}
+
+.portal-filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.portal-filters__input {
+    flex: 1;
+    min-width: 200px;
+}
+
+.portal-vereadores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.portal-vereador-card {
+    background: #fff;
+    border: 1px solid var(--card-border, #eef0f3);
+    border-radius: 10px;
+    padding: 1.25rem;
+    text-align: center;
+    transition: border-color 0.15s;
+}
+
+.portal-vereador-card:hover {
+    border-color: var(--portal-primary);
+}
+
+.portal-vereador-card h3 {
+    margin: 0.75rem 0 0.25rem;
+    font-size: 1rem;
+}
+
+.portal-vereador-card__party {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--portal-primary);
+    font-weight: 600;
+}
+
+.portal-vereador-card__office {
+    margin: 0.25rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted, #8492a6);
+}
+
+.portal-vereador-detail__header {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.portal-section {
+    margin-top: 1.5rem;
+}
+
+.portal-section h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+}
+
+.portal-section__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.portal-section__header h3 {
+    margin: 0;
+}
+
+.portal-transmissao {
+    background: #fff;
+    border: 1px solid var(--card-border, #eef0f3);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.portal-transmissao__header h2 {
+    margin: 0 0 0.35rem;
+    color: var(--portal-primary);
+    font-size: 1.15rem;
+}
+
+.portal-transmissao__header p {
+    margin: 0.15rem 0;
+}
+
+.portal-transmissao__embed {
+    margin-top: 1rem;
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #000;
+}
+
+.portal-transmissao__embed iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.portal-mesa-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.portal-mesa-grid--compact {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+.portal-mesa-card {
+    background: #fff;
+    border: 1px solid var(--card-border, #eef0f3);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.portal-mesa-card--compact {
+    text-align: left;
+    padding: 0.85rem 1rem;
+}
+
+.portal-mesa-card__cargo {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--portal-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.5rem;
+}
+
+.portal-mesa-card--compact .portal-mesa-card__cargo {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.portal-mesa-card__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.portal-mesa-card__link h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.portal-comissoes-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.portal-comissao-card {
+    display: block;
+    background: #fff;
+    border: 1px solid var(--card-border, #eef0f3);
+    border-radius: 10px;
+    padding: 1.25rem;
+    transition: border-color 0.15s;
+}
+
+.portal-comissao-card:hover {
+    border-color: var(--portal-primary);
+}
+
+.portal-comissao-card h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+    color: var(--portal-primary);
+}
+
+.portal-comissao-card__purpose {
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+    color: var(--text-body, #3d4f66);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.portal-agenda-item--compact {
+    padding: 0.85rem 1rem;
+}
+
+.portal-list--members li {
+    margin-bottom: 0.35rem;
+}
+
+.portal-list--members a {
+    color: var(--portal-primary);
+}
+
+.portal-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    line-height: 1.7;
+}
+
+.portal-back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: var(--portal-primary);
+    font-size: 0.9rem;
+}
+
+.portal-muted {
+    color: var(--text-muted, #8492a6);
+    font-size: 0.875rem;
+}
+
+.portal-empty {
+    color: var(--text-muted, #8492a6);
+    padding: 1rem 0;
+}
+
+.portal-agenda-list,
+.portal-normas-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.portal-agenda-item,
+.portal-norma-item,
+.portal-contact-card {
+    background: #fff;
+    border: 1px solid var(--card-border, #eef0f3);
+    border-radius: 10px;
+    padding: 1.25rem;
+}
+
+.portal-agenda-item h3,
+.portal-norma-item h3 {
+    margin: 0.35rem 0;
+    font-size: 1.05rem;
+}
+
+.portal-agenda-item__meta {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+}
+
+.portal-agenda-item__date {
+    font-weight: 600;
+    color: var(--portal-primary);
+}
+
+.portal-agenda-item__type {
+    color: var(--text-muted, #8492a6);
+}
+
+.portal-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    color: var(--portal-primary);
+    font-size: 0.9rem;
+}
+
+.portal-contact-social {
+    margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+    .portal-vereador-detail__header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .portal-public__header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

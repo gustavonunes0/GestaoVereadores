@@ -30,6 +30,6 @@ import { PrismaAgendaLegislativaRepository } from './infra/prisma/prisma-agenda-
             useExisting: PrismaAgendaLegislativaRepository,
         },
     ],
-    exports: [AGENDA_LEGISLATIVA_REPOSITORY],
+    exports: [AGENDA_LEGISLATIVA_REPOSITORY, ListPublicAgendaUseCase],
 })
 export class AgendaLegislativaModule {}

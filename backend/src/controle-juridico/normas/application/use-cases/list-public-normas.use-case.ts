@@ -7,8 +7,8 @@ import { NormaViewModel } from '../view-models/norma.view-model';
 export class ListPublicNormasUseCase {
     constructor(private readonly normaRepository: NormaRepository) {}
 
-    async execute(query: ListNormasQueryDto) {
-        const result = await this.normaRepository.findPublic({
+    async execute(tenantId: string, query: ListNormasQueryDto) {
+        const result = await this.normaRepository.findPublic(tenantId, {
             search: query.search,
             tipoId: query.tipoId,
             anoId: query.anoId,

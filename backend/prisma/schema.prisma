@@ -120,6 +120,7 @@ model Tenant {
     name        String
     cnpj        String       @unique
     logo        String?
+    portalSlug  String?      @unique
     status      TenantStatus @default(ACTIVE)
     settings    Json?
     createdAt   DateTime     @default(now())

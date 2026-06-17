@@ -20,6 +20,16 @@ export const Pages = {
     autores: lazy(() => import('../../pages/AutoresPage').then((m) => ({ default: m.AutoresPage }))),
     legislaturas: lazy(() => import('../../pages/LegislaturasPage').then((m) => ({ default: m.LegislaturasPage }))),
     portal: lazy(() => import('../../pages/PortalInstitucionalPage').then((m) => ({ default: m.PortalInstitucionalPage }))),
+
+    portalHome: lazy(() => import('../../pages/portal/PortalHomePage').then((m) => ({ default: m.PortalHomePage }))),
+    portalVereadores: lazy(() => import('../../pages/portal/PortalVereadoresPage').then((m) => ({ default: m.PortalVereadoresPage }))),
+    portalVereadorDetail: lazy(() => import('../../pages/portal/PortalVereadorDetailPage').then((m) => ({ default: m.PortalVereadorDetailPage }))),
+    portalMesaDiretora: lazy(() => import('../../pages/portal/PortalMesaDiretoraPage').then((m) => ({ default: m.PortalMesaDiretoraPage }))),
+    portalComissoes: lazy(() => import('../../pages/portal/PortalComissoesPage').then((m) => ({ default: m.PortalComissoesPage }))),
+    portalComissaoDetail: lazy(() => import('../../pages/portal/PortalComissaoDetailPage').then((m) => ({ default: m.PortalComissaoDetailPage }))),
+    portalAgenda: lazy(() => import('../../pages/portal/PortalAgendaPage').then((m) => ({ default: m.PortalAgendaPage }))),
+    portalNormas: lazy(() => import('../../pages/portal/PortalNormasPage').then((m) => ({ default: m.PortalNormasPage }))),
+    portalContato: lazy(() => import('../../pages/portal/PortalContatoPage').then((m) => ({ default: m.PortalContatoPage }))),
     usuarios: lazy(() => import('../../pages/UsuariosPage').then((m) => ({ default: m.UsuariosPage }))),
 
     parlamentarPerfil: lazy(() => import('../../pages/parlamentar/ParlamentarPerfilPage').then((m) => ({ default: m.ParlamentarPerfilPage }))),

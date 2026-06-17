@@ -1,10 +1,25 @@
+/** Postgres do `docker compose` no host (porta 5433). */
+const LOCAL_DOCKER_DATABASE_URL =
+    'postgresql://postgres:postgres@localhost:5433/gestao_vereadores?schema=public';
+
 /**
  * Mapeia variáveis injetadas pelo Vercel Storage (prefixo do projeto)
  * para os nomes usados pelo Prisma e pela aplicação.
  *
- * Ordem: DATABASE_URL explícita vence; senão usa gestaovereadores_* / POSTGRES_*.
+ * Com `SIGL_USE_LOCAL_DB=true`, usa sempre banco local (Docker Compose)
+ * e ignora URLs da Vercel.
  */
 export function resolveVercelDatabaseEnv(): void {
+    if (process.env.SIGL_USE_LOCAL_DB === 'true') {
+        const local =
+            process.env.LOCAL_DATABASE_URL?.trim() ??
+            process.env.DATABASE_URL?.trim() ??
+            LOCAL_DOCKER_DATABASE_URL;
+        process.env.DATABASE_URL = local;
+        process.env.DIRECT_DATABASE_URL = local;
+        return;
+    }
+
     if (!process.env.DATABASE_URL?.trim()) {
         const pooled =
             process.env.gestaovereadores_PRISMA_DATABASE_URL?.trim() ??

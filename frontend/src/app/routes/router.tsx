@@ -4,6 +4,7 @@ import { CatchAllRoute } from './catch-all.route';
 import { Pages } from './lazy-pages';
 import { page } from './page-loader';
 import { parlamentarRoutes } from './parlamentar.routes';
+import { portalRoutes } from './portal.routes';
 import { staffRoutes } from './staff.routes';
 
 export const appRouter = createBrowserRouter([
@@ -11,6 +12,7 @@ export const appRouter = createBrowserRouter([
         path: ROUTES.login,
         element: page(Pages.login),
     },
+    portalRoutes,
     staffRoutes,
     parlamentarRoutes,
     {

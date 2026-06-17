@@ -188,8 +188,11 @@ export class PrismaNormaRepository extends NormaRepository {
         assertTenantScopedUpdate(result.count, 'Norma não encontrada');
     }
 
-    async findPublic(query: ListNormasRepositoryQuery) {
-        const where: Prisma.NormaWhereInput = { isRemoved: false };
+    async findPublic(tenantId: string, query: ListNormasRepositoryQuery) {
+        const where: Prisma.NormaWhereInput = {
+            tenantId,
+            isRemoved: false,
+        };
         if (query.tipoId) where.tipoId = query.tipoId;
         if (query.anoId) where.anoId = query.anoId;
         if (query.numero) where.numero = { contains: query.numero };

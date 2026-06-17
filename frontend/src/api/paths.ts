@@ -69,7 +69,20 @@ export const API_PATHS = {
     relatorioAtividade: '/relatorios/atividade-legislativa/completo',
     relatorioPresenca:  '/relatorios/presenca',
 
-    // ── Público (sem auth) ────────────────────────────────────────────────
-    publicAgenda:       '/public/agenda',
+    // ── Portal institucional ───────────────────────────────────────────────
+    portalConfig:          '/portal/config',
+    portalConfigPreviewUrl:'/portal/config/preview-url',
+    publicPortalConfig:    (slug: string) => `/public/${slug}/config`,
+    publicPortalAgenda:    (slug: string) => `/public/${slug}/agenda`,
+    publicPortalNormas:    (slug: string) => `/public/${slug}/normas`,
+    publicPortalVereadores:(slug: string) => `/public/${slug}/vereadores`,
+    publicPortalVereador:  (slug: string, id: string) => `/public/${slug}/vereadores/${id}`,
+    publicPortalMesaDiretora:(slug: string) => `/public/${slug}/mesa-diretora`,
+    publicPortalComissoes: (slug: string) => `/public/${slug}/comissoes`,
+    publicPortalComissao:  (slug: string, id: string) => `/public/${slug}/comissoes/${id}`,
+    publicPortalTransmissao:(slug: string) => `/public/${slug}/transmissao`,
+
+    // ── Público (legado — preferir publicPortal*) ─────────────────────────
+    publicAgenda:       '/legislative/agenda-legislativa/public',
     publicNormas:       '/normas/public',
 } as const;
