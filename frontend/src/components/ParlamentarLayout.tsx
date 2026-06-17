@@ -5,12 +5,14 @@ import { Button } from 'primereact/button';
 import { useAuth } from '../contexts/AuthContext';
 import { PARLAMENTAR_NAV_ITEMS, type NavItemDef } from '../app/navigation';
 import { AppFeedbackProvider } from '../hooks/useAppToast';
+import { isParlamentarianUser } from '../types/auth';
 
 export function ParlamentarLayout() {
     const { user, logout } = useAuth();
     const { pathname } = useLocation();
-    // "Perfil" começa expandido por padrão
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Perfil']));
+
+    const parlUser = user && isParlamentarianUser(user) ? user : null;
 
     function toggleGroup(label: string) {
         setExpandedGroups((prev) => {
@@ -32,7 +34,7 @@ export function ParlamentarLayout() {
                 <div key={item.label}>
                     <button
                         type="button"
-                        className={`parlamentar-nav-item w-full text-left flex items-center justify-between`}
+                        className="parlamentar-nav-item w-full text-left flex items-center justify-between"
                         onClick={() => toggleGroup(item.label)}
                         aria-expanded={isExpanded}
                     >
@@ -77,16 +79,26 @@ export function ParlamentarLayout() {
             <div className="parlamentar-layout">
                 <header className="parlamentar-header">
                     <div className="parlamentar-identity">
-                        {user?.photoUrl ? (
-                            <Avatar image={user.photoUrl} size="large" shape="circle" />
+                        {parlUser?.photoUrl ? (
+                            <Avatar image={parlUser.photoUrl} size="large" shape="circle" />
                         ) : (
-                            <Avatar icon="pi pi-user" size="large" shape="circle" />
+                            <Avatar
+                                label={
+                                    parlUser?.parliamentaryName?.charAt(0).toUpperCase() ?? '?'
+                                }
+                                size="large"
+                                shape="circle"
+                            />
                         )}
                         <div>
                             <span className="parlamentar-name">
-                                {user?.parliamentaryName ?? user?.name}
+                                {parlUser?.parliamentaryName ?? 'Parlamentar'}
                             </span>
-                            <span className="parlamentar-role">Parlamentar</span>
+                            {parlUser?.name && (
+                                <span className="parlamentar-role block text-sm opacity-70">
+                                    {parlUser.name}
+                                </span>
+                            )}
                         </div>
                     </div>
                     <Button

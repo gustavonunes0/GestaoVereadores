@@ -2,6 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { ROUTES } from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import { isParlamentarianUser } from '../types/auth';
 
 export function ParlamentarRoute() {
     const { user, isLoading } = useAuth();
@@ -15,6 +16,6 @@ export function ParlamentarRoute() {
     }
 
     if (!user) return <Navigate to={ROUTES.login} replace />;
-    if (user.role !== 'PARLIAMENTARIAN') return <Navigate to={ROUTES.dashboard} replace />;
+    if (!isParlamentarianUser(user)) return <Navigate to={ROUTES.dashboard} replace />;
     return <Outlet />;
 }

@@ -2,13 +2,13 @@ import { ParliamentarianWithRelations } from '../../domain/repositories/parliame
 
 export type ParliamentarianHttp = {
     id: string;
-    tenantUserId: string;
     parliamentaryName: string;
     officeNumber?: string;
     photoUrl?: string;
     biography?: string;
     status: string;
-    user: {
+    hasAccess: boolean;
+    user?: {
         id: string;
         firstName: string;
         lastName: string;
@@ -21,6 +21,21 @@ export type ParliamentarianHttp = {
         flagUrl?: string;
     };
     activeMandatesCount?: number;
+    activeMandate?: {
+        id: string;
+        status: string;
+    };
+    stats?: {
+        authoredMattersCount: number;
+        coauthoredMattersCount: number;
+        committeeMembersCount: number;
+        sessionVotesCount: number;
+    };
+    committees?: Array<{
+        id: string;
+        name: string;
+        acronym?: string;
+    }>;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -30,10 +45,10 @@ export class ParliamentarianViewModel {
         const p = data.entity.toPrimitives();
         return {
             id: p.id,
-            tenantUserId: p.tenantUserId,
             parliamentaryName: p.parliamentaryName,
             status: p.status,
-            user: data.user,
+            hasAccess: !!data.user,
+            ...(data.user ? { user: data.user } : {}),
             ...(p.officeNumber ? { officeNumber: p.officeNumber } : {}),
             ...(p.photoUrl ? { photoUrl: p.photoUrl } : {}),
             ...(p.biography ? { biography: p.biography } : {}),
@@ -51,6 +66,17 @@ export class ParliamentarianViewModel {
                 : {}),
             ...(data.activeMandatesCount !== undefined
                 ? { activeMandatesCount: data.activeMandatesCount }
+                : {}),
+            ...(data.activeMandate ? { activeMandate: data.activeMandate } : {}),
+            ...(data.stats ? { stats: data.stats } : {}),
+            ...(data.committees
+                ? {
+                      committees: data.committees.map((c) => ({
+                          id: c.id,
+                          name: c.name,
+                          ...(c.acronym ? { acronym: c.acronym } : {}),
+                      })),
+                  }
                 : {}),
             createdAt: p.createdAt,
             updatedAt: p.updatedAt,

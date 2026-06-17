@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
-import { Tag } from 'primereact/tag';
 import { apiList } from '../api/client';
 import { API_PATHS } from '../api/paths';
 import {
@@ -14,8 +13,11 @@ import { DataTableLayout } from '../components/common/DataTableLayout';
 import { DeleteDialog } from '../components/common/DeleteDialog';
 import { FiltroLayout } from '../components/common/FiltroLayout';
 import { PageHeader } from '../components/PageHeader';
+import { ParlamentarComissoesDialog } from '../components/parlamentares/ParlamentarComissoesDialog';
 import { ParlamentarCreateDialog } from '../components/parlamentares/ParlamentarCreateDialog';
 import { ParlamentarEditDialog } from '../components/parlamentares/ParlamentarEditDialog';
+import { ParlamentarListCard } from '../components/parlamentares/ParlamentarListCard';
+import { ParlamentarMandatosDialog } from '../components/parlamentares/ParlamentarMandatosDialog';
 import { Dropdown } from '../components/ui';
 import { useAppToast } from '../hooks/useAppToast';
 import { usePermissions } from '../hooks/usePermissions';
@@ -28,17 +30,6 @@ const STATUS_OPTIONS = [
     { label: 'Ativo', value: 'ACTIVE' },
     { label: 'Inativo', value: 'INACTIVE' },
 ];
-
-const STATUS_LABEL: Record<string, string> = {
-    ACTIVE: 'Ativo',
-    INACTIVE: 'Inativo',
-};
-
-type StatusSeverity = 'success' | 'secondary' | 'danger' | 'info' | 'warning';
-const STATUS_SEVERITY: Record<string, StatusSeverity> = {
-    ACTIVE: 'success',
-    INACTIVE: 'secondary',
-};
 
 const EMPTY_FILTROS = { search: '', politicalPartyId: '', status: '' };
 
@@ -58,6 +49,8 @@ export function ParlamentaresPage() {
     const [dialogCriar, setDialogCriar] = useState(false);
     const [dialogEditar, setDialogEditar] = useState<Parliamentarian | null>(null);
     const [dialogDeletar, setDialogDeletar] = useState<Parliamentarian | null>(null);
+    const [dialogMandatos, setDialogMandatos] = useState<Parliamentarian | null>(null);
+    const [dialogComissoes, setDialogComissoes] = useState<Parliamentarian | null>(null);
 
     const buscar = useCallback(async () => {
         setLoading(true);
@@ -101,48 +94,16 @@ export function ParlamentaresPage() {
     }
 
     const columns = (
-        <>
-            <Column
-                header="Nome parlamentar"
-                body={(row: Parliamentarian) => (
-                    <span className="font-semibold">{row.parliamentaryName}</span>
-                )}
-                style={{ minWidth: '12rem' }}
-            />
-            <Column
-                header="Usuário"
-                body={(row: Parliamentarian) =>
-                    `${row.user.firstName} ${row.user.lastName}`
-                }
-                style={{ width: '12rem' }}
-            />
-            <Column
-                header="Partido"
-                body={(row: Parliamentarian) =>
-                    row.politicalParty ? (
-                        <Tag value={row.politicalParty.acronym} severity="secondary" />
-                    ) : (
-                        <span className="text-muted">—</span>
-                    )
-                }
-                style={{ width: '7rem' }}
-            />
-            <Column
-                header="Gabinete"
-                body={(row: Parliamentarian) => row.officeNumber ?? '—'}
-                style={{ width: '8rem' }}
-            />
-            <Column
-                header="Status"
-                body={(row: Parliamentarian) => (
-                    <Tag
-                        value={STATUS_LABEL[row.status] ?? row.status}
-                        severity={STATUS_SEVERITY[row.status] ?? 'secondary'}
-                    />
-                )}
-                style={{ width: '6rem' }}
-            />
-        </>
+        <Column
+            header="Parlamentar"
+            body={(row: Parliamentarian) => (
+                <ParlamentarListCard
+                    row={row}
+                    onVerMandatos={setDialogMandatos}
+                    onVerComissoes={setDialogComissoes}
+                />
+            )}
+        />
     );
 
     return (
@@ -152,59 +113,59 @@ export function ParlamentaresPage() {
                 title="Parlamentares"
                 subtitle="Vereadores e deputados vinculados ao tenant."
                 actions={
-                    (
+                    canEdit ? (
                         <Button
                             label="Novo Parlamentar"
                             icon="pi pi-plus"
                             onClick={() => setDialogCriar(true)}
                         />
-                    ) 
+                    ) : undefined
                 }
             />
 
             <section aria-label="Filtros de pesquisa" className="pt-4">
                 <FiltroLayout onBuscar={aplicarFiltros} onLimpar={limparFiltros} loading={loading}>
-                <div className="sigl-filtro-campo">
-                    <label htmlFor="pf-search">Nome / busca</label>
-                    <InputText
-                        id="pf-search"
-                        value={filtros.search}
-                        onChange={(e) => setFiltros((f) => ({ ...f, search: e.target.value }))}
-                        placeholder="Nome parlamentar"
-                    />
-                </div>
-                <div className="sigl-filtro-campo">
-                    <label htmlFor="pf-partido">Partido</label>
-                    <Dropdown
-                        id="pf-partido"
-                        value={filtros.politicalPartyId}
-                        options={partidoOptions.map((p) => ({ label: p.label, value: p.id }))}
-                        onChange={(v) => setFiltros((f) => ({ ...f, politicalPartyId: String(v) }))}
-                    />
-                </div>
-                <div className="sigl-filtro-campo">
-                    <label htmlFor="pf-status">Status</label>
-                    <Dropdown
-                        id="pf-status"
-                        value={filtros.status}
-                        options={STATUS_OPTIONS}
-                        onChange={(v) => setFiltros((f) => ({ ...f, status: String(v) }))}
-                    />
-                </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="pf-search">Nome / busca</label>
+                        <InputText
+                            id="pf-search"
+                            value={filtros.search}
+                            onChange={(e) => setFiltros((f) => ({ ...f, search: e.target.value }))}
+                            placeholder="Nome parlamentar"
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="pf-partido">Partido</label>
+                        <Dropdown
+                            id="pf-partido"
+                            value={filtros.politicalPartyId}
+                            options={partidoOptions.map((p) => ({ label: p.label, value: p.id }))}
+                            onChange={(v) => setFiltros((f) => ({ ...f, politicalPartyId: String(v) }))}
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="pf-status">Status</label>
+                        <Dropdown
+                            id="pf-status"
+                            value={filtros.status}
+                            options={STATUS_OPTIONS}
+                            onChange={(v) => setFiltros((f) => ({ ...f, status: String(v) }))}
+                        />
+                    </div>
                 </FiltroLayout>
             </section>
 
-            <section aria-label="Lista de parlamentares">
+            <section aria-label="Lista de parlamentares" className="parlamentares-table-section">
                 <DataTableLayout<Parliamentarian>
-                items={items}
-                total={total}
-                loading={loading}
-                page={page}
-                onPageChange={setPage}
-                columns={columns}
-                canWrite={canEdit}
-                onEditar={canEdit ? setDialogEditar : undefined}
-                onDeletar={canDelete ? setDialogDeletar : undefined}
+                    items={items}
+                    total={total}
+                    loading={loading}
+                    page={page}
+                    onPageChange={setPage}
+                    columns={columns}
+                    canWrite={canEdit}
+                    onEditar={canEdit ? setDialogEditar : undefined}
+                    onDeletar={canDelete ? setDialogDeletar : undefined}
                 />
             </section>
 
@@ -231,6 +192,20 @@ export function ParlamentaresPage() {
                         setDialogDeletar(null);
                         void buscar();
                     }}
+                />
+            )}
+            {dialogMandatos && (
+                <ParlamentarMandatosDialog
+                    parliamentarianId={dialogMandatos.id}
+                    parliamentaryName={dialogMandatos.parliamentaryName}
+                    onClose={() => setDialogMandatos(null)}
+                />
+            )}
+            {dialogComissoes && (
+                <ParlamentarComissoesDialog
+                    parliamentarianId={dialogComissoes.id}
+                    parliamentaryName={dialogComissoes.parliamentaryName}
+                    onClose={() => setDialogComissoes(null)}
                 />
             )}
         </main>

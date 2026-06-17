@@ -41,7 +41,7 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
             setParlamentares(
                 r.data.map((p) => ({
                     id: p.id,
-                    nome: p.parliamentaryName || `${p.user.firstName} ${p.user.lastName}`.trim(),
+                    nome: p.parliamentaryName || (p.user ? `${p.user.firstName} ${p.user.lastName}`.trim() : ''),
                 })),
             ),
         );

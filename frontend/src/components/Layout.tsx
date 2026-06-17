@@ -3,6 +3,7 @@ import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Tag } from 'primereact/tag';
 import { useAuth } from '../contexts/AuthContext';
+import { isStaffUser } from '../types/auth';
 import { LegislaturaProvider } from '../contexts/LegislaturaContext';
 import { AppFeedbackProvider } from '../hooks/useAppToast';
 import { SiglButton } from './common/SiglButton';
@@ -72,7 +73,13 @@ export function Layout() {
                                 <span className="topbar-user-info">
                                     <strong>{user?.name}</strong>
                                     <Tag
-                                        value={user?.role ?? '—'}
+                                        value={
+                                            user && isStaffUser(user)
+                                                ? user.role
+                                                : user?.sessionType === 'parliamentarian'
+                                                  ? 'Parlamentar'
+                                                  : '—'
+                                        }
                                         severity="secondary"
                                         className="topbar-role-tag"
                                     />

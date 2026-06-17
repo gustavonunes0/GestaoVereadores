@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card } from 'primereact/card';
 import { Tag } from 'primereact/tag';
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
 import { PageHeader } from '../../components/PageHeader';
 import { MODULE_ICONS } from '../../app/navigation';
@@ -17,22 +17,22 @@ interface Filiacao {
 }
 
 export function ParlamentarFiliacaoPage() {
-    const { user } = useAuth();
+    const { parliamentarianId } = usePermissions();
     const { showApiError } = useAppToast();
     const [filiacoes, setFiliacoes] = useState<Filiacao[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user?.parliamentarianId) { setLoading(false); return; }
+        if (!parliamentarianId) { setLoading(false); return; }
         parlamentaresApi
-            .getById(user.parliamentarianId)
+            .getById(parliamentarianId)
             .then((p) => {
                 const f = (p as unknown as { filiacoes?: Filiacao[] }).filiacoes;
                 setFiliacoes(f ?? []);
             })
             .catch(showApiError)
             .finally(() => setLoading(false));
-    }, [user?.parliamentarianId, showApiError]);
+    }, [parliamentarianId, showApiError]);
 
     if (loading) {
         return (

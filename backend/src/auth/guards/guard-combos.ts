@@ -1,5 +1,12 @@
 import { TenantUserRole } from '@prisma/client';
 
+/** Sessão de parlamentar para endpoints que aceitam apenas parlamentares logados. */
+export const PARLIAMENTARIAN_SESSION = 'PARLIAMENTARIAN_SESSION' as const;
+
+export type TenantRoleRequirement =
+    | TenantUserRole
+    | typeof PARLIAMENTARIAN_SESSION;
+
 export const STAFF_AND_ABOVE: TenantUserRole[] = [
     TenantUserRole.ADMIN_STAFF,
     TenantUserRole.STAFF,
@@ -7,12 +14,11 @@ export const STAFF_AND_ABOVE: TenantUserRole[] = [
 
 export const ADMIN_ONLY: TenantUserRole[] = [TenantUserRole.ADMIN_STAFF];
 
-export const ALL_AUTHENTICATED: TenantUserRole[] = [
-    TenantUserRole.ADMIN_STAFF,
-    TenantUserRole.STAFF,
-    TenantUserRole.PARLIAMENTARIAN,
+export const PARLIAMENTARIAN_ONLY: TenantRoleRequirement[] = [
+    PARLIAMENTARIAN_SESSION,
 ];
 
-export const PARLIAMENTARIAN_ONLY: TenantUserRole[] = [
-    TenantUserRole.PARLIAMENTARIAN,
+export const ALL_AUTHENTICATED: TenantRoleRequirement[] = [
+    ...STAFF_AND_ABOVE,
+    PARLIAMENTARIAN_SESSION,
 ];

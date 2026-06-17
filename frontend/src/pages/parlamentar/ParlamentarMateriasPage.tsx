@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Column } from 'primereact/column';
-import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import { materiasApi, type Materia } from '../../api/legislative/materias.api';
 import { MateriaVerDialog } from '../../components/materias/MateriaVerDialog';
 import { MateriaStatusBadge } from '../../components/materias/MateriaStatusBadge';
@@ -10,7 +10,7 @@ import { MODULE_ICONS } from '../../app/navigation';
 import { useAppToast } from '../../hooks/useAppToast';
 
 export function ParlamentarMateriasPage() {
-    const { user } = useAuth();
+    const { parliamentarianId } = usePermissions();
     const { showApiError } = useAppToast();
     const [items, setItems] = useState<Materia[]>([]);
     const [total, setTotal] = useState(0);
@@ -19,7 +19,7 @@ export function ParlamentarMateriasPage() {
     const [dialogVer, setDialogVer] = useState<Materia | null>(null);
 
     const buscar = useCallback(async () => {
-        if (!user?.parliamentarianId) return;
+        if (!parliamentarianId) return;
         setLoading(true);
         try {
             const res = await materiasApi.list({
@@ -33,7 +33,7 @@ export function ParlamentarMateriasPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, user?.parliamentarianId, showApiError]);
+    }, [page, parliamentarianId, showApiError]);
 
     useEffect(() => {
         void buscar();

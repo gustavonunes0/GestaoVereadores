@@ -6,8 +6,16 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RoleUsuario, TenantUserRole } from '@prisma/client';
+import {
+    PARLIAMENTARIAN_SESSION,
+    TenantRoleRequirement,
+} from '../../auth/guards/guard-combos';
 import { TENANT_ROLES_KEY } from '../decorators/tenant-roles.decorator';
-import { AuthenticatedUser } from '../types/authenticated-request';
+import {
+    AuthenticatedUser,
+    isParlamentarianUser,
+    isStaffUser,
+} from '../types/authenticated-request';
 
 const SIGL_WRITE_ROLES: RoleUsuario[] = [
     RoleUsuario.MASTER,
@@ -20,7 +28,7 @@ export class TenantRolesGuard implements CanActivate {
     constructor(private readonly reflector: Reflector) {}
 
     canActivate(context: ExecutionContext): boolean {
-        const required = this.reflector.getAllAndOverride<TenantUserRole[]>(
+        const required = this.reflector.getAllAndOverride<TenantRoleRequirement[]>(
             TENANT_ROLES_KEY,
             [context.getHandler(), context.getClass()],
         );
@@ -40,10 +48,23 @@ export class TenantRolesGuard implements CanActivate {
             throw new ForbiddenException('Você não tem permissão para realizar esta ação');
         }
 
-        if (!user.tenantUserRole || !required.includes(user.tenantUserRole)) {
+        const allowsParliamentarian = required.includes(PARLIAMENTARIAN_SESSION);
+        const staffRoles = required.filter(
+            (r): r is TenantUserRole => r !== PARLIAMENTARIAN_SESSION,
+        );
+
+        if (isParlamentarianUser(user)) {
+            if (allowsParliamentarian) return true;
             throw new ForbiddenException('Você não tem permissão para realizar esta ação');
         }
 
-        return true;
+        if (isStaffUser(user)) {
+            if (staffRoles.length && staffRoles.includes(user.role)) {
+                return true;
+            }
+            throw new ForbiddenException('Você não tem permissão para realizar esta ação');
+        }
+
+        throw new ForbiddenException('Você não tem permissão para realizar esta ação');
     }
 }

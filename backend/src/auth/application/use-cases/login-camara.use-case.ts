@@ -14,7 +14,10 @@ import {
     TenantResolutionRequiredDomainError,
     TenantResolutionService,
 } from '../../domain/services/tenant-resolution.service';
-import { JwtPayload } from '../../domain/types/jwt-payload.type';
+import {
+    ParlamentarianJwtPayload,
+    StaffJwtPayload,
+} from '../../domain/types/jwt-payload.type';
 import { LoginCamaraDto } from '../dto/login-camara.dto';
 import {
     InvalidCredentialsError,
@@ -75,7 +78,6 @@ export class LoginCamaraUseCase {
             throw error;
         }
 
-        let tenantUser;
         let tenant;
 
         if (dto.tenantId || dto.tenantCnpj) {
@@ -95,14 +97,90 @@ export class LoginCamaraUseCase {
                 throw error;
             }
 
-            tenantUser = await this.camaraAuth.findActiveTenantUser(
+            // Verificar ParlamentarianUser primeiro
+            const parlUser = await this.camaraAuth.findActiveParlamentarianUser(
                 user.id,
                 tenant.id,
             );
-        } else {
-            tenantUser = await this.camaraAuth.findFirstActiveTenantUser(
+            if (parlUser) {
+                await this.camaraAuth.touchParlamentarianLastAccess(parlUser.id);
+                const payload: ParlamentarianJwtPayload = {
+                    sessionType: 'parliamentarian',
+                    sub: user.id,
+                    tenantId: parlUser.tenantId,
+                    parliamentarianUserId: parlUser.id,
+                    parliamentarianId: parlUser.parliamentarianId,
+                    parliamentaryName: parlUser.parliamentaryName,
+                };
+                return AuthSessionViewModel.camaraParliamentarian(
+                    user,
+                    tenant,
+                    parlUser,
+                    this.tokenIssuer.sign(payload),
+                );
+            }
+
+            // Fallback para TenantUser (servidor)
+            const tenantUser = await this.camaraAuth.findActiveTenantUser(
                 user.id,
+                tenant.id,
             );
+
+            try {
+                this.domainService.assertActiveTenantMembership(tenantUser);
+            } catch (error) {
+                if (error instanceof TenantMembershipRequiredDomainError) {
+                    throw new TenantMembershipRequiredError();
+                }
+                throw error;
+            }
+
+            await this.camaraAuth.touchLastAccess(tenantUser.id);
+            const payload: StaffJwtPayload = {
+                sessionType: 'staff',
+                sub: user.id,
+                tenantId: tenantUser.tenantId,
+                tenantUserId: tenantUser.id,
+                role: tenantUser.role,
+            };
+            return AuthSessionViewModel.camaraStaff(
+                user,
+                tenant,
+                tenantUser,
+                this.tokenIssuer.sign(payload),
+            );
+        } else {
+            // Sem tenantId: buscar primeiro ParlamentarianUser disponível
+            const parlUser =
+                await this.camaraAuth.findFirstActiveParlamentarianUser(user.id);
+
+            if (parlUser) {
+                const parlTenant = await this.tenants.findActiveById(
+                    parlUser.tenantId,
+                );
+                if (!parlTenant) {
+                    throw new InvalidTenantError('Câmara inválida ou inativa');
+                }
+                await this.camaraAuth.touchParlamentarianLastAccess(parlUser.id);
+                const payload: ParlamentarianJwtPayload = {
+                    sessionType: 'parliamentarian',
+                    sub: user.id,
+                    tenantId: parlUser.tenantId,
+                    parliamentarianUserId: parlUser.id,
+                    parliamentarianId: parlUser.parliamentarianId,
+                    parliamentaryName: parlUser.parliamentaryName,
+                };
+                return AuthSessionViewModel.camaraParliamentarian(
+                    user,
+                    parlTenant,
+                    parlUser,
+                    this.tokenIssuer.sign(payload),
+                );
+            }
+
+            // Fallback para TenantUser
+            const tenantUser =
+                await this.camaraAuth.findFirstActiveTenantUser(user.id);
 
             if (!tenantUser) {
                 throw new TenantMembershipRequiredError();
@@ -112,37 +190,30 @@ export class LoginCamaraUseCase {
             if (!tenant) {
                 throw new InvalidTenantError('Câmara inválida ou inativa');
             }
-        }
 
-        try {
-            this.domainService.assertActiveTenantMembership(tenantUser);
-        } catch (error) {
-            if (error instanceof TenantMembershipRequiredDomainError) {
-                throw new TenantMembershipRequiredError();
+            try {
+                this.domainService.assertActiveTenantMembership(tenantUser);
+            } catch (error) {
+                if (error instanceof TenantMembershipRequiredDomainError) {
+                    throw new TenantMembershipRequiredError();
+                }
+                throw error;
             }
-            throw error;
+
+            await this.camaraAuth.touchLastAccess(tenantUser.id);
+            const payload: StaffJwtPayload = {
+                sessionType: 'staff',
+                sub: user.id,
+                tenantId: tenantUser.tenantId,
+                tenantUserId: tenantUser.id,
+                role: tenantUser.role,
+            };
+            return AuthSessionViewModel.camaraStaff(
+                user,
+                tenant,
+                tenantUser,
+                this.tokenIssuer.sign(payload),
+            );
         }
-
-        const payload: JwtPayload = {
-            sub: user.id,
-            authType: 'camara',
-            tid: tenant.id,
-            tenantUserId: tenantUser.id,
-            tenantUserRole: tenantUser.role,
-            parliamentarianId: tenantUser.parliamentarianId,
-            isTenantAdmin: tenantUser.isTenantAdmin,
-            isTenantStaff: tenantUser.isTenantStaff,
-            isParliamentarian: tenantUser.isParliamentarian,
-            isAdmin: tenantUser.isTenantAdmin,
-        };
-
-        await this.camaraAuth.touchLastAccess(tenantUser.id);
-
-        return AuthSessionViewModel.camara(
-            user,
-            tenant,
-            tenantUser,
-            this.tokenIssuer.sign(payload),
-        );
     }
 }

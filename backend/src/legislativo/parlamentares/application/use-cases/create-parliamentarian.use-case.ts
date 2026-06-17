@@ -3,18 +3,17 @@ import { PasswordHasher } from '../../../../identidade/users/application/contrac
 import { PASSWORD_HASHER, USER_REPOSITORY } from '../../../../identidade/users/users.tokens';
 import { UserEntity } from '../../../../identidade/users/domain/user.entity';
 import { UserRepository } from '../../../../identidade/users/domain/user.repository';
-import {
-    TenantUserEntity,
-    TenantUserStatus,
-} from '../../../../identidade/tenant-users/domain/entities/tenant-user.entity';
-import { TenantUserRepository } from '../../../../identidade/tenant-users/domain/repositories/tenant-user.repository';
-import { TENANT_USER_REPOSITORY } from '../../../../identidade/tenant-users/tenant-users.tokens';
 import { POLITICAL_PARTY_REPOSITORY } from '../../../partidos-politicos/partidos-politicos.tokens';
 import { PoliticalPartyRepository } from '../../../partidos-politicos/domain/repositories/political-party.repository';
+import { ParlamentarianUserEntity } from '../../domain/entities/parlamentarian-user.entity';
 import { ParliamentarianRepository } from '../../domain/repositories/parliamentarian.repository';
+import { ParlamentarianUserRepository } from '../../domain/repositories/parlamentarian-user.repository';
 import { ParliamentarianDomainService } from '../../domain/services/parliamentarian-domain.service';
 import { ParliamentarianProvisioningDomainService } from '../../domain/services/parliamentarian-provisioning.domain-service';
-import { PARLIAMENTARIAN_REPOSITORY } from '../../parlamentares.tokens';
+import {
+    PARLIAMENTARIAN_REPOSITORY,
+    PARLIAMENTARIAN_USER_REPOSITORY,
+} from '../../parlamentares.tokens';
 import { CreateParliamentarianDto } from '../dto/create-parliamentarian.dto';
 import {
     ParliamentarianCpfAlreadyInUseError,
@@ -32,8 +31,8 @@ export class CreateParliamentarianUseCase {
     constructor(
         @Inject(PARLIAMENTARIAN_REPOSITORY)
         private readonly parliamentarianRepository: ParliamentarianRepository,
-        @Inject(TENANT_USER_REPOSITORY)
-        private readonly tenantUserRepository: TenantUserRepository,
+        @Inject(PARLIAMENTARIAN_USER_REPOSITORY)
+        private readonly parlamentarianUserRepository: ParlamentarianUserRepository,
         @Inject(USER_REPOSITORY)
         private readonly userRepository: UserRepository,
         @Inject(PASSWORD_HASHER)
@@ -50,37 +49,60 @@ export class CreateParliamentarianUseCase {
             );
         }
 
-        const tenantUserId = await this.provisionTenantUser(tenantId, dto);
-
-        const payload = {
+        const saved = await this.parliamentarianRepository.create({
             tenantId,
-            tenantUserId,
             politicalPartyId: dto.politicalPartyId ?? null,
             parliamentaryName: dto.parliamentaryName.trim(),
             officeNumber: dto.officeNumber ?? null,
             photoUrl: dto.photoUrl ?? null,
             biography: dto.biography ?? null,
-        };
+        });
 
-        const saved = await this.parliamentarianRepository.create(payload);
+        if (dto.cpf && dto.password) {
+            await this.provisionAccess(
+                tenantId,
+                saved.entity.toPrimitives().id,
+                dto.cpf,
+                dto.password,
+                dto.parliamentaryName,
+            );
+            const withAccess = await this.parliamentarianRepository.findById(
+                tenantId,
+                saved.entity.toPrimitives().id,
+            );
+            if (withAccess) {
+                return ParliamentarianViewModel.toHttp(withAccess);
+            }
+        }
+
         return ParliamentarianViewModel.toHttp(saved);
     }
 
-    private async provisionTenantUser(
+    private async provisionAccess(
         tenantId: string,
-        dto: CreateParliamentarianDto,
-    ): Promise<string> {
-        const normalizedCpf = dto.cpf.replace(/\D/g, '');
+        parliamentarianId: string,
+        cpf: string,
+        password: string,
+        parliamentaryName: string,
+    ) {
+        const normalizedCpf = cpf.replace(/\D/g, '');
         const existingUser =
             await this.userRepository.findByCpf(normalizedCpf);
         if (existingUser) {
             throw new ParliamentarianCpfAlreadyInUseError();
         }
 
+        const existingAccess =
+            await this.parlamentarianUserRepository.findActiveByParliamentarianId(
+                tenantId,
+                parliamentarianId,
+            );
+        this.domainService.assertNoDuplicateAccess(!!existingAccess);
+
         const { firstName, lastName } =
-            this.provisioningService.splitParliamentaryName(dto.parliamentaryName);
+            this.provisioningService.splitParliamentaryName(parliamentaryName);
         const email = this.provisioningService.buildEmailFromCpf(normalizedCpf);
-        const passwordHash = await this.passwordHasher.hash(dto.password);
+        const passwordHash = await this.passwordHasher.hash(password);
 
         const user = UserEntity.create({
             firstName,
@@ -91,16 +113,12 @@ export class CreateParliamentarianUseCase {
         });
         const createdUser = await this.userRepository.create(user);
 
-        const tenantUser = TenantUserEntity.create({
+        const parlUser = ParlamentarianUserEntity.create({
             tenantId,
+            parliamentarianId,
             userId: createdUser.id,
-            isParliamentarian: true,
-            status: TenantUserStatus.ACTIVE,
         });
-        const createdTenantUser =
-            await this.tenantUserRepository.create(tenantUser);
-
-        return createdTenantUser.id;
+        await this.parlamentarianUserRepository.create(parlUser);
     }
 
     private async assertPoliticalPartyForParliamentarian(

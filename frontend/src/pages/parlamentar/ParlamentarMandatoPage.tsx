@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card } from 'primereact/card';
 import { Tag } from 'primereact/tag';
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
 import { PageHeader } from '../../components/PageHeader';
 import { MODULE_ICONS } from '../../app/navigation';
@@ -19,19 +19,19 @@ interface Mandato {
 }
 
 export function ParlamentarMandatoPage() {
-    const { user } = useAuth();
+    const { parliamentarianId } = usePermissions();
     const { showApiError } = useAppToast();
     const [mandatos, setMandatos] = useState<Mandato[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user?.parliamentarianId) { setLoading(false); return; }
+        if (!parliamentarianId) { setLoading(false); return; }
         parlamentaresApi
-            .getMandatos(user.parliamentarianId)
+            .getMandatos(parliamentarianId)
             .then((res) => setMandatos(res as unknown as Mandato[]))
             .catch(showApiError)
             .finally(() => setLoading(false));
-    }, [user?.parliamentarianId, showApiError]);
+    }, [parliamentarianId, showApiError]);
 
     if (loading) {
         return (

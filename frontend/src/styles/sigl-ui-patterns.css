@@ -1106,3 +1106,108 @@ textarea:not(:disabled):focus {
     background: transparent;
     padding: var(--layout-gap-md) var(--layout-gap-lg);
 }
+
+/* Parlamentares — listagem estilo SIGL */
+.parlamentares-table-section .p-datatable .p-datatable-tbody > tr > td {
+    vertical-align: top;
+    padding: var(--layout-gap-md) var(--layout-gap-lg);
+}
+
+.parlamentares-table-section .p-datatable .p-datatable-thead > tr > th {
+    padding: var(--layout-gap-sm) var(--layout-gap-lg);
+}
+
+.parlamentar-list-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--layout-gap-md);
+    min-width: 0;
+}
+
+.parlamentar-list-card__header {
+    display: flex;
+    gap: var(--layout-gap-md);
+    align-items: flex-start;
+}
+
+.parlamentar-list-card__identity {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.parlamentar-list-card__name-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.parlamentar-list-card__name {
+    font-size: 1rem;
+    color: var(--text-900);
+}
+
+.parlamentar-list-card__email,
+.parlamentar-list-card__party,
+.parlamentar-list-card__meta,
+.parlamentar-list-card__bio {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--text-600);
+    line-height: 1.45;
+}
+
+.parlamentar-list-card__bio {
+    color: var(--text-500);
+    font-style: italic;
+}
+
+.parlamentar-list-card__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--layout-gap-md);
+    padding: var(--layout-gap-sm) 0;
+    border-top: 1px solid var(--surface-border);
+    border-bottom: 1px solid var(--surface-border);
+}
+
+@media (max-width: 768px) {
+    .parlamentar-list-card__stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+.parlamentar-list-card__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.parlamentar-list-card__stat-label {
+    font-size: 0.75rem;
+    color: var(--text-500);
+    line-height: 1.35;
+}
+
+.parlamentar-list-card__stat strong {
+    font-size: 1.125rem;
+    color: var(--text-800);
+    font-weight: var(--font-weight-semibold);
+}
+
+.parlamentar-list-card__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--layout-gap-lg);
+}
+
+.parlamentar-list-card__link-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    color: var(--text-700);
+}

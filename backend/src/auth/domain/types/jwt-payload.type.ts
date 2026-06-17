@@ -1,18 +1,28 @@
-import { RoleUsuario, TenantUserRole } from '@prisma/client';
-import { AuthType } from '../../../common/types/authenticated-request';
+import { TenantUserRole } from '@prisma/client';
 
-export type JwtPayload = {
+export interface StaffJwtPayload {
+    sessionType: 'staff';
     sub: string;
-    authType: AuthType;
-    tid?: string;
-    tenantUserId?: string;
-    tenantUserRole?: TenantUserRole;
-    parliamentarianId?: string;
-    isTenantAdmin?: boolean;
-    isTenantStaff?: boolean;
-    isParliamentarian?: boolean;
-    /** @deprecated use isTenantAdmin */
-    isAdmin?: boolean;
-    username?: string;
-    role?: RoleUsuario;
-};
+    tenantId: string;
+    tenantUserId: string;
+    role: TenantUserRole;
+}
+
+export interface ParlamentarianJwtPayload {
+    sessionType: 'parliamentarian';
+    sub: string;
+    tenantId: string;
+    parliamentarianUserId: string;
+    parliamentarianId: string;
+    parliamentaryName: string;
+}
+
+export type JwtPayload = StaffJwtPayload | ParlamentarianJwtPayload;
+
+export function isStaffSession(p: JwtPayload): p is StaffJwtPayload {
+    return p.sessionType === 'staff';
+}
+
+export function isParlamentarianSession(p: JwtPayload): p is ParlamentarianJwtPayload {
+    return p.sessionType === 'parliamentarian';
+}

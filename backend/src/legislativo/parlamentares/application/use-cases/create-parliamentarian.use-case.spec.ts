@@ -1,4 +1,3 @@
-import { TenantUserEntity, TenantUserStatus } from '../../../../identidade/tenant-users/domain/entities/tenant-user.entity';
 import { UserEntity } from '../../../../identidade/users/domain/user.entity';
 import { CreateParliamentarianUseCase } from './create-parliamentarian.use-case';
 import {
@@ -10,8 +9,8 @@ import { PoliticalPartyEntity } from '../../../partidos-politicos/domain/entitie
 import {
     buildParliamentarianRepositoryMock,
     buildParliamentarianWithRelations,
+    buildParlamentarianUserRepositoryMock,
     buildPoliticalPartyRepositoryMock,
-    buildTenantUserRepositoryMock,
 } from './__tests__/parliamentarian-test.helpers';
 
 function buildUserRepositoryMock() {
@@ -37,7 +36,7 @@ describe('CreateParliamentarianUseCase', () => {
 
     function buildUseCase(overrides: {
         parliamentarianRepository?: ReturnType<typeof buildParliamentarianRepositoryMock>;
-        tenantUserRepository?: ReturnType<typeof buildTenantUserRepositoryMock>;
+        parlamentarianUserRepository?: ReturnType<typeof buildParlamentarianUserRepositoryMock>;
         politicalPartyRepository?: ReturnType<typeof buildPoliticalPartyRepositoryMock>;
         userRepository?: ReturnType<typeof buildUserRepositoryMock>;
         passwordHasher?: ReturnType<typeof buildPasswordHasherMock>;
@@ -45,8 +44,9 @@ describe('CreateParliamentarianUseCase', () => {
         const parliamentarianRepository =
             overrides.parliamentarianRepository ??
             buildParliamentarianRepositoryMock();
-        const tenantUserRepository =
-            overrides.tenantUserRepository ?? buildTenantUserRepositoryMock();
+        const parlamentarianUserRepository =
+            overrides.parlamentarianUserRepository ??
+            buildParlamentarianUserRepositoryMock();
         const politicalPartyRepository =
             overrides.politicalPartyRepository ??
             buildPoliticalPartyRepositoryMock();
@@ -55,53 +55,46 @@ describe('CreateParliamentarianUseCase', () => {
         const passwordHasher =
             overrides.passwordHasher ?? buildPasswordHasherMock();
 
-        parliamentarianRepository.create.mockResolvedValue(
-            buildParliamentarianWithRelations(),
-        );
+        const created = buildParliamentarianWithRelations();
+        parliamentarianRepository.create.mockResolvedValue(created);
+        parliamentarianRepository.findById.mockResolvedValue(created);
         userRepository.create.mockImplementation(async (user: UserEntity) => user);
-        tenantUserRepository.create.mockImplementation(
-            async (tenantUser: TenantUserEntity) => tenantUser,
+        parlamentarianUserRepository.create.mockImplementation(
+            async (entity) => entity,
         );
 
         return {
             useCase: new CreateParliamentarianUseCase(
                 parliamentarianRepository as never,
-                tenantUserRepository as never,
+                parlamentarianUserRepository as never,
                 userRepository as never,
                 passwordHasher as never,
                 politicalPartyRepository as never,
             ),
             parliamentarianRepository,
-            tenantUserRepository,
+            parlamentarianUserRepository,
             userRepository,
             passwordHasher,
             politicalPartyRepository,
         };
     }
 
-    it('cria parlamentar provisionando User e TenantUser com CPF e senha informados', async () => {
-        const { useCase, tenantUserRepository, userRepository, parliamentarianRepository, passwordHasher } =
+    it('cria parlamentar e provisiona ParlamentarianUser com CPF e senha', async () => {
+        const { useCase, parlamentarianUserRepository, userRepository, parliamentarianRepository, passwordHasher } =
             buildUseCase();
 
         const result = await useCase.execute('tenant-1', dto);
         const createdUser = userRepository.create.mock.calls[0][0] as UserEntity;
-        const createdTenantUser = tenantUserRepository.create.mock
-            .calls[0][0] as TenantUserEntity;
 
         expect(passwordHasher.hash).toHaveBeenCalledWith('senha-segura');
         expect(createdUser.cpf).toBe('52998224725');
         expect(userRepository.create).toHaveBeenCalledTimes(1);
-        expect(tenantUserRepository.create).toHaveBeenCalledTimes(1);
-        expect(createdTenantUser.tenantId).toBe('tenant-1');
-        expect(createdTenantUser.isParliamentarian).toBe(true);
-        expect(createdTenantUser.toPrimitives().status).toBe(
-            TenantUserStatus.ACTIVE,
-        );
+        expect(parlamentarianUserRepository.create).toHaveBeenCalledTimes(1);
         expect(parliamentarianRepository.create).toHaveBeenCalledWith(
-            expect.objectContaining({ tenantUserId: createdTenantUser.id }),
+            expect.objectContaining({ parliamentaryName: 'Vereador Teste' }),
         );
-        expect(result.tenantUserId).toBe('tu-1');
-        expect(result.user.email).toBe('joao@camara.local');
+        expect(result.hasAccess).toBe(true);
+        expect(result.user?.email).toBe('parlamentar.52998224725@interno.sigl.local');
     });
 
     it('bloqueia CPF já cadastrado', async () => {

@@ -7,10 +7,9 @@ import { apiFormData } from '../../api/client';
 import { API_PATHS } from '../../api/paths';
 import { autoresExternosApi } from '../../api/autores-externos.api';
 import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
-import { useAuth } from '../../contexts/AuthContext';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { usePermissions } from '../../hooks/usePermissions';
 import { DatePicker, Dropdown, FileUpload, mapDropdownOptions } from '../../components/ui';
 import type { LookupOption } from '../../api/dominios.api';
 import type { Materia } from '../../api/legislative/materias.api';
@@ -26,8 +25,7 @@ function isTipoAutorParlamentar(nome: string): boolean {
 }
 
 export function MateriaCreateDialog({ onClose, onSaved }: Props) {
-    const { user } = useAuth();
-    const { canVotar } = usePermissions();
+    const { canVotar, parliamentarianId } = usePermissions();
     const { showSuccess, showApiError } = useAppToast();
     const { tiposMateria, tiposAutor } = useDominios();
 
@@ -56,7 +54,7 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
             setParlamentares(
                 r.data.map((p) => ({
                     id: p.id,
-                    nome: p.parliamentaryName || `${p.user.firstName} ${p.user.lastName}`.trim(),
+                    nome: p.parliamentaryName || (p.user ? `${p.user.firstName} ${p.user.lastName}`.trim() : p.parliamentaryName),
                 })),
             ),
         );
@@ -66,10 +64,10 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
     }, []);
 
     useEffect(() => {
-        if (canVotar && user?.parliamentarianId) {
-            setAutorParlamentarianId(user.parliamentarianId);
+        if (canVotar && parliamentarianId) {
+            setAutorParlamentarianId(parliamentarianId);
         }
-    }, [canVotar, user]);
+    }, [canVotar, parliamentarianId]);
 
     useEffect(() => {
         setAutorParlamentarianId('');
@@ -80,7 +78,7 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
     const autorOptions = isParlamentarType ? parlamentares : autoresExternos;
     const autorValue = isParlamentarType ? autorParlamentarianId : autorExternoId;
     const setAutorValue = isParlamentarType ? setAutorParlamentarianId : setAutorExternoId;
-    const isAutorDisabled = canVotar && isParlamentarType && !!user?.parliamentarianId;
+    const isAutorDisabled = canVotar && isParlamentarType && !!parliamentarianId;
 
     async function handleSubmit() {
         if (!tipoId || !tipoAutorId || !autorValue || !ementa.trim()) {

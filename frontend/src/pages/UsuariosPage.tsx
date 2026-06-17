@@ -4,7 +4,7 @@ import { MODULE_ICONS } from '../app/navigation';
 import { api, apiList } from '../api/client';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
-import type { TenantUserRole } from '../types/auth';
+type TenantUserRole = 'ADMIN_STAFF' | 'STAFF';
 
 type SiglRole = 'MASTER' | 'ADMIN' | 'OPERADOR';
 type AnyRole = TenantUserRole | SiglRole | string;
@@ -23,7 +23,6 @@ const SIGL_ROLES: SiglRole[] = ['MASTER', 'ADMIN', 'OPERADOR'];
 const TENANT_ROLE_OPTIONS: { label: string; value: TenantUserRole }[] = [
     { label: 'Administrador (Admin Staff)', value: 'ADMIN_STAFF' },
     { label: 'Operador (Staff)', value: 'STAFF' },
-    { label: 'Parlamentar', value: 'PARLIAMENTARIAN' },
 ];
 
 const SIGL_ROLE_LABELS: Record<SiglRole, string> = {
@@ -35,7 +34,6 @@ const SIGL_ROLE_LABELS: Record<SiglRole, string> = {
 const TENANT_ROLE_LABELS: Record<TenantUserRole, string> = {
     ADMIN_STAFF: 'Administrador',
     STAFF: 'Operador',
-    PARLIAMENTARIAN: 'Parlamentar',
 };
 
 function getRoleLabel(role: AnyRole): string {
@@ -62,7 +60,7 @@ export function UsuariosPage() {
             setItems(r.data);
             setMeta({ total: r.meta.total, page: r.meta.page, totalPages: r.meta.totalPages });
             const hasTenantRole = r.data.some(
-                (u) => u.role === 'ADMIN_STAFF' || u.role === 'STAFF' || u.role === 'PARLIAMENTARIAN',
+                (u) => u.role === 'ADMIN_STAFF' || u.role === 'STAFF',
             );
             setIsTenantMode(hasTenantRole);
         });

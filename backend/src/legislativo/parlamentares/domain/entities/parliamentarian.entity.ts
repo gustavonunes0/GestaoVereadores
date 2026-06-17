@@ -4,7 +4,6 @@ import { ParliamentarianStatus } from '../enums/parliamentarian-status.enum';
 type ParliamentarianProps = {
     id: string;
     tenantId: string;
-    tenantUserId: string;
     politicalPartyId: string | null;
     parliamentaryName: string;
     officeNumber: string | null;
@@ -21,7 +20,6 @@ export type ParliamentarianPrimitives = ParliamentarianProps;
 
 export type CreateParliamentarianParams = {
     tenantId: string;
-    tenantUserId: string;
     politicalPartyId?: string | null;
     parliamentaryName: string;
     officeNumber?: string | null;
@@ -46,7 +44,6 @@ export class ParliamentarianEntity {
         const entity = new ParliamentarianEntity({
             id: randomUUID(),
             tenantId: params.tenantId,
-            tenantUserId: params.tenantUserId,
             politicalPartyId: params.politicalPartyId ?? null,
             parliamentaryName: params.parliamentaryName.trim(),
             officeNumber: ParliamentarianEntity.normalizeOptional(
@@ -82,10 +79,6 @@ export class ParliamentarianEntity {
 
     get tenantId() {
         return this.props.tenantId;
-    }
-
-    get tenantUserId() {
-        return this.props.tenantUserId;
     }
 
     get politicalPartyId() {
@@ -133,9 +126,6 @@ export class ParliamentarianEntity {
     }
 
     private validate() {
-        if (!this.props.tenantUserId?.trim()) {
-            throw new Error('Vínculo TenantUser é obrigatório para parlamentar');
-        }
         if (!this.props.parliamentaryName) {
             throw new Error('Nome parlamentar é obrigatório');
         }

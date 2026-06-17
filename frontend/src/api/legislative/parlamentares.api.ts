@@ -3,13 +3,13 @@ import { API_PATHS } from '../paths';
 
 export type Parliamentarian = {
     id: string;
-    tenantUserId: string;
     parliamentaryName: string;
     officeNumber?: string;
     photoUrl?: string;
     biography?: string;
     status: string;
-    user: {
+    hasAccess: boolean;
+    user?: {
         id: string;
         firstName: string;
         lastName: string;
@@ -22,6 +22,47 @@ export type Parliamentarian = {
         flagUrl?: string;
     };
     activeMandatesCount?: number;
+    activeMandate?: { id: string; status: string };
+    stats?: {
+        authoredMattersCount: number;
+        coauthoredMattersCount: number;
+        committeeMembersCount: number;
+        sessionVotesCount: number;
+    };
+    committees?: Array<{ id: string; name: string; acronym?: string }>;
+};
+
+export type ParliamentarianProfile = {
+    id: string;
+    parliamentaryName: string;
+    officeNumber?: string;
+    photoUrl?: string;
+    biography?: string;
+    status: string;
+    nomeCompleto?: string;
+    email?: string;
+    partido?: {
+        id: string;
+        nome: string;
+        sigla: string;
+        flagUrl?: string;
+    };
+    mandatos: Array<{
+        id: string;
+        legislaturaNumero: number;
+        startedAt: string;
+        endedAt?: string;
+        status: string;
+    }>;
+    comissoes: Array<{
+        id: string;
+        nome: string;
+        sigla?: string;
+    }>;
+    frentes: Array<{
+        id: string;
+        nome: string;
+    }>;
 };
 
 export type CreateParliamentarianInput = {
@@ -34,7 +75,9 @@ export type CreateParliamentarianInput = {
     biography?: string;
 };
 
-export type UpdateParliamentarianInput = Partial<CreateParliamentarianInput>;
+export type UpdateParliamentarianInput = Partial<
+    Omit<CreateParliamentarianInput, 'cpf' | 'password'>
+>;
 
 export const parlamentaresApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
@@ -42,6 +85,9 @@ export const parlamentaresApi = {
 
     getById: (id: string) =>
         api<Parliamentarian>(`${API_PATHS.parlamentares}/${id}`),
+
+    meuPerfil: () =>
+        api<ParliamentarianProfile>(`${API_PATHS.parlamentares}/me/perfil`),
 
     create: (body: CreateParliamentarianInput) =>
         api<Parliamentarian>(API_PATHS.parlamentares, {

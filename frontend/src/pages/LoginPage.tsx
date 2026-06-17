@@ -7,7 +7,7 @@ import { ROUTES } from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { FooterBar } from '../components/FooterBar';
-import type { AuthUser } from '../types/auth';
+import { isParlamentarianUser } from '../types/auth';
 
 export function LoginPage() {
     const { user, login } = useAuth();
@@ -21,7 +21,7 @@ export function LoginPage() {
     if (user) {
         return (
             <Navigate
-                to={user.role === 'PARLIAMENTARIAN' ? ROUTES.parlamentar.perfil : ROUTES.dashboard}
+                to={isParlamentarianUser(user) ? ROUTES.parlamentar.perfil : ROUTES.dashboard}
                 replace
             />
         );
@@ -45,11 +45,13 @@ export function LoginPage() {
         try {
             await login(cpf, password);
             const stored = localStorage.getItem('user');
-            const u: AuthUser | null = stored ? (JSON.parse(stored) as AuthUser) : null;
-            if (u?.role === 'PARLIAMENTARIAN') {
-                navigate(ROUTES.parlamentar.perfil, { replace: true });
-            } else {
-                navigate(ROUTES.dashboard, { replace: true });
+            if (stored) {
+                const parsed = JSON.parse(stored) as { sessionType?: string };
+                if (parsed.sessionType === 'parliamentarian') {
+                    navigate(ROUTES.parlamentar.perfil, { replace: true });
+                } else {
+                    navigate(ROUTES.dashboard, { replace: true });
+                }
             }
         } catch (err) {
             setError(getApiErrorMessage(err) || 'CPF ou senha incorretos.');

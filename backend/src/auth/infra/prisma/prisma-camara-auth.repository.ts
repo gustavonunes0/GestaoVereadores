@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { TenantStatus, TenantUserStatus } from '@prisma/client';
+import { ParlamentarianUserStatus, TenantStatus, TenantUserStatus } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CamaraUserEntity } from '../../domain/entities/camara-user.entity';
-import { TenantUserAccessEntity } from '../../domain/entities/tenant-access.entity';
+import {
+    ParlamentarianUserAccessEntity,
+    TenantUserAccessEntity,
+} from '../../domain/entities/tenant-access.entity';
 import {
     CamaraAuthRepository,
     CamaraUserProfile,
@@ -26,6 +29,7 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
             firstName: row.firstName,
             lastName: row.lastName,
             passwordHash: row.passwordHash,
+            cpf: row.cpf,
         });
     }
 
@@ -41,6 +45,7 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
             firstName: row.firstName,
             lastName: row.lastName,
             passwordHash: row.passwordHash,
+            cpf: row.cpf,
         });
     }
 
@@ -52,6 +57,7 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
                 email: true,
                 firstName: true,
                 lastName: true,
+                cpf: true,
             },
         });
     }
@@ -67,9 +73,6 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
                 isRemoved: false,
                 status: TenantUserStatus.ACTIVE,
             },
-            include: {
-                parliamentarian: { select: { id: true } },
-            },
         });
         if (!row) return null;
 
@@ -78,10 +81,6 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
             tenantId: row.tenantId,
             userId: row.userId,
             role: row.role,
-            parliamentarianId: row.parliamentarian?.id,
-            isTenantAdmin: row.isTenantAdmin,
-            isTenantStaff: row.isTenantStaff,
-            isParliamentarian: row.isParliamentarian,
         });
     }
 
@@ -95,9 +94,6 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
                 status: TenantUserStatus.ACTIVE,
                 tenant: { isRemoved: false, status: TenantStatus.ACTIVE },
             },
-            include: {
-                parliamentarian: { select: { id: true } },
-            },
             orderBy: { createdAt: 'asc' },
         });
         if (!row) return null;
@@ -107,16 +103,71 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
             tenantId: row.tenantId,
             userId: row.userId,
             role: row.role,
-            parliamentarianId: row.parliamentarian?.id,
-            isTenantAdmin: row.isTenantAdmin,
-            isTenantStaff: row.isTenantStaff,
-            isParliamentarian: row.isParliamentarian,
+        });
+    }
+
+    async findActiveParlamentarianUser(
+        userId: string,
+        tenantId: string,
+    ): Promise<ParlamentarianUserAccessEntity | null> {
+        const row = await this.prisma.parlamentarianUser.findFirst({
+            where: {
+                userId,
+                tenantId,
+                isRemoved: false,
+                status: ParlamentarianUserStatus.ACTIVE,
+            },
+            include: {
+                parliamentarian: { select: { parliamentaryName: true } },
+            },
+        });
+        if (!row) return null;
+
+        return new ParlamentarianUserAccessEntity({
+            id: row.id,
+            tenantId: row.tenantId,
+            userId: row.userId,
+            parliamentarianId: row.parliamentarianId,
+            parliamentaryName: row.parliamentarian.parliamentaryName,
+        });
+    }
+
+    async findFirstActiveParlamentarianUser(
+        userId: string,
+    ): Promise<ParlamentarianUserAccessEntity | null> {
+        const row = await this.prisma.parlamentarianUser.findFirst({
+            where: {
+                userId,
+                isRemoved: false,
+                status: ParlamentarianUserStatus.ACTIVE,
+                tenant: { isRemoved: false, status: TenantStatus.ACTIVE },
+            },
+            include: {
+                parliamentarian: { select: { parliamentaryName: true } },
+            },
+            orderBy: { createdAt: 'asc' },
+        });
+        if (!row) return null;
+
+        return new ParlamentarianUserAccessEntity({
+            id: row.id,
+            tenantId: row.tenantId,
+            userId: row.userId,
+            parliamentarianId: row.parliamentarianId,
+            parliamentaryName: row.parliamentarian.parliamentaryName,
         });
     }
 
     async touchLastAccess(tenantUserId: string): Promise<void> {
         await this.prisma.tenantUser.update({
             where: { id: tenantUserId },
+            data: { lastAccessAt: new Date() },
+        });
+    }
+
+    async touchParlamentarianLastAccess(parliamentarianUserId: string): Promise<void> {
+        await this.prisma.parlamentarianUser.update({
+            where: { id: parliamentarianUserId },
             data: { lastAccessAt: new Date() },
         });
     }

@@ -11,7 +11,8 @@ import {
     type UpdateParliamentarianInput,
 } from '../../api/legislative/parlamentares.api';
 import { useAppToast } from '../../hooks/useAppToast';
-import { Dropdown } from '../../components/ui';
+import { Dropdown, FileUpload } from '../../components/ui';
+import { fileToDataUrl, MAX_PHOTO_BYTES } from '../../utils/fileToDataUrl';
 
 type Partido = { id: string; name: string; acronym: string };
 type PartidoOption = { id: string; label: string };
@@ -31,6 +32,8 @@ export function ParlamentarEditDialog({ parlamentar, onClose, onSaved }: Props) 
         politicalPartyId: parlamentar.politicalParty?.id ?? '',
         officeNumber: parlamentar.officeNumber ?? '',
         biography: parlamentar.biography ?? '',
+        photoFile: null as File | null,
+        photoUrl: parlamentar.photoUrl ?? '',
     });
 
     useEffect(() => {
@@ -50,11 +53,22 @@ export function ParlamentarEditDialog({ parlamentar, onClose, onSaved }: Props) 
         if (!form.parliamentaryName.trim()) return;
         setLoading(true);
         try {
+            let photoUrl: string | undefined = form.photoUrl.trim() || undefined;
+            if (form.photoFile) {
+                if (form.photoFile.size > MAX_PHOTO_BYTES) {
+                    showApiError(new Error('A foto deve ter no máximo 2 MB.'));
+                    setLoading(false);
+                    return;
+                }
+                photoUrl = await fileToDataUrl(form.photoFile);
+            }
+
             const body: UpdateParliamentarianInput = {
                 parliamentaryName: form.parliamentaryName.trim(),
                 politicalPartyId: form.politicalPartyId || undefined,
                 officeNumber: form.officeNumber.trim() || undefined,
                 biography: form.biography.trim() || undefined,
+                ...(photoUrl !== undefined ? { photoUrl } : {}),
             };
             await parlamentaresApi.update(parlamentar.id, body);
             showSuccess('Parlamentar atualizado com sucesso.');
@@ -120,6 +134,30 @@ export function ParlamentarEditDialog({ parlamentar, onClose, onSaved }: Props) 
                                 placeholder="Selecione o partido"
                             />
                         </div>
+                    </div>
+                </div>
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Foto</span>
+                    <FileUpload
+                        id="pe-foto"
+                        label="Foto do parlamentar"
+                        accept="image/jpeg,image/png,image/webp"
+                        value={form.photoFile ?? (form.photoUrl || null)}
+                        onChange={(file) =>
+                            patch({ photoFile: file, photoUrl: file ? '' : form.photoUrl })
+                        }
+                    />
+                    <div className="sigl-filtro-campo mt-2">
+                        <label htmlFor="pe-foto-url">Ou informe URL da foto</label>
+                        <InputText
+                            id="pe-foto-url"
+                            value={form.photoUrl}
+                            onChange={(e) =>
+                                patch({ photoUrl: e.target.value, photoFile: null })
+                            }
+                            placeholder="https://..."
+                            disabled={!!form.photoFile}
+                        />
                     </div>
                 </div>
                 <div className="sigl-dialog-secao">

@@ -11,8 +11,9 @@ import {
     type CreateParliamentarianInput,
 } from '../../api/legislative/parlamentares.api';
 import { useAppToast } from '../../hooks/useAppToast';
-import { Dropdown } from '../../components/ui';
+import { Dropdown, FileUpload } from '../../components/ui';
 import { isValidCpf, normalizeCpf } from '../../utils/cpf';
+import { fileToDataUrl, MAX_PHOTO_BYTES } from '../../utils/fileToDataUrl';
 
 type Partido = { id: string; name: string; acronym: string };
 type PartidoOption = { id: string; label: string };
@@ -30,6 +31,8 @@ const emptyForm = () => ({
     politicalPartyId: '',
     officeNumber: '',
     biography: '',
+    photoFile: null as File | null,
+    photoUrl: '',
 });
 
 export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
@@ -73,6 +76,18 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
         if (!canSubmit) return;
         setLoading(true);
         try {
+            let photoUrl: string | undefined;
+            if (form.photoFile) {
+                if (form.photoFile.size > MAX_PHOTO_BYTES) {
+                    showApiError(new Error('A foto deve ter no máximo 2 MB.'));
+                    setLoading(false);
+                    return;
+                }
+                photoUrl = await fileToDataUrl(form.photoFile);
+            } else if (form.photoUrl.trim()) {
+                photoUrl = form.photoUrl.trim();
+            }
+
             const body: CreateParliamentarianInput = {
                 cpf: normalizeCpf(form.cpf),
                 password: form.password,
@@ -80,6 +95,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                 politicalPartyId: form.politicalPartyId || undefined,
                 officeNumber: form.officeNumber.trim() || undefined,
                 biography: form.biography.trim() || undefined,
+                ...(photoUrl ? { photoUrl } : {}),
             };
             await parlamentaresApi.create(body);
             showSuccess('Parlamentar cadastrado com sucesso.');
@@ -213,6 +229,31 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                                 placeholder="Selecione o partido"
                             />
                         </div>
+                    </div>
+                </div>
+
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">Foto</span>
+                    <FileUpload
+                        id="pc-foto"
+                        label="Foto do parlamentar"
+                        accept="image/jpeg,image/png,image/webp"
+                        value={form.photoFile ?? (form.photoUrl || null)}
+                        onChange={(file) =>
+                            patch({ photoFile: file, photoUrl: file ? '' : form.photoUrl })
+                        }
+                    />
+                    <div className="sigl-filtro-campo mt-2">
+                        <label htmlFor="pc-foto-url">Ou informe URL da foto</label>
+                        <InputText
+                            id="pc-foto-url"
+                            value={form.photoUrl}
+                            onChange={(e) =>
+                                patch({ photoUrl: e.target.value, photoFile: null })
+                            }
+                            placeholder="https://..."
+                            disabled={!!form.photoFile}
+                        />
                     </div>
                 </div>
 

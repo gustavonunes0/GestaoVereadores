@@ -1,6 +1,8 @@
-import { Inject, Injectable, UnprocessableEntityException } from '@nestjs/common';
-import { TenantUserRole } from '@prisma/client';
-import { AuthenticatedUser } from '../../../../common/types/authenticated-request';
+import { Inject, Injectable } from '@nestjs/common';
+import {
+    AuthenticatedUser,
+    isParlamentarianUser,
+} from '../../../../common/types/authenticated-request';
 import { MateriaRepository } from '../../domain/repositories/materia.repository';
 import { LegislativeMatterDomainService } from '../../domain/services/legislative-matter-domain.service';
 import { MATERIA_REPOSITORY } from '../../materias.tokens';
@@ -31,12 +33,7 @@ export class CreateMateriaUseCase {
 
         let authorParliamentarianId = dto.authorParliamentarianId;
 
-        if (user && user.tenantUserRole === TenantUserRole.PARLIAMENTARIAN) {
-            if (!user.parliamentarianId) {
-                throw new UnprocessableEntityException(
-                    'Usuário parlamentar sem parlamentarianId no token — contate o administrador',
-                );
-            }
+        if (user && isParlamentarianUser(user)) {
             authorParliamentarianId = user.parliamentarianId;
         }
 

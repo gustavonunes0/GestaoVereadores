@@ -1,5 +1,5 @@
 /**
- * Provisionamento de identidade (User + TenantUser) ao cadastrar parlamentar.
+ * Provisionamento de User ao conceder acesso de parlamentar.
  */
 export class ParliamentarianProvisioningDomainService {
     splitParliamentaryName(parliamentaryName: string): {

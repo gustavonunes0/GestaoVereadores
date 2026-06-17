@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { authApi } from '../api/client';
 import type { AuthUser } from '../types/auth';
+import { isParlamentarianUser, isStaffUser } from '../types/auth';
 
 interface AuthContextValue {
     user: AuthUser | null;
@@ -19,6 +20,9 @@ interface AuthContextValue {
     isAdminStaff: boolean;
     isStaff: boolean;
     isParliamentarian: boolean;
+    canEdit: boolean;
+    canWrite: boolean;
+    canVotar: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -27,7 +31,9 @@ function loadStoredUser(): AuthUser | null {
     const raw = localStorage.getItem('user');
     if (!raw) return null;
     try {
-        return JSON.parse(raw) as AuthUser;
+        const parsed = JSON.parse(raw) as AuthUser;
+        if (!parsed.sessionType) return null;
+        return parsed;
     } catch {
         return null;
     }
@@ -72,19 +78,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     }, []);
 
-    const value = useMemo<AuthContextValue>(
-        () => ({
+    const value = useMemo<AuthContextValue>(() => {
+        const isAdminStaff =
+            !!user && isStaffUser(user) && user.role === 'ADMIN_STAFF';
+        const isStaff = !!user && isStaffUser(user) && user.role === 'STAFF';
+        const isParliamentarian = !!user && isParlamentarianUser(user);
+
+        return {
             user,
             isAuthenticated: !!user,
             isLoading,
             login,
             logout,
-            isAdminStaff: user?.role === 'ADMIN_STAFF',
-            isStaff: user?.role === 'STAFF',
-            isParliamentarian: user?.role === 'PARLIAMENTARIAN',
-        }),
-        [user, isLoading, login, logout],
-    );
+            isAdminStaff,
+            isStaff,
+            isParliamentarian,
+            canEdit: isAdminStaff,
+            canWrite: isAdminStaff || isStaff,
+            canVotar: isParliamentarian,
+        };
+    }, [user, isLoading, login, logout]);
 
     return (
         <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
