@@ -77,7 +77,7 @@ export function DashboardPage() {
     }, []);
 
     return (
-        <main>
+        <main className="dashboard-page">
             <PageHeader
                 icon={MODULE_ICONS.dashboard}
                 title="Painel legislativo"

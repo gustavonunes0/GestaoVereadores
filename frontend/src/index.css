@@ -938,8 +938,26 @@ h2.module-title.tab-panel-title {
 .pipeline {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-    gap: var(--layout-gap-md);
+    gap: var(--layout-gap-lg);
     margin: 0;
+}
+
+.dashboard-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.dashboard-page .pipeline {
+    gap: var(--layout-gap-lg);
+}
+
+.dashboard-page .stats-row {
+    gap: var(--layout-gap-lg);
+}
+
+.dashboard-page .dashboard-grid {
+    gap: var(--layout-gap-xl);
 }
 
 .pipeline-step {
