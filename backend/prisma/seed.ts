@@ -168,6 +168,53 @@ async function main() {
     });
     console.log('Usuário ADMIN_STAFF: CPF 99999999999 / senha admin123');
 
+    // --- Gustavo — ADMIN_STAFF (CPF real) ---
+    const gustavoPasswordHash = await hashPasswordScrypt('admin123');
+    const gustavoUser = await prisma.user.upsert({
+        where: { cpf: '07415914309' },
+        update: {
+            firstName: 'Gustavo',
+            lastName: 'Nunes',
+            email: 'gustavo@camara.teste',
+            passwordHash: gustavoPasswordHash,
+            isRemoved: false,
+        },
+        create: {
+            firstName: 'Gustavo',
+            lastName: 'Nunes',
+            cpf: '07415914309',
+            email: 'gustavo@camara.teste',
+            passwordHash: gustavoPasswordHash,
+        },
+    });
+
+    await prisma.tenantUser.upsert({
+        where: {
+            tenantId_userId: {
+                tenantId: DEMO_TENANT_ID,
+                userId: gustavoUser.id,
+            },
+        },
+        update: {
+            role: TenantUserRole.ADMIN_STAFF,
+            isTenantAdmin: true,
+            isTenantStaff: true,
+            isParliamentarian: false,
+            status: TenantUserStatus.ACTIVE,
+            isRemoved: false,
+        },
+        create: {
+            tenantId: DEMO_TENANT_ID,
+            userId: gustavoUser.id,
+            role: TenantUserRole.ADMIN_STAFF,
+            isTenantAdmin: true,
+            isTenantStaff: true,
+            isParliamentarian: false,
+            status: TenantUserStatus.ACTIVE,
+        },
+    });
+    console.log('Usuário ADMIN_STAFF: CPF 07415914309 / senha admin123 (Gustavo)');
+
     // --- Ano ---
     const ano2026 = await prisma.ano.upsert({
         where: { valor: 2026 },
