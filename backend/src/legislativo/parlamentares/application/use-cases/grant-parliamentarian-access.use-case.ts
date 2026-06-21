@@ -4,6 +4,7 @@ import { PASSWORD_HASHER, USER_REPOSITORY } from '../../../../identidade/users/u
 import { UserEntity } from '../../../../identidade/users/domain/user.entity';
 import { UserRepository } from '../../../../identidade/users/domain/user.repository';
 import { ParlamentarianUserEntity } from '../../domain/entities/parlamentarian-user.entity';
+import { ParlamentarianUserStatus } from '../../domain/enums/parlamentarian-user-status.enum';
 import { ParliamentarianRepository } from '../../domain/repositories/parliamentarian.repository';
 import { ParlamentarianUserRepository } from '../../domain/repositories/parlamentarian-user.repository';
 import { ParliamentarianDomainService } from '../../domain/services/parliamentarian-domain.service';
@@ -59,6 +60,30 @@ export class GrantParliamentarianAccessUseCase {
         try {
             this.domainService.assertNoDuplicateAccess(!!existing);
         } catch {
+            const inactive =
+                await this.parlamentarianUserRepository.findLatestByParliamentarianId(
+                    tenantId,
+                    parliamentarianId,
+                );
+            if (
+                inactive &&
+                inactive.toPrimitives().status === ParlamentarianUserStatus.INACTIVE &&
+                dto.userId &&
+                inactive.toPrimitives().userId === dto.userId
+            ) {
+                await this.parlamentarianUserRepository.activate(
+                    tenantId,
+                    parliamentarianId,
+                );
+                const updated = await this.parliamentarianRepository.findById(
+                    tenantId,
+                    parliamentarianId,
+                );
+                if (!updated) {
+                    throw new ParliamentarianNotFoundError();
+                }
+                return updated;
+            }
             throw new ParliamentarianAccessAlreadyGrantedError();
         }
 

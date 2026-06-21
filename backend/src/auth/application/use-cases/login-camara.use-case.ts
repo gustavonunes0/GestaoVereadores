@@ -64,6 +64,11 @@ export class LoginCamaraUseCase {
             throw error;
         }
 
+        const isPartnerOnly = await this.camaraAuth.isPartnerOnlyUser(user.id);
+        if (isPartnerOnly) {
+            throw new InvalidCredentialsError();
+        }
+
         const valid = await this.passwordHasher.compare(
             dto.password,
             user.passwordHash,

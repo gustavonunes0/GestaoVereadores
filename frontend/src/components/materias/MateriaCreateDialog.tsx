@@ -1,130 +1,141 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
+import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
+import { Tooltip } from 'primereact/tooltip';
+import { AutoComplete } from 'primereact/autocomplete';
+import { Dropdown as PrDropdown } from 'primereact/dropdown';
 import { materiasApi } from '../../api/legislative/materias.api';
-import { usePermissions } from '../../hooks/usePermissions';
+import { parlamentaresApi, type Parliamentarian } from '../../api/legislative/parlamentares.api';
+import { tenantPartnersApi, type TenantPartner } from '../../api/tenant-partners.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { DatePicker, Dropdown, FileUpload, MultiSelect, mapDropdownOptions } from '../../components/ui';
-import type { LookupOption } from '../../api/dominios.api';
+import { DatePicker, FileUpload } from '../../components/ui';
+import type { TipoAutorMateria, StatusMateria } from '../../types/materias';
+import { TIPOS_AUTOR_OPTIONS } from '../../types/materias';
+
+const ANO_ATUAL = new Date().getFullYear();
 
 interface Props {
     onClose: () => void;
     onSaved: () => void;
 }
 
-/** idNegocio global do tipo Parlamentar (seed). */
-export const PARLAMENTAR_TIPO_AUTOR_ID_NEGOCIO = '1';
-
-function findParlamentarTipoId(tiposAutor: LookupOption[]): string {
-    const match = tiposAutor.find(
-        (t) =>
-            t.codigo === PARLAMENTAR_TIPO_AUTOR_ID_NEGOCIO ||
-            t.nome.trim().toLowerCase() === 'parlamentar',
-    );
-    return match?.id ?? '';
-}
-
 export function MateriaCreateDialog({ onClose, onSaved }: Props) {
-    const { canVotar, parliamentarianId } = usePermissions();
-    const { showSuccess, showApiError } = useAppToast();
-    const { tiposMateria, tiposAutor } = useDominios();
-
-    const parlamentarTipoId = useMemo(
-        () => findParlamentarTipoId(tiposAutor),
-        [tiposAutor],
-    );
-
+    const { showSuccess, showApiError, showToast } = useAppToast();
+    const showWarning = (msg: string) => showToast('warn', 'Aviso', msg);
+    const { tiposMateria } = useDominios();
     const [saving, setSaving] = useState(false);
+
+    // Identificação
     const [tipoId, setTipoId] = useState('');
+    const [numero, setNumero] = useState('');
     const [dataProtocolo, setDataProtocolo] = useState<Date | null>(null);
-    const [tipoAutorId, setTipoAutorId] = useState('');
-    const [autorId, setAutorId] = useState('');
-    const [authorKind, setAuthorKind] = useState<'parliamentarian' | 'external' | null>(null);
-    const [coautorIds, setCoautorIds] = useState<string[]>([]);
-    const [relatorIds, setRelatorIds] = useState<string[]>([]);
+
+    // Autoria
+    const [tipoAutor, setTipoAutor] = useState<TipoAutorMateria | ''>('');
+
+    // PARLAMENTAR
+    const [parlSugestoes, setParlSugestoes] = useState<Parliamentarian[]>([]);
+    const [parlSelecionado, setParlSelecionado] = useState<Parliamentarian | null>(null);
+
+    // TENANT_PARTNER
+    const [partners, setPartners] = useState<TenantPartner[]>([]);
+    const [partnerSelecionado, setPartnerSelecionado] = useState<TenantPartner | null>(null);
+    const [partnerAutorLabel, setPartnerAutorLabel] = useState('');
+    const [partnerAutorId, setPartnerAutorId] = useState('');
+    const [loadingPartners, setLoadingPartners] = useState(false);
+
+    // EXECUTIVO / COMISSAO
+    const [autorTexto, setAutorTexto] = useState('');
+
+    // Conteúdo
     const [ementa, setEmenta] = useState('');
     const [justificativa, setJustificativa] = useState('');
     const [textoOriginal, setTextoOriginal] = useState<File | null>(null);
 
-    const [autorOptions, setAutorOptions] = useState<LookupOption[]>([]);
-    const [relatorOptions, setRelatorOptions] = useState<LookupOption[]>([]);
-    const [loadingAutores, setLoadingAutores] = useState(false);
-
-    const isParlamentarType = authorKind === 'parliamentarian';
-    const isAutorDisabled = canVotar && isParlamentarType && !!parliamentarianId;
+    const tipoSelecionado = tiposMateria.find((t) => t.id === tipoId);
 
     useEffect(() => {
-        if (!parlamentarTipoId) return;
-        void materiasApi.listOpcoesAutor(parlamentarTipoId).then((res) => {
-            setRelatorOptions(
-                res.options.map((o) => ({ id: o.id, nome: o.label })),
-            );
-        });
-    }, [parlamentarTipoId]);
+        if (tipoAutor !== 'TENANT_PARTNER') return;
+        setLoadingPartners(true);
+        tenantPartnersApi.list({ limit: 100 })
+            .then((r) => setPartners(r.data))
+            .catch(() => setPartners([]))
+            .finally(() => setLoadingPartners(false));
+    }, [tipoAutor]);
 
     useEffect(() => {
-        if (!tipoAutorId) {
-            setAutorOptions([]);
-            setAuthorKind(null);
+        setParlSelecionado(null);
+        setPartnerSelecionado(null);
+        setPartnerAutorLabel('');
+        setPartnerAutorId('');
+        setAutorTexto('');
+    }, [tipoAutor]);
+
+    const buscarParlamentar = async (query: string) => {
+        if (query.length < 2) { setParlSugestoes([]); return; }
+        try {
+            const res = await parlamentaresApi.list({ busca: query, limit: 20 });
+            setParlSugestoes(res.data);
+        } catch {
+            setParlSugestoes([]);
+        }
+    };
+
+    const handleSelectPartner = (partner: TenantPartner | null) => {
+        setPartnerSelecionado(partner);
+        if (!partner) { setPartnerAutorId(''); setPartnerAutorLabel(''); return; }
+        if (!partner.usuario && !partner.usuarioVinculado) {
+            showWarning('Esta instituição não possui usuário vinculado. Vincule em Câmara > Autores.');
+            setPartnerAutorId('');
+            setPartnerAutorLabel('');
             return;
         }
+        const usuarioNome = partner.usuario?.nome ?? partner.nome;
+        setPartnerAutorId(partner.id);
+        setPartnerAutorLabel(`${usuarioNome} (${partner.nome})`);
+    };
 
-        setLoadingAutores(true);
-        void materiasApi
-            .listOpcoesAutor(tipoAutorId)
-            .then((res) => {
-                setAuthorKind(res.kind);
-                setAutorOptions(
-                    res.options.map((o) => ({ id: o.id, nome: o.label })),
-                );
-            })
-            .catch(showApiError)
-            .finally(() => setLoadingAutores(false));
-    }, [tipoAutorId, showApiError]);
+    async function submit(statusMateria: StatusMateria) {
+        if (!tipoId) { showApiError(new Error('Selecione o tipo de matéria.')); return; }
+        if (!ementa.trim()) { showApiError(new Error('Ementa é obrigatória.')); return; }
+        if (!tipoAutor) { showApiError(new Error('Selecione o tipo de autor.')); return; }
 
-    useEffect(() => {
-        if (canVotar && parliamentarianId && isParlamentarType) {
-            setAutorId(parliamentarianId);
+        const body: Record<string, unknown> = {
+            tipoId,
+            ementa: ementa.trim(),
+            statusMateria,
+            ...(numero.trim() ? { numero: numero.trim() } : {}),
+            ...(dataProtocolo ? { dataProtocolo: dataProtocolo.toISOString() } : {}),
+            ...(justificativa.trim() ? { justificativa: justificativa.trim() } : {}),
+        };
+
+        if (tipoAutor === 'PARLAMENTAR') {
+            if (!parlSelecionado) { showApiError(new Error('Selecione o parlamentar autor.')); return; }
+            body.authorParliamentarianId = parlSelecionado.id;
+        } else if (tipoAutor === 'TENANT_PARTNER') {
+            if (!partnerAutorId) { showApiError(new Error('Selecione a instituição parceira.')); return; }
+            body.tenantPartnerId = partnerAutorId;
+        } else {
+            if (!autorTexto.trim()) { showApiError(new Error('Informe o nome do autor.')); return; }
+            body.autorNome = autorTexto.trim();
+            body.tipoAutor = tipoAutor;
         }
-    }, [canVotar, parliamentarianId, isParlamentarType]);
 
-    useEffect(() => {
-        setAutorId('');
-        setCoautorIds([]);
-    }, [tipoAutorId]);
-
-    async function handleSubmit() {
-        if (!tipoId || !tipoAutorId || !autorId || !ementa.trim()) {
-            showApiError(
-                new Error('Preencha os campos obrigatórios: Tipo, Tipo de Autor, Autor e Ementa.'),
-            );
-            return;
-        }
         setSaving(true);
         try {
-            const created = await materiasApi.create({
-                tipoId,
-                ementa: ementa.trim(),
-                ...(isParlamentarType
-                    ? { authorParliamentarianId: autorId }
-                    : { autorExternoId: autorId }),
-                ...(dataProtocolo
-                    ? { dataProtocolo: dataProtocolo.toISOString() }
-                    : {}),
-                ...(justificativa.trim()
-                    ? { justificativa: justificativa.trim() }
-                    : {}),
-                ...(coautorIds.length ? { coautorIds } : {}),
-                ...(relatorIds.length ? { relatoresIds: relatorIds } : {}),
-            });
-
+            const created = await materiasApi.create(body);
             if (textoOriginal) {
                 await materiasApi.uploadTextoOriginal(created.id, textoOriginal);
             }
-
-            showSuccess('Matéria criada com sucesso.');
+            const sigla = tipoSelecionado ? (tipoSelecionado as unknown as { sigla?: string; nome: string }).sigla ?? tipoSelecionado.nome : '';
+            const idStr = numero.trim() ? `${sigla} ${numero}/${ANO_ATUAL}` : tipoSelecionado?.nome ?? 'Matéria';
+            const msg = statusMateria === 'PROTOCOLADA'
+                ? `${idStr} protocolada com sucesso.`
+                : `${idStr} salva como rascunho.`;
+            showSuccess(msg);
             onSaved();
             onClose();
         } catch (err) {
@@ -134,43 +145,85 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
         }
     }
 
-    const coautorSelectOptions = isParlamentarType
-        ? autorOptions.filter((p) => p.id !== autorId)
-        : [];
+    const previewId = tipoSelecionado && numero.trim()
+        ? `${(tipoSelecionado as unknown as { sigla?: string; nome: string }).sigla ?? tipoSelecionado.nome} ${numero.trim()}/${ANO_ATUAL}`
+        : null;
 
     const footer = (
         <div className="flex justify-content-end gap-2">
             <Button label="Cancelar" severity="secondary" onClick={onClose} disabled={saving} />
-            <Button label="Salvar" icon="pi pi-check" loading={saving} onClick={() => void handleSubmit()} />
+            <Button
+                label="Salvar rascunho"
+                severity="secondary"
+                icon="pi pi-save"
+                loading={saving}
+                onClick={() => void submit('RASCUNHO')}
+            />
+            <Button
+                label="Protocolar"
+                icon="pi pi-send"
+                loading={saving}
+                onClick={() => void submit('PROTOCOLADA')}
+            />
         </div>
     );
 
     return (
         <Dialog
-            header="Nova Matéria"
+            header="Nova Matéria Legislativa"
             visible
             onHide={() => !saving && onClose()}
-            style={{ width: 'min(96vw, 700px)' }}
+            style={{ width: 'min(96vw, 720px)' }}
             footer={footer}
             modal
         >
             <div className="sigl-dialog-body">
+                {/* ── Seção 1: Identificação ── */}
                 <div className="sigl-dialog-secao">
                     <span className="sigl-dialog-secao-titulo">Identificação</span>
-                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                    <div className="sigl-dialog-grid sigl-dialog-grid-3">
                         <div className="sigl-filtro-campo">
-                            <label htmlFor="mat-tipo">Tipo de Matéria *</label>
-                            <Dropdown
-                                id="mat-tipo"
+                            <label htmlFor="mc-tipo">Tipo de Matéria *</label>
+                            <PrDropdown
+                                id="mc-tipo"
                                 value={tipoId}
-                                options={mapDropdownOptions(tiposMateria, 'nome', 'id')}
+                                options={tiposMateria.map((t) => ({ label: t.nome, value: t.id }))}
                                 placeholder="Selecione o tipo"
-                                onChange={(v) => setTipoId(String(v))}
+                                onChange={(e) => setTipoId(String(e.value))}
+                                filter
+                                className="w-full"
                             />
                         </div>
                         <div className="sigl-filtro-campo">
+                            <label htmlFor="mc-numero">
+                                Número *{' '}
+                                <i
+                                    id="mc-numero-tooltip"
+                                    className="pi pi-info-circle text-color-secondary"
+                                    style={{ fontSize: '0.75rem', cursor: 'help' }}
+                                />
+                            </label>
+                            <Tooltip
+                                target="#mc-numero-tooltip"
+                                content="Deixe em branco para gerar automaticamente. Após protocolada, aparecerá como PLO 102/2026."
+                                position="top"
+                            />
+                            <InputText
+                                id="mc-numero"
+                                value={numero}
+                                onChange={(e) => setNumero(e.target.value)}
+                                placeholder="Gerado automaticamente"
+                                className="w-full"
+                            />
+                            {previewId && (
+                                <small style={{ color: 'var(--text-color-secondary)' }}>
+                                    Identificação: <strong>{previewId}</strong>
+                                </small>
+                            )}
+                        </div>
+                        <div className="sigl-filtro-campo">
                             <DatePicker
-                                id="mat-data-protocolo"
+                                id="mc-data-protocolo"
                                 label="Data Protocolo"
                                 value={dataProtocolo}
                                 onChange={setDataProtocolo}
@@ -179,89 +232,118 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
                     </div>
                 </div>
 
+                {/* ── Seção 2: Autoria ── */}
                 <div className="sigl-dialog-secao">
                     <span className="sigl-dialog-secao-titulo">Autoria</span>
                     <div className="sigl-dialog-grid sigl-dialog-grid-2">
                         <div className="sigl-filtro-campo">
-                            <label htmlFor="mat-tipo-autor">Tipo de Autor *</label>
-                            <Dropdown
-                                id="mat-tipo-autor"
-                                value={tipoAutorId}
-                                options={mapDropdownOptions(tiposAutor, 'nome', 'id')}
+                            <label htmlFor="mc-tipo-autor">Tipo de Autor *</label>
+                            <PrDropdown
+                                id="mc-tipo-autor"
+                                value={tipoAutor}
+                                options={TIPOS_AUTOR_OPTIONS}
+                                optionLabel="label"
+                                optionValue="value"
                                 placeholder="Selecione o tipo de autor"
-                                onChange={(v) => setTipoAutorId(String(v))}
+                                onChange={(e) => setTipoAutor(e.value as TipoAutorMateria)}
+                                className="w-full"
                             />
                         </div>
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="mat-autor">Autor *</label>
-                            <Dropdown
-                                id="mat-autor"
-                                value={autorId}
-                                options={mapDropdownOptions(autorOptions, 'nome', 'id')}
-                                placeholder={
-                                    loadingAutores
-                                        ? 'Carregando...'
-                                        : tipoAutorId
-                                          ? 'Selecione o autor'
-                                          : 'Selecione o tipo primeiro'
-                                }
-                                onChange={(v) => setAutorId(String(v))}
-                                disabled={!tipoAutorId || isAutorDisabled || loadingAutores}
-                            />
-                        </div>
-                        {isParlamentarType && (
-                            <div className="sigl-filtro-campo sigl-col-full">
-                                <MultiSelect
-                                    id="mat-coautores"
-                                    label="Coautor(es)"
-                                    value={coautorIds}
-                                    options={mapDropdownOptions(coautorSelectOptions, 'nome', 'id')}
-                                    placeholder="Selecione coautores (opcional)"
-                                    onChange={(ids) => setCoautorIds(ids.map(String))}
-                                    filter
-                                    disabled={!tipoAutorId || loadingAutores}
+
+                        {tipoAutor === 'PARLAMENTAR' && (
+                            <div className="sigl-filtro-campo">
+                                <label>Parlamentar *</label>
+                                <AutoComplete
+                                    value={parlSelecionado ?? undefined}
+                                    suggestions={parlSugestoes}
+                                    completeMethod={(e) => void buscarParlamentar(e.query)}
+                                    field="parliamentaryName"
+                                    itemTemplate={(p: Parliamentarian) => (
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                                                {p.parliamentaryName}
+                                            </span>
+                                        </div>
+                                    )}
+                                    onChange={(e) => setParlSelecionado((e.value as Parliamentarian | undefined) ?? null)}
+                                    onSelect={(e) => setParlSelecionado(e.value as Parliamentarian)}
+                                    placeholder="Digite o nome para buscar…"
+                                    minLength={2}
+                                    forceSelection
+                                    emptyMessage="Nenhum parlamentar encontrado"
+                                    className="w-full"
+                                    style={{ width: '100%' }}
                                 />
                             </div>
                         )}
-                        <div className="sigl-filtro-campo sigl-col-full">
-                            <MultiSelect
-                                id="mat-relatores"
-                                label="Relator(es)"
-                                value={relatorIds}
-                                options={mapDropdownOptions(relatorOptions, 'nome', 'id')}
-                                placeholder="Selecione relatores (opcional)"
-                                onChange={(ids) => setRelatorIds(ids.map(String))}
-                                filter
-                            />
-                        </div>
+
+                        {tipoAutor === 'TENANT_PARTNER' && (
+                            <div className="sigl-filtro-campo">
+                                <label>Instituição parceira *</label>
+                                <PrDropdown
+                                    value={partnerSelecionado}
+                                    options={partners}
+                                    optionLabel="nome"
+                                    placeholder={loadingPartners ? 'Carregando...' : 'Selecione a instituição'}
+                                    onChange={(e) => handleSelectPartner(e.value as TenantPartner)}
+                                    className="w-full"
+                                    disabled={loadingPartners}
+                                    filter
+                                />
+                                {partnerAutorLabel && (
+                                    <small className="text-color-secondary">{partnerAutorLabel}</small>
+                                )}
+                            </div>
+                        )}
+
+                        {(tipoAutor === 'EXECUTIVO' || tipoAutor === 'COMISSAO') && (
+                            <div className="sigl-filtro-campo">
+                                <label>
+                                    {tipoAutor === 'EXECUTIVO' ? 'Nome do órgão executivo *' : 'Nome da comissão *'}
+                                </label>
+                                <InputText
+                                    value={autorTexto}
+                                    onChange={(e) => setAutorTexto(e.target.value)}
+                                    placeholder={
+                                        tipoAutor === 'EXECUTIVO'
+                                            ? 'Ex: Prefeitura Municipal de Baturité'
+                                            : 'Ex: Comissão de Finanças'
+                                    }
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 
+                {/* ── Seção 3: Conteúdo ── */}
                 <div className="sigl-dialog-secao">
                     <span className="sigl-dialog-secao-titulo">Conteúdo</span>
                     <div className="sigl-filtro-campo">
-                        <label htmlFor="mat-ementa">Ementa *</label>
+                        <label htmlFor="mc-ementa">Ementa *</label>
                         <InputTextarea
-                            id="mat-ementa"
+                            id="mc-ementa"
                             value={ementa}
                             onChange={(e) => setEmenta(e.target.value)}
                             rows={3}
                             autoResize
+                            className="w-full"
                         />
                     </div>
-                    <div className="sigl-filtro-campo">
-                        <label htmlFor="mat-justificativa">Justificativa</label>
+                    <div className="sigl-filtro-campo mt-3">
+                        <label htmlFor="mc-justificativa">Justificativa</label>
                         <InputTextarea
-                            id="mat-justificativa"
+                            id="mc-justificativa"
                             value={justificativa}
                             onChange={(e) => setJustificativa(e.target.value)}
-                            rows={5}
+                            rows={4}
                             autoResize
+                            className="w-full"
                         />
                     </div>
-                    <div className="sigl-filtro-campo">
+                    <div className="sigl-filtro-campo mt-3">
                         <FileUpload
-                            id="mat-texto-original"
+                            id="mc-texto-original"
                             label="Texto Original (PDF / DOC)"
                             value={textoOriginal}
                             onChange={setTextoOriginal}

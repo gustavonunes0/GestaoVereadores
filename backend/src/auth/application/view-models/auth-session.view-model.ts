@@ -75,7 +75,7 @@ export class AuthSessionViewModel {
     static camaraParliamentarianMe(profile: {
         id: string;
         name: string;
-        cpf: string;
+        cpf: string | null;
         email: string;
         tenantId: string;
         tenantName?: string;
@@ -100,7 +100,7 @@ export class AuthSessionViewModel {
     static camaraStaffMe(profile: {
         id: string;
         name: string;
-        cpf: string;
+        cpf: string | null;
         email: string;
         tenantId: string;
         tenantName?: string;

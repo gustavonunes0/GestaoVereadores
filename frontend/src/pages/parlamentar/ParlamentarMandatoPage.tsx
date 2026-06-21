@@ -27,8 +27,8 @@ export function ParlamentarMandatoPage() {
     useEffect(() => {
         if (!parliamentarianId) { setLoading(false); return; }
         parlamentaresApi
-            .getMandatos(parliamentarianId)
-            .then((res) => setMandatos(res as unknown as Mandato[]))
+            .listMandatos(parliamentarianId)
+            .then((res) => setMandatos(res.data as unknown as Mandato[]))
             .catch(showApiError)
             .finally(() => setLoading(false));
     }, [parliamentarianId, showApiError]);

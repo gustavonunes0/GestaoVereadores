@@ -8,11 +8,13 @@ export type ParliamentarianHttp = {
     biography?: string;
     status: string;
     hasAccess: boolean;
+    accessStatus?: string;
     user?: {
         id: string;
         firstName: string;
         lastName: string;
         email: string;
+        cpf: string;
         politicalParty?: {
             id: string;
             name: string;
@@ -44,11 +46,13 @@ export class ParliamentarianViewModel {
     static toHttp(data: ParliamentarianWithRelations): ParliamentarianHttp {
         const p = data.entity.toPrimitives();
         const party = data.user?.politicalParty;
+        const accessActive = data.accessStatus === 'ACTIVE';
         return {
             id: p.id,
             parliamentaryName: p.parliamentaryName,
             status: p.status,
-            hasAccess: !!data.user,
+            hasAccess: accessActive && !!data.user,
+            ...(data.accessStatus ? { accessStatus: data.accessStatus } : {}),
             ...(data.user
                 ? {
                       user: {
@@ -56,6 +60,7 @@ export class ParliamentarianViewModel {
                           firstName: data.user.firstName,
                           lastName: data.user.lastName,
                           email: data.user.email,
+                          cpf: data.user.cpf ?? '',
                           ...(party
                               ? {
                                     politicalParty: {

@@ -73,9 +73,16 @@ export function isDateInRange(
     return d > min && d < max;
 }
 
+export function formatDateShort(date: Date): string {
+    return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    });
+}
+
 export function formatRange([start, end]: [Date | null, Date | null]): string {
-    const fmt = (d: Date) => d.toLocaleDateString('pt-BR');
-    if (start && end) return `${fmt(start)} — ${fmt(end)}`;
-    if (start) return `${fmt(start)} — ...`;
+    if (start && end) return `${formatDateShort(start)} — ${formatDateShort(end)}`;
+    if (start) return formatDateShort(start);
     return '';
 }

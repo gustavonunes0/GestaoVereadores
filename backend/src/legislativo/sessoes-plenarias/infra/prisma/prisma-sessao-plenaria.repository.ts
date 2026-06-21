@@ -11,9 +11,11 @@ import {
     StatusMateria,
     StatusSessao as PrismaStatusSessao,
     StatusPautaItem as PrismaStatusPautaItem,
+    FaseSessao as PrismaFaseSessao,
 } from '@prisma/client';
 import { SessaoPlenariaEntity } from '../../domain/entities/sessao-plenaria.entity';
 import { StatusSessao } from '../../domain/enums/status-sessao.enum';
+import { FaseSessao } from '../../domain/enums/fase-sessao.enum';
 import {
     QuorumInfo,
     TransicionarStatusDados,
@@ -26,9 +28,6 @@ import {
 } from '../../../../common/prisma/prisma-includes';
 import { tenantWhere } from '../../../../common/prisma/tenant-scope';
 import { PrismaService } from '../../../../prisma/prisma.service';
-import {
-    assertMateriaPodeEntrarNaPauta,
-} from '../../../materias/domain/services/materia-workflow';
 import { MatterTramitationAction } from '../../../materias/domain/enums/matter-tramitation-action.enum';
 import { MateriaRepository } from '../../../materias/domain/repositories/materia.repository';
 import { MATERIA_REPOSITORY } from '../../../materias/materias.tokens';
@@ -149,7 +148,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
 
     private async assertTipoSessaoDoTenant(tenantId: string, tipoSessaoId: string) {
         const tipo = await this.prisma.tipoSessao.findFirst({
-            where: { id: tipoSessaoId, ...tenantWhere(tenantId) },
+            where: { id: tipoSessaoId, tenantId },
         });
         if (!tipo) {
             throw new NotFoundException(
@@ -347,6 +346,12 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         if (!sessao) {
             throw new NotFoundException('Sessão plenária não encontrada');
         }
+        if (
+            sessao.statusSessao === PrismaStatusSessao.AGENDADA ||
+            sessao.statusSessao === PrismaStatusSessao.ABERTA
+        ) {
+            return sessao;
+        }
         assertSessaoAceitaPauta(sessao.situacao);
         return sessao;
     }
@@ -415,33 +420,37 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
 
         const materia = await this.prisma.materia.findFirst({
             where: { id: dto.materiaId, ...tenantWhere(tenantId) },
+            include: { tipo: true },
         });
         if (!materia) throw new NotFoundException('Matéria não encontrada');
 
-        assertMateriaPodeEntrarNaPauta(materia);
-
         const activeItems = await this.listActivePautaItems(sessaoId);
         assertMateriaNaoDuplicadaNaPauta(dto.materiaId, activeItems);
-        assertOrdemDisponivelNaPauta(dto.ordem, activeItems);
+
+        const ordem =
+            dto.ordem ??
+            (activeItems.length === 0
+                ? 1
+                : Math.max(...activeItems.map((i) => i.ordem)) + 1);
+        assertOrdemDisponivelNaPauta(ordem, activeItems);
+
+        // RN-SPL-04: Inferir tipoPautaItem e fase pela sigla do tipo de matéria
+        const sigla = materia.tipo?.sigla ?? '';
+        const SIGLAS_LEITURA = ['OFC', 'IND', 'REQ'];
+        const isLeitura = SIGLAS_LEITURA.includes(sigla);
+        const tipoPautaItemInferido = isLeitura ? 'LEITURA' : 'DELIBERACAO';
+        const faseInferida = isLeitura ? 'PEQUENO_EXPEDIENTE' : 'ORDEM_DO_DIA';
 
         const pautaItem = await this.prisma.pautaItem.create({
             data: {
                 sessaoId,
                 materiaId: dto.materiaId,
-                ordem: dto.ordem,
-                fase: dto.fase ?? getDefaultFasePauta(),
+                ordem,
+                fase: (dto.fase ?? faseInferida) as any,
+                tipoPautaItem: (dto.tipoPautaItem ?? tipoPautaItemInferido) as any,
             },
             include: pautaItemInclude,
         });
-
-        await this.materiaRepository.tramitarMateria(
-            tenantId,
-            dto.materiaId,
-            {
-                action: MatterTramitationAction.COLOCAR_EM_PAUTA,
-                observacao: 'Matéria incluída na pauta da sessão plenária',
-            },
-        );
 
         return pautaItem;
     }
@@ -728,6 +737,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         entity.dataInicio = raw.dataInicio;
         entity.dataFim = raw.dataFim;
         entity.statusSessao = raw.statusSessao as unknown as StatusSessao;
+        entity.faseAtual = raw.faseAtual as unknown as FaseSessao;
         entity.dataAbertura = raw.dataAbertura;
         entity.dataSuspensao = raw.dataSuspensao;
         entity.dataEncerramento = raw.dataEncerramento;
@@ -826,5 +836,49 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 publicadaEm: new Date(),
             },
         });
+    }
+
+    // M11 — setar fase da sessão
+    async setFase(id: string, tenantId: string, fase: FaseSessao): Promise<void> {
+        await this.prisma.sessaoPlenaria.update({
+            where: { id, tenantId, isRemoved: false },
+            data: { faseAtual: fase as unknown as PrismaFaseSessao },
+        });
+    }
+
+    // M13 — buscar sessão ativa (ABERTA ou SUSPENSA) para o parlamentar
+    async findAtiva(tenantId: string): Promise<SessaoPlenariaEntity | null> {
+        const raw = await this.prisma.sessaoPlenaria.findFirst({
+            where: {
+                tenantId,
+                isRemoved: false,
+                statusSessao: {
+                    in: ['ABERTA', 'SUSPENSA'] as PrismaStatusSessao[],
+                },
+            },
+            orderBy: { dataAbertura: 'desc' },
+        });
+        if (!raw) return null;
+
+        const entity = new SessaoPlenariaEntity();
+        entity.id = raw.id;
+        entity.tenantId = raw.tenantId;
+        entity.tipoSessaoId = raw.tipoSessaoId;
+        entity.sessaoLegislativaId = raw.sessaoLegislativaId;
+        entity.dataInicio = raw.dataInicio;
+        entity.dataFim = raw.dataFim;
+        entity.statusSessao = raw.statusSessao as unknown as StatusSessao;
+        entity.faseAtual = raw.faseAtual as unknown as FaseSessao;
+        entity.dataAbertura = raw.dataAbertura;
+        entity.dataSuspensao = raw.dataSuspensao;
+        entity.dataEncerramento = raw.dataEncerramento;
+        entity.quorumMinimo = raw.quorumMinimo;
+        entity.quorumPresente = raw.quorumPresente;
+        entity.responsavelAberturaId = raw.responsavelAberturaId;
+        entity.observacoes = raw.observacoes;
+        entity.isRemoved = raw.isRemoved;
+        entity.createdAt = raw.createdAt;
+        entity.updatedAt = raw.updatedAt;
+        return entity;
     }
 }

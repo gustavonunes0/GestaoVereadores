@@ -79,6 +79,46 @@ export class PrismaParlamentarianUserRepository extends ParlamentarianUserReposi
         return this.toEntity(row);
     }
 
+    async findLatestByParliamentarianId(
+        tenantId: string,
+        parliamentarianId: string,
+    ) {
+        const row = await this.prisma.parlamentarianUser.findFirst({
+            where: {
+                tenantId,
+                parliamentarianId,
+                isRemoved: false,
+            },
+            orderBy: { updatedAt: 'desc' },
+        });
+        return row ? this.toEntity(row) : null;
+    }
+
+    async activate(tenantId: string, parliamentarianId: string) {
+        const result = await this.prisma.parlamentarianUser.updateMany({
+            where: {
+                tenantId,
+                parliamentarianId,
+                isRemoved: false,
+                status: PrismaStatus.INACTIVE,
+            },
+            data: { status: PrismaStatus.ACTIVE },
+        });
+        assertTenantScopedUpdate(
+            result.count,
+            'Parlamentar não possui vínculo inativo para reativar',
+        );
+
+        const row = await this.prisma.parlamentarianUser.findFirst({
+            where: { tenantId, parliamentarianId, isRemoved: false },
+            orderBy: { updatedAt: 'desc' },
+        });
+        if (!row) {
+            throw new Error('Parlamentar não possui vínculo inativo para reativar');
+        }
+        return this.toEntity(row);
+    }
+
     async updatePoliticalParty(
         tenantId: string,
         parliamentarianId: string,

@@ -8,6 +8,7 @@ import {
     ResultadoPauta,
     ResultadoVotacao,
     TipoVotacao,
+    TipoPautaItem,
     Prisma,
     Voto,
 } from '@prisma/client';
@@ -258,6 +259,24 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             pautaItemId,
         );
 
+        // Bloqueia votação em itens de leitura ou comunicação
+        const tipoPautaItemAtual = pautaItem.tipoPautaItem as TipoPautaItem;
+        if (
+            tipoPautaItemAtual === TipoPautaItem.LEITURA ||
+            tipoPautaItemAtual === TipoPautaItem.COMUNICACAO
+        ) {
+            throw new BadRequestException(
+                'Item de pauta do tipo LEITURA ou COMUNICAÇÃO não permite votação',
+            );
+        }
+
+        // Bloqueia se item já foi deliberado
+        if (pautaItem.resultado !== null) {
+            throw new BadRequestException(
+                'Item de pauta já possui resultado registrado',
+            );
+        }
+
         assertVotacaoNaoExisteParaPauta(!!pautaItem.votacao);
 
         await this.assertQuorumSessao(
@@ -266,11 +285,24 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             sessao.tipoSessao.requerQuorum,
         );
 
+        // Buscar tipoQuorum do tipo de matéria e totalMembros
+        const materiaComTipo = await this.prisma.materia.findUnique({
+            where: { id: pautaItem.materiaId },
+            include: { tipo: true },
+        });
+        const tipoQuorum = (materiaComTipo?.tipo?.tipoQuorum ?? 'MAIORIA_SIMPLES') as any;
+
+        const totalMembros = await this.prisma.parlamentar.count({
+            where: { ...tenantWhere(tenantId), ativo: true },
+        });
+
         return this.prisma.votacao.create({
             data: {
                 pautaItemId,
                 tipoVotacao: dto.tipoVotacao,
                 exigePresenca: dto.exigePresenca ?? true,
+                tipoQuorum,
+                totalMembros,
             },
             include: votacaoInclude.include,
         });
@@ -612,6 +644,10 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         entity.quorumVotacao = raw.quorumVotacao;
         entity.motivoEmpate = raw.motivoEmpate;
         entity.observacoes = raw.observacoes;
+        entity.tipoQuorum = raw.tipoQuorum as unknown as import('../../domain/enums/tipo-quorum.enum').TipoQuorum | null;
+        entity.totalMembros = raw.totalMembros;
+        entity.votoQualidade = raw.votoQualidade;
+        entity.presidenteId = raw.presidenteId;
         entity.createdAt = raw.createdAt;
         return entity;
     }
@@ -654,6 +690,10 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
                     motivoEmpate: dados.motivoEmpate,
                     observacoes: dados.observacoes,
                     realizadaAt: new Date(),
+                    tipoQuorum: dados.tipoQuorum as unknown as any,
+                    totalMembros: dados.totalMembros,
+                    votoQualidade: dados.votoQualidade ?? false,
+                    presidenteId: dados.presidenteId,
                 },
             });
 

@@ -596,7 +596,7 @@ label {
     font-weight: 500;
 }
 
-input,
+input:not([type='radio']):not([type='checkbox']),
 select,
 textarea {
     padding: var(--space-input-y) var(--space-input-x);

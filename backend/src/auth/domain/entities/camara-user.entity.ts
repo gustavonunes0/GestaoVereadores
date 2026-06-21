@@ -4,7 +4,7 @@ export type CamaraUserProps = {
     firstName: string;
     lastName: string;
     passwordHash: string;
-    cpf: string;
+    cpf: string | null;
 };
 
 export class CamaraUserEntity {
@@ -13,7 +13,7 @@ export class CamaraUserEntity {
     readonly firstName: string;
     readonly lastName: string;
     readonly passwordHash: string;
-    readonly cpf: string;
+    readonly cpf: string | null;
 
     constructor(props: CamaraUserProps) {
         this.id = props.id;

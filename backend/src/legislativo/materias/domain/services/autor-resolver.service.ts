@@ -1,11 +1,10 @@
 type AutorFKs = {
     parlamentarId?: string | null;
     parliamentarianId?: string | null;
-    autorExternoId?: string | null;
-    guestUserId?: string | null;
+    tenantPartnerId?: string | null;
 };
 
-type AutorExternoData = {
+type PartnerData = {
     nome: string;
     cargo?: string | null;
     instituicao?: string | null;
@@ -22,31 +21,30 @@ export class AutorResolverService {
         const preenchidas = [
             autor.parlamentarId,
             autor.parliamentarianId,
-            autor.autorExternoId,
-            autor.guestUserId,
+            autor.tenantPartnerId,
         ].filter(Boolean).length;
 
         if (preenchidas !== 1) {
             throw new Error(
-                'Autor inválido: exatamente uma referência é obrigatória (parlamentarId, parliamentarianId, autorExternoId ou guestUserId)',
+                'Autor inválido: exatamente uma referência é obrigatória (parlamentarId, parliamentarianId ou tenantPartnerId)',
             );
         }
     }
 
     /**
-     * Compõe o nome completo de um AutorExterno de acordo com a categoria.
+     * Compõe o nome completo de um TenantPartner de acordo com a categoria.
      * Categoria A (entidade): `nome`
      * Categoria B (cargo + pessoa): `nome — cargo (instituicao)`
      * Categoria C (cargo + registro): `nome — cargo (registro)`
      */
-    resolverNomeCompleto(autorExterno: AutorExternoData): string {
-        if (!autorExterno.cargo) {
-            return autorExterno.nome;
+    resolverNomeCompleto(partner: PartnerData): string {
+        if (!partner.cargo) {
+            return partner.nome;
         }
-        const sufixo = autorExterno.registro ?? autorExterno.instituicao;
+        const sufixo = partner.registro ?? partner.instituicao;
         if (sufixo) {
-            return `${autorExterno.nome} — ${autorExterno.cargo} (${sufixo})`;
+            return `${partner.nome} — ${partner.cargo} (${sufixo})`;
         }
-        return `${autorExterno.nome} — ${autorExterno.cargo}`;
+        return `${partner.nome} — ${partner.cargo}`;
     }
 }

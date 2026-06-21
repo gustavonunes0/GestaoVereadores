@@ -6,7 +6,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { atosApi, type CreateAtoDto } from '../../api/atos.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { DatePicker, Dropdown, mapDropdownOptions, withEmptyOption } from '../../components/ui';
+import { DatePicker, Dropdown, mapDropdownOptions } from '../../components/ui';
 
 interface Props {
     onClose: () => void;
@@ -33,10 +33,20 @@ export function AtoCreateDialog({ onClose, onSaved }: Props) {
     }
 
     async function handleSubmit() {
-        if (!form.tipoId || !form.numero?.trim()) return;
+        if (!form.tipoId || !form.classificacaoId || !form.numero?.trim()) return;
         setLoading(true);
         try {
-            await atosApi.create(form as CreateAtoDto);
+            const payload: CreateAtoDto = {
+                tipoId: form.tipoId,
+                classificacaoId: form.classificacaoId,
+                numero: form.numero.trim(),
+                ...(form.dataAto ? { dataAto: form.dataAto } : {}),
+                ...(form.dataPublicacaoInicio
+                    ? { dataPublicacaoInicio: form.dataPublicacaoInicio }
+                    : {}),
+                ...(form.ementa?.trim() ? { ementa: form.ementa.trim() } : {}),
+            };
+            await atosApi.create(payload);
             showSuccess('Ato administrativo registrado com sucesso.');
             onSaved();
             onClose();
@@ -83,15 +93,12 @@ export function AtoCreateDialog({ onClose, onSaved }: Props) {
                             />
                         </div>
                         <div className="sigl-filtro-campo">
-                            <label htmlFor="a-class">Classificação</label>
+                            <label htmlFor="a-class">Classificação *</label>
                             <Dropdown
                                 id="a-class"
                                 value={form.classificacaoId ?? ''}
-                                options={withEmptyOption(
-                                    mapDropdownOptions(classificacoesAto, 'nome', 'id'),
-                                    'Nenhuma',
-                                )}
-                                onChange={(v) => patch({ classificacaoId: v ? String(v) : undefined })}
+                                options={mapDropdownOptions(classificacoesAto, 'nome', 'id')}
+                                onChange={(v) => patch({ classificacaoId: String(v) })}
                                 placeholder="Selecione"
                             />
                         </div>
@@ -136,9 +143,17 @@ export function AtoCreateDialog({ onClose, onSaved }: Props) {
                             <DatePicker
                                 id="a-pub"
                                 label="Data de publicação"
-                                value={form.dataPublicacao ? new Date(form.dataPublicacao) : null}
+                                value={
+                                    form.dataPublicacaoInicio
+                                        ? new Date(form.dataPublicacaoInicio)
+                                        : null
+                                }
                                 onChange={(d) =>
-                                    patch({ dataPublicacao: d ? d.toISOString().split('T')[0] : undefined })
+                                    patch({
+                                        dataPublicacaoInicio: d
+                                            ? d.toISOString().split('T')[0]
+                                            : undefined,
+                                    })
                                 }
                             />
                         </div>

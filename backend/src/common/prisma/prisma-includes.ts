@@ -44,7 +44,7 @@ export const materiaRelationsInclude = {
     origem: true,
     autor: {
         include: {
-            autorExterno: {
+            tenantPartner: {
                 select: {
                     id: true,
                     nome: true,
@@ -78,10 +78,7 @@ export const materiaAutoriaInclude = {
     ...materiaRelationsInclude,
     autor: {
         include: {
-            guestUser: {
-                select: { id: true, fullName: true, type: true },
-            },
-            autorExterno: {
+            tenantPartner: {
                 select: { id: true, nome: true, tipoAutorId: true },
             },
             parliamentarian: { select: materiaParliamentarianSelect },

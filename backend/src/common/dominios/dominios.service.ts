@@ -115,7 +115,7 @@ export class DominiosService {
             nome: t.nome,
             ...(t.idNegocio != null ? { codigo: String(t.idNegocio) } : {}),
         }));
-        const tiposAutorExternoHttp = tiposAutorHttp.filter(
+        const tiposPartnerHttp = tiposAutorHttp.filter(
             (t) => t.codigo !== '1',
         );
 
@@ -127,7 +127,7 @@ export class DominiosService {
             origensMateria: mapNome(origensMateria),
             locaisOrigemExterna: mapNome(locaisOrigemExterna),
             tiposAutor: tiposAutorHttp,
-            tiposAutorExterno: tiposAutorExternoHttp,
+            tiposPartner: tiposPartnerHttp,
             statusTramitacao: mapNome(statusTramitacao),
             unidadesTramitacao: mapNome(unidadesTramitacao),
             tiposSessao: tiposSessao.map((t) => ({

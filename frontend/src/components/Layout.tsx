@@ -54,7 +54,7 @@ export function Layout() {
 
                     <div className="main">
                         <header className="topbar">
-                            <div className="topbar__start">
+                            {/* <div className="topbar__start">
                                 <SiglButton
                                     type="button"
                                     className="sidebar-toggle"
@@ -67,7 +67,7 @@ export function Layout() {
                                     onClick={() => setMenuOpen((open) => !open)}
                                 />
                                 <LegislaturaBar />
-                            </div>
+                            </div> */}
 
                             <div className="topbar-user">
                                 <span className="topbar-user-info">

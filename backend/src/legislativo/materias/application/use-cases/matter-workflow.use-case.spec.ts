@@ -21,7 +21,7 @@ function buildMateriaRepositoryMock() {
         adicionarAutor: jest.fn(),
         removerAutor: jest.fn(),
         setAutorParlamentar: jest.fn(),
-        setAutorExterno: jest.fn(),
+        setTenantPartner: jest.fn(),
         replaceCoautores: jest.fn(),
     };
 }

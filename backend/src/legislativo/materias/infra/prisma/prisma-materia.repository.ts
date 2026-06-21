@@ -15,7 +15,7 @@ import { AdicionarMateriaAutorDto } from '../../application/dto/materia-autor.dt
 import { CreateMateriaDto, FilterMateriaDto } from '../../application/dto/materia.dto';
 import {
     AddCoautorMateriaDto,
-    SetAutorExternoDto,
+    SetTenantPartnerDto,
     SetAutorParlamentarDto,
     SetRelatorMateriaDto,
 } from '../../application/dto/matter-autoria.dto';
@@ -25,7 +25,7 @@ import { MatterAuthorshipPayload } from '../../application/view-models/matter-au
 import { MatterStatus } from '../../domain/enums/matter-status.enum';
 import { MatterTramitationDomainService } from '../../domain/services/matter-tramitation-domain.service';
 import {
-    AutorExternoListItem,
+    TenantPartnerListItem,
     MateriaRepository,
     TramitarMateriaData,
 } from '../../domain/repositories/materia.repository';
@@ -625,20 +625,20 @@ export class PrismaMateriaRepository implements MateriaRepository {
         return this.findAutoriaOrThrow(tenantId, matterId);
     }
 
-    async setAutorExterno(
+    async setTenantPartner(
         tenantId: string,
         matterId: string,
-        dto: SetAutorExternoDto,
+        dto: SetTenantPartnerDto,
     ) {
         await this.findAutoriaOrThrow(tenantId, matterId);
-        const autorExterno = await this.prisma.autorExterno.findFirst({
+        const tenantPartner = await this.prisma.tenantPartner.findFirst({
             where: {
-                id: dto.autorExternoId,
+                id: dto.tenantPartnerId,
                 ...tenantWhere(tenantId),
                 isRemoved: false,
             },
         });
-        if (!autorExterno) {
+        if (!tenantPartner) {
             throw new NotFoundException(
                 'Autor externo não encontrado nesta Câmara',
             );
@@ -647,7 +647,7 @@ export class PrismaMateriaRepository implements MateriaRepository {
         let autor = await this.prisma.autor.findFirst({
             where: {
                 tenantId,
-                autorExternoId: dto.autorExternoId,
+                tenantPartnerId: dto.tenantPartnerId,
                 isRemoved: false,
             },
         });
@@ -656,9 +656,9 @@ export class PrismaMateriaRepository implements MateriaRepository {
             autor = await this.prisma.autor.create({
                 data: {
                     tenantId,
-                    nome: autorExterno.nome,
-                    tipoAutorId: autorExterno.tipoAutorId,
-                    autorExternoId: autorExterno.id,
+                    nome: tenantPartner.nome,
+                    tipoAutorId: tenantPartner.tipoAutorId,
+                    tenantPartnerId: tenantPartner.id,
                 },
             });
         }
@@ -802,11 +802,11 @@ export class PrismaMateriaRepository implements MateriaRepository {
         ]);
     }
 
-    async listAutoresExternos(
+    async listTenantPartners(
         tenantId: string,
         tipoAutorId?: string,
-    ): Promise<AutorExternoListItem[]> {
-        const rows = await this.prisma.autorExterno.findMany({
+    ): Promise<TenantPartnerListItem[]> {
+        const rows = await this.prisma.tenantPartner.findMany({
             where: {
                 tenantId,
                 isRemoved: false,

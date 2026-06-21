@@ -1,6 +1,7 @@
 import {
     ResultadoVotacao,
     TipoVotacao,
+    TipoQuorum as PrismaTipoQuorum,
     Voto,
 } from '@prisma/client';
 import {
@@ -11,6 +12,11 @@ import {
     VOTE_TYPE_LABELS,
     VoteType,
 } from '../../domain/enums/vote-type.enum';
+import {
+    calcularQuorumNecessario,
+    TIPO_QUORUM_LABELS,
+    TipoQuorum,
+} from '../../domain/enums/tipo-quorum.enum';
 import { VotingDomainService } from '../../domain/services/voting-domain.service';
 import { VotoParlamentarViewModel } from './voto-parlamentar.view-model';
 
@@ -39,6 +45,9 @@ export type VotacaoPrismaPayload = {
     abstencoes: number;
     resultado: ResultadoVotacao | null;
     realizadaAt: Date | null;
+    tipoQuorum?: PrismaTipoQuorum | null;
+    totalMembros?: number | null;
+    votoQualidade?: boolean;
     createdAt: Date;
     votos?: Array<
         VotoParlamentarPayload & {
@@ -55,6 +64,12 @@ export class VotacaoViewModel {
         const tipo = data.tipoVotacao as VoteType;
         const aberta = !data.realizadaAt;
         const resultado = data.resultado as VoteResult | null;
+        const tipoQuorum = data.tipoQuorum as unknown as TipoQuorum | null;
+        const totalMembros = data.totalMembros ?? null;
+        const quorumNecessario =
+            tipoQuorum && totalMembros
+                ? calcularQuorumNecessario(tipoQuorum, totalMembros)
+                : null;
 
         return {
             id: data.id,
@@ -74,6 +89,12 @@ export class VotacaoViewModel {
                       label: VOTE_RESULT_LABELS[resultado],
                   }
                 : null,
+            tipoQuorum: tipoQuorum
+                ? { value: tipoQuorum, label: TIPO_QUORUM_LABELS[tipoQuorum] }
+                : null,
+            totalMembros,
+            quorumNecessario,
+            votoQualidade: data.votoQualidade ?? false,
             aberta,
             finalizadaEm: data.realizadaAt?.toISOString() ?? null,
             aceitaVotoIndividual: votingService.acceptsIndividualVotes(

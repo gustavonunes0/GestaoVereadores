@@ -14,6 +14,7 @@ import { UpdateSessaoPlenariaDto } from '../../application/dto/update-sessao.dto
 import { ExecutarCicloVidaSessaoDto } from '../../application/dto/session-lifecycle.dto';
 import { SessaoPlenariaEntity } from '../entities/sessao-plenaria.entity';
 import { StatusSessao } from '../enums/status-sessao.enum';
+import { FaseSessao } from '../enums/fase-sessao.enum';
 
 export type TransicionarStatusDados = {
     novoStatus: StatusSessao;
@@ -116,4 +117,8 @@ export abstract class SessaoPlenariaRepository {
     ): Promise<void>;
     abstract calcularQuorum(sessaoId: string, tenantId: string): Promise<QuorumInfo>;
     abstract publicarPauta(sessaoId: string, tenantId: string): Promise<void>;
+    // M11 — fase da sessão
+    abstract setFase(id: string, tenantId: string, fase: FaseSessao): Promise<void>;
+    // M13 — sessão ativa para parlamentar
+    abstract findAtiva(tenantId: string): Promise<SessaoPlenariaEntity | null>;
 }

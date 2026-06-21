@@ -1,0 +1,501 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);color:var(--color-text-primary);font-size:14px}
+
+.panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.section{border-bottom:0.5px solid var(--color-border-tertiary);padding:12px 14px}
+.section:last-child{border-bottom:none}
+.sec-title{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);font-size:12px;cursor:pointer;font-family:var(--font-sans);white-space:nowrap;transition:background .12s}
+.btn:hover{background:var(--color-background-secondary)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn i{font-size:13px}
+.btn-danger{background:#A32D2D;color:#fff;border-color:#A32D2D}
+.btn-danger:hover{background:#791F1F}
+.btn-stop{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-secondary)}
+.btn-ghost{border-color:transparent}
+.btn-ghost:hover{border-color:var(--color-border-tertiary);background:var(--color-background-secondary)}
+.btn-active{background:#E6F1FB;color:#0C447C;border-color:#B5D4F4}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-live{background:#FCEBEB;color:#A32D2D}
+.badge-optional{background:#FAEEDA;color:#854F0B}
+.badge-connected{background:#EAF3DE;color:#3B6D11}
+.badge-disconnected{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot-red{background:#E24B4A;animation:pulse .9s infinite}
+.dot-green{background:#639922;animation:pulse 1.4s infinite}
+.dot-yellow{background:#BA7517;animation:pulse 1s infinite}
+.dot-gray{background:#888780}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.status-bar{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);flex-wrap:wrap;font-size:12px}
+.status-item{display:flex;align-items:center;gap:5px}
+.live-badge{display:flex;align-items:center;gap:5px;font-weight:500;font-size:11px;color:#A32D2D;letter-spacing:.04em;margin-left:auto}
+
+.jitsi-mock{background:#0c0c14;border-radius:var(--border-radius-md);overflow:hidden;position:relative}
+
+.cam-grid{display:grid;gap:2px}
+.cam-grid-2{grid-template-columns:1fr 1fr}
+.cam-grid-3{grid-template-columns:2fr 1fr}
+.cam-cell{background:#12121e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;position:relative;min-height:80px}
+.cam-main{min-height:160px}
+.cam-label{font-size:10px;color:rgba(255,255,255,.45);letter-spacing:.04em}
+.cam-icon{font-size:20px;color:rgba(255,255,255,.2)}
+.cam-highlight{outline:2px solid #185FA5}
+.cam-highlight-lib{outline:2px solid #1D9E75}
+.cam-active-badge{position:absolute;top:6px;left:6px;background:rgba(24,95,165,.85);color:#fff;font-size:9px;padding:2px 6px;border-radius:3px;font-weight:500}
+.cam-optional-badge{position:absolute;top:6px;left:6px;background:rgba(29,158,117,.7);color:#fff;font-size:9px;padding:2px 6px;border-radius:3px}
+.cam-disconnected-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}
+.cam-disconnected-overlay span{color:rgba(255,255,255,.4);font-size:10px}
+.jitsi-toolbar{background:#1a1a28;padding:8px 12px;display:flex;align-items:center;justify-content:center;gap:8px}
+.jt-btn{width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+.jt-btn:hover{background:rgba(255,255,255,.15)}
+.jt-btn-red{background:rgba(226,75,74,.8)}
+.jt-btn-red:hover{background:#E24B4A}
+.fullscreen-btn{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.5);border:none;color:rgba(255,255,255,.6);border-radius:4px;padding:3px 5px;cursor:pointer;font-size:11px;display:flex;align-items:center;gap:3px}
+.fullscreen-btn:hover{background:rgba(0,0,0,.8);color:#fff}
+
+.cam-selector-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.cam-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;cursor:pointer;transition:border-color .15s}
+.cam-card:hover{border-color:var(--color-border-primary)}
+.cam-card.selected{border-color:#185FA5;border-width:1.5px}
+.cam-card.selected-lib{border-color:#1D9E75;border-width:1.5px}
+.cam-preview{background:#12121e;height:64px;display:flex;align-items:center;justify-content:center;position:relative}
+.cam-preview i{font-size:18px;color:rgba(255,255,255,.2)}
+.cam-card-footer{padding:6px 8px;display:flex;align-items:center;justify-content:space-between;gap:4px}
+.cam-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cam-set-btn{font-size:10px;padding:2px 6px;border-radius:3px;border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;color:var(--color-text-secondary);white-space:nowrap}
+.cam-set-btn:hover{background:var(--color-background-secondary)}
+.cam-target-badge{position:absolute;bottom:4px;left:4px;font-size:9px;padding:1px 5px;border-radius:2px;font-weight:500}
+.cam-target-main{background:rgba(24,95,165,.85);color:#fff}
+.cam-target-lib{background:rgba(29,158,117,.85);color:#fff}
+
+.mixer-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.mixer-row+.mixer-row{border-top:0.5px solid var(--color-border-tertiary)}
+.mixer-label{width:100px;font-size:12px;display:flex;align-items:center;gap:6px;flex-shrink:0;color:var(--color-text-secondary)}
+.mixer-label i{font-size:14px}
+.mixer-slider{flex:1;min-width:0;accent-color:#185FA5}
+.mixer-val{width:36px;text-align:right;font-size:12px;font-weight:500;color:var(--color-text-primary);font-family:var(--font-mono)}
+.mixer-mute{width:28px;height:28px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--color-text-secondary)}
+.mixer-mute:hover{background:var(--color-background-secondary)}
+.mixer-mute.muted{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
+.vu-bar{height:4px;border-radius:2px;background:var(--color-background-secondary);overflow:hidden;margin-top:3px}
+.vu-fill{height:100%;border-radius:2px;background:#639922;transition:width .1s}
+.vu-fill.warn{background:#BA7517}
+.vu-fill.clip{background:#E24B4A}
+
+.yt-row{display:flex;gap:6px;align-items:center}
+.yt-input{flex:1;min-width:0;padding:6px 9px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans)}
+
+.tab-row{display:flex;gap:0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.stab{padding:8px 14px;font-size:12px;background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--color-text-secondary);font-family:var(--font-sans);margin-bottom:-0.5px;display:flex;align-items:center;gap:5px}
+.stab.active{color:#185FA5;border-bottom-color:#185FA5;font-weight:500}
+.stab:hover:not(.active){background:var(--color-background-secondary)}
+</style>
+
+<h2 class="sr-only">Protótipo interativo do painel de transmissão AV com controle de câmeras, áudio e modo tela cheia</h2>
+
+<div class="panel">
+
+  <div class="status-bar">
+    <div class="status-item"><span class="dot dot-green"></span><span>Conectado</span></div>
+    <div class="status-item" style="color:var(--color-text-secondary)">
+      <i class="ti ti-video" aria-hidden="true" style="font-size:13px"></i>
+      <code style="font-size:11px;background:var(--color-background-primary);padding:1px 5px;border-radius:3px;border:0.5px solid var(--color-border-tertiary)">sessao-a4f82c19</code>
+    </div>
+    <div class="status-item">
+      <span class="badge badge-connected"><span class="dot dot-green"></span>4 participantes</span>
+    </div>
+    <div class="live-badge"><span class="dot dot-red"></span>AO VIVO</div>
+  </div>
+
+  <div class="tab-row" role="tablist">
+    <button class="stab active" onclick="switchTab('video',this)" role="tab"><i class="ti ti-device-tv" aria-hidden="true"></i> Câmeras</button>
+    <button class="stab" onclick="switchTab('audio',this)" role="tab"><i class="ti ti-wave-sine" aria-hidden="true"></i> Áudio</button>
+    <button class="stab" onclick="switchTab('stream',this)" role="tab"><i class="ti ti-brand-youtube" aria-hidden="true"></i> Transmissão</button>
+  </div>
+
+  <div id="tab-video">
+    <div class="section">
+      <div class="sec-title"><i class="ti ti-layout-sidebar-right" aria-hidden="true"></i> Visualização ao vivo</div>
+      <div class="jitsi-mock" id="jitsi-preview">
+        <div class="cam-grid cam-grid-2" id="cam-layout" style="height:200px">
+          <div class="cam-cell cam-main cam-highlight" id="main-cell">
+            <i class="ti ti-device-tv cam-icon" aria-hidden="true"></i>
+            <span class="cam-label" id="main-label">Câmera 1 — Leitor</span>
+            <div class="cam-active-badge">DESTAQUE</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div class="cam-cell" id="cell-2" style="flex:1">
+              <i class="ti ti-device-tv cam-icon" aria-hidden="true"></i>
+              <span class="cam-label">Câmera 2 — Plenário</span>
+            </div>
+            <div class="cam-cell cam-highlight-lib" id="cell-lib" style="flex:1">
+              <i class="ti ti-hand-stop cam-icon" aria-hidden="true"></i>
+              <span class="cam-label">Intérprete Libras</span>
+              <div class="cam-optional-badge">LIBRAS</div>
+            </div>
+          </div>
+        </div>
+        <button class="fullscreen-btn" id="fs-btn" onclick="toggleFullscreen()" aria-label="Tela cheia">
+          <i class="ti ti-arrows-maximize" id="fs-icon" aria-hidden="true"></i>
+          <span id="fs-label">Tela cheia</span>
+        </button>
+        <div class="jitsi-toolbar">
+          <button class="jt-btn" title="Microfone" aria-label="Microfone"><i class="ti ti-microphone"></i></button>
+          <button class="jt-btn" title="Câmera" aria-label="Câmera"><i class="ti ti-video"></i></button>
+          <button class="jt-btn" title="Compartilhar tela" aria-label="Compartilhar tela"><i class="ti ti-screen-share"></i></button>
+          <button class="jt-btn jt-btn-red" title="Sair" aria-label="Sair da sala"><i class="ti ti-phone-off"></i></button>
+          <button class="jt-btn" title="Tela cheia Jitsi" aria-label="Tela cheia Jitsi" onclick="toggleFullscreen()"><i class="ti ti-arrows-maximize"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-title"><i class="ti ti-switch-3" aria-hidden="true"></i> Selecionar câmera em destaque</div>
+      <div class="cam-selector-grid" id="cam-selector">
+        <div class="cam-card selected" id="card-cam1" onclick="selectCam('cam1')" tabindex="0" role="button" aria-pressed="true">
+          <div class="cam-preview">
+            <i class="ti ti-device-tv" aria-hidden="true"></i>
+            <div class="cam-target-badge cam-target-main">Destaque</div>
+          </div>
+          <div class="cam-card-footer">
+            <span class="cam-name">Câmera 1 — Leitor</span>
+            <button class="cam-set-btn" onclick="event.stopPropagation();selectCam('cam1')">Ativar</button>
+          </div>
+        </div>
+        <div class="cam-card" id="card-cam2" onclick="selectCam('cam2')" tabindex="0" role="button" aria-pressed="false">
+          <div class="cam-preview">
+            <i class="ti ti-device-tv" aria-hidden="true"></i>
+          </div>
+          <div class="cam-card-footer">
+            <span class="cam-name">Câmera 2 — Plenário</span>
+            <button class="cam-set-btn" onclick="event.stopPropagation();selectCam('cam2')">Ativar</button>
+          </div>
+        </div>
+        <div class="cam-card selected-lib" id="card-lib" onclick="selectCam('lib')" tabindex="0" role="button" aria-pressed="false">
+          <div class="cam-preview">
+            <i class="ti ti-hand-stop" aria-hidden="true"></i>
+            <div class="cam-target-badge cam-target-lib">Libras</div>
+          </div>
+          <div class="cam-card-footer">
+            <span class="cam-name">Intérprete Libras</span>
+            <button class="cam-set-btn" onclick="event.stopPropagation();selectCam('lib')">Ativar</button>
+          </div>
+        </div>
+        <div class="cam-card" id="card-screen" onclick="selectCam('screen')" tabindex="0" role="button" aria-pressed="false">
+          <div class="cam-preview">
+            <i class="ti ti-screen-share" aria-hidden="true"></i>
+          </div>
+          <div class="cam-card-footer">
+            <span class="cam-name">Compartilhar tela</span>
+            <button class="cam-set-btn" onclick="event.stopPropagation();selectCam('screen')">Ativar</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="badge badge-optional"><i class="ti ti-hand-stop" style="font-size:10px" aria-hidden="true"></i> Libras — opcional</span>
+        <span style="font-size:11px;color:var(--color-text-secondary)">Intérprete conectado automaticamente quando disponível na sala.</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-audio" style="display:none">
+    <div class="section">
+      <div class="sec-title"><i class="ti ti-adjustments-horizontal" aria-hidden="true"></i> Mixer de áudio</div>
+      <div>
+        <div class="mixer-row">
+          <span class="mixer-label"><i class="ti ti-microphone" aria-hidden="true"></i> Microfone</span>
+          <input type="range" class="mixer-slider" min="0" max="100" value="85" step="1" id="sl-mic" oninput="updateMixer('mic',this.value)" aria-label="Volume microfone">
+          <span class="mixer-val" id="val-mic">85%</span>
+          <button class="mixer-mute" id="mute-mic" onclick="toggleMute('mic')" aria-label="Silenciar microfone"><i class="ti ti-microphone"></i></button>
+        </div>
+        <div class="vu-bar"><div class="vu-fill" id="vu-mic" style="width:85%"></div></div>
+
+        <div class="mixer-row" style="margin-top:8px">
+          <span class="mixer-label"><i class="ti ti-device-tv" aria-hidden="true"></i> Câmera 1</span>
+          <input type="range" class="mixer-slider" min="0" max="100" value="70" step="1" id="sl-cam1" oninput="updateMixer('cam1',this.value)" aria-label="Volume câmera 1">
+          <span class="mixer-val" id="val-cam1">70%</span>
+          <button class="mixer-mute" id="mute-cam1" onclick="toggleMute('cam1')" aria-label="Silenciar câmera 1"><i class="ti ti-device-tv"></i></button>
+        </div>
+        <div class="vu-bar"><div class="vu-fill" id="vu-cam1" style="width:70%"></div></div>
+
+        <div class="mixer-row" style="margin-top:8px">
+          <span class="mixer-label"><i class="ti ti-device-tv" aria-hidden="true"></i> Câmera 2</span>
+          <input type="range" class="mixer-slider" min="0" max="100" value="60" step="1" id="sl-cam2" oninput="updateMixer('cam2',this.value)" aria-label="Volume câmera 2">
+          <span class="mixer-val" id="val-cam2">60%</span>
+          <button class="mixer-mute" id="mute-cam2" onclick="toggleMute('cam2')" aria-label="Silenciar câmera 2"><i class="ti ti-device-tv"></i></button>
+        </div>
+        <div class="vu-bar"><div class="vu-fill warn" id="vu-cam2" style="width:60%"></div></div>
+
+        <div class="mixer-row" style="margin-top:8px">
+          <span class="mixer-label" style="color:#1D9E75"><i class="ti ti-hand-stop" aria-hidden="true"></i> Libras</span>
+          <input type="range" class="mixer-slider" min="0" max="100" value="0" step="1" id="sl-lib" oninput="updateMixer('lib',this.value)" aria-label="Volume intérprete Libras" disabled>
+          <span class="mixer-val" id="val-lib" style="color:var(--color-text-secondary)">—</span>
+          <button class="mixer-mute muted" id="mute-lib" onclick="toggleMute('lib')" aria-label="Silenciar Libras"><i class="ti ti-hand-stop"></i></button>
+        </div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:3px;padding-left:116px">Intérprete não conectado — canal reservado</div>
+
+        <div class="mixer-row" style="margin-top:8px">
+          <span class="mixer-label"><i class="ti ti-volume" aria-hidden="true"></i> Volume geral</span>
+          <input type="range" class="mixer-slider" min="0" max="100" value="100" step="1" id="sl-master" oninput="updateMixer('master',this.value)" aria-label="Volume geral">
+          <span class="mixer-val" id="val-master">100%</span>
+          <button class="mixer-mute" id="mute-master" onclick="toggleMute('master')" aria-label="Silenciar tudo"><i class="ti ti-volume"></i></button>
+        </div>
+        <div class="vu-bar"><div class="vu-fill" id="vu-master" style="width:100%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-stream" style="display:none">
+    <div class="section">
+      <div class="sec-title"><i class="ti ti-broadcast" aria-hidden="true"></i> Controle de transmissão</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn btn-stop" id="btn-stream" onclick="toggleStream()">
+          <i class="ti ti-player-play" id="stream-icon" aria-hidden="true"></i>
+          <span id="stream-label">Iniciar YouTube</span>
+        </button>
+        <span class="badge badge-live" id="live-badge" style="display:none"><span class="dot dot-red"></span> AO VIVO</span>
+        <span style="font-size:11px;color:var(--color-text-secondary)" id="stream-timer" style="display:none"></span>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:5px">Link do YouTube (transmissão pública)</div>
+        <div class="yt-row">
+          <input class="yt-input" type="text" value="https://youtube.com/live/xK9mZ2pQrTs" id="yt-link" aria-label="Link YouTube">
+          <button class="btn" onclick="saveYt()"><i class="ti ti-device-floppy" aria-hidden="true"></i> Salvar</button>
+          <button class="btn btn-ghost" onclick="copyYt()" title="Copiar" aria-label="Copiar link"><i class="ti ti-copy" aria-hidden="true"></i></button>
+          <button class="btn btn-ghost" title="Abrir no YouTube" aria-label="Abrir no YouTube"><i class="ti ti-external-link" aria-hidden="true"></i></button>
+        </div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:6px">
+          <i class="ti ti-info-circle" aria-hidden="true" style="font-size:12px"></i>
+          A stream key é extraída automaticamente da URL.
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="sec-title"><i class="ti ti-arrows-maximize" aria-hidden="true"></i> Tela cheia</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="toggleFullscreen()">
+          <i class="ti ti-arrows-maximize" id="fs2-icon" aria-hidden="true"></i>
+          <span id="fs2-label">Expandir sala de vídeo</span>
+        </button>
+        <span style="font-size:11px;color:var(--color-text-secondary)">Expande o iframe Jitsi para ocupar toda a janela do navegador.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="fs-overlay" style="display:none;position:relative;margin-top:8px">
+  <div style="background:#0c0c14;border-radius:var(--border-radius-lg);overflow:hidden;border:0.5px solid var(--color-border-tertiary)">
+    <div style="padding:8px 12px;background:#12121e;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="dot dot-red"></span>
+        <span style="color:rgba(255,255,255,.7);font-size:12px">sessao-a4f82c19 — AO VIVO</span>
+      </div>
+      <button class="btn btn-ghost" onclick="toggleFullscreen()" style="color:rgba(255,255,255,.6);border-color:rgba(255,255,255,.15);font-size:11px">
+        <i class="ti ti-arrows-minimize" aria-hidden="true"></i> Sair da tela cheia
+      </button>
+    </div>
+    <div class="cam-grid cam-grid-2" style="height:320px">
+      <div class="cam-cell cam-main cam-highlight">
+        <i class="ti ti-device-tv" style="font-size:32px;color:rgba(255,255,255,.15)" aria-hidden="true"></i>
+        <span style="font-size:11px;color:rgba(255,255,255,.35)">Câmera 1 — Leitor</span>
+        <div class="cam-active-badge">DESTAQUE</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div class="cam-cell" style="flex:1">
+          <i class="ti ti-device-tv" style="font-size:22px;color:rgba(255,255,255,.1)" aria-hidden="true"></i>
+          <span style="font-size:10px;color:rgba(255,255,255,.3)">Câmera 2</span>
+        </div>
+        <div class="cam-cell cam-highlight-lib" style="flex:1">
+          <i class="ti ti-hand-stop" style="font-size:22px;color:rgba(255,255,255,.15)" aria-hidden="true"></i>
+          <span style="font-size:10px;color:rgba(255,255,255,.3)">Libras</span>
+          <div class="cam-optional-badge">LIBRAS</div>
+        </div>
+      </div>
+    </div>
+    <div class="jitsi-toolbar">
+      <button class="jt-btn" title="Microfone" aria-label="Microfone"><i class="ti ti-microphone"></i></button>
+      <button class="jt-btn" title="Câmera" aria-label="Câmera"><i class="ti ti-video"></i></button>
+      <button class="jt-btn" title="Tela" aria-label="Compartilhar tela"><i class="ti ti-screen-share"></i></button>
+      <button class="jt-btn jt-btn-red" title="Sair" aria-label="Sair"><i class="ti ti-phone-off"></i></button>
+    </div>
+  </div>
+</div>
+
+<script>
+var fsMode = false;
+var streaming = false;
+var streamStart = null;
+var timerInterval = null;
+var muted = { mic: false, cam1: false, cam2: false, lib: true, master: false };
+var camTarget = 'cam1';
+
+function switchTab(name, btn) {
+  ['video','audio','stream'].forEach(function(t){
+    var el = document.getElementById('tab-'+t);
+    if(el) el.style.display = 'none';
+  });
+  document.querySelectorAll('.stab').forEach(function(b){ b.classList.remove('active'); });
+  var el = document.getElementById('tab-'+name);
+  if(el) el.style.display = 'block';
+  if(btn) btn.classList.add('active');
+}
+
+function selectCam(id) {
+  var labels = { cam1: 'Câmera 1 — Leitor', cam2: 'Câmera 2 — Plenário', lib: 'Intérprete Libras', screen: 'Compartilhar tela' };
+  camTarget = id;
+  document.querySelectorAll('.cam-card').forEach(function(c){
+    c.classList.remove('selected','selected-lib');
+    c.setAttribute('aria-pressed','false');
+  });
+  var target = document.getElementById('card-'+id);
+  if(target){
+    target.classList.add(id === 'lib' ? 'selected-lib' : 'selected');
+    target.setAttribute('aria-pressed','true');
+  }
+  document.querySelectorAll('.cam-target-badge').forEach(function(b){ b.remove(); });
+  if(target){
+    var preview = target.querySelector('.cam-preview');
+    var badge = document.createElement('div');
+    badge.className = 'cam-target-badge ' + (id === 'lib' ? 'cam-target-lib' : 'cam-target-main');
+    badge.textContent = id === 'lib' ? 'Libras' : 'Destaque';
+    preview.appendChild(badge);
+  }
+  document.querySelectorAll('.cam-cell').forEach(function(c){
+    c.classList.remove('cam-highlight','cam-highlight-lib');
+    var ab = c.querySelector('.cam-active-badge,.cam-optional-badge');
+    if(ab) ab.remove();
+  });
+  var lbl = document.getElementById('main-label');
+  if(lbl) lbl.textContent = labels[id] || '';
+  var mc = document.getElementById('main-cell');
+  if(mc){ mc.classList.add(id === 'lib' ? 'cam-highlight-lib' : 'cam-highlight'); }
+  var ab = document.createElement('div');
+  ab.className = id === 'lib' ? 'cam-optional-badge' : 'cam-active-badge';
+  ab.textContent = id === 'lib' ? 'LIBRAS' : 'DESTAQUE';
+  if(mc) mc.appendChild(ab);
+}
+
+function toggleFullscreen() {
+  fsMode = !fsMode;
+  var overlay = document.getElementById('fs-overlay');
+  var preview = document.getElementById('jitsi-preview');
+  var fsIcon = document.getElementById('fs-icon');
+  var fsLabel = document.getElementById('fs-label');
+  var fs2Icon = document.getElementById('fs2-icon');
+  var fs2Label = document.getElementById('fs2-label');
+  if(fsMode){
+    if(overlay) overlay.style.display = 'block';
+    if(preview) preview.style.opacity = '.35';
+    if(fsIcon) fsIcon.className = 'ti ti-arrows-minimize';
+    if(fsLabel) fsLabel.textContent = 'Sair da tela cheia';
+    if(fs2Icon) fs2Icon.className = 'ti ti-arrows-minimize';
+    if(fs2Label) fs2Label.textContent = 'Sair da tela cheia';
+  } else {
+    if(overlay) overlay.style.display = 'none';
+    if(preview) preview.style.opacity = '1';
+    if(fsIcon) fsIcon.className = 'ti ti-arrows-maximize';
+    if(fsLabel) fsLabel.textContent = 'Tela cheia';
+    if(fs2Icon) fs2Icon.className = 'ti ti-arrows-maximize';
+    if(fs2Label) fs2Label.textContent = 'Expandir sala de vídeo';
+  }
+}
+
+function updateMixer(ch, val) {
+  var num = Math.round(Number(val));
+  var valEl = document.getElementById('val-'+ch);
+  var vuEl = document.getElementById('vu-'+ch);
+  if(valEl) valEl.textContent = num + '%';
+  if(vuEl){
+    vuEl.style.width = num + '%';
+    vuEl.className = 'vu-fill' + (num > 90 ? ' clip' : num > 70 ? ' warn' : '');
+  }
+}
+
+function toggleMute(ch) {
+  if(ch === 'lib') return;
+  muted[ch] = !muted[ch];
+  var btn = document.getElementById('mute-'+ch);
+  var sl = document.getElementById('sl-'+ch);
+  if(btn) btn.classList.toggle('muted', muted[ch]);
+  if(sl) sl.disabled = muted[ch];
+  if(muted[ch] && sl){
+    var valEl = document.getElementById('val-'+ch);
+    var vuEl = document.getElementById('vu-'+ch);
+    if(valEl) valEl.textContent = '0%';
+    if(vuEl) { vuEl.style.width = '0%'; vuEl.className = 'vu-fill'; }
+  } else if(!muted[ch] && sl){
+    updateMixer(ch, sl.value);
+  }
+}
+
+function toggleStream() {
+  streaming = !streaming;
+  var btn = document.getElementById('btn-stream');
+  var icon = document.getElementById('stream-icon');
+  var label = document.getElementById('stream-label');
+  var badge = document.getElementById('live-badge');
+  var timer = document.getElementById('stream-timer');
+  if(streaming){
+    if(btn){ btn.className = 'btn btn-stop'; }
+    if(icon) icon.className = 'ti ti-player-stop';
+    if(label) label.textContent = 'Parar transmissão';
+    if(badge) badge.style.display = 'inline-flex';
+    streamStart = Date.now();
+    if(timer){ timer.style.display = 'inline'; }
+    timerInterval = setInterval(function(){
+      var elapsed = Math.floor((Date.now() - streamStart) / 1000);
+      var m = Math.floor(elapsed / 60);
+      var s = elapsed % 60;
+      if(timer) timer.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }, 1000);
+  } else {
+    if(btn){ btn.className = 'btn btn-danger'; }
+    if(icon) icon.className = 'ti ti-player-play';
+    if(label) label.textContent = 'Iniciar YouTube';
+    if(badge) badge.style.display = 'none';
+    if(timer){ timer.style.display = 'none'; timer.textContent = ''; }
+    if(timerInterval) clearInterval(timerInterval);
+  }
+}
+
+function saveYt() {
+  var input = document.getElementById('yt-link');
+  if(input && input.value) {
+    var orig = input.style.borderColor;
+    input.style.borderColor = '#639922';
+    setTimeout(function(){ input.style.borderColor = orig; }, 800);
+  }
+}
+
+function copyYt() {
+  var input = document.getElementById('yt-link');
+  if(input && navigator.clipboard) navigator.clipboard.writeText(input.value);
+}
+
+var vuIntervals = {};
+function animateVU(ch, base) {
+  if(vuIntervals[ch]) clearInterval(vuIntervals[ch]);
+  vuIntervals[ch] = setInterval(function(){
+    if(muted[ch]) return;
+    var v = Math.round(base + (Math.random() * 16 - 8));
+    v = Math.max(0, Math.min(100, v));
+    var vuEl = document.getElementById('vu-'+ch);
+    if(vuEl){
+      vuEl.style.width = v + '%';
+      vuEl.className = 'vu-fill' + (v > 90 ? ' clip' : v > 70 ? ' warn' : '');
+    }
+  }, 180);
+}
+animateVU('mic', 82);
+animateVU('cam1', 65);
+animateVU('cam2', 55);
+animateVU('master', 95);
+</script>

@@ -106,6 +106,7 @@ describe('CreateParliamentarianUseCase', () => {
                 firstName: 'Vereador',
                 lastName: 'Teste',
                 email: 'vereador@camara.gov.br',
+                cpf: '52998224725',
             },
         });
         parliamentarianRepository.findById.mockResolvedValue(withEmail);

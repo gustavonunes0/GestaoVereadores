@@ -50,6 +50,10 @@ import { ListParliamentariansUseCase } from '../use-cases/list-parliamentarians.
 import { RemoveParliamentarianUseCase } from '../use-cases/remove-parliamentarian.use-case';
 import { RevokeParliamentarianAccessUseCase } from '../use-cases/revoke-parliamentarian-access.use-case';
 import { UpdateParliamentarianUseCase } from '../use-cases/update-parliamentarian.use-case';
+import { UpdateMeuPerfilUseCase } from '../use-cases/update-meu-perfil.use-case';
+import { UpdateMinhaBiografiaUseCase } from '../use-cases/update-minha-biografia.use-case';
+import { UpdateMeuPerfilDto } from '../dto/update-meu-perfil.dto';
+import { UpdateMinhaBiografiaDto } from '../dto/update-minha-biografia.dto';
 import { ParliamentarianViewModel } from '../view-models/parliamentarian.view-model';
 
 @ApiTags('legislative-parlamentares')
@@ -65,6 +69,8 @@ export class ParliamentariansController {
         private readonly revokeParliamentarianAccessUseCase: RevokeParliamentarianAccessUseCase,
         private readonly updateParliamentarianUseCase: UpdateParliamentarianUseCase,
         private readonly removeParliamentarianUseCase: RemoveParliamentarianUseCase,
+        private readonly updateMeuPerfilUseCase: UpdateMeuPerfilUseCase,
+        private readonly updateMinhaBiografiaUseCase: UpdateMinhaBiografiaUseCase,
     ) {}
 
     @Get('me/perfil')
@@ -193,6 +199,32 @@ export class ParliamentariansController {
         } catch (error) {
             this.handleError(error);
         }
+    }
+
+    @Patch('me/perfil')
+    @UseGuards(ParlamentarianGuard)
+    async updateMeuPerfil(
+        @TenantId() tenantId: string,
+        @CurrentUser() user: AuthenticatedUser,
+        @Body() dto: UpdateMeuPerfilDto,
+    ) {
+        if (!isParlamentarianUser(user)) {
+            throw new NotFoundException('Parlamentar não encontrado');
+        }
+        return this.updateMeuPerfilUseCase.execute(user.parliamentarianId, tenantId, dto);
+    }
+
+    @Patch('me/biografia')
+    @UseGuards(ParlamentarianGuard)
+    async updateMinhaBiografia(
+        @TenantId() tenantId: string,
+        @CurrentUser() user: AuthenticatedUser,
+        @Body() dto: UpdateMinhaBiografiaDto,
+    ) {
+        if (!isParlamentarianUser(user)) {
+            throw new NotFoundException('Parlamentar não encontrado');
+        }
+        return this.updateMinhaBiografiaUseCase.execute(user.parliamentarianId, tenantId, dto);
     }
 
     private handleError(error: unknown): never {

@@ -35,22 +35,6 @@ enum ParlamentarianUserStatus {
     SUSPENDED
 }
 
-enum GuestUserType {
-    CITIZEN
-    GUEST
-    EXTERNAL_AUTHORITY
-    ORGANIZATION_REPRESENTATIVE
-    ATTORNEY
-    SPEAKER
-    EXTERNAL_AUTHOR
-}
-
-enum GuestUserStatus {
-    ACTIVE
-    INACTIVE
-    BLOCKED
-}
-
 enum ParliamentarianStatus {
     ACTIVE
     INACTIVE
@@ -98,7 +82,7 @@ model User {
     id             String       @id @default(uuid())
     firstName      String
     lastName       String
-    cpf            String       @unique
+    cpf            String?      @unique
     email          String       @unique
     passwordHash   String
     profilePicture String?
@@ -110,6 +94,7 @@ model User {
     tenantUsers    TenantUser[]
 
     parliamentarianUser ParlamentarianUser?
+    tenantPartnerUser   TenantPartnerUser?
 }
 
 model Tenant {
@@ -142,7 +127,6 @@ model Tenant {
     mesasDiretoras      MesaDiretora[]
     agendasLegislativas AgendaLegislativa[]
     courses             Course[]
-    guestUsers          GuestUser[]
     politicalParties    PoliticalParty[]
     parliamentarians    Parliamentarian[]
     legislatures        Legislature[]
@@ -155,8 +139,9 @@ model Tenant {
     parliamentaryFronts ParliamentaryFront[]
     parliamentaryFrontMembers ParliamentaryFrontMember[]
     matterCoauthors           MatterCoauthor[]
-    autoresExternos           AutorExterno[]
     publicacoesOficiais       PublicacaoOficial[]
+    tenantPartners            TenantPartner[]
+    tenantPartnerUsers        TenantPartnerUser[]
     atos                      Ato[]
     parliamentarianUsers      ParlamentarianUser[]
 }
@@ -258,6 +243,8 @@ model Parliamentarian {
     matterCoauthorships            MatterCoauthor[]
     autores                        Autor[]
     votos                          VotoParlamentar[]
+    presencas                      PresencaSessao[]
+    pedidosPalavra                 PedidoPalavra[]
 
     @@index([tenantId])
     @@index([tenantId, status])
@@ -525,40 +512,6 @@ model ParliamentaryFrontMember {
     @@map("parliamentary_front_members")
 }
 
-model GuestUser {
-    id       String @id @default(uuid())
-    tenantId String
-
-    fullName String
-    cpf      String?
-    email    String?
-    phone    String?
-
-    type   GuestUserType   @default(CITIZEN)
-    status GuestUserStatus @default(ACTIVE)
-
-    organizationName String?
-    positionName     String?
-    notes            String?
-
-    isRemoved Boolean   @default(false)
-    removedAt DateTime?
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    tenant Tenant @relation(fields: [tenantId], references: [id])
-
-    autores Autor[]
-
-    @@unique([tenantId, cpf])
-    @@index([tenantId])
-    @@index([tenantId, type])
-    @@index([tenantId, status])
-    @@index([tenantId, isRemoved])
-    @@map("guest_users")
-}
-
 // --- Autenticação SIGL ---
 
 enum RoleUsuario {
@@ -612,6 +565,32 @@ enum FasePauta {
     GRANDE_EXPEDIENTE
     ORDEM_DO_DIA
     EXPLICACOES_PESSOAIS
+}
+
+enum FaseSessao {
+    NAO_INICIADA
+    EXPEDIENTE
+    ORDEM_DO_DIA
+    EXPLICACOES_PESSOAIS
+    ENCERRADA
+}
+
+enum TipoPautaItem {
+    LEITURA
+    DELIBERACAO
+    COMUNICACAO
+}
+
+enum TipoQuorum {
+    MAIORIA_SIMPLES
+    MAIORIA_ABSOLUTA
+    QUALIFICADO_DOIS_TERCOS
+    QUALIFICADO_TRES_QUINTOS
+}
+
+enum ModalidadePresenca {
+    PRESENCIAL
+    REMOTO
 }
 
 enum ResultadoPauta {
@@ -668,15 +647,17 @@ model Ano {
 }
 
 model TipoMateria {
-    id        String    @id @default(uuid())
-    tenantId  String
-    tenant    Tenant    @relation(fields: [tenantId], references: [id])
-    nome      String
-    sigla     String?
-    ordem     Int?
-    isRemoved Boolean   @default(false)
-    removedAt DateTime?
-    materias  Materia[]
+    id         String     @id @default(uuid())
+    tenantId   String
+    tenant     Tenant     @relation(fields: [tenantId], references: [id])
+    nome       String
+    sigla      String?
+    ordem      Int?
+    // M12 — tipo de quórum para votação
+    tipoQuorum TipoQuorum @default(MAIORIA_SIMPLES)
+    isRemoved  Boolean    @default(false)
+    removedAt  DateTime?
+    materias   Materia[]
 
     @@unique([tenantId, nome])
     @@index([tenantId])
@@ -714,7 +695,7 @@ model TipoAutor {
     idNegocio   Int?
     nome        String
     autores     Autor[]
-    autoresExternos AutorExterno[]
+    tenantPartners TenantPartner[]
 
     @@unique([tenantId, nome])
     @@index([tenantId])
@@ -869,10 +850,8 @@ model Autor {
     parlamentar       Parlamentar?     @relation(fields: [parlamentarId], references: [id])
     parliamentarianId String?
     parliamentarian   Parliamentarian? @relation(fields: [parliamentarianId], references: [id])
-    guestUserId       String?
-    guestUser         GuestUser?       @relation(fields: [guestUserId], references: [id])
-    autorExternoId    String?
-    autorExterno      AutorExterno?    @relation(fields: [autorExternoId], references: [id])
+    tenantPartnerId   String?
+    tenantPartner     TenantPartner?   @relation(fields: [tenantPartnerId], references: [id])
     materias          Materia[]        @relation("AutorMateria")
     materiaAutores    MateriaAutor[]
     isRemoved         Boolean          @default(false)
@@ -880,9 +859,8 @@ model Autor {
     updatedAt         DateTime         @updatedAt
 
     @@index([tenantId])
-    @@index([tenantId, guestUserId])
     @@index([tenantId, parliamentarianId])
-    @@index([tenantId, autorExternoId])
+    @@index([tenantId, tenantPartnerId])
 }
 
 model TipoComissao {
@@ -1039,12 +1017,18 @@ model SessaoPlenaria {
     quorumPresente        Int?
     responsavelAberturaId String?
     observacoes           String?
+    // M11 — fase atual como indicador (não trava)
+    faseAtual             FaseSessao         @default(NAO_INICIADA)
+    // M13 — links de transmissão
+    linkJitsi             String?
+    linkYoutube           String?
     isRemoved             Boolean            @default(false)
     createdAt             DateTime           @default(now())
     updatedAt             DateTime           @updatedAt
     mesasDiretoras        MesaDiretora[]
     pautaItens            PautaItem[]
     presencas             PresencaSessao[]
+    pedidosPalavra        PedidoPalavra[]
     responsavelAbertura   TenantUser?        @relation("SessaoAbertaPor", fields: [responsavelAberturaId], references: [id])
     agendas               AgendaLegislativa[] @relation("AgendaSessao")
 
@@ -1254,10 +1238,11 @@ model Ato {
     @@index([tenantId, isRemoved])
 }
 
-model AutorExterno {
+model TenantPartner {
     id          String    @id @default(uuid())
     tenantId    String
     tipoAutorId String
+
     nome        String
     cargo       String?
     instituicao String?
@@ -1267,18 +1252,40 @@ model AutorExterno {
     registro    String?
     partido     String?
     uf          String?
-    isRemoved   Boolean   @default(false)
-    removedAt   DateTime?
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
 
-    tenant    Tenant     @relation(fields: [tenantId], references: [id])
-    tipoAutor TipoAutor  @relation(fields: [tipoAutorId], references: [id])
-    autores   Autor[]
+    isRemoved Boolean   @default(false)
+    removedAt DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    tenant            Tenant             @relation(fields: [tenantId], references: [id])
+    tipoAutor         TipoAutor          @relation(fields: [tipoAutorId], references: [id])
+    tenantPartnerUser TenantPartnerUser?
+    autores           Autor[]
 
     @@index([tenantId])
     @@index([tenantId, isRemoved])
-    @@map("autores_externos")
+    @@map("tenant_partners")
+}
+
+model TenantPartnerUser {
+    id              String @id @default(uuid())
+    tenantId        String
+    tenantPartnerId String @unique
+    userId          String @unique
+
+    isRemoved Boolean   @default(false)
+    removedAt DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    tenant        Tenant        @relation(fields: [tenantId], references: [id])
+    tenantPartner TenantPartner @relation(fields: [tenantPartnerId], references: [id])
+    user          User          @relation(fields: [userId], references: [id])
+
+    @@index([tenantId])
+    @@index([tenantId, isRemoved])
+    @@map("tenant_partner_users")
 }
 
 model TramitacaoHistorico {
@@ -1418,10 +1425,12 @@ model PautaItem {
     fase        FasePauta        @default(ORDEM_DO_DIA)
     resultado   ResultadoPauta?
     // Campos novos M4
-    statusPauta StatusPautaItem  @default(RASCUNHO)
-    publicadaEm DateTime?
-    ordemDia    Int?
-    isRemoved   Boolean          @default(false)
+    statusPauta   StatusPautaItem  @default(RASCUNHO)
+    publicadaEm   DateTime?
+    ordemDia      Int?
+    // M11 — tipo de item (bloqueia votação se LEITURA ou COMUNICACAO)
+    tipoPautaItem TipoPautaItem    @default(DELIBERACAO)
+    isRemoved     Boolean          @default(false)
     createdAt   DateTime         @default(now())
     updatedAt   DateTime         @updatedAt
     votacao     Votacao?
@@ -1446,6 +1455,11 @@ model Votacao {
     quorumVotacao Int?
     motivoEmpate  String?
     observacoes   String?
+    // M12 — quórum por tipo de matéria
+    tipoQuorum    TipoQuorum?
+    totalMembros  Int?
+    votoQualidade Boolean           @default(false)
+    presidenteId  String?
     createdAt     DateTime          @default(now())
     votos         VotoParlamentar[]
     responsavel   TenantUser?       @relation("VotacaoEncerradaPor", fields: [responsavelId], references: [id])
@@ -1468,17 +1482,26 @@ model VotoParlamentar {
 }
 
 model PresencaSessao {
-    id            String           @id @default(uuid())
-    sessaoId      String
-    sessao        SessaoPlenaria   @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
-    parlamentarId String
-    parlamentar   Parlamentar      @relation(fields: [parlamentarId], references: [id])
-    presente      Boolean          @default(true)
-    situacao      SituacaoPresenca @default(PRESENTE)
-    justificativa String?
-    createdAt     DateTime         @default(now())
+    id                String              @id @default(uuid())
+    sessaoId          String
+    sessao            SessaoPlenaria      @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+    // Legado — manter
+    parlamentarId     String?
+    parlamentar       Parlamentar?        @relation(fields: [parlamentarId], references: [id])
+    // Novo — app parlamentar usa este
+    parliamentarianId String?
+    parliamentarian   Parliamentarian?    @relation(fields: [parliamentarianId], references: [id])
+    presente          Boolean             @default(true)
+    situacao          SituacaoPresenca    @default(PRESENTE)
+    justificativa     String?
+    // M13 — auto-registro e modalidade (passivo, sem lógica ativa)
+    autoRegistrado    Boolean             @default(false)
+    modalidade        ModalidadePresenca  @default(PRESENCIAL)
+    registradoEm      DateTime?
+    createdAt         DateTime            @default(now())
 
     @@unique([sessaoId, parlamentarId])
+    @@unique([sessaoId, parliamentarianId])
 }
 
 // --- Courses bounded context ---
@@ -1512,4 +1535,31 @@ model Course {
     @@index([tenantId, isRemoved])
     @@index([tenantId, status])
     @@map("courses")
+}
+
+// M14 — Pedido de Palavra na Sessão Plenária
+
+enum StatusPedidoPalavra {
+    AGUARDANDO
+    CONCEDIDO
+    NEGADO
+    ENCERRADO
+}
+
+model PedidoPalavra {
+    id                String              @id @default(uuid())
+    sessaoId          String
+    parliamentarianId String
+    status            StatusPedidoPalavra @default(AGUARDANDO)
+    criadoEm          DateTime            @default(now())
+    respondidoEm      DateTime?
+    encerradoEm       DateTime?
+    duracaoSegundos   Int?
+
+    sessao          SessaoPlenaria  @relation(fields: [sessaoId], references: [id])
+    parliamentarian Parliamentarian @relation(fields: [parliamentarianId], references: [id])
+
+    @@index([sessaoId, status])
+    @@index([sessaoId, parliamentarianId])
+    @@map("pedidos_palavra")
 }

@@ -1,4 +1,4 @@
-import { FasePauta, ResultadoPauta, SituacaoPresenca } from '@prisma/client';
+import { FasePauta, ResultadoPauta, SituacaoPresenca, TipoPautaItem } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
     IsBoolean,
@@ -62,14 +62,19 @@ export class AddPautaItemDto {
     @IsString()
     materiaId: string;
 
+    @IsOptional()
     @IsInt()
     @Min(1)
     @Type(() => Number)
-    ordem: number;
+    ordem?: number;
 
     @IsOptional()
     @IsEnum(FasePauta)
     fase?: FasePauta;
+
+    @IsOptional()
+    @IsEnum(TipoPautaItem)
+    tipoPautaItem?: TipoPautaItem;
 }
 
 export class RegistrarPresencaDto {

@@ -30,8 +30,10 @@
         "@nestjs/mapped-types": "^2.1.1",
         "@nestjs/passport": "^11.0.0",
         "@nestjs/platform-fastify": "^11.1.26",
+        "@nestjs/platform-socket.io": "^11.1.27",
         "@nestjs/swagger": "^11.0.0",
         "@nestjs/throttler": "^6.4.0",
+        "@nestjs/websockets": "^11.1.27",
         "@prisma/client": "^6.0.0",
         "bcryptjs": "^3.0.2",
         "class-transformer": "^0.5.1",
@@ -39,7 +41,8 @@
         "passport": "^0.7.0",
         "passport-jwt": "^4.0.1",
         "reflect-metadata": "^0.2.2",
-        "rxjs": "^7.8.1"
+        "rxjs": "^7.8.1",
+        "socket.io": "^4.8.3"
     },
     "devDependencies": {
         "@nestjs/cli": "^11.0.0",

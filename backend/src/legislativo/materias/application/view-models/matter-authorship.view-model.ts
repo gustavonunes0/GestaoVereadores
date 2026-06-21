@@ -37,12 +37,7 @@ export type MatterAuthorshipPayload = MateriaPrismaPayload & {
     autor?: {
         id: string;
         nome: string;
-        guestUser?: {
-            id: string;
-            fullName: string;
-            type: string;
-        } | null;
-        autorExterno?: {
+        tenantPartner?: {
             id: string;
             nome: string;
             tipoAutorId: string;
@@ -52,28 +47,15 @@ export type MatterAuthorshipPayload = MateriaPrismaPayload & {
 };
 
 function buildExternalAuthor(autor: NonNullable<MatterAuthorshipPayload['autor']>) {
-    if (autor.autorExterno) {
+    if (autor.tenantPartner) {
         return {
             type: MatterAuthorType.EXTERNAL,
             label: MATTER_AUTHOR_TYPE_LABELS[MatterAuthorType.EXTERNAL],
             autorId: autor.id,
-            autorExterno: {
-                id: autor.autorExterno.id,
-                nome: autor.autorExterno.nome,
-                tipoAutorId: autor.autorExterno.tipoAutorId,
-            },
-        };
-    }
-
-    if (autor.guestUser) {
-        return {
-            type: MatterAuthorType.EXTERNAL,
-            label: MATTER_AUTHOR_TYPE_LABELS[MatterAuthorType.EXTERNAL],
-            autorId: autor.id,
-            guestUser: {
-                id: autor.guestUser.id,
-                fullName: autor.guestUser.fullName,
-                guestType: autor.guestUser.type,
+            tenantPartner: {
+                id: autor.tenantPartner.id,
+                nome: autor.tenantPartner.nome,
+                tipoAutorId: autor.tenantPartner.tipoAutorId,
             },
         };
     }

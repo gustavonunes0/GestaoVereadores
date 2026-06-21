@@ -1,6 +1,7 @@
 import { api, apiFormData, apiList } from '../client';
 import { API_PATHS } from '../paths';
 import type { MateriaStatus } from '../../types/legislative';
+import type { CoautorMateria } from '../../types/materias';
 
 export interface MatterAuthorOption {
     id: string;
@@ -19,8 +20,8 @@ export interface MatterAuthorship {
         type: 'parliamentarian' | 'external';
         label: string;
         parliamentarian?: { id: string; parliamentaryName: string };
-        autorExterno?: { id: string; nome: string; tipoAutorId?: string };
-        guestUser?: { id: string; fullName: string };
+        tenantPartner?: { id: string; nome: string; tipoAutorId?: string };
+        autorId?: string;
     };
     coauthors?: Array<{
         id: string;
@@ -183,10 +184,10 @@ export const materiasApi = {
             body: JSON.stringify({ parliamentarianId }),
         }),
 
-    setAutorExterno: (id: string, autorExternoId: string) =>
+    setTenantPartner: (id: string, tenantPartnerId: string) =>
         api<MatterAuthorship>(API_PATHS.materiasAutoriaExterno(id), {
             method: 'PUT',
-            body: JSON.stringify({ autorExternoId }),
+            body: JSON.stringify({ tenantPartnerId }),
         }),
 
     uploadTextoOriginal: (id: string, file: File) => {
@@ -194,4 +195,13 @@ export const materiasApi = {
         fd.append('textoOriginal', file);
         return apiFormData<Materia>(API_PATHS.materiasTextoOriginal(id), fd);
     },
+
+    listCoautores: (id: string) =>
+        api<CoautorMateria[]>(API_PATHS.materiaCoautores(id)),
+
+    addCoautor: (id: string, dto: { tipoCoautor: string; parlamentarId?: string; tenantPartnerUserId?: string }) =>
+        api<CoautorMateria>(API_PATHS.materiaCoautores(id), { method: 'POST', body: JSON.stringify(dto) }),
+
+    removeCoautor: (materiaId: string, coautorId: string) =>
+        api<void>(API_PATHS.materiaCoautorById(materiaId, coautorId), { method: 'DELETE' }),
 };

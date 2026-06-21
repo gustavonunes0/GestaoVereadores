@@ -235,11 +235,23 @@ async function main() {
         { nome: 'Pedido de Veto de PLO',             sigla: 'PVPLO', ordem: 17 },
         { nome: 'Projeto de Lei (CTC)',               sigla: 'PLCTC', ordem: 18 },
     ];
+    const QUORUM_POR_SIGLA: Record<string, string> = {
+        'PLO': 'MAIORIA_SIMPLES', 'PLC': 'MAIORIA_SIMPLES',
+        'PDL': 'MAIORIA_ABSOLUTA', 'PR': 'MAIORIA_ABSOLUTA',
+        'REQ': 'MAIORIA_SIMPLES', 'IND': 'MAIORIA_SIMPLES',
+        'SUB': 'MAIORIA_SIMPLES', 'SUBE': 'MAIORIA_SIMPLES',
+        'PAR': 'MAIORIA_SIMPLES', 'REC': 'MAIORIA_SIMPLES',
+        'ELOM': 'QUALIFICADO_DOIS_TERCOS', 'EMD': 'MAIORIA_SIMPLES',
+        'PIL': 'MAIORIA_SIMPLES', 'PLOE': 'MAIORIA_SIMPLES',
+        'MOÇ': 'MAIORIA_SIMPLES', 'OFC': 'MAIORIA_SIMPLES',
+        'PVPLO': 'MAIORIA_ABSOLUTA', 'PLCTC': 'MAIORIA_SIMPLES',
+    };
     for (const { nome, sigla, ordem } of tiposMateria) {
+        const tipoQuorum = (sigla && QUORUM_POR_SIGLA[sigla]) ?? 'MAIORIA_SIMPLES';
         await prisma.tipoMateria.upsert({
             where: { tenantId_nome: { tenantId: DEMO_TENANT_ID, nome } },
-            update: { sigla, ordem },
-            create: { tenantId: DEMO_TENANT_ID, nome, sigla, ordem },
+            update: { sigla, ordem, tipoQuorum: tipoQuorum as any },
+            create: { tenantId: DEMO_TENANT_ID, nome, sigla, ordem, tipoQuorum: tipoQuorum as any },
         });
     }
     console.log(`TipoMateria: ${tiposMateria.length} tipos criados`);

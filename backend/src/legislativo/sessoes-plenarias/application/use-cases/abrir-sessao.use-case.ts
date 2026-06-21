@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException, Unprocessab
 import { SESSAO_PLENARIA_REPOSITORY } from '../../sessoes-plenarias.tokens';
 import { SessaoPlenariaRepository } from '../../domain/repositories/sessao-plenaria.repository';
 import { StatusSessao } from '../../domain/enums/status-sessao.enum';
+import { FaseSessao } from '../../domain/enums/fase-sessao.enum';
 import { AbrirSessaoDto } from '../dto/abrir-sessao.dto';
 import { QuorumService } from '../../domain/services/quorum.service';
 
@@ -49,6 +50,9 @@ export class AbrirSessaoUseCase {
             observacao: dto.observacao,
             quorumPresente,
         });
+
+        // RN-SPL-02: ao abrir, fase vai automaticamente para EXPEDIENTE
+        await this.repository.setFase(sessaoId, tenantId, FaseSessao.EXPEDIENTE);
 
         return { statusSessao: StatusSessao.ABERTA, quorumPresente };
     }

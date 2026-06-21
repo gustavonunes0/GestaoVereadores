@@ -7,7 +7,7 @@ type TenantStaffRow = {
     status: TenantUserStatus;
     createdAt: Date;
     user: {
-        cpf: string;
+        cpf: string | null;
         email: string;
         firstName: string;
         lastName: string;

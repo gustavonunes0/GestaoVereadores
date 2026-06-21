@@ -13,8 +13,7 @@ describe('AutorResolverService', () => {
                 service.validar({
                     parlamentarId: null,
                     parliamentarianId: null,
-                    autorExternoId: null,
-                    guestUserId: null,
+                    tenantPartnerId: null,
                 }),
             ).toThrow('exatamente uma referência é obrigatória');
         });
@@ -24,8 +23,7 @@ describe('AutorResolverService', () => {
                 service.validar({
                     parlamentarId: 'parl-1',
                     parliamentarianId: 'new-parl-1',
-                    autorExternoId: null,
-                    guestUserId: null,
+                    tenantPartnerId: null,
                 }),
             ).toThrow('exatamente uma referência é obrigatória');
         });
@@ -35,8 +33,7 @@ describe('AutorResolverService', () => {
                 service.validar({
                     parlamentarId: null,
                     parliamentarianId: 'new-parl-1',
-                    autorExternoId: null,
-                    guestUserId: null,
+                    tenantPartnerId: null,
                 }),
             ).not.toThrow();
         });

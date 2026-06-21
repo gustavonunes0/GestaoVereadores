@@ -1,6 +1,7 @@
 import { api, apiList } from '../client';
 import { API_PATHS } from '../paths';
 import type { SessaoStatus } from '../../types/legislative';
+import type { PautaItemDetalhe, SessaoPlenariaDetalhe } from '../../types/sessoes';
 
 export interface SessaoPlenaria {
     id: string;
@@ -41,6 +42,20 @@ export interface QuorumInfo {
     temQuorum: boolean;
 }
 
+type QuorumApiResponse = {
+    quorumMinimo: number;
+    quorumPresente: number;
+    temQuorum: boolean;
+};
+
+function mapQuorum(raw: QuorumApiResponse): QuorumInfo {
+    return {
+        minimo: raw.quorumMinimo,
+        presente: raw.quorumPresente,
+        temQuorum: raw.temQuorum,
+    };
+}
+
 const base = API_PATHS.sessoes;
 
 export const sessoesApi = {
@@ -55,6 +70,8 @@ export const sessoesApi = {
     update: (id: string, body: Record<string, unknown>) =>
         api<SessaoPlenaria>(`${base}/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
 
+    remove: (id: string) => api<void>(`${base}/${id}`, { method: 'DELETE' }),
+
     abrir: (id: string) =>
         api<SessaoPlenaria>(API_PATHS.sessoesAbrir(id), { method: 'POST' }),
 
@@ -67,8 +84,8 @@ export const sessoesApi = {
     cancelar: (id: string) =>
         api<SessaoPlenaria>(API_PATHS.sessoesCancelar(id), { method: 'POST' }),
 
-    getQuorum: (id: string) =>
-        api<QuorumInfo>(API_PATHS.sessoesQuorum(id)),
+    getQuorum: async (id: string) =>
+        mapQuorum(await api<QuorumApiResponse>(API_PATHS.sessoesQuorum(id))),
 
     addPautaItem: (sessaoId: string, body: Record<string, unknown>) =>
         api(`${base}/${sessaoId}/pauta`, { method: 'POST', body: JSON.stringify(body) }),
@@ -93,4 +110,34 @@ export const sessoesApi = {
             method: 'PATCH',
             body: JSON.stringify(body),
         }),
+
+    getDetalhe: (id: string) =>
+        api<SessaoPlenariaDetalhe>(API_PATHS.sessaoById(id)),
+
+    updateLinkYoutube: (id: string, linkYoutube: string) =>
+        api<SessaoPlenariaDetalhe>(API_PATHS.sessaoById(id), {
+            method: 'PATCH',
+            body: JSON.stringify({ linkYoutube }),
+        }),
+
+    getPauta: (sessaoId: string) =>
+        api<PautaItemDetalhe[]>(API_PATHS.sessoesPauta(sessaoId)),
+
+    addPautaItemDetalhe: (sessaoId: string, body: Record<string, unknown>) =>
+        api<PautaItemDetalhe>(API_PATHS.sessoesPauta(sessaoId), {
+            method: 'POST',
+            body: JSON.stringify(body),
+        }),
+
+    removePautaItem: (sessaoId: string, itemId: string) =>
+        api<void>(API_PATHS.sessoesPautaItem(sessaoId, itemId), { method: 'DELETE' }),
+
+    reordenarPautaItem: (sessaoId: string, itemId: string, ordem: number) =>
+        api<PautaItemDetalhe>(API_PATHS.sessoesPautaItem(sessaoId, itemId), {
+            method: 'PATCH',
+            body: JSON.stringify({ ordem }),
+        }),
+
+    publicarPauta: (sessaoId: string) =>
+        api<void>(API_PATHS.sessoesPautaPublicar(sessaoId), { method: 'PATCH' }),
 };

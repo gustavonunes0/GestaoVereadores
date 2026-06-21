@@ -171,4 +171,21 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
             data: { lastAccessAt: new Date() },
         });
     }
+
+    async isPartnerOnlyUser(userId: string): Promise<boolean> {
+        const partnerUser = await this.prisma.tenantPartnerUser.findFirst({
+            where: { userId, isRemoved: false },
+        });
+        if (!partnerUser) return false;
+
+        const tenantUser = await this.prisma.tenantUser.findFirst({
+            where: { userId, isRemoved: false },
+        });
+        if (tenantUser) return false;
+
+        const parlUser = await this.prisma.parlamentarianUser.findFirst({
+            where: { userId, isRemoved: false },
+        });
+        return !parlUser;
+    }
 }

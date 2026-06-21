@@ -30,8 +30,8 @@ export function ParlamentarMandatosDialog({
 
     useEffect(() => {
         parlamentaresApi
-            .getMandatos(parliamentarianId)
-            .then((res) => setMandatos(res as unknown as Mandato[]))
+            .listMandatos(parliamentarianId)
+            .then((res) => setMandatos(res.data))
             .catch(showApiError)
             .finally(() => setLoading(false));
     }, [parliamentarianId, showApiError]);

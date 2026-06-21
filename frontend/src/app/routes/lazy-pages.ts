@@ -22,6 +22,8 @@ export const Pages = {
     portal: lazy(() => import('../../pages/PortalInstitucionalPage').then((m) => ({ default: m.PortalInstitucionalPage }))),
     usuarios: lazy(() => import('../../pages/UsuariosPage').then((m) => ({ default: m.UsuariosPage }))),
 
+    sessaoDetalhe: lazy(() => import('../../components/sessoes/SessaoDetalhePage').then((m) => ({ default: m.SessaoDetalhePage }))),
+
     parlamentarPerfil: lazy(() => import('../../pages/parlamentar/ParlamentarPerfilPage').then((m) => ({ default: m.ParlamentarPerfilPage }))),
     parlamentarBiografia: lazy(() => import('../../pages/parlamentar/ParlamentarBiografiaPage').then((m) => ({ default: m.ParlamentarBiografiaPage }))),
     parlamentarDashboard: lazy(() => import('../../pages/parlamentar/ParlamentarDashboardPage').then((m) => ({ default: m.ParlamentarDashboardPage }))),

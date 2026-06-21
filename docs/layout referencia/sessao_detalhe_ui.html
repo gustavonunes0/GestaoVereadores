@@ -1,0 +1,457 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);color:var(--color-text-primary);font-size:14px}
+.page{display:flex;flex-direction:column;gap:0;min-height:600px;background:var(--color-background-tertiary)}
+
+.topbar{background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);padding:12px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.topbar-back{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-text-secondary);cursor:pointer;padding:4px 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent}
+.topbar-back:hover{background:var(--color-background-secondary)}
+.topbar-info{flex:1;min-width:0}
+.topbar-title{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-sub{font-size:12px;color:var(--color-text-secondary);margin-top:1px}
+.topbar-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.topbar-actions{display:flex;gap:6px}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:var(--border-radius-md);font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{font-size:10px}
+.badge-success{background:#EAF3DE;color:#3B6D11}
+.badge-info{background:#E6F1FB;color:#185FA5}
+.badge-warn{background:#FAEEDA;color:#854F0B}
+.badge-danger{background:#FCEBEB;color:#A32D2D}
+.badge-neutral{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);font-size:13px;cursor:pointer;font-family:var(--font-sans);white-space:nowrap}
+.btn:hover{background:var(--color-background-secondary)}
+.btn-primary{background:#185FA5;color:#fff;border-color:#185FA5}
+.btn-primary:hover{background:#0C447C}
+.btn-danger{background:#A32D2D;color:#fff;border-color:#A32D2D}
+.btn-danger:hover{background:#791F1F}
+.btn-ghost{border-color:transparent}
+.btn-ghost:hover{background:var(--color-background-secondary);border-color:var(--color-border-tertiary)}
+.btn-sm{padding:4px 8px;font-size:12px}
+.btn i{font-size:14px}
+.btn-sm i{font-size:12px}
+
+.tabs-nav{background:var(--color-background-primary);border-bottom:0.5px solid var(--color-border-tertiary);padding:0 20px;display:flex;gap:0}
+.tab-btn{padding:10px 16px;border:none;background:transparent;color:var(--color-text-secondary);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-0.5px;font-family:var(--font-sans);display:flex;align-items:center;gap:6px}
+.tab-btn.active{color:#185FA5;border-bottom-color:#185FA5;font-weight:500}
+.tab-btn:hover:not(.active){color:var(--color-text-primary);background:var(--color-background-secondary)}
+.tab-dot{width:6px;height:6px;border-radius:50%;background:#E24B4A;animation:pulse 1.2s infinite}
+
+.content{padding:20px;flex:1;display:flex;flex-direction:column;gap:16px}
+
+.panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.panel-header{padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.panel-title{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
+.panel-body{padding:16px}
+
+.pauta-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.pauta-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--color-border-tertiary)}
+.pauta-table td{padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle}
+.pauta-table tr:last-child td{border-bottom:none}
+.pauta-table tr.data-row:hover td{background:var(--color-background-secondary)}
+.col-ord{width:52px;text-align:center}
+.col-mat{width:auto}
+.col-fase{width:68px;text-align:center}
+.col-tipo{width:60px;text-align:center}
+.col-act{width:40px;text-align:center}
+
+.mat-id{font-size:12px;font-weight:500;display:block}
+.mat-ementa{font-size:11px;color:var(--color-text-secondary);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;margin-top:2px}
+
+.ord-wrap{display:flex;flex-direction:column;align-items:center;gap:0}
+.ord-num{font-size:11px;font-weight:500;color:var(--color-text-secondary);line-height:1.2}
+.ord-btn{background:none;border:none;padding:1px 4px;cursor:pointer;color:var(--color-text-secondary);font-size:10px;line-height:1;border-radius:3px}
+.ord-btn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.ord-btn:disabled{opacity:.3;cursor:default}
+
+.confirm-row td{background:#FAEEDA !important;border-bottom:0.5px solid #FAC775 !important}
+.confirm-inner{display:flex;align-items:center;gap:10px;font-size:12px;padding:2px 0}
+.confirm-inner strong{color:#854F0B}
+
+.empty-state{display:flex;flex-direction:column;align-items:center;gap:8px;padding:32px 16px;color:var(--color-text-secondary);font-size:13px;text-align:center}
+.empty-state i{font-size:28px;opacity:.35}
+
+.transmissao-wrap{display:flex;flex-direction:column;gap:12px}
+
+.status-bar{display:flex;align-items:center;gap:14px;padding:8px 12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:12px;flex-wrap:wrap}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot-green{background:#639922;animation:pulse 1.4s infinite}
+.dot-yellow{background:#BA7517;animation:pulse 1s infinite}
+.status-sala code{font-family:var(--font-mono);font-size:11px;background:var(--color-background-primary);padding:2px 6px;border-radius:4px;border:0.5px solid var(--color-border-tertiary)}
+.ao-vivo{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:#A32D2D;margin-left:auto}
+.dot-red{width:6px;height:6px;border-radius:50%;background:#E24B4A;animation:pulse .9s infinite}
+
+.controles-bar{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);flex-wrap:wrap}
+.controles-grupo{display:flex;align-items:center;gap:6px}
+.controles-label{font-size:10px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.divider-v{width:0.5px;height:24px;background:var(--color-border-tertiary);margin:0 4px}
+
+.jitsi-frame{background:#0f0f0f;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);height:260px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;position:relative;overflow:hidden}
+.jitsi-frame-bg{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;gap:2px;opacity:.35}
+.jitsi-cam{background:#1a1a2e;display:flex;align-items:center;justify-content:center}
+.jitsi-cam i{font-size:24px;color:#4a4a6a}
+.jitsi-overlay{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.jitsi-overlay span{color:#fff;font-size:12px;opacity:.7}
+.jitsi-live-badge{background:#E24B4A;color:#fff;font-size:10px;font-weight:500;padding:3px 8px;border-radius:var(--border-radius-md);display:flex;align-items:center;gap:4px}
+
+.yt-form{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px}
+.yt-form-label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px}
+.yt-form-label i{color:#E24B4A;font-size:14px}
+.yt-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.yt-input{flex:1;min-width:160px;padding:6px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans)}
+.yt-hint{font-size:11px;color:var(--color-text-secondary);margin-top:6px}
+
+.add-dialog-mock{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.dialog-header{padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between}
+.dialog-body{padding:16px;display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;font-weight:500;color:var(--color-text-secondary)}
+.field input,.field select{padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);width:100%}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.infer-hint{background:#E6F1FB;border-radius:var(--border-radius-md);padding:8px 10px;font-size:11px;color:#185FA5;display:flex;align-items:flex-start;gap:6px}
+.infer-hint i{font-size:13px;margin-top:1px;flex-shrink:0}
+.dialog-footer{padding:10px 16px;border-top:0.5px solid var(--color-border-tertiary);display:flex;justify-content:flex-end;gap:8px}
+
+.ws-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:var(--border-radius-md);background:#EAF3DE;color:#3B6D11;font-size:11px}
+.ws-pill i{font-size:11px}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+
+<h2 class="sr-only">Protótipo de UI — Tela de detalhes de sessão plenária com pauta e transmissão Jitsi</h2>
+
+<div class="page">
+
+  <div class="topbar">
+    <button class="topbar-back btn btn-sm btn-ghost"><i class="ti ti-arrow-left" aria-hidden="true"></i> Sessões</button>
+    <div class="topbar-info">
+      <div class="topbar-title">Sessão Ordinária — 15 de setembro de 2025</div>
+      <div class="topbar-sub">14h00 &middot; Plenário principal</div>
+    </div>
+    <div class="topbar-badges">
+      <span class="badge badge-success"><i class="ti ti-circle-filled" aria-hidden="true"></i> Aberta</span>
+      <span class="badge badge-warn"><i class="ti ti-clock" aria-hidden="true"></i> Ordem do Dia</span>
+      <span class="ws-pill"><i class="ti ti-wifi" aria-hidden="true"></i> Ao vivo</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-sm"><i class="ti ti-player-pause" aria-hidden="true"></i> Suspender</button>
+      <button class="btn btn-sm btn-danger"><i class="ti ti-square-x" aria-hidden="true"></i> Encerrar</button>
+    </div>
+  </div>
+
+  <div class="tabs-nav" role="tablist">
+    <button class="tab-btn" role="tab" onclick="showTab('pauta',this)"><i class="ti ti-list-numbers" aria-hidden="true"></i> Pauta</button>
+    <button class="tab-btn" role="tab" onclick="showTab('presencas',this)"><i class="ti ti-users" aria-hidden="true"></i> Presenças</button>
+    <button class="tab-btn active" role="tab" onclick="showTab('transmissao',this)">
+      <i class="ti ti-broadcast" aria-hidden="true"></i> Transmissão
+      <span class="tab-dot" aria-label="ao vivo"></span>
+    </button>
+    <button class="tab-btn" role="tab" onclick="showTab('add',this)"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar matéria</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ABA PAUTA -->
+    <div id="tab-pauta" class="transmissao-wrap" style="display:none">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="ti ti-list-numbers" aria-hidden="true"></i> Pauta da sessão</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="badge badge-success">Publicada</span>
+            <button class="btn btn-sm btn-primary" disabled><i class="ti ti-send" aria-hidden="true"></i> Publicada</button>
+          </div>
+        </div>
+        <div style="padding:0">
+          <table class="pauta-table" aria-label="Itens da pauta">
+            <thead>
+              <tr>
+                <th class="col-ord">#</th>
+                <th class="col-mat">Matéria</th>
+                <th class="col-fase">Fase</th>
+                <th class="col-tipo">Tipo</th>
+                <th class="col-act"></th>
+              </tr>
+            </thead>
+            <tbody id="pauta-body">
+              <tr class="data-row">
+                <td class="col-ord">
+                  <div class="ord-wrap">
+                    <button class="ord-btn" disabled aria-label="Mover para cima"><i class="ti ti-chevron-up"></i></button>
+                    <span class="ord-num">1</span>
+                    <button class="ord-btn" aria-label="Mover para baixo"><i class="ti ti-chevron-down"></i></button>
+                  </div>
+                </td>
+                <td class="col-mat">
+                  <span class="mat-id">OFC nº 012/2025</span>
+                  <span class="mat-ementa">Ofício da Prefeitura Municipal comunicando obras de pavimentação no bairro Centro previstas para o 2º semestre.</span>
+                </td>
+                <td class="col-fase"><span class="badge badge-neutral">P.EXP</span></td>
+                <td class="col-tipo"><span class="badge badge-neutral">COM</span></td>
+                <td class="col-act"><button class="btn btn-ghost btn-sm" disabled title="Pauta publicada — remoção bloqueada" aria-label="Remover"><i class="ti ti-x" style="font-size:13px"></i></button></td>
+              </tr>
+              <tr class="data-row" id="row2">
+                <td class="col-ord">
+                  <div class="ord-wrap">
+                    <button class="ord-btn" aria-label="Mover para cima"><i class="ti ti-chevron-up"></i></button>
+                    <span class="ord-num">2</span>
+                    <button class="ord-btn" aria-label="Mover para baixo"><i class="ti ti-chevron-down"></i></button>
+                  </div>
+                </td>
+                <td class="col-mat">
+                  <span class="mat-id">PLO nº 003/2025</span>
+                  <span class="mat-ementa">Projeto de Lei Orçamentária para o exercício de 2026, dispondo sobre estimativa de receita e fixação da despesa.</span>
+                </td>
+                <td class="col-fase"><span class="badge badge-warn">O.D.</span></td>
+                <td class="col-tipo"><span class="badge badge-info" style="background:#E6F1FB;color:#185FA5">DEL</span></td>
+                <td class="col-act">
+                  <button class="btn btn-ghost btn-sm" onclick="toggleConfirm()" aria-label="Remover"><i class="ti ti-x" style="font-size:13px;color:#A32D2D"></i></button>
+                </td>
+              </tr>
+              <tr id="confirm-row" class="confirm-row" style="display:none">
+                <td colspan="5">
+                  <div class="confirm-inner">
+                    <i class="ti ti-alert-triangle" style="color:#BA7517;font-size:14px" aria-hidden="true"></i>
+                    <span>Remover <strong>PLO nº 003/2025</strong> da pauta?</span>
+                    <button class="btn btn-sm btn-danger" onclick="toggleConfirm()">Sim, remover</button>
+                    <button class="btn btn-sm btn-ghost" onclick="toggleConfirm()">Não</button>
+                  </div>
+                </td>
+              </tr>
+              <tr class="data-row">
+                <td class="col-ord">
+                  <div class="ord-wrap">
+                    <button class="ord-btn" aria-label="Mover para cima"><i class="ti ti-chevron-up"></i></button>
+                    <span class="ord-num">3</span>
+                    <button class="ord-btn" disabled aria-label="Mover para baixo"><i class="ti ti-chevron-down"></i></button>
+                  </div>
+                </td>
+                <td class="col-mat">
+                  <span class="mat-id">REQ nº 007/2025</span>
+                  <span class="mat-ementa">Requerimento de informações ao Poder Executivo sobre contratos de prestação de serviços firmados no corrente exercício.</span>
+                </td>
+                <td class="col-fase"><span class="badge badge-neutral">P.EXP</span></td>
+                <td class="col-tipo"><span class="badge badge-neutral">LEI</span></td>
+                <td class="col-act"><button class="btn btn-ghost btn-sm" disabled aria-label="Remover"><i class="ti ti-x" style="font-size:13px"></i></button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <button class="btn btn-sm" style="align-self:flex-start" onclick="showTab('add',document.querySelectorAll('.tab-btn')[3])">
+        <i class="ti ti-plus" aria-hidden="true"></i> Adicionar matéria
+      </button>
+    </div>
+
+    <!-- ABA PRESENÇAS -->
+    <div id="tab-presencas" style="display:none">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title"><i class="ti ti-users" aria-hidden="true"></i> Registro de presenças</span>
+          <span class="badge badge-info">9 de 11 presentes</span>
+        </div>
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
+            <div id="vereadores"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA TRANSMISSÃO -->
+    <div id="tab-transmissao" class="transmissao-wrap">
+
+      <div class="status-bar">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="status-dot dot-green" aria-hidden="true"></span>
+          <span style="font-weight:500">Conectado</span>
+        </div>
+        <div class="status-sala" style="display:flex;align-items:center;gap:5px;color:var(--color-text-secondary)">
+          <i class="ti ti-video" aria-hidden="true"></i>
+          <span>Sala:</span><code>sessao-a4f82c19</code>
+        </div>
+        <div class="ao-vivo">
+          <span class="dot-red" aria-hidden="true"></span>
+          AO VIVO
+        </div>
+      </div>
+
+      <div class="controles-bar">
+        <div class="controles-grupo">
+          <span class="controles-label">Câmeras</span>
+          <button class="btn btn-sm"><i class="ti ti-device-tv" aria-hidden="true"></i> Câmera 1 — Leitor</button>
+          <button class="btn btn-sm"><i class="ti ti-device-tv" aria-hidden="true"></i> Câmera 2 — Plenário</button>
+        </div>
+        <div class="divider-v" aria-hidden="true"></div>
+        <div class="controles-grupo">
+          <span class="controles-label">Painel</span>
+          <button class="btn btn-sm"><i class="ti ti-screen-share" aria-hidden="true"></i> Compartilhar tela</button>
+        </div>
+        <div class="divider-v" aria-hidden="true"></div>
+        <div class="controles-grupo">
+          <span class="controles-label">Transmissão</span>
+          <button class="btn btn-sm btn-danger" id="btn-yt" onclick="toggleYt()"><i class="ti ti-player-stop" aria-hidden="true"></i> Parar transmissão</button>
+        </div>
+      </div>
+
+      <div class="jitsi-frame" aria-label="Sala de vídeo Jitsi">
+        <div class="jitsi-frame-bg" aria-hidden="true">
+          <div class="jitsi-cam"><i class="ti ti-user"></i></div>
+          <div class="jitsi-cam"><i class="ti ti-user"></i></div>
+          <div class="jitsi-cam"><i class="ti ti-user"></i></div>
+          <div class="jitsi-cam"><i class="ti ti-user"></i></div>
+        </div>
+        <div class="jitsi-overlay">
+          <span class="jitsi-live-badge"><span class="dot-red" aria-hidden="true"></span> AO VIVO</span>
+          <span>meet.camara.baturite.ce.gov.br</span>
+          <span style="font-size:11px;opacity:.5">4 participantes conectados</span>
+        </div>
+      </div>
+
+      <div class="yt-form">
+        <div class="yt-form-label"><i class="ti ti-brand-youtube" aria-hidden="true"></i> Transmissão pública no YouTube</div>
+        <div class="yt-row">
+          <input class="yt-input" type="text" value="https://youtube.com/live/xK9mZ2pQrTs" aria-label="Link do YouTube" />
+          <button class="btn btn-sm btn-primary"><i class="ti ti-device-floppy" aria-hidden="true"></i> Salvar</button>
+          <button class="btn btn-sm btn-ghost" title="Copiar link" aria-label="Copiar link"><i class="ti ti-copy" aria-hidden="true"></i></button>
+          <button class="btn btn-sm btn-ghost" title="Abrir no YouTube" aria-label="Abrir no YouTube"><i class="ti ti-external-link" aria-hidden="true"></i></button>
+        </div>
+        <div class="yt-hint"><i class="ti ti-info-circle" aria-hidden="true"></i> A stream key é extraída automaticamente da URL ao iniciar a transmissão via Jibri.</div>
+      </div>
+    </div>
+
+    <!-- ABA ADICIONAR MATÉRIA -->
+    <div id="tab-add" style="display:none">
+      <div class="add-dialog-mock">
+        <div class="dialog-header">
+          <span style="font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px"><i class="ti ti-playlist-add" aria-hidden="true"></i> Adicionar matéria à pauta</span>
+          <button class="btn btn-ghost btn-sm" onclick="showTab('pauta',document.querySelectorAll('.tab-btn')[0])"><i class="ti ti-x" aria-hidden="true"></i></button>
+        </div>
+        <div class="dialog-body">
+          <div class="field">
+            <label for="sel-mat">Matéria *</label>
+            <select id="sel-mat" onchange="inferir()">
+              <option value="">Selecionar matéria…</option>
+              <option value="OFC">OFC nº 014/2025 — Ofício da Secretaria de Obras sobre licitação de calçamento</option>
+              <option value="PLO">PLO nº 004/2025 — Projeto de lei criando programa de incentivo à cultura local</option>
+              <option value="REQ">REQ nº 009/2025 — Requerimento de vistas ao contrato nº 22/2025</option>
+              <option value="IND">IND nº 002/2025 — Indicação para instalação de lombada na Rua das Flores</option>
+            </select>
+          </div>
+          <div id="infer-msg" class="infer-hint" style="display:none">
+            <i class="ti ti-wand" aria-hidden="true"></i>
+            <span id="infer-txt">Fase e tipo inferidos automaticamente. Você pode alterar se necessário.</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="sel-fase">Fase *</label>
+              <select id="sel-fase">
+                <option value="">—</option>
+                <option value="PE">Pequeno Expediente</option>
+                <option value="GE">Grande Expediente</option>
+                <option value="OD">Ordem do Dia</option>
+                <option value="EP">Explicações Pessoais</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sel-tipo">Tipo *</label>
+              <select id="sel-tipo">
+                <option value="">—</option>
+                <option value="COM">Comunicação</option>
+                <option value="LEI">Leitura</option>
+                <option value="DEL">Deliberação</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="inp-ord">Posição na pauta (opcional)</label>
+            <input id="inp-ord" type="number" min="1" placeholder="Deixe em branco para o final" style="max-width:200px" />
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-sm" onclick="showTab('pauta',document.querySelectorAll('.tab-btn')[0])">Cancelar</button>
+          <button class="btn btn-sm btn-primary"><i class="ti ti-check" aria-hidden="true"></i> Adicionar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('[id^="tab-"]').forEach(function(el){ el.style.display = 'none'; });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  var el = document.getElementById('tab-' + name);
+  if (el) el.style.display = 'flex';
+  if (name === 'pauta' || name === 'presencas' || name === 'add') {
+    var el2 = document.getElementById('tab-' + name);
+    if (el2) el2.style.display = 'block';
+  }
+  if (btn) btn.classList.add('active');
+}
+
+var ytOn = true;
+function toggleYt() {
+  ytOn = !ytOn;
+  var b = document.getElementById('btn-yt');
+  if (ytOn) {
+    b.innerHTML = '<i class="ti ti-player-stop" aria-hidden="true"></i> Parar transmissão';
+    b.className = 'btn btn-sm btn-danger';
+  } else {
+    b.innerHTML = '<i class="ti ti-player-play" aria-hidden="true"></i> Iniciar YouTube';
+    b.className = 'btn btn-sm';
+  }
+}
+
+var confirmando = false;
+function toggleConfirm() {
+  confirmando = !confirmando;
+  document.getElementById('confirm-row').style.display = confirmando ? 'table-row' : 'none';
+}
+
+var SIGLAS_PE = ['OFC','REQ','IND'];
+function inferir() {
+  var sel = document.getElementById('sel-mat').value;
+  var msg = document.getElementById('infer-msg');
+  var fase = document.getElementById('sel-fase');
+  var tipo = document.getElementById('sel-tipo');
+  if (!sel) { msg.style.display = 'none'; fase.value = ''; tipo.value = ''; return; }
+  var isPE = SIGLAS_PE.indexOf(sel) > -1;
+  fase.value = isPE ? 'PE' : 'OD';
+  tipo.value = isPE ? 'COM' : 'DEL';
+  msg.style.display = 'flex';
+  document.getElementById('infer-txt').textContent =
+    isPE
+      ? 'Fase inferida: Pequeno Expediente (sigla ' + sel + '). Tipo: Comunicação. Você pode alterar.'
+      : 'Fase inferida: Ordem do Dia. Tipo: Deliberação. Você pode alterar.';
+}
+
+var vereadores = [
+  {nome:'Ana Souza',presente:true},{nome:'Carlos Lima',presente:true},
+  {nome:'Fernanda Paz',presente:false},{nome:'João Mendes',presente:true},
+  {nome:'Laura Costa',presente:true},{nome:'Marcos Silva',presente:true},
+  {nome:'Paula Ramos',presente:false},{nome:'Rafael Neto',presente:true},
+  {nome:'Sandra Luz',presente:true},{nome:'Tiago Alves',presente:true},
+  {nome:'Vera Cruz',presente:true}
+];
+var container = document.getElementById('vereadores');
+if (container) {
+  var grid = container.parentElement;
+  vereadores.forEach(function(v) {
+    var initials = v.nome.split(' ').map(function(w){return w[0]}).join('').slice(0,2);
+    var card = document.createElement('div');
+    card.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary)';
+    card.innerHTML =
+      '<div style="width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;background:' + (v.presente ? '#EAF3DE' : '#FCEBEB') + ';color:' + (v.presente ? '#3B6D11' : '#A32D2D') + '">' + initials + '</div>' +
+      '<span style="font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + v.nome + '</span>' +
+      '<span style="font-size:10px;font-weight:500;' + (v.presente ? 'color:#3B6D11' : 'color:#A32D2D') + '">' + (v.presente ? '✓' : '✗') + '</span>';
+    grid.appendChild(card);
+  });
+  container.remove();
+}
+
+showTab('transmissao', document.querySelectorAll('.tab-btn')[2]);
+</script>

@@ -12,6 +12,8 @@ import { ListParliamentariansUseCase } from './application/use-cases/list-parlia
 import { RemoveParliamentarianUseCase } from './application/use-cases/remove-parliamentarian.use-case';
 import { RevokeParliamentarianAccessUseCase } from './application/use-cases/revoke-parliamentarian-access.use-case';
 import { UpdateParliamentarianUseCase } from './application/use-cases/update-parliamentarian.use-case';
+import { UpdateMeuPerfilUseCase } from './application/use-cases/update-meu-perfil.use-case';
+import { UpdateMinhaBiografiaUseCase } from './application/use-cases/update-minha-biografia.use-case';
 import { ParlamentarMandatosController } from './mandatos/application/controllers/parlamentar-mandatos.controller';
 import { CreateParlamentarMandatoUseCase } from './mandatos/application/use-cases/create-parlamentar-mandato.use-case';
 import { FinishParlamentarMandatoUseCase } from './mandatos/application/use-cases/finish-parlamentar-mandato.use-case';
@@ -42,6 +44,8 @@ import {
         GetParliamentarianByIdUseCase,
         UpdateParliamentarianUseCase,
         RemoveParliamentarianUseCase,
+        UpdateMeuPerfilUseCase,
+        UpdateMinhaBiografiaUseCase,
         CreateParlamentarMandatoUseCase,
         ListParlamentarMandatosUseCase,
         FinishParlamentarMandatoUseCase,

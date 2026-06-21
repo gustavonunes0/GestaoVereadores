@@ -4,7 +4,7 @@ import { MateriaRepository } from '../../domain/repositories/materia.repository'
 import { MATERIA_REPOSITORY } from '../../materias.tokens';
 
 @Injectable()
-export class ListAutoresExternosUseCase {
+export class ListTenantPartnersForMatterUseCase {
     private readonly autorResolver = new AutorResolverService();
 
     constructor(
@@ -13,12 +13,12 @@ export class ListAutoresExternosUseCase {
     ) {}
 
     async execute(tenantId: string, tipoAutorId?: string) {
-        const autores = await this.repository.listAutoresExternos(
+        const partners = await this.repository.listTenantPartners(
             tenantId,
             tipoAutorId,
         );
 
-        return autores.map((a) => ({
+        return partners.map((a) => ({
             id: a.id,
             nomeExibicao: this.autorResolver.resolverNomeCompleto({
                 nome: a.nome,

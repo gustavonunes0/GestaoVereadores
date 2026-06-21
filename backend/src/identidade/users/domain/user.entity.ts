@@ -5,7 +5,7 @@ type UserProps = {
     id: string;
     firstName: string;
     lastName: string;
-    cpf: string;
+    cpf: string | null;
     email: string;
     passwordHash: string;
     profilePicture: string | null;
@@ -20,7 +20,7 @@ type CreateUserParams = UserAuditParams & {
     id?: string;
     firstName: string;
     lastName: string;
-    cpf: string;
+    cpf: string | null;
     email: string;
     passwordHash: string;
     profilePicture?: string | null;
@@ -29,7 +29,7 @@ type CreateUserParams = UserAuditParams & {
 type UpdateUserParams = {
     firstName?: string;
     lastName?: string;
-    cpf?: string;
+    cpf?: string | null;
     email?: string;
     passwordHash?: string;
     profilePicture?: string | null;
@@ -54,7 +54,7 @@ export class UserEntity extends BaseEntity {
                 id: params.id ?? randomUUID(),
                 firstName: params.firstName.trim(),
                 lastName: params.lastName.trim(),
-                cpf: UserEntity.normalizeCpf(params.cpf),
+                cpf: params.cpf !== null ? UserEntity.normalizeCpf(params.cpf) : null,
                 email: UserEntity.normalizeEmail(params.email),
                 passwordHash: params.passwordHash,
                 profilePicture: UserEntity.normalizeAsset(
@@ -111,7 +111,7 @@ export class UserEntity extends BaseEntity {
         }
 
         if (params.cpf !== undefined) {
-            this.props.cpf = UserEntity.normalizeCpf(params.cpf);
+            this.props.cpf = params.cpf !== null ? UserEntity.normalizeCpf(params.cpf) : null;
         }
 
         if (params.email !== undefined) {
@@ -162,7 +162,7 @@ export class UserEntity extends BaseEntity {
             );
         }
 
-        if (this.props.cpf.length !== CPF_LENGTH) {
+        if (this.props.cpf !== null && this.props.cpf.length !== CPF_LENGTH) {
             throw new Error('CPF do usuário inválido');
         }
 

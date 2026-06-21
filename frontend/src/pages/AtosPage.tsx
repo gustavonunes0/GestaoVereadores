@@ -142,7 +142,7 @@ export function AtosPage() {
             />
             <Column
                 header="Publicação"
-                body={(row: Ato) => formatDatePt(row.dataPublicacao)}
+                body={(row: Ato) => formatDatePt(row.dataPublicacaoInicio)}
                 style={{ width: '7rem' }}
             />
         </>

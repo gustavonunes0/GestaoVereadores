@@ -1,3 +1,5 @@
+import { TipoQuorum } from '../enums/tipo-quorum.enum';
+
 export enum TipoVotacaoEnum {
     NOMINAL = 'NOMINAL',
     SIMBOLICA = 'SIMBOLICA',
@@ -25,6 +27,10 @@ export class VotacaoEntity {
     quorumVotacao: number | null;
     motivoEmpate: string | null;
     observacoes: string | null;
+    tipoQuorum: TipoQuorum | null;
+    totalMembros: number | null;
+    votoQualidade: boolean;
+    presidenteId: string | null;
     createdAt: Date;
 
     estaEncerrada(): boolean {

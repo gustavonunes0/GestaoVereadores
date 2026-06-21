@@ -1,5 +1,5 @@
 import type { Materia } from '../api/legislative/materias.api';
-import { formatProtocoloNumero, resolveMateriaAno } from './materiaDisplay';
+import { formatarIdentificacao } from './materiaIdentificacao';
 
 const STRIPE_COLORS: Record<string, string> = {
     PLO: '#2563a8',
@@ -30,21 +30,12 @@ export function resolveMateriaTipoNome(
     return tipo?.nome?.trim() || 'Matéria';
 }
 
-/** Título do card: tipo + número legislativo ou protocolo. */
+/** Título do card: "SIGLA numero/ano" ou fallback para tipo nome. */
 export function resolveMateriaCardTitulo(materia: Materia): string {
-    const tipoNome = resolveMateriaTipoNome(materia.tipo);
-    const ano = resolveMateriaAno(materia);
-
-    if (materia.numero != null && materia.numero !== '') {
-        return `${tipoNome} nº ${materia.numero}/${ano ?? '?'}`;
-    }
-
-    const protocolo = formatProtocoloNumero(materia.numeroProtocolo);
-    if (protocolo) {
-        return ano != null
-            ? `${tipoNome} Prot. ${protocolo}/${ano}`
-            : `${tipoNome} Prot. ${protocolo}`;
-    }
-
-    return tipoNome;
+    const id = formatarIdentificacao({
+        tipo: materia.tipo,
+        numero: materia.numero,
+        ano: materia.ano,
+    });
+    return id || resolveMateriaTipoNome(materia.tipo);
 }

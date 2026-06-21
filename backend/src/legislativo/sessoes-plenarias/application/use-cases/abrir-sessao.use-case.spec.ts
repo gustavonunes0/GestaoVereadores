@@ -24,6 +24,7 @@ describe('AbrirSessaoUseCase', () => {
             transicionarStatus: jest.fn(),
             calcularQuorum: jest.fn(),
             publicarPauta: jest.fn(),
+            setFase: jest.fn().mockResolvedValue(undefined),
         } as unknown as jest.Mocked<SessaoPlenariaRepository>;
 
         const module = await Test.createTestingModule({

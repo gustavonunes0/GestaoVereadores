@@ -59,7 +59,7 @@ export function AtoVerDialog({ atoId, onClose }: Props) {
 
                     <div className="border-top-1 surface-border pt-3">
                         <DetailRow label="Data do ato" value={formatDatePt(ato.dataAto)} />
-                        <DetailRow label="Data de publicação" value={formatDatePt(ato.dataPublicacao)} />
+                        <DetailRow label="Data de publicação" value={formatDatePt(ato.dataPublicacaoInicio)} />
                         {ato.identificador && (
                             <DetailRow label="Identificador" value={ato.identificador.nome} />
                         )}

@@ -22,6 +22,7 @@ const includeRelations = {
                     firstName: true,
                     lastName: true,
                     email: true,
+                    cpf: true,
                 },
             },
             politicalParty: {
@@ -66,11 +67,13 @@ const includeDetailRelations = {
 type ParliamentarianRow = PrismaParliamentarian & {
     parliamentarianUser: {
         isRemoved: boolean;
+        status: string;
         user: {
             id: string;
             firstName: string;
             lastName: string;
             email: string;
+            cpf: string | null;
         };
         politicalParty: {
             id: string;
@@ -321,6 +324,7 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
                           ...parlUser.user,
                           politicalParty: parlUser.politicalParty,
                       },
+                      accessStatus: parlUser.status,
                   }
                 : {}),
             activeMandatesCount: row._count.mandates,

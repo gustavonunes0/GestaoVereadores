@@ -1,8 +1,12 @@
-import { FasePauta, ResultadoPauta, StatusMateria } from '@prisma/client';
+import { FasePauta, ResultadoPauta, StatusMateria, StatusPautaItem, TipoPautaItem } from '@prisma/client';
 import {
     AGENDA_PHASE_LABELS,
     AgendaPhase,
 } from '../../domain/enums/agenda-phase.enum';
+import {
+    TIPO_PAUTA_ITEM_LABELS,
+    TipoPautaItem as DomainTipoPautaItem,
+} from '../../domain/enums/tipo-pauta-item.enum';
 
 export type PautaItemPrismaPayload = {
     id: string;
@@ -10,7 +14,9 @@ export type PautaItemPrismaPayload = {
     materiaId: string;
     ordem: number;
     fase: FasePauta;
+    tipoPautaItem: TipoPautaItem;
     resultado: ResultadoPauta | null;
+    statusPauta: StatusPautaItem;
     isRemoved: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -19,7 +25,7 @@ export type PautaItemPrismaPayload = {
         ementa: string;
         numero: number | null;
         status: StatusMateria;
-        tipo?: { id: string; nome: string } | null;
+        tipo?: { id: string; nome: string; sigla?: string | null } | null;
         ano?: { id: string; valor: number } | null;
     } | null;
     votacao?: {
@@ -27,12 +33,28 @@ export type PautaItemPrismaPayload = {
         tipoVotacao: string;
         resultado: string | null;
         realizadaAt: Date | null;
+        votosSim?: number;
+        votosNao?: number;
+        abstencoes?: number;
+        votos?: {
+            id: string;
+            parlamentarId: string;
+            voto: string;
+            parlamentar?: {
+                id: string;
+                pessoa?: {
+                    nome?: string | null;
+                    nomeParlamentar?: string | null;
+                } | null;
+            } | null;
+        }[];
     } | null;
 };
 
 export class PautaItemViewModel {
     static toHttp(data: PautaItemPrismaPayload) {
         const fase = data.fase as AgendaPhase;
+        const tipoPautaItem = data.tipoPautaItem as unknown as DomainTipoPautaItem;
         return {
             id: data.id,
             sessaoId: data.sessaoId,
@@ -41,7 +63,12 @@ export class PautaItemViewModel {
                 value: data.fase,
                 label: AGENDA_PHASE_LABELS[fase] ?? data.fase,
             },
+            tipoPautaItem: {
+                value: data.tipoPautaItem,
+                label: TIPO_PAUTA_ITEM_LABELS[tipoPautaItem] ?? data.tipoPautaItem,
+            },
             resultado: data.resultado,
+            status: data.statusPauta,
             materia: data.materia
                 ? {
                       id: data.materia.id,
@@ -57,7 +84,22 @@ export class PautaItemViewModel {
                       id: data.votacao.id,
                       tipoVotacao: data.votacao.tipoVotacao,
                       resultado: data.votacao.resultado,
+                      realizadaAt: data.votacao.realizadaAt?.toISOString() ?? null,
                       finalizada: data.votacao.realizadaAt !== null,
+                      votosSim: data.votacao.votosSim,
+                      votosNao: data.votacao.votosNao,
+                      abstencoes: data.votacao.abstencoes,
+                      votos: data.votacao.votos?.map((v) => ({
+                          id: v.id,
+                          parlamentarId: v.parlamentarId,
+                          voto: v.voto,
+                          parlamentar: v.parlamentar
+                              ? {
+                                    id: v.parlamentar.id,
+                                    pessoa: v.parlamentar.pessoa ?? null,
+                                }
+                              : null,
+                      })),
                   }
                 : null,
             podeVotar: !data.isRemoved,

@@ -8,6 +8,7 @@ import {
     UpdateVotoDto,
 } from '../../application/dto/voto.dto';
 import { VotacaoEntity, ResultadoVotacaoEnum } from '../entities/votacao.entity';
+import { TipoQuorum } from '../enums/tipo-quorum.enum';
 import { ContagemVotos } from '../services/contagem-votos.service';
 
 export type EncerrarVotacaoDados = {
@@ -16,6 +17,10 @@ export type EncerrarVotacaoDados = {
     abstencoes: number;
     resultado: ResultadoVotacaoEnum;
     responsavelId: string;
+    tipoQuorum?: TipoQuorum;
+    totalMembros?: number;
+    votoQualidade?: boolean;
+    presidenteId?: string;
     quorumVotacao?: number;
     motivoEmpate?: string;
     observacoes?: string;
