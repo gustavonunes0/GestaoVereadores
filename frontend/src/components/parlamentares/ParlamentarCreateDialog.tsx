@@ -207,131 +207,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
             className="sigl-dialog-parlamentar-create"
         >
             <div className="sigl-dialog-body sigl-dialog-body--dense">
-                <div className="sigl-dialog-secao">
-                    <span className="sigl-dialog-secao-titulo">
-                        <i className="pi pi-user" aria-hidden />
-                        Conta de acesso
-                    </span>
-                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="pc-cpf">CPF *</label>
-                            <InputText
-                                id="pc-cpf"
-                                value={cpf}
-                                onChange={(e) => handleCpfChange(e.target.value)}
-                                placeholder="000.000.000-00"
-                                className={`w-full${cpf && !cpfValido ? ' p-invalid' : ''}`}
-                                inputMode="numeric"
-                                autoComplete="off"
-                            />
-                            {cpf && !cpfValido && (
-                                <small className="p-error">Informe um CPF com 11 dígitos.</small>
-                            )}
-                        </div>
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="pc-email">E-mail</label>
-                            <InputText
-                                id="pc-email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="vereador@camara.gov.br"
-                                className={`w-full${email && !emailValido ? ' p-invalid' : ''}`}
-                                autoComplete="off"
-                            />
-                            <small className="text-color-secondary">
-                                Opcional — se vazio, o sistema gera e-mail interno.
-                            </small>
-                        </div>
-                    </div>
-
-                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="pc-senha">Senha *</label>
-                            <input
-                                id="pc-senha"
-                                type="password"
-                                value={senha}
-                                onChange={(e) => setSenha(e.target.value)}
-                                className={`w-full${senha && !senhaValida ? ' p-invalid' : ''}`}
-                                autoComplete="new-password"
-                                placeholder="••••••••"
-                            />
-                            {senha && !senhaValida && (
-                                <small className="p-error">A senha deve ter ao menos {MIN_SENHA} caracteres.</small>
-                            )}
-                        </div>
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="pc-confirmar-senha">Confirmar senha *</label>
-                            <input
-                                id="pc-confirmar-senha"
-                                type="password"
-                                value={confirmarSenha}
-                                onChange={(e) => setConfirmarSenha(e.target.value)}
-                                className={`w-full${confirmarSenha && !senhasConferem ? ' p-invalid' : ''}`}
-                                autoComplete="new-password"
-                                placeholder="••••••••"
-                            />
-                            {confirmarSenha && !senhasConferem && (
-                                <small className="p-error">As senhas não coincidem.</small>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="sigl-dialog-secao">
-                    <span className="sigl-dialog-secao-titulo">
-                        <i className="pi pi-id-card" aria-hidden />
-                        Identificação parlamentar
-                    </span>
-                    <div className="sigl-filtro-campo">
-                        <label htmlFor="pc-nome">Nome Parlamentar *</label>
-                        <InputText
-                            id="pc-nome"
-                            value={parliamentaryName}
-                            onChange={(e) => setParliamentaryName(e.target.value)}
-                            placeholder="Nome de urna"
-                            className={`w-full${parliamentaryName && !nomeValido ? ' p-invalid' : ''}`}
-                        />
-                        <small className="text-color-secondary">
-                            Nome de urna usado nas proposições e documentos oficiais.
-                        </small>
-                    </div>
-                    <div className="sigl-filtro-campo">
-                        <FileUpload
-                            id="pc-foto"
-                            label="Foto do parlamentar"
-                            accept={PARLAMENTAR_PHOTO_ACCEPT}
-                            value={photoValue}
-                            onChange={setPhotoValue}
-                        />
-                        <small className="text-color-secondary">
-                            JPEG, PNG ou WebP · máx. 2 MB. Exibida na listagem e perfil.
-                        </small>
-                    </div>
-                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                        <Dropdown
-                            id="pc-partido"
-                            label="Partido Político"
-                            options={partidoOptions}
-                            value={politicalPartyId}
-                            onChange={(v) => setPoliticalPartyId(String(v))}
-                            placeholder="Selecione (opcional)"
-                        />
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="pc-gabinete">Nº do Gabinete</label>
-                            <InputText
-                                id="pc-gabinete"
-                                value={officeNumber}
-                                onChange={(e) => setOfficeNumber(e.target.value)}
-                                placeholder="Ex.: 31, 31A, Térreo"
-                                className="w-full"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="sigl-dialog-secao">
+            <div className="sigl-dialog-secao">
                     <span className="sigl-dialog-secao-titulo">
                         <i className="pi pi-calendar" aria-hidden />
                         Mandato
@@ -456,6 +332,129 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                                     ? 'Login com CPF e senha.'
                                     : 'Conta criada sem acesso ao SIGL.'}
                             </small>
+                        </div>
+                    </div>
+                </div>
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">
+                        <i className="pi pi-user" aria-hidden />
+                        Conta de acesso
+                    </span>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pc-cpf">CPF *</label>
+                            <InputText
+                                id="pc-cpf"
+                                value={cpf}
+                                onChange={(e) => handleCpfChange(e.target.value)}
+                                placeholder="000.000.000-00"
+                                className={`w-full${cpf && !cpfValido ? ' p-invalid' : ''}`}
+                                inputMode="numeric"
+                                autoComplete="off"
+                            />
+                            {cpf && !cpfValido && (
+                                <small className="p-error">Informe um CPF com 11 dígitos.</small>
+                            )}
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pc-email">E-mail</label>
+                            <InputText
+                                id="pc-email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="vereador@camara.gov.br"
+                                className={`w-full${email && !emailValido ? ' p-invalid' : ''}`}
+                                autoComplete="off"
+                            />
+                            <small className="text-color-secondary">
+                                Opcional — se vazio, o sistema gera e-mail interno.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pc-senha">Senha *</label>
+                            <input
+                                id="pc-senha"
+                                type="password"
+                                value={senha}
+                                onChange={(e) => setSenha(e.target.value)}
+                                className={`w-full${senha && !senhaValida ? ' p-invalid' : ''}`}
+                                autoComplete="new-password"
+                                placeholder="••••••••"
+                            />
+                            {senha && !senhaValida && (
+                                <small className="p-error">A senha deve ter ao menos {MIN_SENHA} caracteres.</small>
+                            )}
+                        </div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pc-confirmar-senha">Confirmar senha *</label>
+                            <input
+                                id="pc-confirmar-senha"
+                                type="password"
+                                value={confirmarSenha}
+                                onChange={(e) => setConfirmarSenha(e.target.value)}
+                                className={`w-full${confirmarSenha && !senhasConferem ? ' p-invalid' : ''}`}
+                                autoComplete="new-password"
+                                placeholder="••••••••"
+                            />
+                            {confirmarSenha && !senhasConferem && (
+                                <small className="p-error">As senhas não coincidem.</small>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="sigl-dialog-secao">
+                    <span className="sigl-dialog-secao-titulo">
+                        <i className="pi pi-id-card" aria-hidden />
+                        Identificação parlamentar
+                    </span>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="pc-nome">Nome Parlamentar *</label>
+                        <InputText
+                            id="pc-nome"
+                            value={parliamentaryName}
+                            onChange={(e) => setParliamentaryName(e.target.value)}
+                            placeholder="Nome de urna"
+                            className={`w-full${parliamentaryName && !nomeValido ? ' p-invalid' : ''}`}
+                        />
+                        <small className="text-color-secondary">
+                            Nome de urna usado nas proposições e documentos oficiais.
+                        </small>
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <FileUpload
+                            id="pc-foto"
+                            label="Foto do parlamentar"
+                            accept={PARLAMENTAR_PHOTO_ACCEPT}
+                            value={photoValue}
+                            onChange={setPhotoValue}
+                        />
+                        <small className="text-color-secondary">
+                            JPEG, PNG ou WebP · máx. 2 MB. Exibida na listagem e perfil.
+                        </small>
+                    </div>
+                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                        <Dropdown
+                            id="pc-partido"
+                            label="Partido Político"
+                            options={partidoOptions}
+                            value={politicalPartyId}
+                            onChange={(v) => setPoliticalPartyId(String(v))}
+                            placeholder="Selecione (opcional)"
+                        />
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pc-gabinete">Nº do Gabinete</label>
+                            <InputText
+                                id="pc-gabinete"
+                                value={officeNumber}
+                                onChange={(e) => setOfficeNumber(e.target.value)}
+                                placeholder="Ex.: 31, 31A, Térreo"
+                                className="w-full"
+                            />
                         </div>
                     </div>
                 </div>

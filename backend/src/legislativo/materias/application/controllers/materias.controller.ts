@@ -134,6 +134,24 @@ export class MateriasController {
         return this.listMinhasMaterias.execute(user.parliamentarianId, tenantId, filtros);
     }
 
+    @TenantRoles(...ALL_AUTHENTICATED)
+    @Get('tenant-partners')
+    listarTenantPartners(
+        @TenantId() tenantId: string,
+        @Query('tipoAutorId') tipoAutorId?: string,
+    ) {
+        return this.listTenantPartnersForMatter.execute(tenantId, tipoAutorId);
+    }
+
+    @TenantRoles(...ALL_AUTHENTICATED)
+    @Get('opcoes-autor')
+    listarOpcoesAutor(
+        @TenantId() tenantId: string,
+        @Query('tipoAutorId') tipoAutorId: string,
+    ) {
+        return this.listMatterAuthorOptions.execute(tenantId, tipoAutorId);
+    }
+
     @Get(':id/fluxo')
     async getFluxo(
         @TenantId() tenantId: string,
@@ -200,7 +218,7 @@ export class MateriasController {
         }
     }
 
-    @TenantRoles(...ADMIN_ONLY)
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Delete(':id/autoria/coautores/:coauthorId')
     async removerCoautor(
         @TenantId() tenantId: string,
@@ -289,7 +307,7 @@ export class MateriasController {
         }
     }
 
-    @TenantRoles(...ADMIN_ONLY)
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Patch(':id')
     async update(
         @TenantId() tenantId: string,
@@ -352,24 +370,6 @@ export class MateriasController {
         @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.removeMateria.execute(tenantId, id);
-    }
-
-    // ── Novos endpoints (SPEC-001 / PROMPTS SESSÃO 2) ─────────────────────
-
-    @Get('tenant-partners')
-    listarTenantPartners(
-        @TenantId() tenantId: string,
-        @Query('tipoAutorId') tipoAutorId?: string,
-    ) {
-        return this.listTenantPartnersForMatter.execute(tenantId, tipoAutorId);
-    }
-
-    @Get('opcoes-autor')
-    listarOpcoesAutor(
-        @TenantId() tenantId: string,
-        @Query('tipoAutorId') tipoAutorId: string,
-    ) {
-        return this.listMatterAuthorOptions.execute(tenantId, tipoAutorId);
     }
 
     @TenantRoles(...STAFF_AND_ABOVE)

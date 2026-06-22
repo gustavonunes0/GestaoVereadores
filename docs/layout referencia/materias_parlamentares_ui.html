@@ -1,0 +1,353 @@
+<style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font-sans);color:var(--color-text-primary);font-size:14px}
+    .tabs-main{display:flex;gap:0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:0}
+    .tmain{padding:9px 18px;border:none;background:transparent;border-bottom:2px solid transparent;cursor:pointer;color:var(--color-text-secondary);font-family:var(--font-sans);font-size:13px;margin-bottom:-0.5px}
+    .tmain.active{color:#185FA5;border-bottom-color:#185FA5;font-weight:500}
+    .tmain:hover:not(.active){background:var(--color-background-secondary)}
+    .page{background:var(--color-background-tertiary);padding:16px;display:flex;flex-direction:column;gap:12px}
+    .card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+    .card-header{padding:10px 14px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .card-title{font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px}
+    .card-body{padding:14px}
+    .secao{margin-bottom:14px}
+    .secao:last-child{margin-bottom:0}
+    .secao-titulo{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .field{display:flex;flex-direction:column;gap:3px}
+    .field label{font-size:11px;font-weight:500;color:var(--color-text-secondary)}
+    .field input,.field select,.field textarea{padding:6px 9px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-sans);width:100%}
+    .field textarea{resize:vertical;line-height:1.5}
+    .field-hint{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+    .id-preview{font-size:12px;color:var(--color-text-secondary);margin-top:4px}
+    .id-preview strong{color:var(--color-text-primary)}
+    .btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);font-size:12px;cursor:pointer;font-family:var(--font-sans)}
+    .btn:hover{background:var(--color-background-secondary)}
+    .btn-primary{background:#185FA5;color:#fff;border-color:#185FA5}
+    .btn-primary:hover{background:#0C447C}
+    .btn-ghost{border-color:transparent}
+    .btn-ghost:hover{background:var(--color-background-secondary);border-color:var(--color-border-tertiary)}
+    .btn i{font-size:13px}
+    .footer{padding:10px 14px;border-top:0.5px solid var(--color-border-tertiary);display:flex;justify-content:flex-end;gap:8px}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+    .badge-info{background:#E6F1FB;color:#185FA5}
+    .badge-warn{background:#FAEEDA;color:#854F0B}
+    .badge-success{background:#EAF3DE;color:#3B6D11}
+    .badge-danger{background:#FCEBEB;color:#A32D2D}
+    .badge-neutral{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+    .badge-amber{background:#FAEEDA;color:#854F0B}
+    .tipo-tag{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:500;background:#E6F1FB;color:#0C447C}
+    .selected-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;background:#E6F1FB;color:#0C447C;border-radius:20px;font-size:12px;font-weight:500}
+    .coautor-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)}
+    .coautor-row:last-child{border-bottom:none}
+    .radio-group{display:flex;gap:14px;align-items:center;padding:6px 0}
+    .radio-opt{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px}
+    .radio-opt input[type=radio]{accent-color:#185FA5;width:14px;height:14px}
+    .upload-area{border:0.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-md);padding:20px;text-align:center;color:var(--color-text-secondary);font-size:12px;cursor:pointer;background:var(--color-background-secondary)}
+    .upload-area:hover{border-color:#185FA5;color:#185FA5}
+    .mat-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 14px;background:var(--color-background-primary);display:flex;flex-direction:column;gap:6px}
+    .mat-id{font-size:14px;font-weight:500}
+    .mat-tipo{font-size:12px;color:var(--color-text-secondary)}
+    .mat-meta{font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .mat-ementa{font-size:12px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5}
+    .mat-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+    .status-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+    .dot-green{background:#639922}
+    .dot-blue{background:#185FA5}
+    .separador{height:0.5px;background:var(--color-border-tertiary);margin:8px 0}
+    .tab-inner{display:flex;gap:0;border-bottom:0.5px solid var(--color-border-tertiary)}
+    .tinner{padding:7px 12px;border:none;background:transparent;border-bottom:2px solid transparent;cursor:pointer;color:var(--color-text-secondary);font-family:var(--font-sans);font-size:12px;margin-bottom:-0.5px}
+    .tinner.active{color:#185FA5;border-bottom-color:#185FA5;font-weight:500}
+    .tinner:hover:not(.active){background:var(--color-background-secondary)}
+    .status-opt{padding:5px 8px;cursor:pointer;font-size:12px;border-radius:var(--border-radius-md)}
+    .status-opt:hover{background:var(--color-background-secondary)}
+    </style>
+    
+    <h2 class="sr-only">Protótipos interativos de formulários de Matéria Legislativa</h2>
+    
+    <div class="tabs-main" role="tablist">
+      <button class="tmain active" onclick="switchMain('materias',this)" role="tab">Matéria Legislativa</button>
+      <button class="tmain" onclick="switchMain('lista',this)" role="tab">Listagem de Matérias</button>
+    </div>
+    
+    <div id="main-materias" class="page">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><i class="ti ti-file-plus" aria-hidden="true"></i> Nova Matéria Legislativa</span>
+          <button class="btn btn-ghost btn-sm" style="font-size:12px"><i class="ti ti-x" aria-hidden="true"></i></button>
+        </div>
+    
+        <div class="tab-inner" role="tablist">
+          <button class="tinner active" onclick="switchInner('ident',this)" role="tab">Identificação</button>
+          <button class="tinner" onclick="switchInner('autoria',this)" role="tab">Autoria</button>
+          <button class="tinner" onclick="switchInner('conteudo',this)" role="tab">Conteúdo</button>
+        </div>
+    
+        <div class="card-body">
+    
+          <div id="ident-tab">
+            <div class="secao">
+              <div class="secao-titulo"><i class="ti ti-id-badge-2" aria-hidden="true"></i> Identificação</div>
+              <div class="grid-3">
+                <div class="field">
+                  <label>Tipo de Matéria *</label>
+                  <select id="sel-tipo-mat" onchange="atualizarPreview()">
+                    <option value="">Selecionar…</option>
+                    <option value="PLO">PLO — Projeto de Lei Ordinária</option>
+                    <option value="REQ">REQ — Requerimento Legislativo</option>
+                    <option value="IND">IND — Indicação</option>
+                    <option value="OFC">OFC — Ofício</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Número *</label>
+                  <input type="text" id="inp-numero" placeholder="Gerado automaticamente" oninput="atualizarPreview()" />
+                  <span class="field-hint" id="preview-id" style="display:none"></span>
+                </div>
+                <div class="field">
+                  <label>Data de protocolo</label>
+                  <input type="date" value="2026-06-21" />
+                </div>
+              </div>
+            </div>
+          </div>
+    
+          <div id="autoria-tab" style="display:none">
+            <div class="secao">
+              <div class="secao-titulo"><i class="ti ti-user-check" aria-hidden="true"></i> Autoria</div>
+              <div class="grid-2">
+                <div class="field">
+                  <label>Tipo de Autor *</label>
+                  <select id="sel-tipo-autor" onchange="trocarTipoAutor()">
+                    <option value="">Selecionar…</option>
+                    <option value="PARLAMENTAR">Parlamentar</option>
+                    <option value="TENANT_PARTNER">Instituição parceira</option>
+                    <option value="EXECUTIVO">Poder Executivo</option>
+                    <option value="COMISSAO">Comissão</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label id="lbl-autor">Autor *</label>
+                  <div id="campo-autor">
+                    <select disabled style="opacity:.4"><option>Selecione o tipo de autor primeiro</option></select>
+                  </div>
+                </div>
+              </div>
+              <div id="author-selected" style="display:none;margin-top:10px">
+                <span class="selected-chip" id="autor-chip"></span>
+              </div>
+            </div>
+    
+            <div class="separador"></div>
+    
+            <div class="secao">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div class="secao-titulo" style="margin-bottom:0"><i class="ti ti-users" aria-hidden="true"></i> Coautores</div>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <select style="font-size:11px;padding:3px 6px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-secondary)">
+                    <option>Todos</option><option>Parlamentar</option><option>Inst. Parceira</option>
+                  </select>
+                  <button class="btn" style="font-size:11px;padding:4px 8px"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar</button>
+                </div>
+              </div>
+              <div id="coautores-lista">
+                <div class="coautor-row">
+                  <i class="ti ti-user" style="font-size:14px;color:var(--color-text-secondary)" aria-hidden="true"></i>
+                  <span style="flex:1;font-size:13px">Carlos Mendes</span>
+                  <span class="tipo-tag">Parlamentar</span>
+                  <button class="btn btn-ghost" style="font-size:11px;padding:2px 5px" aria-label="Remover"><i class="ti ti-x" style="font-size:12px"></i></button>
+                </div>
+                <div class="coautor-row">
+                  <i class="ti ti-building" style="font-size:14px;color:var(--color-text-secondary)" aria-hidden="true"></i>
+                  <span style="flex:1;font-size:13px">Maria Oliveira <span style="color:var(--color-text-secondary);font-size:11px">(Câmara Municipal)</span></span>
+                  <span class="tipo-tag">Inst. Parceira</span>
+                  <button class="btn btn-ghost" style="font-size:11px;padding:2px 5px" aria-label="Remover"><i class="ti ti-x" style="font-size:12px"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+    
+          <div id="conteudo-tab" style="display:none">
+            <div class="secao">
+              <div class="secao-titulo"><i class="ti ti-align-left" aria-hidden="true"></i> Conteúdo</div>
+              <div class="field" style="margin-bottom:10px">
+                <label>Ementa *</label>
+                <textarea rows="3" placeholder="Descreva o objetivo da matéria…"></textarea>
+              </div>
+              <div class="field" style="margin-bottom:10px">
+                <label>Justificativa</label>
+                <textarea rows="4" placeholder="Fundamentos e motivações (opcional)…"></textarea>
+              </div>
+              <div class="field">
+                <label>Texto Original</label>
+                <div class="upload-area" role="button" tabindex="0" aria-label="Área de upload de arquivo">
+                  <i class="ti ti-upload" style="font-size:20px;margin-bottom:4px;display:block" aria-hidden="true"></i>
+                  Arraste e solte um arquivo aqui ou clique<br>
+                  <span style="font-size:10px;color:var(--color-text-secondary)">.pdf .doc .docx — até 10 MB</span>
+                </div>
+              </div>
+            </div>
+          </div>
+    
+          <div id="status-tab" style="display:none">
+            <div class="secao">
+              <div class="secao-titulo"><i class="ti ti-git-branch" aria-hidden="true"></i> Status da matéria</div>
+              <div class="field">
+                <label>Status atual</label>
+                <select>
+                  <option>Rascunho</option>
+                  <option>Protocolada</option>
+                  <option>Lida no plenário</option>
+                  <option>Em análise nas comissões</option>
+                  <option>Pronta para ordem do dia</option>
+                  <option>Em votação</option>
+                  <option>Aprovada pelo legislativo</option>
+                  <option>Vetada</option>
+                  <option>Sancionada</option>
+                </select>
+              </div>
+              <div style="margin-top:10px;font-size:11px;color:var(--color-text-secondary)">
+                <i class="ti ti-info-circle" aria-hidden="true"></i>
+                O status só pode avançar. Não é possível retornar a um status anterior.
+              </div>
+            </div>
+          </div>
+    
+        </div>
+        <div class="footer">
+          <button class="btn" style="font-size:12px">Cancelar</button>
+          <button class="btn" style="font-size:12px"><i class="ti ti-device-floppy" aria-hidden="true"></i> Salvar rascunho</button>
+          <button class="btn btn-primary" style="font-size:12px"><i class="ti ti-send" aria-hidden="true"></i> Protocolar</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="main-lista" class="page" style="display:none">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:4px">
+        <select style="font-size:12px;padding:5px 8px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary)"><option>Todos os tipos</option><option>PLO</option><option>REQ</option><option>IND</option></select>
+        <select style="font-size:12px;padding:5px 8px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary)"><option>Todos os status</option><option>Rascunho</option><option>Protocolada</option></select>
+        <input type="text" placeholder="Buscar por ementa ou autor…" style="flex:1;min-width:160px;font-size:12px;padding:5px 9px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary)">
+        <button class="btn" style="font-size:12px"><i class="ti ti-x" aria-hidden="true"></i> Limpar</button>
+        <button class="btn btn-primary" style="font-size:12px;margin-left:auto"><i class="ti ti-plus" aria-hidden="true"></i> Nova matéria</button>
+      </div>
+    
+      <div class="mat-card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div>
+            <div class="mat-id">REQ 83/2026</div>
+            <div class="mat-tipo">Requerimento Legislativo</div>
+          </div>
+          <span class="badge badge-info"><span class="status-dot dot-blue"></span> Protocolada</span>
+        </div>
+        <div class="mat-meta">
+          <span><i class="ti ti-calendar" style="font-size:11px" aria-hidden="true"></i> 15/06/2026</span>
+          <span>·</span>
+          <span><i class="ti ti-user" style="font-size:11px" aria-hidden="true"></i> WILL MACIEL</span>
+        </div>
+        <p class="mat-ementa">Requer que seja encaminhado Ofício ao Sr. Herberlh Mota, Prefeito Municipal, solicitando que seja estudada a viabilidade da criação do cargo de Maestro Regente Auxiliar para a Banda de Música Municipal de Baturité.</p>
+        <div class="mat-footer">
+          <span style="font-size:11px;color:var(--color-text-secondary)">Última tramitação: 15/06/2026</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn" style="font-size:11px;padding:4px 8px"><i class="ti ti-eye" aria-hidden="true"></i> Ver</button>
+            <button class="btn" style="font-size:11px;padding:4px 8px"><i class="ti ti-edit" aria-hidden="true"></i> Editar</button>
+          </div>
+        </div>
+      </div>
+    
+      <div class="mat-card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div>
+            <div class="mat-id">PLO 003/2025</div>
+            <div class="mat-tipo">Projeto de Lei Ordinária</div>
+          </div>
+          <span class="badge badge-neutral">Rascunho</span>
+        </div>
+        <div class="mat-meta">
+          <span><i class="ti ti-calendar" style="font-size:11px" aria-hidden="true"></i> 22/06/2026</span>
+          <span>·</span>
+          <span><i class="ti ti-user" style="font-size:11px" aria-hidden="true"></i> ttttesstewts · Gabinete 31</span>
+        </div>
+        <p class="mat-ementa">13131312312w2131s122313132131s2131313 — conteúdo de rascunho, ementa a ser completada antes da protocolização.</p>
+        <div class="mat-footer">
+          <span style="font-size:11px;color:var(--color-text-secondary)">Última tramitação: 21/06/2026</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn" style="font-size:11px;padding:4px 8px"><i class="ti ti-eye" aria-hidden="true"></i> Ver</button>
+            <button class="btn" style="font-size:11px;padding:4px 8px"><i class="ti ti-edit" aria-hidden="true"></i> Editar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+    function switchMain(name, btn) {
+      ['materias','lista'].forEach(function(t){
+        var el = document.getElementById('main-'+t);
+        if(el) el.style.display = 'none';
+      });
+      document.querySelectorAll('.tmain').forEach(function(b){ b.classList.remove('active'); });
+      var el = document.getElementById('main-'+name);
+      if(el) el.style.display = 'flex';
+      if(btn) btn.classList.add('active');
+    }
+    
+    function switchInner(name, btn) {
+      ['ident','autoria','conteudo','status'].forEach(function(t){
+        var el = document.getElementById(t+'-tab');
+        if(el) el.style.display = 'none';
+      });
+      document.querySelectorAll('.tinner').forEach(function(b){ b.classList.remove('active'); });
+      var el = document.getElementById(name+'-tab');
+      if(el) el.style.display = 'block';
+      if(btn) btn.classList.add('active');
+    }
+    
+    function atualizarPreview() {
+      var tipo = document.getElementById('sel-tipo-mat').value;
+      var num  = document.getElementById('inp-numero').value;
+      var prev = document.getElementById('preview-id');
+      if(tipo && num) {
+        prev.style.display = 'block';
+        prev.innerHTML = 'Identificação: <strong>' + tipo + ' ' + num + '/2026</strong>';
+      } else {
+        prev.style.display = 'none';
+      }
+    }
+    
+    function trocarTipoAutor() {
+      var tipo = document.getElementById('sel-tipo-autor').value;
+      var campo = document.getElementById('campo-autor');
+      var lbl = document.getElementById('lbl-autor');
+      var sel = document.getElementById('author-selected');
+      sel.style.display = 'none';
+    
+      if(tipo === 'PARLAMENTAR') {
+        lbl.textContent = 'Parlamentar *';
+        campo.innerHTML = '<input type="text" id="parl-busca" placeholder="Digite o nome para buscar…" oninput="simularBuscaParl(this.value)" style="width:100%">';
+      } else if(tipo === 'TENANT_PARTNER') {
+        lbl.textContent = 'Instituição parceira *';
+        campo.innerHTML = '<select onchange="simularPartner(this.value)" style="width:100%"><option value="">Selecionar parceiro…</option><option value="com_usuario">Câmara Municipal de Fortaleza</option><option value="sem_usuario">Instituto Cultural</option></select>';
+      } else if(tipo === 'EXECUTIVO' || tipo === 'COMISSAO') {
+        lbl.textContent = tipo === 'EXECUTIVO' ? 'Órgão do Executivo *' : 'Comissão *';
+        campo.innerHTML = '<input type="text" placeholder="' + (tipo === 'EXECUTIVO' ? 'Ex: Prefeitura Municipal de Baturité' : 'Ex: Comissão de Finanças') + '" style="width:100%">';
+      } else {
+        campo.innerHTML = '<select disabled style="opacity:.4"><option>Selecione o tipo de autor primeiro</option></select>';
+      }
+    }
+    
+    function simularBuscaParl(val) {
+      // Em produção: GET /parlamentares?busca={val}
+    }
+    
+    function simularPartner(val) {
+      var sel = document.getElementById('author-selected');
+      var chip = document.getElementById('autor-chip');
+      if(val === 'com_usuario') {
+        sel.style.display = 'block';
+        chip.textContent = 'João Silva (Câmara Municipal de Fortaleza)';
+      } else if(val === 'sem_usuario') {
+        sel.style.display = 'none';
+        alert('⚠ Esta instituição não possui usuário vinculado.\nVincule em Câmara > Autores.');
+      }
+    }
+    </script>

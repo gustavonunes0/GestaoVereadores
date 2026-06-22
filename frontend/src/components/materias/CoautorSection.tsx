@@ -76,33 +76,29 @@ function AddCoautorDialog({ materiaId, onClose, onSaved }: AddCoautorDialogProps
     async function handleSubmit() {
         if (!tipoCoautor) return;
 
-        let payload: { tipoCoautor: string; parlamentarId?: string; tenantPartnerUserId?: string } | null = null;
-
         if (tipoCoautor === 'PARLAMENTAR') {
             if (!parlSelecionado) {
                 showApiError(new Error('Selecione o parlamentar coautor.'));
                 return;
             }
-            payload = { tipoCoautor, parlamentarId: parlSelecionado.id };
-        } else if (tipoCoautor === 'TENANT_PARTNER') {
-            if (!partnerSelecionado) {
-                showApiError(new Error('Selecione a instituição parceira.'));
-                return;
+            setSaving(true);
+            try {
+                await materiasApi.addCoautor(materiaId, {
+                    parliamentarianId: parlSelecionado.id,
+                });
+                showSuccess('Coautor adicionado.');
+                onSaved();
+                onClose();
+            } catch (err) {
+                showApiError(err);
+            } finally {
+                setSaving(false);
             }
-            payload = { tipoCoautor, tenantPartnerUserId: partnerSelecionado.id };
+            return;
         }
 
-        if (!payload) return;
-        setSaving(true);
-        try {
-            await materiasApi.addCoautor(materiaId, payload);
-            showSuccess('Coautor adicionado.');
-            onSaved();
-            onClose();
-        } catch (err) {
-            showApiError(err);
-        } finally {
-            setSaving(false);
+        if (tipoCoautor === 'TENANT_PARTNER') {
+            showApiError(new Error('Coautores de instituição parceira ainda não são suportados.'));
         }
     }
 

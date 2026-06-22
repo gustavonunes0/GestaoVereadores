@@ -3,6 +3,24 @@ import { API_PATHS } from '../paths';
 import type { MateriaStatus } from '../../types/legislative';
 import type { CoautorMateria } from '../../types/materias';
 
+export interface MatterTenantPartnerOption {
+    id: string;
+    nome: string;
+    nomeExibicao: string;
+    cargo?: string;
+    instituicao?: string;
+    registro?: string;
+    partido?: string;
+    uf?: string;
+    usuarioVinculado?: boolean;
+    usuario?: {
+        nome: string;
+        cpf: string;
+        fotoPerfil?: string | null;
+    } | null;
+    tipoAutor?: { id: string; nome: string; idNegocio: number };
+}
+
 export interface MatterAuthorOption {
     id: string;
     label: string;
@@ -106,14 +124,16 @@ export interface Materia {
 
 export interface CreateMateriaDto {
     tipoId: string;
-    numero?: string;
+    numero?: number;
     anoId?: string;
     ementa: string;
     origemId?: string;
     tematicaId?: string;
     dataProtocolo?: string;
     justificativa?: string;
+    status?: MateriaStatus;
     authorParliamentarianId?: string;
+    tenantPartnerId?: string;
     autorExternoId?: string;
     coautorIds?: string[];
     relatoresIds?: string[];
@@ -161,8 +181,14 @@ export const materiasApi = {
     remove: (id: string) =>
         api<void>(`${API_PATHS.materias}/${id}`, { method: 'DELETE' }),
 
-    tramitar: (id: string, dto: { statusNovo: MateriaStatus; descricao?: string }) =>
-        api<Materia>(API_PATHS.materiasTramitar(id), { method: 'POST', body: JSON.stringify(dto) }),
+    tramitar: (
+        id: string,
+        dto: { novoStatus: MateriaStatus; observacao?: string; despacho?: string },
+    ) =>
+        api<Materia>(API_PATHS.materiasTramitar(id), {
+            method: 'POST',
+            body: JSON.stringify(dto),
+        }),
 
     adicionarAutor: (id: string, dto: { autorExternoId?: string; parlamentarId?: string; tipoAutorId?: string }) =>
         api<Materia>(API_PATHS.materiasAutores(id), { method: 'POST', body: JSON.stringify(dto) }),
@@ -174,6 +200,16 @@ export const materiasApi = {
         api<MatterAuthorOptionsResponse>(
             `${API_PATHS.materiasOpcoesAutor}?tipoAutorId=${encodeURIComponent(tipoAutorId)}`,
         ),
+
+    /** Instituições parceiras para autoria — acessível a parlamentares e staff. */
+    listTenantPartners: (tipoAutorId?: string) => {
+        const qs = tipoAutorId
+            ? `?tipoAutorId=${encodeURIComponent(tipoAutorId)}`
+            : '';
+        return api<MatterTenantPartnerOption[]>(
+            `${API_PATHS.materiasListarTenantPartners}${qs}`,
+        );
+    },
 
     getAutoria: (id: string) =>
         api<MatterAuthorship>(API_PATHS.materiasAutoria(id)),
@@ -199,7 +235,7 @@ export const materiasApi = {
     listCoautores: (id: string) =>
         api<CoautorMateria[]>(API_PATHS.materiaCoautores(id)),
 
-    addCoautor: (id: string, dto: { tipoCoautor: string; parlamentarId?: string; tenantPartnerUserId?: string }) =>
+    addCoautor: (id: string, dto: { parliamentarianId: string }) =>
         api<CoautorMateria>(API_PATHS.materiaCoautores(id), { method: 'POST', body: JSON.stringify(dto) }),
 
     removeCoautor: (materiaId: string, coautorId: string) =>

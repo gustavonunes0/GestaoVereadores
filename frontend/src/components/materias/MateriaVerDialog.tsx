@@ -3,22 +3,20 @@ import { Button } from 'primereact/button';
 import { Divider } from 'primereact/divider';
 import { Timeline } from 'primereact/timeline';
 import { VerDialog } from '../common/VerDialog';
-import { MateriaAutorAvatar } from './MateriaAutorAvatar';
 import { MateriaStatusBadge } from './MateriaStatusBadge';
 import { materiasApi } from '../../api/legislative/materias.api';
 import type { Materia, TramitacaoItem } from '../../api/legislative/materias.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { formatDatePt } from '../../utils/formatDate';
 import {
-    resolveMateriaAutores,
     resolveMateriaAutorPrincipal,
     resolveMateriaProtocoloLabel,
     resolveMateriaTextoOriginalUrl,
 } from '../../utils/materiaDisplay';
-import {
-    formatarIdentificacaoCompleta,
-} from '../../utils/materiaIdentificacao';
+import { autorTipoIcon } from '../../utils/autorMateria';
+import { formatarIdentificacaoCompleta } from '../../utils/materiaIdentificacao';
 import { STATUS_MATERIA_LABELS } from '../../types/materias';
+import type { TipoAutorMateria } from '../../types/materias';
 
 interface Props {
     materiaId: string;
@@ -74,6 +72,35 @@ function EmentaTruncavel({ texto }: { texto: string }) {
     );
 }
 
+function resolveAutorTipo(materia: Materia): TipoAutorMateria | 'parlamentar' | 'externo' {
+    if (materia.autor?.tipo === 'parlamentar') return 'PARLAMENTAR';
+    if (materia.autor?.tipo === 'externo') return 'TENANT_PARTNER';
+    if (materia.authorship?.authorParliamentarian) return 'PARLAMENTAR';
+    return 'externo';
+}
+
+function AutorLinha({
+    nome,
+    subtitulo,
+    tipo,
+}: {
+    nome: string;
+    subtitulo?: string | null;
+    tipo: TipoAutorMateria | 'parlamentar' | 'externo';
+}) {
+    return (
+        <div className="flex align-items-center gap-2">
+            <i className={`pi ${autorTipoIcon(tipo)} text-color-secondary`} aria-hidden />
+            <div>
+                <span className="font-medium text-sm">{nome}</span>
+                {subtitulo ? (
+                    <span className="text-color-secondary text-xs block">{subtitulo}</span>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
 export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
     const { showApiError } = useAppToast();
     const [materia, setMateria] = useState<Materia | null>(null);
@@ -90,11 +117,14 @@ export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
     }, [materiaId, showApiError]);
 
     const resolvedStatus = materia
-        ? typeof materia.status === 'string' ? materia.status : materia.status.value
+        ? typeof materia.status === 'string'
+            ? materia.status
+            : materia.status.value
         : '';
 
     const autorPrincipal = materia ? resolveMateriaAutorPrincipal(materia) : null;
-    const autores = materia ? resolveMateriaAutores(materia) : [];
+    const autorTipo = materia ? resolveAutorTipo(materia) : 'parlamentar';
+    const coautores = materia?.authorship?.coauthors ?? [];
     const protocoloLabel = materia ? resolveMateriaProtocoloLabel(materia) : null;
 
     const tramitacaoLegado = materia?.tramitacaoHistorico ?? [];
@@ -119,8 +149,6 @@ export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
           })
         : '';
 
-    const title = materia ? identificacaoCompleta : 'Detalhes da Matéria';
-
     const timelineContent = (item: TramitacaoItem) => {
         const labelStatus =
             STATUS_MATERIA_LABELS[item.statusNovo as keyof typeof STATUS_MATERIA_LABELS] ??
@@ -144,7 +172,7 @@ export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
     return (
         <VerDialog
             visible
-            title={title}
+            title={materia ? identificacaoCompleta : 'Detalhes da Matéria'}
             onClose={onClose}
             width="min(92vw, 52rem)"
             contentClassName="materia-ver-dialog"
@@ -153,30 +181,21 @@ export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
 
             {materia && !loading && (
                 <div className="materia-detail">
-                    {/* Header: identificação + badge */}
                     <header className="flex align-items-center justify-content-between gap-2 mb-3">
-                        <div className="flex align-items-center gap-2">
-                            {autorPrincipal && (
-                                <MateriaAutorAvatar autor={autorPrincipal} />
-                            )}
-                            {autorPrincipal && (
-                                <span className="font-medium">{autorPrincipal.nome}</span>
-                            )}
-                        </div>
+                        <h2 className="m-0 text-lg font-semibold">{identificacaoCompleta}</h2>
                         <MateriaStatusBadge status={resolvedStatus} />
                     </header>
 
-                    {/* Metadados */}
                     <dl className="materia-detail-meta flex flex-column gap-2 mb-3">
-                        <MetaItem label="Data do protocolo" value={formatDatePt(materia.dataProtocolo)} />
+                        <MetaItem
+                            label="Data do protocolo"
+                            value={formatDatePt(materia.dataProtocolo)}
+                        />
                         <MetaItem label="Protocolo" value={protocoloLabel} />
-                        <MetaItem label="Unidade" value={materia.unidadeTramitacao?.nome} />
-                        <MetaItem label="Situação" value={materia.statusTramitacao?.nome} />
                     </dl>
 
                     <Divider className="my-2" />
 
-                    {/* Ementa */}
                     <section aria-label="Ementa" className="mb-3">
                         <p className="section-label text-xs text-color-secondary mb-1">Ementa</p>
                         <EmentaTruncavel texto={materia.ementa} />
@@ -184,43 +203,57 @@ export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
 
                     <Divider className="my-2" />
 
-                    {/* Autoria */}
-                    {autores.length > 0 && (
-                        <section aria-label="Autores" className="mb-3">
+                    {autorPrincipal && (
+                        <section aria-label="Autor" className="mb-3">
+                            <p className="section-label text-xs text-color-secondary mb-1">Autor</p>
+                            <AutorLinha
+                                nome={autorPrincipal.nome}
+                                subtitulo={autorPrincipal.subtitulo}
+                                tipo={autorTipo}
+                            />
+                        </section>
+                    )}
+
+                    {coautores.length > 0 && (
+                        <section aria-label="Coautores" className="mb-3">
                             <p className="section-label text-xs text-color-secondary mb-1">
-                                Autoria ({autores.length})
+                                Coautores ({coautores.length})
                             </p>
-                            <ul className="list-none p-0 m-0 flex flex-column gap-1">
-                                {autores.map((autor) => (
-                                    <li key={autor.id} className="flex align-items-center gap-2">
-                                        <MateriaAutorAvatar autor={autor} size="normal" />
-                                        <span className="font-medium text-sm">{autor.nome}</span>
-                                        {autor.subtitulo && (
-                                            <span className="text-color-secondary text-xs">{autor.subtitulo}</span>
-                                        )}
+                            <ul className="list-none p-0 m-0 flex flex-column gap-2">
+                                {coautores.map((c) => (
+                                    <li key={c.id}>
+                                        <AutorLinha
+                                            nome={c.parliamentarian.parliamentaryName}
+                                            tipo="PARLAMENTAR"
+                                        />
                                     </li>
                                 ))}
                             </ul>
                         </section>
                     )}
 
-                    {/* Última tramitação */}
                     {ultimaTramitacao && (
                         <section className="mb-3">
-                            <p className="section-label text-xs text-color-secondary mb-1">Última tramitação</p>
+                            <p className="section-label text-xs text-color-secondary mb-1">
+                                Última tramitação
+                            </p>
                             <p className="m-0 text-sm">
                                 {formatDatePt(ultimaTramitacao.data)} ·{' '}
-                                {STATUS_MATERIA_LABELS[ultimaTramitacao.statusNovo as keyof typeof STATUS_MATERIA_LABELS] ??
-                                    String(ultimaTramitacao.statusNovo)}
+                                {STATUS_MATERIA_LABELS[
+                                    ultimaTramitacao.statusNovo as keyof typeof STATUS_MATERIA_LABELS
+                                ] ?? String(ultimaTramitacao.statusNovo)}
                             </p>
                         </section>
                     )}
 
-                    {/* Histórico colapsável */}
                     {tramitacao.length > 0 && (
                         <section className="mb-3">
                             <Button
-                                label={historicoExpandido ? 'Ocultar histórico ▴' : 'Ver histórico completo ▾'}
+                                label={
+                                    historicoExpandido
+                                        ? 'Ocultar histórico ▴'
+                                        : 'Ver histórico ▾'
+                                }
                                 link
                                 size="small"
                                 className="p-0"
@@ -238,7 +271,6 @@ export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
 
                     <Divider className="my-2" />
 
-                    {/* Ações */}
                     <div className="flex gap-2 flex-wrap">
                         {materia.textoOriginalUrl && (
                             <Button

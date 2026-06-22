@@ -197,4 +197,32 @@ export const parlamentaresApi = {
 
     searchUsers: (busca: string) =>
         apiList<UserResumo>(API_PATHS.usuariosBusca, { busca, limit: 20 }),
+
+    /** Vereadores com usuário ativo — tenta endpoint dedicado; fallback via listagem. */
+    listUsuariosAtivos: async (): Promise<
+        Array<{ parliamentarianId: string; parliamentaryName: string; userNome: string }>
+    > => {
+        try {
+            const res = await api<
+                Array<{ parliamentarianId: string; parliamentaryName: string; user: { nome: string } }>
+            >(API_PATHS.parlamentarianUsersAtivos);
+            return res.map((item) => ({
+                parliamentarianId: item.parliamentarianId,
+                parliamentaryName: item.parliamentaryName,
+                userNome: item.user?.nome ?? '',
+            }));
+        } catch {
+            const res = await apiList<Parliamentarian>(API_PATHS.parlamentares, {
+                status: 'ACTIVE',
+                limit: 200,
+            });
+            return res.data
+                .filter((p) => p.user)
+                .map((p) => ({
+                    parliamentarianId: p.id,
+                    parliamentaryName: p.parliamentaryName,
+                    userNome: `${p.user!.firstName} ${p.user!.lastName}`.trim(),
+                }));
+        }
+    },
 };

@@ -15,6 +15,7 @@ export const API_PATHS = {
     // ── Legislativo — base ────────────────────────────────────────────────
     legislaturas:            '/legislative/legislaturas',
     parlamentares:           '/legislative/parlamentares',
+    parlamentarianUsersAtivos: '/legislative/parlamentares/usuarios/ativos',
     parlamentarById:         (id: string) => `/legislative/parlamentares/${id}`,
     parlamentarUsers:        (id: string) => `/legislative/parlamentares/${id}/usuarios`,
     parlamentarUserById:     (pid: string, uid: string) => `/legislative/parlamentares/${pid}/usuarios/${uid}`,
@@ -47,8 +48,9 @@ export const API_PATHS = {
     materiaTramitacao:   (id: string) => `/legislative/materias/${id}/tramitacao`,
     materiasAutores:     (id: string) => `/legislative/materias/${id}/autores`,
     materiasAutor:       (id: string, autorId: string) => `/legislative/materias/${id}/autores/${autorId}`,
-    materiaCoautores:    (id: string) => `/legislative/materias/${id}/coautores`,
-    materiaCoautorById:  (mid: string, cid: string) => `/legislative/materias/${mid}/coautores/${cid}`,
+    materiaCoautores:    (id: string) => `/legislative/materias/${id}/autoria/coautores`,
+    materiaCoautorById:  (mid: string, cid: string) =>
+        `/legislative/materias/${mid}/autoria/coautores/${cid}`,
     materiasPublicacoes: (id: string) => `/legislative/materias/${id}/publicacoes`,
 
     // ── Domínios extras ───────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { IdentidadeModule } from '../../identidade/identidade.module';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { MateriasController } from './application/controllers/materias.controller';
 import { AddMateriaAutorUseCase } from './application/use-cases/add-materia-autor.use-case';
@@ -37,7 +38,7 @@ import {
 import { TramitacaoHistoricoRepository } from './domain/repositories/tramitacao-historico.repository';
 
 @Module({
-    imports: [PrismaModule],
+    imports: [PrismaModule, IdentidadeModule],
     controllers: [MateriasController],
     providers: [
         CreateMateriaUseCase,

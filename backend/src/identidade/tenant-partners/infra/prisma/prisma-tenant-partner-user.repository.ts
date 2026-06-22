@@ -26,15 +26,25 @@ export class PrismaTenantPartnerUserRepository extends TenantPartnerUserReposito
     }
 
     async findLinkedPartnerIds(tenantPartnerIds: string[]): Promise<string[]> {
+        const links = await this.findLinksByPartnerIds(tenantPartnerIds);
+        return links.map((l) => l.tenantPartnerId);
+    }
+
+    async findLinksByPartnerIds(tenantPartnerIds: string[]): Promise<
+        Array<{ tenantPartnerId: string; userId: string }>
+    > {
         if (tenantPartnerIds.length === 0) return [];
         const rows = await this.prisma.tenantPartnerUser.findMany({
             where: {
                 tenantPartnerId: { in: tenantPartnerIds },
                 isRemoved: false,
             },
-            select: { tenantPartnerId: true },
+            select: { tenantPartnerId: true, userId: true },
         });
-        return rows.map((r) => r.tenantPartnerId);
+        return rows.map((r) => ({
+            tenantPartnerId: r.tenantPartnerId,
+            userId: r.userId,
+        }));
     }
 
     async removeByPartnerId(tenantPartnerId: string): Promise<void> {

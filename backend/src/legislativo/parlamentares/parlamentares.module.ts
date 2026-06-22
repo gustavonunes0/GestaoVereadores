@@ -9,6 +9,7 @@ import { GetParliamentarianByIdUseCase } from './application/use-cases/get-parli
 import { GetParliamentarianProfileUseCase } from './application/use-cases/get-parliamentarian-profile.use-case';
 import { GrantParliamentarianAccessUseCase } from './application/use-cases/grant-parliamentarian-access.use-case';
 import { ListParliamentariansUseCase } from './application/use-cases/list-parliamentarians.use-case';
+import { ListActiveParliamentarianUsersUseCase } from './application/use-cases/list-active-parliamentarian-users.use-case';
 import { RemoveParliamentarianUseCase } from './application/use-cases/remove-parliamentarian.use-case';
 import { RevokeParliamentarianAccessUseCase } from './application/use-cases/revoke-parliamentarian-access.use-case';
 import { UpdateParliamentarianUseCase } from './application/use-cases/update-parliamentarian.use-case';
@@ -41,6 +42,7 @@ import {
         RevokeParliamentarianAccessUseCase,
         GetParliamentarianProfileUseCase,
         ListParliamentariansUseCase,
+        ListActiveParliamentarianUsersUseCase,
         GetParliamentarianByIdUseCase,
         UpdateParliamentarianUseCase,
         RemoveParliamentarianUseCase,

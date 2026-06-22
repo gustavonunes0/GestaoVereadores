@@ -1,5 +1,6 @@
 import { Tag } from 'primereact/tag';
-import type { StatusMateria } from '../../types/materias';
+import type { MateriaStatus } from '../../types/legislative';
+import { MATERIA_STATUS_LABELS } from '../../types/legislative';
 
 type Severity = 'info' | 'warning' | 'success' | 'danger' | 'secondary';
 
@@ -9,16 +10,20 @@ interface StatusCfg {
     icon: string;
 }
 
-const CFG: Record<StatusMateria, StatusCfg> = {
-    RASCUNHO:                  { label: 'Rascunho',                 severity: 'secondary', icon: 'pi pi-file-edit'    },
-    PROTOCOLADA:               { label: 'Protocolada',              severity: 'info',      icon: 'pi pi-file-check'   },
-    LIDA_NO_PLENARIO:          { label: 'Lida no plenário',         severity: 'info',      icon: 'pi pi-book'         },
-    EM_ANALISE_NAS_COMISSOES:  { label: 'Em análise nas comissões', severity: 'warning',   icon: 'pi pi-search'       },
-    PRONTA_PARA_ORDEM_DO_DIA:  { label: 'Pronta para ordem do dia', severity: 'warning',   icon: 'pi pi-list-check'   },
-    EM_VOTACAO:                { label: 'Em votação',               severity: 'warning',   icon: 'pi pi-circle'       },
-    APROVADA_PELO_LEGISLATIVO: { label: 'Aprovada',                 severity: 'success',   icon: 'pi pi-check-circle' },
-    VETADA:                    { label: 'Vetada',                   severity: 'danger',    icon: 'pi pi-times-circle' },
-    SANCIONADA:                { label: 'Sancionada',               severity: 'success',   icon: 'pi pi-verified'     },
+const CFG: Record<MateriaStatus, StatusCfg> = {
+    DRAFT: { label: MATERIA_STATUS_LABELS.DRAFT, severity: 'secondary', icon: 'pi pi-file-edit' },
+    PROTOCOLADA: { label: MATERIA_STATUS_LABELS.PROTOCOLADA, severity: 'info', icon: 'pi pi-file-check' },
+    EM_TRAMITACAO: { label: MATERIA_STATUS_LABELS.EM_TRAMITACAO, severity: 'warning', icon: 'pi pi-search' },
+    EM_PAUTA: { label: MATERIA_STATUS_LABELS.EM_PAUTA, severity: 'warning', icon: 'pi pi-list-check' },
+    APROVADA: { label: MATERIA_STATUS_LABELS.APROVADA, severity: 'success', icon: 'pi pi-check-circle' },
+    REJEITADA: { label: MATERIA_STATUS_LABELS.REJEITADA, severity: 'danger', icon: 'pi pi-times-circle' },
+    ARQUIVADA: { label: MATERIA_STATUS_LABELS.ARQUIVADA, severity: 'secondary', icon: 'pi pi-inbox' },
+    RETIRADA: { label: MATERIA_STATUS_LABELS.RETIRADA, severity: 'secondary', icon: 'pi pi-arrow-left' },
+    TRANSFORMADA_EM_NORMA: {
+        label: MATERIA_STATUS_LABELS.TRANSFORMADA_EM_NORMA,
+        severity: 'success',
+        icon: 'pi pi-verified',
+    },
 };
 
 const FALLBACK: StatusCfg = { label: 'Desconhecido', severity: 'secondary', icon: 'pi pi-question' };
@@ -28,6 +33,6 @@ interface Props {
 }
 
 export function MateriaStatusBadge({ status }: Props) {
-    const c = CFG[status as StatusMateria] ?? FALLBACK;
+    const c = CFG[status as MateriaStatus] ?? FALLBACK;
     return <Tag value={c.label} severity={c.severity} icon={c.icon} />;
 }
