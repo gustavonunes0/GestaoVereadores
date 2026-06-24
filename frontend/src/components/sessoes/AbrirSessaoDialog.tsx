@@ -32,11 +32,20 @@ export function AbrirSessaoDialog({ sessaoId, onClose, onSaved }: Props) {
     async function handleConfirmar() {
         setSaving(true);
         try {
-            await sessoesApi.abrir(sessaoId);
+            await sessoesApi.abrir(sessaoId, {
+                observacao: observacoes.trim() || undefined,
+            });
             showSuccess('Sessão aberta com sucesso.');
             onSaved();
             onClose();
         } catch (err) {
+            const msg = err instanceof Error ? err.message : '';
+            if (msg.includes('ABERTA → ABERTA') || msg.includes('ABERTA -> ABERTA')) {
+                showApiError(new Error('Esta sessão já está aberta. Atualize a página.'));
+                onSaved();
+                onClose();
+                return;
+            }
             showApiError(err);
         } finally {
             setSaving(false);

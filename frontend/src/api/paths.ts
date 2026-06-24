@@ -68,8 +68,10 @@ export const API_PATHS = {
     sessoesPauta:        (id: string) => `/legislative/sessoes-plenarias/${id}/pauta`,
     sessoesPautaItem:    (sid: string, iid: string) => `/legislative/sessoes-plenarias/${sid}/pauta/${iid}`,
     sessoesPautaPublicar:(id: string) => `/legislative/sessoes-plenarias/${id}/pauta/publicar`,
-    sessoesPresencas:    (id: string) => `/legislative/sessoes-plenarias/${id}/presencas`,
-    tiposSessao:         '/dominios/tipos-sessao',
+    sessoesPresencas:        (id: string) => `/legislative/sessoes-plenarias/${id}/presencas`,
+    sessaoPresencaToggle:    (id: string, presencaId: string) =>
+                                 `/legislative/sessoes-plenarias/${id}/presencas/${presencaId}`,
+    tiposSessao:             '/dominios/tipos-sessao',
 
     // ── Votações ──────────────────────────────────────────────────────────
     votacoes:            '/legislative/votacoes',

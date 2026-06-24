@@ -15,7 +15,7 @@ export class SuspenderSessaoUseCase {
         tenantId: string,
         sessaoId: string,
         dto: SuspenderSessaoDto,
-        responsavelId: string,
+        responsavelId?: string,
     ): Promise<{ statusSessao: StatusSessao }> {
         const sessao = await this.repository.findSessaoById(sessaoId, tenantId);
         if (!sessao) throw new NotFoundException('Sessão plenária não encontrada');

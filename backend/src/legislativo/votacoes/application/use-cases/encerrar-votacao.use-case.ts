@@ -24,7 +24,7 @@ export class EncerrarVotacaoUseCase {
         sessaoId: string,
         pautaItemId: string,
         dto: EncerrarVotacaoDto,
-        responsavelId: string,
+        responsavelId?: string,
     ): Promise<{ votacaoId: string; resultado: string; votosSim: number; votosNao: number; abstencoes: number }> {
         // Resolve votacaoId via pautaItem
         const pautaItem = await this.prisma.pautaItem.findFirst({
@@ -88,11 +88,10 @@ export class EncerrarVotacaoUseCase {
                 votosNao: contagem.votosNao,
                 abstencoes: contagem.abstencoes,
                 resultado,
-                responsavelId,
+                ...(responsavelId ? { responsavelId, presidenteId: responsavelId } : {}),
                 tipoQuorum,
                 totalMembros,
                 votoQualidade,
-                presidenteId: responsavelId,
                 quorumVotacao: dto.quorumVotacao,
                 motivoEmpate: resultado === ResultadoVotacaoEnum.EMPATADO ? dto.motivoEmpate : undefined,
                 observacoes: dto.observacoes,

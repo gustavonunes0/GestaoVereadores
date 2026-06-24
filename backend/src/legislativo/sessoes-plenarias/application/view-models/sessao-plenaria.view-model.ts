@@ -11,6 +11,7 @@ import {
 import {
     STATUS_SESSAO_LABELS,
     StatusSessao,
+    statusSessaoToCodigoSituacao,
 } from '../../domain/enums/status-sessao.enum';
 import {
     SESSION_TYPE_LABELS,
@@ -95,10 +96,20 @@ function mapPresencas(items: unknown[] | undefined) {
 export class SessaoPlenariaViewModel {
     static toHttp(data: SessaoPlenariaPrismaPayload) {
         const statusLegado = resolveSessionStatus(data.situacao);
-        const capabilities = getSessionWorkflowCapabilities(data.situacao);
-        const cicloVida = parseLifecycleHistory(data.cicloVidaJson);
         const statusSessao = (data.statusSessao ??
             statusLegado) as StatusSessao | null;
+        const statusWorkflow: SessionStatus | null = statusSessao
+            ? (statusSessaoToCodigoSituacao(statusSessao) as SessionStatus)
+            : statusLegado;
+        const capabilities = statusWorkflow
+            ? getSessionWorkflowCapabilities({
+                  codigo: statusSessaoToCodigoSituacao(
+                      statusSessao ?? StatusSessao.AGENDADA,
+                  ) as SessaoPlenariaPrismaPayload['situacao']['codigo'],
+                  nome: data.situacao.nome,
+              })
+            : getSessionWorkflowCapabilities(data.situacao);
+        const cicloVida = parseLifecycleHistory(data.cicloVidaJson);
 
         return {
             id: data.id,
@@ -127,10 +138,14 @@ export class SessaoPlenariaViewModel {
             situacao: {
                 id: data.situacao.id,
                 nome: data.situacao.nome,
-                codigo: data.situacao.codigo,
-                label: statusLegado
-                    ? SESSION_STATUS_LABELS[statusLegado]
-                    : data.situacao.nome,
+                codigo: statusSessao
+                    ? statusSessaoToCodigoSituacao(statusSessao)
+                    : data.situacao.codigo,
+                label: statusSessao
+                    ? STATUS_SESSAO_LABELS[statusSessao]
+                    : statusLegado
+                      ? SESSION_STATUS_LABELS[statusLegado]
+                      : data.situacao.nome,
             },
             faseAtual: data.faseAtual
                 ? {
@@ -150,10 +165,10 @@ export class SessaoPlenariaViewModel {
             pautaItens: mapPautaItens(data.pautaItens),
             presencas: mapPresencas(data.presencas),
             workflow: {
-                status: statusLegado
+                status: statusWorkflow
                     ? {
-                          value: statusLegado,
-                          label: SESSION_STATUS_LABELS[statusLegado],
+                          value: statusWorkflow,
+                          label: SESSION_STATUS_LABELS[statusWorkflow],
                       }
                     : null,
                 capabilities,

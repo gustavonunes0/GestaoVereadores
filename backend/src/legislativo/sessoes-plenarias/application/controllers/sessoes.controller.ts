@@ -153,7 +153,8 @@ import { GetSessaoAtivaUseCase } from '../use-cases/get-sessao-ativa.use-case';
 import { EncerrarVotacaoUseCase } from '../../../votacoes/application/use-cases/encerrar-votacao.use-case';
 import { EncerrarVotacaoDto } from '../../../votacoes/application/dto/encerrar-votacao.dto';
 import { SessaoRealtimeGateway } from '../../realtime/sessao-realtime.gateway';
-import { isParlamentarianUser } from '../../../../common/types/authenticated-request';
+import { isParlamentarianUser, resolveTenantUserId } from '../../../../common/types/authenticated-request';
+import type { AuthenticatedUser } from '../../../../common/types/authenticated-request';
 import { ParlamentarianJwtPayload } from '../../../../auth/domain/types/jwt-payload.type';
 import { PresidentOrStaffGuard } from '../../../../auth/guards/president-or-staff.guard';
 import { PedirPalavraUseCase } from '../use-cases/pedir-palavra.use-case';
@@ -648,7 +649,7 @@ export class SessoesController {
         @Body() dto: AbrirSessaoDto,
         @Req() req: Request,
     ) {
-        const responsavelId = (req.user as { id?: string })?.id ?? 'system';
+        const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
         return this.abrirSessao.execute(tenantId, id, dto, responsavelId);
     }
 
@@ -660,7 +661,7 @@ export class SessoesController {
         @Body() dto: SuspenderSessaoDto,
         @Req() req: Request,
     ) {
-        const responsavelId = (req.user as { id?: string })?.id ?? 'system';
+        const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
         return this.suspenderSessao.execute(tenantId, id, dto, responsavelId);
     }
 
@@ -672,7 +673,7 @@ export class SessoesController {
         @Body() dto: EncerrarSessaoDto,
         @Req() req: Request,
     ) {
-        const responsavelId = (req.user as { id?: string })?.id ?? 'system';
+        const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
         const result = await this.encerrarSessao.execute(tenantId, id, dto, responsavelId);
         this.realtimeGateway.emitSessaoEncerrada(tenantId, { sessaoId: id });
         return result;
@@ -686,7 +687,7 @@ export class SessoesController {
         @Body() dto: CancelarSessaoDto,
         @Req() req: Request,
     ) {
-        const responsavelId = (req.user as { id?: string })?.id ?? 'system';
+        const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
         return this.cancelarSessao.execute(tenantId, id, dto, responsavelId);
     }
 
@@ -771,7 +772,7 @@ export class SessoesController {
         @Body() dto: EncerrarVotacaoDto,
         @Req() req: Request,
     ) {
-        const responsavelId = (req.user as { id?: string })?.id ?? 'system';
+        const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
         const result = await this.encerrarVotacao.execute(tenantId, id, pautaItemId, dto, responsavelId);
         this.realtimeGateway.emitVotacaoEncerrada(tenantId, {
             votacaoId: result.votacaoId,

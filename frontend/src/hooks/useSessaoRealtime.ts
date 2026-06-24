@@ -16,11 +16,21 @@ interface Placar {
     abstencoes: number;
 }
 
+export interface PresencaUpdate {
+    parlamentarianUserId: string;
+    presente: boolean;
+    origem: 'APP' | 'STAFF';
+    presentes: number;
+    ausentes: number;
+    temQuorum: boolean;
+}
+
 export function useSessaoRealtime(sessaoId: string) {
     const [faseAtual, setFaseAtual] = useState<FaseSessao | null>(null);
     const [votacaoAberta, setVotacaoAberta] = useState<VotacaoAberta | null>(null);
     const [placar, setPlacar] = useState<Placar | null>(null);
     const [wsConectado, setWsConectado] = useState(false);
+    const [presencaUpdate, setPresencaUpdate] = useState<PresencaUpdate | null>(null);
 
     useEffect(() => {
         const token = localStorage.getItem('access_token');
@@ -30,16 +40,17 @@ export function useSessaoRealtime(sessaoId: string) {
             transports: ['websocket'],
         });
 
-        socket.on('connect',           () => setWsConectado(true));
-        socket.on('disconnect',        () => setWsConectado(false));
-        socket.on('sessao:fase',       (data: { faseAtual: FaseSessao }) => setFaseAtual(data.faseAtual));
-        socket.on('votacao:aberta',    (data: VotacaoAberta) => { setVotacaoAberta(data); setPlacar(null); });
-        socket.on('votacao:placar',    (data: Placar) => setPlacar(data));
-        socket.on('votacao:encerrada', () => { setVotacaoAberta(null); setPlacar(null); });
-        socket.on('sessao:encerrada',  () => setFaseAtual('ENCERRADA'));
+        socket.on('connect',              () => setWsConectado(true));
+        socket.on('disconnect',           () => setWsConectado(false));
+        socket.on('sessao:fase',          (data: { faseAtual: FaseSessao }) => setFaseAtual(data.faseAtual));
+        socket.on('votacao:aberta',       (data: VotacaoAberta) => { setVotacaoAberta(data); setPlacar(null); });
+        socket.on('votacao:placar',       (data: Placar) => setPlacar(data));
+        socket.on('votacao:encerrada',    () => { setVotacaoAberta(null); setPlacar(null); });
+        socket.on('sessao:encerrada',     () => setFaseAtual('ENCERRADA'));
+        socket.on('presenca:atualizada',  (data: PresencaUpdate) => setPresencaUpdate(data));
 
         return () => { socket.disconnect(); };
     }, [sessaoId]);
 
-    return { faseAtual, votacaoAberta, placar, wsConectado };
+    return { faseAtual, votacaoAberta, placar, wsConectado, presencaUpdate };
 }

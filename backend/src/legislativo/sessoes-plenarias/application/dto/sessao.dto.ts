@@ -9,6 +9,7 @@ import {
     IsString,
     IsUUID,
     Min,
+    ValidateIf,
 } from 'class-validator';
 import { PaginationQueryDto } from '../../../../common/dto/pagination.dto';
 
@@ -78,8 +79,13 @@ export class AddPautaItemDto {
 }
 
 export class RegistrarPresencaDto {
+    @ValidateIf((o: RegistrarPresencaDto) => !o.parliamentarianId)
     @IsString()
-    parlamentarId: string;
+    parlamentarId?: string;
+
+    @ValidateIf((o: RegistrarPresencaDto) => !o.parlamentarId)
+    @IsUUID()
+    parliamentarianId?: string;
 
     /** Perfil DDD (Parliamentarian); quando informado com legislatureProfileId, valida mandato ativo. */
     @IsOptional()

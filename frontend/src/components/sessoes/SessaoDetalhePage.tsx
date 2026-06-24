@@ -17,6 +17,7 @@ import {
 } from '../../types/sessoes';
 import { SessaoAcoesMenu } from './SessaoAcoesMenu';
 import { PautaManager } from './pauta/PautaManager';
+import { PresencaPanel } from './presencas/PresencaPanel';
 import { TransmissaoPanel } from './transmissao/TransmissaoPanel';
 
 const STATUS_BADGE: Record<StatusSessao, { className: string; icon: string; label: string }> = {
@@ -174,21 +175,11 @@ export function SessaoDetalhePage() {
                         </span>
                     }
                 >
-                    <div className="sigl-panel">
-                        <div className="sigl-panel-header">
-                            <span className="sigl-panel-title">
-                                <i className="pi pi-users" aria-hidden />
-                                Registro de presenças
-                            </span>
-                        </div>
-                        <div className="sigl-panel-body">
-                            <div className="sessao-empty-state sessao-empty-state--compact">
-                                <i className="pi pi-users" aria-hidden />
-                                <span>Gestão de presenças</span>
-                                <span className="sessao-empty-state__hint">Em implementação.</span>
-                            </div>
-                        </div>
-                    </div>
+                    <PresencaPanel
+                        sessaoId={sessao.id}
+                        legislatureId={sessao.sessaoLegislativa?.legislatura?.id}
+                        legislaturaNumero={sessao.sessaoLegislativa?.legislatura?.numero}
+                    />
                 </TabPanel>
 
                 {mostrarTransmissao && (

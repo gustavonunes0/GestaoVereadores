@@ -14,7 +14,7 @@ import {
     FaseSessao as PrismaFaseSessao,
 } from '@prisma/client';
 import { SessaoPlenariaEntity } from '../../domain/entities/sessao-plenaria.entity';
-import { StatusSessao } from '../../domain/enums/status-sessao.enum';
+import { StatusSessao, statusSessaoToCodigoSituacao } from '../../domain/enums/status-sessao.enum';
 import { FaseSessao } from '../../domain/enums/fase-sessao.enum';
 import {
     QuorumInfo,
@@ -94,6 +94,7 @@ const pautaItemInclude = {
 
 const presencaInclude = {
     parlamentar: { include: { pessoa: true } },
+    parliamentarian: true,
 } as const;
 
 type LifecycleEntry = {
@@ -664,6 +665,48 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         const sessao = await this.findOne(tenantId, sessaoId);
         assertSessaoNaoEncerrada(sessao.situacao);
 
+        if (dto.parliamentarianId) {
+            const parliamentarian = await this.prisma.parliamentarian.findFirst({
+                where: {
+                    id: dto.parliamentarianId,
+                    tenantId,
+                    isRemoved: false,
+                },
+            });
+            if (!parliamentarian) {
+                throw new NotFoundException('Parlamentar não encontrado');
+            }
+
+            await this.assertMandateIfProvided(tenantId, dto);
+
+            const existing = await this.prisma.presencaSessao.findUnique({
+                where: {
+                    sessaoId_parliamentarianId: {
+                        sessaoId,
+                        parliamentarianId: dto.parliamentarianId,
+                    },
+                },
+            });
+            assertPresencaNaoDuplicada(!!existing);
+
+            const campos = resolveCamposPresenca(dto);
+
+            return this.prisma.presencaSessao.create({
+                data: {
+                    sessaoId,
+                    parliamentarianId: dto.parliamentarianId,
+                    ...campos,
+                },
+                include: presencaInclude,
+            });
+        }
+
+        if (!dto.parlamentarId) {
+            throw new BadRequestException(
+                'Informe parlamentarId ou parliamentarianId',
+            );
+        }
+
         const parlamentar = await this.prisma.parlamentar.findFirst({
             where: { id: dto.parlamentarId, ...tenantWhere(tenantId) },
         });
@@ -768,7 +811,9 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
 
         if (dados.novoStatus === StatusSessao.ABERTA) {
             dataFields.dataAbertura = agora;
-            dataFields.responsavelAberturaId = dados.responsavelId;
+            if (dados.responsavelId) {
+                dataFields.responsavelAberturaId = dados.responsavelId;
+            }
             if (dados.quorumPresente !== undefined) {
                 dataFields.quorumPresente = dados.quorumPresente;
             }
@@ -782,10 +827,16 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             dataFields.observacoes = dados.observacao;
         }
 
+        const codigoSituacao = statusSessaoToCodigoSituacao(
+            dados.novoStatus,
+        ) as CodigoSituacaoSessao;
+        const situacaoId = await this.resolveSituacaoIdByCodigo(codigoSituacao);
+
         await this.prisma.sessaoPlenaria.update({
             where: { id, tenantId, isRemoved: false },
             data: {
                 statusSessao: dados.novoStatus as unknown as PrismaStatusSessao,
+                situacaoId,
                 ...dataFields,
             },
         });

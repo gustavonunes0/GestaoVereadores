@@ -19,7 +19,7 @@ export class AbrirSessaoUseCase {
         tenantId: string,
         sessaoId: string,
         dto: AbrirSessaoDto,
-        responsavelId: string,
+        responsavelId?: string,
     ): Promise<{ statusSessao: StatusSessao; quorumPresente: number | null }> {
         const sessao = await this.repository.findSessaoById(sessaoId, tenantId);
         if (!sessao) throw new NotFoundException('Sessão plenária não encontrada');

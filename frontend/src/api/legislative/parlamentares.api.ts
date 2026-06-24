@@ -124,6 +124,24 @@ export const parlamentaresApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
         apiList<Parliamentarian>(API_PATHS.parlamentares, params),
 
+    /** Busca todos os parlamentares ativos (paginação automática; API limita 100/página). */
+    listActiveAll: async (): Promise<Parliamentarian[]> => {
+        const all: Parliamentarian[] = [];
+        let page = 1;
+        let totalPages = 1;
+        do {
+            const res = await apiList<Parliamentarian>(API_PATHS.parlamentares, {
+                status: 'ACTIVE',
+                limit: 100,
+                page,
+            });
+            all.push(...res.data);
+            totalPages = res.meta.totalPages;
+            page += 1;
+        } while (page <= totalPages);
+        return all;
+    },
+
     getById: (id: string) =>
         api<Parliamentarian>(`${API_PATHS.parlamentares}/${id}`),
 

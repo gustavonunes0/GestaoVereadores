@@ -8,10 +8,13 @@ import { contaPresencaParaQuorum } from '../../domain/services/presenca-workflow
 export type PresencaSessaoPrismaPayload = {
     id: string;
     sessaoId: string;
-    parlamentarId: string;
+    parlamentarId: string | null;
+    parliamentarianId: string | null;
     presente: boolean;
     situacao: SituacaoPresenca;
     justificativa: string | null;
+    autoRegistrado: boolean;
+    registradoEm: Date | null;
     createdAt: Date;
     parlamentar?: {
         id: string;
@@ -20,6 +23,10 @@ export type PresencaSessaoPrismaPayload = {
             nome?: string | null;
             nomeParlamentar?: string | null;
         } | null;
+    } | null;
+    parliamentarian?: {
+        id: string;
+        parliamentaryName: string;
     } | null;
 };
 
@@ -30,6 +37,15 @@ export class PresencaSessaoViewModel {
             id: data.id,
             sessaoId: data.sessaoId,
             parlamentarId: data.parlamentarId,
+            parliamentarianId: data.parliamentarianId,
+            parliamentarian: data.parliamentarian
+                ? {
+                      id: data.parliamentarian.id,
+                      parliamentaryName: data.parliamentarian.parliamentaryName,
+                  }
+                : null,
+            autoRegistrado: data.autoRegistrado,
+            registradoEm: data.registradoEm?.toISOString() ?? null,
             parlamentar: data.parlamentar
                 ? {
                       id: data.parlamentar.id,

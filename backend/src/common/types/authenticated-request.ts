@@ -46,6 +46,12 @@ export function isParlamentarianUser(u: AuthenticatedUser): u is ParlamentarianA
     return u.authType === 'camara' && (u as CamaraAuthenticatedUser).sessionType === 'parliamentarian';
 }
 
+/** ID de TenantUser para FKs (ex.: responsavelAberturaId). Não usar User.id. */
+export function resolveTenantUserId(user?: AuthenticatedUser): string | undefined {
+    if (user && isStaffUser(user)) return user.tenantUserId;
+    return undefined;
+}
+
 export type RequestWithTenant = {
     tenantId?: string;
     user?: AuthenticatedUser;

@@ -18,7 +18,7 @@ import { FaseSessao } from '../enums/fase-sessao.enum';
 
 export type TransicionarStatusDados = {
     novoStatus: StatusSessao;
-    responsavelId: string;
+    responsavelId?: string;
     observacao?: string;
     quorumPresente?: number;
 };

@@ -16,7 +16,7 @@ export type EncerrarVotacaoDados = {
     votosNao: number;
     abstencoes: number;
     resultado: ResultadoVotacaoEnum;
-    responsavelId: string;
+    responsavelId?: string;
     tipoQuorum?: TipoQuorum;
     totalMembros?: number;
     votoQualidade?: boolean;
