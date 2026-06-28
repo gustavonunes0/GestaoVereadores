@@ -121,4 +121,22 @@ export abstract class SessaoPlenariaRepository {
     abstract setFase(id: string, tenantId: string, fase: FaseSessao): Promise<void>;
     // M13 — sessão ativa para parlamentar
     abstract findAtiva(tenantId: string): Promise<SessaoPlenariaEntity | null>;
+
+    abstract resolveDefaultSessaoLegislativaId(
+        tenantId: string,
+    ): Promise<string | null>;
+
+    abstract getLegislaturaContexto(tenantId: string): Promise<{
+        legislaturas: Array<{
+            id: string;
+            numero: number;
+            sessoesLegislativas: Array<{ id: string; numero: number }>;
+        }>;
+        vigente: {
+            legislaturaId: string;
+            legislaturaNumero: number;
+            sessaoLegislativaId: string | null;
+            sessaoLegislativaNumero: number | null;
+        } | null;
+    }>;
 }

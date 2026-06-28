@@ -8,12 +8,14 @@ import { SessaoDialogFormFields } from './SessaoDialogFormFields';
 
 interface Props {
     sessaoLegislativaId?: string;
+    legislaturaLabel?: string;
     onClose: () => void;
     onSaved: () => void;
 }
 
 export function SessaoCreateDialog({
     sessaoLegislativaId,
+    legislaturaLabel,
     onClose,
     onSaved,
 }: Props) {
@@ -87,6 +89,7 @@ export function SessaoCreateDialog({
                 onTipoSessaoIdChange={setTipoSessaoId}
                 tiposSessao={tiposSessao}
                 situacaoLabel={situacaoAgendada}
+                legislaturaLabel={legislaturaLabel}
                 mensagem={mensagem}
                 onMensagemChange={setMensagem}
             />

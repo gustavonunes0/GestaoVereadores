@@ -59,6 +59,7 @@ export const API_PATHS = {
 
     // ── Sessões Plenárias ─────────────────────────────────────────────────
     sessoes:             '/legislative/sessoes-plenarias',
+    sessoesContextoLegislatura: '/legislative/sessoes-plenarias/contexto-legislatura',
     sessaoById:          (id: string) => `/legislative/sessoes-plenarias/${id}`,
     sessoesAbrir:        (id: string) => `/legislative/sessoes-plenarias/${id}/abrir`,
     sessoesSuspender:    (id: string) => `/legislative/sessoes-plenarias/${id}/suspender`,

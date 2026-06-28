@@ -186,6 +186,11 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         );
         const status = SessionStatus.AGENDADA;
 
+        const sessaoLegislativaId =
+            dto.sessaoLegislativaId ??
+            (await this.resolveDefaultSessaoLegislativaId(tenantId)) ??
+            undefined;
+
         return this.prisma.sessaoPlenaria.create({
             data: {
                 tenantId,
@@ -193,7 +198,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 dataFim,
                 tipoSessaoId: dto.tipoSessaoId,
                 situacaoId,
-                sessaoLegislativaId: dto.sessaoLegislativaId,
+                sessaoLegislativaId,
                 mensagem: dto.mensagem,
                 cicloVidaJson: this.appendCicloVida([], {
                     status,
@@ -1160,5 +1165,66 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         entity.createdAt = raw.createdAt;
         entity.updatedAt = raw.updatedAt;
         return entity;
+    }
+
+    async resolveDefaultSessaoLegislativaId(
+        tenantId: string,
+    ): Promise<string | null> {
+        const vigente = await this.findVigenteLegislaturaPt(tenantId);
+        if (!vigente) return null;
+        const sessao = vigente.sessoesLegislativas[0];
+        return sessao?.id ?? null;
+    }
+
+    async getLegislaturaContexto(tenantId: string) {
+        const legislaturas = await this.prisma.legislatura.findMany({
+            where: { tenantId, isRemoved: false },
+            orderBy: { numero: 'desc' },
+            include: {
+                sessoesLegislativas: { orderBy: { numero: 'asc' } },
+            },
+        });
+
+        const mapped = legislaturas.map((leg) => ({
+            id: leg.id,
+            numero: leg.numero,
+            sessoesLegislativas: leg.sessoesLegislativas.map((sl) => ({
+                id: sl.id,
+                numero: sl.numero,
+            })),
+        }));
+
+        const vigentePt = await this.findVigenteLegislaturaPt(tenantId);
+        const vigente = vigentePt
+            ? {
+                  legislaturaId: vigentePt.id,
+                  legislaturaNumero: vigentePt.numero,
+                  sessaoLegislativaId:
+                      vigentePt.sessoesLegislativas.at(-1)?.id ?? null,
+                  sessaoLegislativaNumero:
+                      vigentePt.sessoesLegislativas.at(-1)?.numero ?? null,
+              }
+            : null;
+
+        return { legislaturas: mapped, vigente };
+    }
+
+    /** Resolve legislatura legada (PT) a partir da legislatura em exercício (EN). */
+    private async findVigenteLegislaturaPt(tenantId: string) {
+        const current = await this.prisma.legislature.findFirst({
+            where: { tenantId, isCurrent: true, isRemoved: false },
+        });
+        if (!current) return null;
+
+        return this.prisma.legislatura.findFirst({
+            where: {
+                tenantId,
+                numero: current.number,
+                isRemoved: false,
+            },
+            include: {
+                sessoesLegislativas: { orderBy: { numero: 'asc' } },
+            },
+        });
     }
 }

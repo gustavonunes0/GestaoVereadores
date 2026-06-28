@@ -42,6 +42,22 @@ export interface QuorumInfo {
     temQuorum: boolean;
 }
 
+export type LegislaturaSessaoRef = {
+    id: string;
+    numero: number;
+    sessoesLegislativas: { id: string; numero: number }[];
+};
+
+export type LegislaturaContextoSessoes = {
+    legislaturas: LegislaturaSessaoRef[];
+    vigente: {
+        legislaturaId: string;
+        legislaturaNumero: number;
+        sessaoLegislativaId: string | null;
+        sessaoLegislativaNumero: number | null;
+    } | null;
+};
+
 type QuorumApiResponse = {
     quorumMinimo: number;
     quorumPresente: number;
@@ -61,6 +77,9 @@ const base = API_PATHS.sessoes;
 export const sessoesApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
         apiList<SessaoPlenaria>(base, params),
+
+    getContextoLegislatura: () =>
+        api<LegislaturaContextoSessoes>(API_PATHS.sessoesContextoLegislatura),
 
     getById: (id: string) => api<SessaoPlenaria>(`${base}/${id}`),
 

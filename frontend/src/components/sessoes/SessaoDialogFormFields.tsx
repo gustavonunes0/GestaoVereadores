@@ -12,6 +12,7 @@ interface Props {
     onTipoSessaoIdChange: (value: string) => void;
     tiposSessao: TipoSessaoOption[];
     situacaoLabel: string;
+    legislaturaLabel?: string;
     mensagem: string;
     onMensagemChange: (value: string) => void;
 }
@@ -24,11 +25,26 @@ export function SessaoDialogFormFields({
     onTipoSessaoIdChange,
     tiposSessao,
     situacaoLabel,
+    legislaturaLabel,
     mensagem,
     onMensagemChange,
 }: Props) {
     return (
         <div className="sigl-dialog-body sigl-grid-12">
+            {legislaturaLabel ? (
+                <div className="sigl-filtro-campo sigl-col-12">
+                    <label htmlFor={`sess-${idPrefix}-legislatura`}>
+                        Legislatura em vigor
+                    </label>
+                    <InputText
+                        id={`sess-${idPrefix}-legislatura`}
+                        value={legislaturaLabel}
+                        disabled
+                        readOnly
+                    />
+                </div>
+            ) : null}
+
             <div className="sigl-filtro-campo sigl-col-6">
                 <label htmlFor={`sess-${idPrefix}-inicio`}>Data início *</label>
                 <InputText

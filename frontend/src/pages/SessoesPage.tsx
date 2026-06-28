@@ -2,7 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
-import { sessoesApi } from '../api/legislative/sessoes.api';
+import {
+    sessoesApi,
+    type LegislaturaContextoSessoes,
+    type LegislaturaSessaoRef,
+} from '../api/legislative/sessoes.api';
 import { MODULE_ICONS } from '../app/navigation';
 import { DataTableLayout } from '../components/common/DataTableLayout';
 import { DeleteDialog } from '../components/common/DeleteDialog';
@@ -16,24 +20,26 @@ import {
 } from '../components/sessoes/SessaoPesquisaFilters';
 import { SessaoStatusBadge } from '../components/sessoes/SessaoStatusBadge';
 import { sessaoLabel, type Sessao } from '../components/sessoes/sessao.types';
-import { useLegislatura } from '../contexts/LegislaturaContext';
-import type { LegislaturaRef } from '../contexts/LegislaturaContext';
 import { useAppToast } from '../hooks/useAppToast';
 import { useDominios } from '../hooks/useDominios';
 import { usePermissions } from '../hooks/usePermissions';
 import { buildSessaoDataRange } from '../utils/sessaoPesquisa';
 
-const EMPTY_FILTROS: SessaoFiltrosForm = {
-    legislaturaId: '',
-    sessaoLegislativaId: '',
-    ano: String(new Date().getFullYear()),
-    mes: '',
-    dia: '',
-    dataDe: '',
-    dataAte: '',
-    tipoSessaoId: '',
-    situacaoId: '',
-};
+function buildDefaultFiltros(
+    vigente?: LegislaturaContextoSessoes['vigente'],
+): SessaoFiltrosForm {
+    return {
+        legislaturaId: vigente?.legislaturaId ?? '',
+        sessaoLegislativaId: vigente?.sessaoLegislativaId ?? '',
+        ano: String(new Date().getFullYear()),
+        mes: '',
+        dia: '',
+        dataDe: '',
+        dataAte: '',
+        tipoSessaoId: '',
+        situacaoId: '',
+    };
+}
 
 function filtrosToQuery(
     f: SessaoFiltrosForm,
@@ -61,28 +67,46 @@ export function SessoesPage() {
     const { tiposSessao, situacoesSessao } = useDominios();
     const { canWrite, canEdit, canDelete } = usePermissions();
     const { showApiError } = useAppToast();
-    const { legislaturas, refresh } = useLegislatura();
 
-    const [legislaturasList, setLegislaturasList] = useState<LegislaturaRef[]>([]);
+    const [legislaturasList, setLegislaturasList] = useState<LegislaturaSessaoRef[]>([]);
+    const [contextoVigente, setContextoVigente] =
+        useState<LegislaturaContextoSessoes['vigente']>(null);
+    const [contextReady, setContextReady] = useState(false);
+    const [defaultFiltros, setDefaultFiltros] = useState<SessaoFiltrosForm>(() =>
+        buildDefaultFiltros(),
+    );
+
     const [items, setItems] = useState<Sessao[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
 
-    const [filtros, setFiltros] = useState<SessaoFiltrosForm>({ ...EMPTY_FILTROS });
-    const [filtrosApplied, setFiltrosApplied] = useState<SessaoFiltrosForm>({
-        ...EMPTY_FILTROS,
-    });
+    const [filtros, setFiltros] = useState<SessaoFiltrosForm>(() => buildDefaultFiltros());
+    const [filtrosApplied, setFiltrosApplied] = useState<SessaoFiltrosForm>(() =>
+        buildDefaultFiltros(),
+    );
 
     const [dialogCriar, setDialogCriar] = useState(false);
     const [dialogEditar, setDialogEditar] = useState<Sessao | null>(null);
     const [dialogDeletar, setDialogDeletar] = useState<Sessao | null>(null);
 
     useEffect(() => {
-        void refresh().then(setLegislaturasList);
-    }, [refresh]);
+        sessoesApi
+            .getContextoLegislatura()
+            .then((ctx) => {
+                setLegislaturasList(ctx.legislaturas);
+                setContextoVigente(ctx.vigente);
+                const defaults = buildDefaultFiltros(ctx.vigente ?? undefined);
+                setDefaultFiltros(defaults);
+                setFiltros(defaults);
+                setFiltrosApplied(defaults);
+            })
+            .catch(showApiError)
+            .finally(() => setContextReady(true));
+    }, [showApiError]);
 
     const buscar = useCallback(async () => {
+        if (!contextReady) return;
         setLoading(true);
         try {
             const r = await sessoesApi.list(filtrosToQuery(filtrosApplied, page));
@@ -93,7 +117,7 @@ export function SessoesPage() {
         } finally {
             setLoading(false);
         }
-    }, [filtrosApplied, page, showApiError]);
+    }, [contextReady, filtrosApplied, page, showApiError]);
 
     useEffect(() => {
         void buscar();
@@ -105,10 +129,18 @@ export function SessoesPage() {
     }
 
     function limparFiltros() {
-        setFiltros({ ...EMPTY_FILTROS });
-        setFiltrosApplied({ ...EMPTY_FILTROS });
+        setFiltros({ ...defaultFiltros });
+        setFiltrosApplied({ ...defaultFiltros });
         setPage(1);
     }
+
+    const contextoLabel = contextoVigente
+        ? `${contextoVigente.legislaturaNumero}ª legislatura${
+              contextoVigente.sessaoLegislativaNumero
+                  ? ` · ${contextoVigente.sessaoLegislativaNumero}ª sessão legislativa`
+                  : ''
+          }`
+        : undefined;
 
     const colunas = (
         <>
@@ -157,6 +189,11 @@ export function SessoesPage() {
             <PageHeader
                 icon={MODULE_ICONS.sessoes}
                 title="Sessões plenárias"
+                subtitle={
+                    contextoLabel
+                        ? `Legislatura em vigor: ${contextoLabel}`
+                        : undefined
+                }
                 actions={
                     canWrite ? (
                         <Button
@@ -180,15 +217,13 @@ export function SessoesPage() {
                         onChange={(patch) =>
                             setFiltros((f) => ({ ...f, ...patch }))
                         }
-                        legislaturas={
-                            legislaturasList.length ? legislaturasList : legislaturas
-                        }
+                        legislaturas={legislaturasList}
                         tiposSessao={tiposSessao}
                         situacoesSessao={situacoesSessao}
                         onPesquisar={aplicarFiltros}
                         onClear={limparFiltros}
                         hasFilters={
-                            JSON.stringify(filtros) !== JSON.stringify(EMPTY_FILTROS)
+                            JSON.stringify(filtros) !== JSON.stringify(defaultFiltros)
                         }
                         resultCount={total}
                     />
@@ -199,7 +234,7 @@ export function SessoesPage() {
                 <DataTableLayout<Sessao>
                     items={items}
                     total={total}
-                    loading={loading}
+                    loading={loading || !contextReady}
                     page={page}
                     onPageChange={setPage}
                     columns={colunas}
@@ -212,12 +247,14 @@ export function SessoesPage() {
 
             {dialogCriar && (
                 <SessaoCreateDialog
-                    sessaoLegislativaId={filtrosApplied.sessaoLegislativaId || undefined}
+                    sessaoLegislativaId={
+                        contextoVigente?.sessaoLegislativaId ?? undefined
+                    }
+                    legislaturaLabel={contextoLabel}
                     onClose={() => setDialogCriar(false)}
                     onSaved={() => void buscar()}
                 />
             )}
-
 
             {dialogEditar && (
                 <SessaoEditDialog

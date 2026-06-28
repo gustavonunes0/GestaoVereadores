@@ -51,6 +51,7 @@ import { PedirPalavraUseCase } from './application/use-cases/pedir-palavra.use-c
 import { ListarPedidosPalavraUseCase } from './application/use-cases/listar-pedidos-palavra.use-case';
 import { ResponderPedidoPalavraUseCase } from './application/use-cases/responder-pedido-palavra.use-case';
 import { GetJitsiTokenUseCase } from './application/use-cases/get-jitsi-token.use-case';
+import { GetLegislaturaContextoUseCase } from './application/use-cases/get-legislatura-contexto.use-case';
 import { EncerrarPedidoPalavraUseCase } from './application/use-cases/encerrar-pedido-palavra.use-case';
 import { PrismaPedidoPalavraRepository } from './infra/prisma/prisma-pedido-palavra.repository';
 import { PedidoPalavraRepository } from './domain/repositories/pedido-palavra.repository';
@@ -110,6 +111,7 @@ import { PEDIDO_PALAVRA_REPOSITORY } from './sessoes-plenarias.tokens';
         ResponderPedidoPalavraUseCase,
         EncerrarPedidoPalavraUseCase,
         GetJitsiTokenUseCase,
+        GetLegislaturaContextoUseCase,
         PrismaPedidoPalavraRepository,
         PrismaSessaoPlenariaRepository,
         {

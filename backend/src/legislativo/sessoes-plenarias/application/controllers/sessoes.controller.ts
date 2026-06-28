@@ -163,6 +163,7 @@ import { ResponderPedidoPalavraUseCase } from '../use-cases/responder-pedido-pal
 import { EncerrarPedidoPalavraUseCase } from '../use-cases/encerrar-pedido-palavra.use-case';
 import { ResponderPedidoPalavraDto } from '../dto/responder-pedido-palavra.dto';
 import { GetJitsiTokenUseCase } from '../use-cases/get-jitsi-token.use-case';
+import { GetLegislaturaContextoUseCase } from '../use-cases/get-legislatura-contexto.use-case';
 import { buildVotacaoAbertaPayload } from '../../realtime/votacao-realtime.mapper';
 
 @ApiTags('sessoes')
@@ -215,6 +216,7 @@ export class SessoesController {
         private readonly responderPedidoPalavra: ResponderPedidoPalavraUseCase,
         private readonly encerrarPedidoPalavra: EncerrarPedidoPalavraUseCase,
         private readonly getJitsiToken: GetJitsiTokenUseCase,
+        private readonly getLegislaturaContexto: GetLegislaturaContextoUseCase,
     ) {}
 
     @Get('pauta/fases')
@@ -230,6 +232,11 @@ export class SessoesController {
     @Get('situacoes')
     listSituacoes() {
         return this.listSessionStatuses.execute();
+    }
+
+    @Get('contexto-legislatura')
+    contextoLegislatura(@TenantId() tenantId: string) {
+        return this.getLegislaturaContexto.execute(tenantId);
     }
 
     @Get()
