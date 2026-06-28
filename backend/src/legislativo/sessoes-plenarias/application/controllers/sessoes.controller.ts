@@ -162,6 +162,8 @@ import { ListarPedidosPalavraUseCase } from '../use-cases/listar-pedidos-palavra
 import { ResponderPedidoPalavraUseCase } from '../use-cases/responder-pedido-palavra.use-case';
 import { EncerrarPedidoPalavraUseCase } from '../use-cases/encerrar-pedido-palavra.use-case';
 import { ResponderPedidoPalavraDto } from '../dto/responder-pedido-palavra.dto';
+import { GetJitsiTokenUseCase } from '../use-cases/get-jitsi-token.use-case';
+import { buildVotacaoAbertaPayload } from '../../realtime/votacao-realtime.mapper';
 
 @ApiTags('sessoes')
 @ApiBearerAuth()
@@ -212,6 +214,7 @@ export class SessoesController {
         private readonly listarPedidosPalavra: ListarPedidosPalavraUseCase,
         private readonly responderPedidoPalavra: ResponderPedidoPalavraUseCase,
         private readonly encerrarPedidoPalavra: EncerrarPedidoPalavraUseCase,
+        private readonly getJitsiToken: GetJitsiTokenUseCase,
     ) {}
 
     @Get('pauta/fases')
@@ -505,11 +508,23 @@ export class SessoesController {
         try {
             const result = await this.abrirVotacao.execute(tenantId, id, pautaItemId, dto);
             if (result) {
-                this.realtimeGateway.emitVotacaoAberta(tenantId, {
-                    votacaoId: (result as any).id,
+                const pautaItem = await this.getPautaItemById.execute(
+                    tenantId,
+                    id,
                     pautaItemId,
-                    tipoVotacao: (result as any).tipo?.value ?? dto.tipoVotacao,
+                );
+                const payload = buildVotacaoAbertaPayload({
+                    sessaoId: id,
+                    votacaoId: result.id,
+                    pautaItemId,
+                    tipoVotacao: result.tipo?.value ?? dto.tipoVotacao,
+                    materia: pautaItem?.materia ?? null,
+                    votosSim: result.totais?.votosSim,
+                    votosNao: result.totais?.votosNao,
+                    abstencoes: result.totais?.abstencoes,
                 });
+                this.realtimeGateway.emitVotacaoAberta(tenantId, payload);
+                this.realtimeGateway.emitVotacaoConvocada(tenantId, payload);
             }
             return result;
         } catch (error) {
@@ -565,13 +580,13 @@ export class SessoesController {
     ) {
         try {
             const result = await this.registrarVoto.execute(tenantId, id, pautaItemId, dto);
-            const votacaoId = (result as any)?.votacaoId as string | undefined;
-            if (votacaoId) {
+            const votacao = await this.obterVotacao.execute(tenantId, id, pautaItemId);
+            if (votacao) {
                 this.realtimeGateway.emitVotacaoPlacar(tenantId, {
-                    votacaoId,
-                    votosSim: 0,
-                    votosNao: 0,
-                    abstencoes: 0,
+                    votacaoId: votacao.id,
+                    votosSim: votacao.totais?.votosSim ?? 0,
+                    votosNao: votacao.totais?.votosNao ?? 0,
+                    abstencoes: votacao.totais?.abstencoes ?? 0,
                 });
             }
             return result;
@@ -630,12 +645,28 @@ export class SessoesController {
         @Body() dto: FinalizarVotacaoDto,
     ) {
         try {
-            return await this.finalizarVotacao.execute(
+            const result = await this.finalizarVotacao.execute(
                 tenantId,
                 id,
                 pautaItemId,
                 dto,
             );
+            if (result && typeof result === 'object' && 'id' in result) {
+                const vm = result as {
+                    id: string;
+                    totais?: { votosSim: number; votosNao: number; abstencoes: number };
+                    resultado?: { value: string } | null;
+                };
+                this.realtimeGateway.emitVotacaoEncerrada(tenantId, {
+                    votacaoId: vm.id,
+                    resultado: vm.resultado?.value ?? '',
+                    votosSim: vm.totais?.votosSim ?? 0,
+                    votosNao: vm.totais?.votosNao ?? 0,
+                    abstencoes: vm.totais?.abstencoes ?? 0,
+                    votoQualidade: false,
+                });
+            }
+            return result;
         } catch (error) {
             this.handleError(error);
         }
@@ -689,6 +720,20 @@ export class SessoesController {
     ) {
         const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
         return this.cancelarSessao.execute(tenantId, id, dto, responsavelId);
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Get(':id/jitsi-token')
+    getJitsiTokenHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Req() req: Request,
+    ) {
+        return this.getJitsiToken.execute(
+            tenantId,
+            id,
+            req.user as AuthenticatedUser,
+        );
     }
 
     @Get(':id/quorum')

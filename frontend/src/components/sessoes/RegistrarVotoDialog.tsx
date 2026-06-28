@@ -9,6 +9,7 @@ interface Props {
     sessaoId: string;
     pautaItemId: string;
     parlamentarId: string;
+    titulo?: string;
     onClose: () => void;
     onSaved: () => void;
 }
@@ -19,7 +20,7 @@ const VOTO_OPTIONS = [
     { label: 'Abstenção', value: 'ABSTENCAO' },
 ];
 
-export function RegistrarVotoDialog({ sessaoId, pautaItemId, parlamentarId, onClose, onSaved }: Props) {
+export function RegistrarVotoDialog({ sessaoId, pautaItemId, parlamentarId, titulo, onClose, onSaved }: Props) {
     const { showSuccess, showApiError } = useAppToast();
     const [voto, setVoto] = useState<string>('SIM');
     const [loading, setLoading] = useState(false);
@@ -55,7 +56,7 @@ export function RegistrarVotoDialog({ sessaoId, pautaItemId, parlamentarId, onCl
 
     return (
         <Dialog
-            header="Registrar Meu Voto"
+            header={titulo ? `Votar — ${titulo}` : 'Registrar Meu Voto'}
             visible
             onHide={onClose}
             style={{ width: '360px' }}

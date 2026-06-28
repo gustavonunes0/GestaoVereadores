@@ -34,6 +34,7 @@ export class EncerrarVotacaoUseCase {
                 materia: { select: { id: true, tenantId: true } },
                 votacao: { select: { id: true } },
             },
+            // categoria é campo escalar, retornado por padrão
         });
 
         if (!pautaItem || pautaItem.sessao.tenantId !== tenantId) {
@@ -82,7 +83,8 @@ export class EncerrarVotacaoUseCase {
             votacaoId,
             pautaItem.id,
             tenantId,
-            pautaItem.materia.id,
+            pautaItem.materia?.id ?? null,
+            pautaItem.categoria,
             {
                 votosSim: contagem.votosSim,
                 votosNao: contagem.votosNao,

@@ -1,7 +1,7 @@
 import { api, apiList } from '../client';
 import { API_PATHS } from '../paths';
 import type { SessaoStatus } from '../../types/legislative';
-import type { PautaItemDetalhe, SessaoPlenariaDetalhe } from '../../types/sessoes';
+import type { JitsiTokenData, PautaItemDetalhe, SessaoPlenariaDetalhe } from '../../types/sessoes';
 
 export interface SessaoPlenaria {
     id: string;
@@ -90,6 +90,9 @@ export const sessoesApi = {
     getQuorum: async (id: string) =>
         mapQuorum(await api<QuorumApiResponse>(API_PATHS.sessoesQuorum(id))),
 
+    getJitsiToken: (id: string) =>
+        api<JitsiTokenData>(API_PATHS.sessaoJitsiToken(id)),
+
     addPautaItem: (sessaoId: string, body: Record<string, unknown>) =>
         api(`${base}/${sessaoId}/pauta`, { method: 'POST', body: JSON.stringify(body) }),
 
@@ -114,6 +117,18 @@ export const sessoesApi = {
             body: JSON.stringify(body),
         }),
 
+    encerrarVotacao: (sessaoId: string, pautaItemId: string, body?: Record<string, unknown>) =>
+        api<{
+            votacaoId: string;
+            resultado: string;
+            votosSim: number;
+            votosNao: number;
+            abstencoes: number;
+        }>(`${base}/${sessaoId}/pauta/${pautaItemId}/votacao/encerrar`, {
+            method: 'PATCH',
+            body: JSON.stringify(body ?? {}),
+        }),
+
     getDetalhe: (id: string) =>
         api<SessaoPlenariaDetalhe>(API_PATHS.sessaoById(id)),
 
@@ -125,6 +140,9 @@ export const sessoesApi = {
 
     getPauta: (sessaoId: string) =>
         api<PautaItemDetalhe[]>(API_PATHS.sessoesPauta(sessaoId)),
+
+    getPautaItem: (sessaoId: string, itemId: string) =>
+        api<PautaItemDetalhe>(API_PATHS.sessoesPautaItem(sessaoId, itemId)),
 
     addPautaItemDetalhe: (sessaoId: string, body: Record<string, unknown>) =>
         api<PautaItemDetalhe>(API_PATHS.sessoesPauta(sessaoId), {

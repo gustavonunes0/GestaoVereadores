@@ -1,28 +1,15 @@
 import { JitsiMeeting } from '@jitsi/react-sdk';
+import { useCallback, useEffect, useState } from 'react';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { JitsiTokenData } from '../../../types/sessoes';
+import { ConvidarParticipantesJitsi } from './ConvidarParticipantesJitsi';
 
-interface CameraSource {
+interface Participante {
     id: string;
-    label: string;
-    icon: string;
-    opcional?: boolean;
+    nome: string;
 }
-
-const CAMERAS_FIXAS: CameraSource[] = [
-    { id: 'camera1', label: 'Câmera 1 — Leitor',   icon: 'pi pi-desktop' },
-    { id: 'camera2', label: 'Câmera 2 — Plenário', icon: 'pi pi-desktop' },
-    { id: 'screen',  label: 'Compartilhar tela',   icon: 'pi pi-window'  },
-];
-
-const CAMERA_LIBRAS: CameraSource = {
-    id: 'libras',
-    label: 'Intérprete — Libras',
-    icon: 'pi pi-sign-language',
-    opcional: true,
-};
 
 interface Props {
     jitsiData: JitsiTokenData;
@@ -31,11 +18,13 @@ interface Props {
     jitsiContainerRef: React.RefObject<HTMLDivElement | null>;
     cameraAtiva: string;
     setCameraAtiva: (id: string) => void;
-    modoTelaCheia: boolean;
-    librasConectado: boolean;
+    participantes: Participante[];
     librasParticipantId: string | null;
     handleApiReady: (api: unknown) => void;
-    handleFullscreen: () => void;
+}
+
+function isLibras(p: Participante): boolean {
+    return /libras|intérprete|interprete/i.test(p.nome);
 }
 
 export function CameraSelector({
@@ -45,39 +34,51 @@ export function CameraSelector({
     jitsiContainerRef,
     cameraAtiva,
     setCameraAtiva,
-    modoTelaCheia,
-    librasConectado,
+    participantes,
     librasParticipantId,
     handleApiReady,
-    handleFullscreen,
 }: Props) {
     const { showToast } = useAppToast();
+    const [telaCheia, setTelaCheia] = useState(false);
 
-    function handleSelecionarCamera(cam: CameraSource) {
-        if (!librasConectado && cam.id === 'libras') {
-            showToast('warn', 'Intérprete não disponível', 'Intérprete de Libras não está na sala');
-            return;
-        }
-        const api = externalApiRef.current as { executeCommand?: (...args: unknown[]) => void } | null;
-        if (cam.id === 'screen') {
-            api?.executeCommand?.('toggleShareScreen');
-        } else if (cam.id === 'libras') {
-            api?.executeCommand?.('setLargeVideoParticipant', librasParticipantId);
+    useEffect(() => {
+        const onChange = () => setTelaCheia(document.fullscreenElement === jitsiContainerRef.current);
+        document.addEventListener('fullscreenchange', onChange);
+        return () => document.removeEventListener('fullscreenchange', onChange);
+    }, [jitsiContainerRef]);
+
+    const handleFullscreen = useCallback(() => {
+        const el = jitsiContainerRef.current;
+        if (!el) return;
+        if (document.fullscreenElement) {
+            void document.exitFullscreen();
         } else {
-            api?.executeCommand?.('setLargeVideoParticipant', cam.id);
+            void el.requestFullscreen?.().catch(() => {
+                showToast('warn', 'Tela cheia indisponível', 'O navegador bloqueou o modo tela cheia.');
+            });
         }
-        setCameraAtiva(cam.id);
+    }, [jitsiContainerRef, showToast]);
+
+    function getApi() {
+        return externalApiRef.current as { executeCommand?: (...args: unknown[]) => void } | null;
     }
 
-    const allCameras = [...CAMERAS_FIXAS, CAMERA_LIBRAS];
+    function handleFixarParticipante(p: Participante) {
+        getApi()?.executeCommand?.('setLargeVideoParticipant', p.id);
+        setCameraAtiva(p.id);
+    }
+
+    function handleCompartilharTela() {
+        getApi()?.executeCommand?.('toggleShareScreen');
+    }
 
     return (
         <div className="flex flex-column gap-4">
-            <div ref={jitsiContainerRef} style={{ position: 'relative' }}>
+            <div ref={jitsiContainerRef} className="jitsi-stage" style={{ position: 'relative' }}>
                 <JitsiMeeting
                     domain={jitsiData.domain}
                     roomName={jitsiData.roomName}
-                    jwt={jitsiData.token}
+                    {...(jitsiData.token ? { jwt: jitsiData.token } : {})}
                     configOverwrite={{
                         startWithAudioMuted: false,
                         startWithVideoMuted: false,
@@ -91,7 +92,7 @@ export function CameraSelector({
                     userInfo={{ displayName: userName, email: '' }}
                     onApiReady={handleApiReady}
                     getIFrameRef={(ref) => {
-                        ref.style.height = '420px';
+                        ref.style.height = '100%';
                         ref.style.width = '100%';
                         ref.style.borderRadius = '8px';
                         ref.style.border = '1px solid var(--surface-border)';
@@ -100,80 +101,107 @@ export function CameraSelector({
                 <button
                     className="jitsi-fullscreen-btn"
                     onClick={handleFullscreen}
-                    aria-label={modoTelaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
+                    aria-label={telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
                 >
-                    <i className={modoTelaCheia ? 'pi pi-compress' : 'pi pi-expand'} />
-                    {modoTelaCheia ? 'Sair' : 'Tela cheia'}
+                    <i className={telaCheia ? 'pi pi-compress' : 'pi pi-expand'} />
+                    {telaCheia ? 'Sair' : 'Tela cheia'}
                 </button>
             </div>
 
-            <div>
-                <p className="text-sm font-semibold mb-2 m-0">Selecionar câmera em destaque</p>
-                <div className="cam-selector-grid">
-                    {allCameras.map((cam) => {
-                        const isLibras = cam.id === 'libras';
-                        const ativa = cameraAtiva === cam.id;
-                        const desconectada = isLibras && !librasConectado;
-                        let cardClass = 'cam-card';
-                        if (ativa && !isLibras) cardClass += ' ativa';
-                        if (ativa && isLibras && librasConectado) cardClass += ' ativa-libras';
-                        if (desconectada) cardClass += ' desconectada';
+            <ConvidarParticipantesJitsi jitsiData={jitsiData} />
 
-                        return (
-                            <div key={cam.id} className={cardClass}>
-                                <div
-                                    style={{
-                                        height: 80,
-                                        background: 'var(--surface-900)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        position: 'relative',
-                                    }}
-                                >
-                                    <i className={`${cam.icon} text-white`} style={{ fontSize: '1.5rem' }} />
-                                    {ativa && (
-                                        <Tag
-                                            value={isLibras && librasConectado ? 'LIBRAS' : 'DESTAQUE'}
-                                            severity={isLibras ? 'success' : 'info'}
-                                            style={{ position: 'absolute', top: 4, left: 4, fontSize: '9px' }}
-                                        />
-                                    )}
-                                    {isLibras && !librasConectado && (
-                                        <Tag
-                                            value="Aguardando"
-                                            severity="warning"
-                                            style={{ position: 'absolute', top: 4, left: 4, fontSize: '9px' }}
-                                        />
-                                    )}
-                                    {isLibras && librasConectado && !ativa && (
-                                        <Tag
-                                            value="Conectado"
-                                            severity="success"
-                                            style={{ position: 'absolute', top: 4, left: 4, fontSize: '9px' }}
-                                        />
-                                    )}
-                                </div>
-                                <div className="p-2 flex align-items-center justify-content-between gap-1">
-                                    <span style={{ fontSize: '11px', color: 'var(--text-color-secondary)' }}>
-                                        {cam.label}
-                                    </span>
-                                    <Button
-                                        label="Ativar"
-                                        size="small"
-                                        text
-                                        style={{ fontSize: '11px', padding: '2px 6px' }}
-                                        onClick={() => handleSelecionarCamera(cam)}
-                                        disabled={desconectada}
-                                    />
-                                </div>
-                            </div>
-                        );
-                    })}
+            <div>
+                <div className="flex align-items-center justify-content-between mb-2 gap-2 flex-wrap">
+                    <p className="text-sm font-semibold m-0">
+                        Câmeras na sala{' '}
+                        <span className="text-color-secondary">({participantes.length})</span>
+                    </p>
+                    <Button
+                        label="Compartilhar tela"
+                        icon="pi pi-window-maximize"
+                        size="small"
+                        outlined
+                        style={{ fontSize: '11px' }}
+                        onClick={handleCompartilharTela}
+                    />
                 </div>
+
+                {participantes.length === 0 ? (
+                    <div className="transmissao-cam-empty">
+                        <i className="pi pi-video" aria-hidden />
+                        <span>Nenhuma câmera conectada à sala ainda.</span>
+                        <small className="text-color-secondary">
+                            Clique em <strong>Convidar</strong> acima e envie o link da sala para cada
+                            dispositivo (câmera do plenário, celular, intérprete de Libras). Ao entrar,
+                            eles aparecerão aqui para você escolher qual fica em destaque.
+                        </small>
+                    </div>
+                ) : (
+                    <div className="cam-selector-grid">
+                        {participantes.map((p) => {
+                            const libras = isLibras(p);
+                            const ativa = cameraAtiva === p.id || (libras && cameraAtiva === librasParticipantId);
+                            let cardClass = 'cam-card';
+                            if (ativa && !libras) cardClass += ' ativa';
+                            if (ativa && libras) cardClass += ' ativa-libras';
+
+                            return (
+                                <div key={p.id} className={cardClass}>
+                                    <div
+                                        style={{
+                                            height: 80,
+                                            background: 'var(--surface-900)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            position: 'relative',
+                                        }}
+                                    >
+                                        <i
+                                            className={`${libras ? 'pi pi-sign-language' : 'pi pi-video'} text-white`}
+                                            style={{ fontSize: '1.5rem' }}
+                                        />
+                                        {ativa && (
+                                            <Tag
+                                                value={libras ? 'LIBRAS' : 'DESTAQUE'}
+                                                severity={libras ? 'success' : 'info'}
+                                                style={{ position: 'absolute', top: 4, left: 4, fontSize: '9px' }}
+                                            />
+                                        )}
+                                        {libras && !ativa && (
+                                            <Tag
+                                                value="Libras"
+                                                severity="success"
+                                                style={{ position: 'absolute', top: 4, left: 4, fontSize: '9px' }}
+                                            />
+                                        )}
+                                    </div>
+                                    <div className="p-2 flex align-items-center justify-content-between gap-1">
+                                        <span
+                                            style={{ fontSize: '11px', color: 'var(--text-color-secondary)' }}
+                                            title={p.nome}
+                                        >
+                                            {p.nome}
+                                        </span>
+                                        <Button
+                                            label="Destacar"
+                                            size="small"
+                                            text
+                                            style={{ fontSize: '11px', padding: '2px 6px' }}
+                                            onClick={() => handleFixarParticipante(p)}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
                 <div className="flex align-items-center gap-2 mt-2">
-                    <Tag value="Libras — opcional" severity="warning" style={{ fontSize: '10px' }} />
-                    <small className="text-color-secondary">Intérprete conectado automaticamente quando disponível na sala.</small>
+                    <Tag value="Libras" severity="success" style={{ fontSize: '10px' }} />
+                    <small className="text-color-secondary">
+                        Participantes cujo nome contém “Libras/Intérprete” são marcados automaticamente.
+                    </small>
                 </div>
             </div>
         </div>

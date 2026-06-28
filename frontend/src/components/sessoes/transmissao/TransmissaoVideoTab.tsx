@@ -24,6 +24,7 @@ interface Props {
     librasConectado: boolean;
     modoTelaCheia: boolean;
     previewOpaco?: boolean;
+    aguardandoJitsi?: boolean;
     onSelectCamera: (id: string) => void;
     onToggleFullscreen: () => void;
 }
@@ -83,6 +84,7 @@ export function TransmissaoVideoTab({
     librasConectado,
     modoTelaCheia,
     previewOpaco,
+    aguardandoJitsi,
     onSelectCamera,
     onToggleFullscreen,
 }: Props) {
@@ -100,6 +102,15 @@ export function TransmissaoVideoTab({
                     className="transmissao-jitsi-mock"
                     style={previewOpaco ? { opacity: 0.35 } : undefined}
                 >
+                    {aguardandoJitsi && (
+                        <div className="transmissao-jitsi-hint">
+                            <i className="pi pi-info-circle" aria-hidden />
+                            <span>
+                                Vá à aba <strong>Transmissão</strong> e clique em{' '}
+                                <strong>Iniciar transmissão</strong> para abrir a sala Jitsi.
+                            </span>
+                        </div>
+                    )}
                     <div className="transmissao-cam-grid transmissao-cam-grid-2" style={{ height: 200 }}>
                         <CamCell cam={mainCam} highlight librasConectado={librasConectado} />
                         <div className="flex flex-column" style={{ gap: 2 }}>

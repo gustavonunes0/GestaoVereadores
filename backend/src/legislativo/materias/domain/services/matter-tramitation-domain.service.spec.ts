@@ -35,6 +35,24 @@ describe('MatterTramitationDomainService', () => {
         ).toBe(MatterStatus.APROVADA);
     });
 
+    it('inicia votação a partir de EM_PAUTA', () => {
+        expect(
+            service.resolveTransition(
+                MatterStatus.EM_PAUTA,
+                MatterTramitationAction.INICIAR_VOTACAO,
+            ),
+        ).toBe(MatterStatus.EM_VOTACAO);
+    });
+
+    it('permite aprovar de EM_VOTACAO', () => {
+        expect(
+            service.resolveTransition(
+                MatterStatus.EM_VOTACAO,
+                MatterTramitationAction.APROVAR,
+            ),
+        ).toBe(MatterStatus.APROVADA);
+    });
+
     it('bloqueia ação inválida no status atual', () => {
         expect(() =>
             service.resolveTransition(

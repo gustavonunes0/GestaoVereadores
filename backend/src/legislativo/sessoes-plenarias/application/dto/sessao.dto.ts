@@ -1,4 +1,10 @@
-import { FasePauta, ResultadoPauta, SituacaoPresenca, TipoPautaItem } from '@prisma/client';
+import {
+    CategoriaPautaItem,
+    FasePauta,
+    ResultadoPauta,
+    SituacaoPresenca,
+    TipoPautaItem,
+} from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
     IsBoolean,
@@ -60,8 +66,39 @@ export class FilterSessaoPlenariaDto extends PaginationQueryDto {
 }
 
 export class AddPautaItemDto {
+    /** Categoria do item; quando ausente assume MATERIA (compatibilidade). */
+    @IsOptional()
+    @IsEnum(CategoriaPautaItem)
+    categoria?: CategoriaPautaItem;
+
+    /** Obrigatório para MATERIA e COMISSAO (matéria objeto do parecer). */
+    @ValidateIf((o: AddPautaItemDto) =>
+        !o.categoria ||
+        o.categoria === CategoriaPautaItem.MATERIA ||
+        o.categoria === CategoriaPautaItem.COMISSAO,
+    )
+    @IsUUID()
+    materiaId?: string;
+
+    @ValidateIf((o: AddPautaItemDto) => o.categoria === CategoriaPautaItem.ATO)
+    @IsUUID()
+    atoId?: string;
+
+    @ValidateIf((o: AddPautaItemDto) => o.categoria === CategoriaPautaItem.NORMA)
+    @IsUUID()
+    normaId?: string;
+
+    @ValidateIf((o: AddPautaItemDto) => o.categoria === CategoriaPautaItem.COMISSAO)
+    @IsUUID()
+    comissaoId?: string;
+
+    @ValidateIf((o: AddPautaItemDto) => o.categoria === CategoriaPautaItem.AVISO)
     @IsString()
-    materiaId: string;
+    avisoTitulo?: string;
+
+    @IsOptional()
+    @IsString()
+    avisoTexto?: string;
 
     @IsOptional()
     @IsInt()

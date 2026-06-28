@@ -53,7 +53,7 @@ describe('AddPautaItemUseCase', () => {
         });
 
         expect(result.fase.value).toBe(FasePauta.PEQUENO_EXPEDIENTE);
-        expect(result.materia.id).toBe('materia-1');
+        expect(result.materia?.id).toBe('materia-1');
         expect(result.podeVotar).toBe(true);
     });
 

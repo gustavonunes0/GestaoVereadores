@@ -61,7 +61,8 @@ export class LegislativeMatterDomainService {
     getWorkflowCapabilities(status: MatterStatus): MatterWorkflowCapabilities {
         const active =
             status === MatterStatus.EM_TRAMITACAO ||
-            status === MatterStatus.EM_PAUTA;
+            status === MatterStatus.EM_PAUTA ||
+            status === MatterStatus.EM_VOTACAO;
         return {
             canTramitate:
                 status === MatterStatus.EM_TRAMITACAO ||
@@ -114,7 +115,8 @@ export class LegislativeMatterDomainService {
     syncEmTramitacaoFlag(status: MatterStatus): boolean {
         return (
             status === MatterStatus.EM_TRAMITACAO ||
-            status === MatterStatus.EM_PAUTA
+            status === MatterStatus.EM_PAUTA ||
+            status === MatterStatus.EM_VOTACAO
         );
     }
 

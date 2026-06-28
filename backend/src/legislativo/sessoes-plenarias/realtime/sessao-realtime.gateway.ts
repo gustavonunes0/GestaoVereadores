@@ -10,9 +10,16 @@ import { JwtService } from '@nestjs/jwt';
 import { isParlamentarianSession, isStaffSession, JwtPayload } from '../../../auth/domain/types/jwt-payload.type';
 
 export type VotacaoAbertaPayload = {
+    sessaoId: string;
     votacaoId: string;
     pautaItemId: string;
     tipoVotacao: string;
+    titulo: string;
+    ementa?: string;
+    votosSim: number;
+    votosNao: number;
+    abstencoes: number;
+    aceitaVotoIndividual: boolean;
 };
 
 export type VotacaoPlacarPayload = {
@@ -99,6 +106,11 @@ export class SessaoRealtimeGateway
 
     emitVotacaoAberta(tenantId: string, payload: VotacaoAbertaPayload) {
         this.server.to(`tenant:${tenantId}`).emit('votacao:aberta', payload);
+    }
+
+    /** Convoca parlamentares (app mobile / painel do vereador) a registrarem voto. */
+    emitVotacaoConvocada(tenantId: string, payload: VotacaoAbertaPayload) {
+        this.server.to(`tenant:${tenantId}`).emit('votacao:convocada', payload);
     }
 
     emitVotacaoPlacar(tenantId: string, payload: VotacaoPlacarPayload) {

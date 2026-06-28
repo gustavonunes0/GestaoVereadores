@@ -4,6 +4,7 @@ export const MATERIA_STATUS = {
     PROTOCOLADA: 'Protocolada',
     EM_TRAMITACAO: 'Em tramitação',
     EM_PAUTA: 'Em pauta',
+    EM_VOTACAO: 'Em votação',
     APROVADA: 'Aprovada',
     REJEITADA: 'Rejeitada',
     ARQUIVADA: 'Arquivada',
@@ -18,6 +19,7 @@ export const MATERIA_STATUS_LABELS: Record<MateriaStatus, string> = {
     PROTOCOLADA: 'Protocolada',
     EM_TRAMITACAO: 'Em tramitação',
     EM_PAUTA: 'Em pauta',
+    EM_VOTACAO: 'Em votação',
     APROVADA: 'Aprovada',
     REJEITADA: 'Rejeitada',
     ARQUIVADA: 'Arquivada',
@@ -48,6 +50,37 @@ export const NORMA_STATUS = {
 export type NormaStatus = keyof typeof NORMA_STATUS;
 
 export type TipoVotacao = 'NOMINAL' | 'SIMBOLICA' | 'SECRETA';
+
+/** Evento WebSocket ao abrir votação (tenant + app mobile). */
+export interface VotacaoAbertaEvent {
+    sessaoId: string;
+    votacaoId: string;
+    pautaItemId: string;
+    tipoVotacao: TipoVotacao;
+    titulo: string;
+    ementa?: string;
+    votosSim: number;
+    votosNao: number;
+    abstencoes: number;
+    aceitaVotoIndividual: boolean;
+}
+
+export interface VotacaoPlacarEvent {
+    votacaoId: string;
+    votosSim: number;
+    votosNao: number;
+    abstencoes: number;
+}
+
+export interface VotacaoEncerradaEvent {
+    votacaoId: string;
+    resultado: string;
+    votosSim: number;
+    votosNao: number;
+    abstencoes: number;
+    votoQualidade?: boolean;
+    titulo?: string;
+}
 
 export function canAddMateriaToPauta(materia: {
     status?: MateriaStatus;

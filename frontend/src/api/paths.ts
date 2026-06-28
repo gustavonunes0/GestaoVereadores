@@ -65,6 +65,7 @@ export const API_PATHS = {
     sessoesEncerrar:     (id: string) => `/legislative/sessoes-plenarias/${id}/encerrar`,
     sessoesCancelar:     (id: string) => `/legislative/sessoes-plenarias/${id}/cancelar`,
     sessoesQuorum:       (id: string) => `/legislative/sessoes-plenarias/${id}/quorum`,
+    sessaoJitsiToken:    (id: string) => `/legislative/sessoes-plenarias/${id}/jitsi-token`,
     sessoesPauta:        (id: string) => `/legislative/sessoes-plenarias/${id}/pauta`,
     sessoesPautaItem:    (sid: string, iid: string) => `/legislative/sessoes-plenarias/${sid}/pauta/${iid}`,
     sessoesPautaPublicar:(id: string) => `/legislative/sessoes-plenarias/${id}/pauta/publicar`,

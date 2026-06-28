@@ -23,18 +23,31 @@ const ACTION_RULES: Record<MatterTramitationAction, ActionRule> = {
         to: MatterStatus.EM_PAUTA,
         defaultObservacao: 'Matéria incluída em pauta',
     },
+    [MatterTramitationAction.INICIAR_VOTACAO]: {
+        from: [MatterStatus.EM_PAUTA],
+        to: MatterStatus.EM_VOTACAO,
+        defaultObservacao: 'Votação aberta na sessão plenária',
+    },
     [MatterTramitationAction.RETIRAR_DA_PAUTA]: {
         from: [MatterStatus.EM_PAUTA],
         to: MatterStatus.EM_TRAMITACAO,
         defaultObservacao: 'Matéria retirada da pauta',
     },
     [MatterTramitationAction.APROVAR]: {
-        from: [MatterStatus.EM_TRAMITACAO, MatterStatus.EM_PAUTA],
+        from: [
+            MatterStatus.EM_TRAMITACAO,
+            MatterStatus.EM_PAUTA,
+            MatterStatus.EM_VOTACAO,
+        ],
         to: MatterStatus.APROVADA,
         defaultObservacao: 'Matéria aprovada',
     },
     [MatterTramitationAction.REJEITAR]: {
-        from: [MatterStatus.EM_TRAMITACAO, MatterStatus.EM_PAUTA],
+        from: [
+            MatterStatus.EM_TRAMITACAO,
+            MatterStatus.EM_PAUTA,
+            MatterStatus.EM_VOTACAO,
+        ],
         to: MatterStatus.REJEITADA,
         defaultObservacao: 'Matéria rejeitada',
     },

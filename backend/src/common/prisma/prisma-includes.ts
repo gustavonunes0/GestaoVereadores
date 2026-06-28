@@ -101,6 +101,9 @@ export const sessaoPlenariaInclude = {
     pautaItens: {
         include: {
             materia: true,
+            ato: { include: { tipo: true, classificacao: true } },
+            norma: { include: { tipo: true, ano: true } },
+            comissao: { select: { id: true, nome: true, sigla: true } },
             votacao: votacaoInclude,
         },
         orderBy: { ordem: 'asc' as const },

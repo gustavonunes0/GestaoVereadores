@@ -23,6 +23,7 @@ export const Pages = {
     usuarios: lazy(() => import('../../pages/UsuariosPage').then((m) => ({ default: m.UsuariosPage }))),
 
     sessaoDetalhe: lazy(() => import('../../components/sessoes/SessaoDetalhePage').then((m) => ({ default: m.SessaoDetalhePage }))),
+    sessaoPainel: lazy(() => import('../../components/sessoes/painel/SessaoPainelPage').then((m) => ({ default: m.SessaoPainelPage }))),
 
     parlamentarPerfil: lazy(() => import('../../pages/parlamentar/ParlamentarPerfilPage').then((m) => ({ default: m.ParlamentarPerfilPage }))),
     parlamentarBiografia: lazy(() => import('../../pages/parlamentar/ParlamentarBiografiaPage').then((m) => ({ default: m.ParlamentarBiografiaPage }))),

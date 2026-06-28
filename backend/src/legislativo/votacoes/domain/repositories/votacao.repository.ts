@@ -91,7 +91,8 @@ export abstract class VotacaoRepository {
         votacaoId: string,
         pautaItemId: string,
         tenantId: string,
-        materiaId: string,
+        materiaId: string | null,
+        categoria: string,
         dados: EncerrarVotacaoDados,
     ): Promise<void>;
 }

@@ -4,6 +4,7 @@ interface Props {
     sessaoId: string;
     linkYoutube: string;
     transmitindo: boolean;
+    iniciando?: boolean;
     duracao: number;
     modoTelaCheia: boolean;
     onLinkChange: (link: string) => void;
@@ -21,6 +22,7 @@ export function TransmissaoStreamTab({
     sessaoId,
     linkYoutube,
     transmitindo,
+    iniciando = false,
     duracao,
     modoTelaCheia,
     onLinkChange,
@@ -39,10 +41,19 @@ export function TransmissaoStreamTab({
                         type="button"
                         className={`transmissao-btn ${transmitindo ? 'transmissao-btn-stop' : 'transmissao-btn-danger'}`}
                         onClick={onToggleStream}
-                        disabled={!transmitindo && !linkYoutube.trim()}
+                        disabled={iniciando}
                     >
-                        <i className={transmitindo ? 'pi pi-stop' : 'pi pi-play'} aria-hidden />
-                        {transmitindo ? 'Parar transmissão' : 'Iniciar YouTube'}
+                        <i
+                            className={
+                                iniciando ? 'pi pi-spin pi-spinner' : transmitindo ? 'pi pi-stop' : 'pi pi-play'
+                            }
+                            aria-hidden
+                        />
+                        {iniciando
+                            ? 'Conectando…'
+                            : transmitindo
+                              ? 'Parar transmissão'
+                              : 'Iniciar transmissão'}
                     </button>
                     {transmitindo && (
                         <>

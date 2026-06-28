@@ -65,6 +65,7 @@ export function Dropdown({
     const [open, setOpen] = useState(false);
     const [filterText, setFilterText] = useState('');
     const [panelPos, setPanelPos] = useState({ top: 0, left: 0, width: 0 });
+    const [panelZ, setPanelZ] = useState(1200);
 
     const isDisabled = disabled || loading;
     const selected = options.find((opt) => opt.value === value) ?? null;
@@ -86,6 +87,18 @@ export function Dropdown({
             left: rect.left,
             width: rect.width,
         });
+
+        // O painel é portado para o body, então precisa ficar acima do overlay
+        // ancestral mais alto (ex.: Dialog do PrimeReact usa autoZIndex que
+        // incrementa a cada abertura e pode ultrapassar um z-index fixo).
+        let node: HTMLElement | null = el;
+        let maxZ = 0;
+        while (node) {
+            const z = Number.parseInt(window.getComputedStyle(node).zIndex, 10);
+            if (!Number.isNaN(z)) maxZ = Math.max(maxZ, z);
+            node = node.parentElement;
+        }
+        setPanelZ(maxZ > 0 ? maxZ + 1 : 1200);
     };
 
     useLayoutEffect(() => {
@@ -163,12 +176,13 @@ export function Dropdown({
         open && typeof document !== 'undefined' ? (
             <div
                 ref={panelRef}
-                className="z-[1200] bg-white border border-[#eef0f3] rounded-[8px] shadow-[0_4px_16px_rgba(0,0,0,0.08)] overflow-hidden"
+                className="bg-white border border-[#eef0f3] rounded-[8px] shadow-[0_4px_16px_rgba(0,0,0,0.08)] overflow-hidden"
                 style={{
                     position: 'fixed',
                     top: panelPos.top,
                     left: panelPos.left,
                     width: panelPos.width,
+                    zIndex: panelZ,
                 }}
             >
                 {filter ? (

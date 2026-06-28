@@ -50,7 +50,10 @@ import { assertParliamentarianHasActiveMandate } from '../../../parlamentares/ma
 import { ACTIVE_PARLIAMENTARIAN_MANDATE_CHECKER } from '../../../parlamentares/mandatos/mandatos.tokens';
 import {
     assertMateriaNaoDuplicadaNaPauta,
+    assertMateriaSemPautaAtivaEmOutraSessao,
     assertOrdemDisponivelNaPauta,
+    assertPautaPodeReceberItens,
+    assertPautaPodeSerPublicada,
     assertPodeRemoverItemPauta,
     getDefaultFasePauta,
 } from '../../domain/services/pauta-workflow';
@@ -82,12 +85,24 @@ const pautaItemInclude = {
             ano: true,
         },
     },
+    ato: {
+        include: { tipo: true, classificacao: true },
+    },
+    norma: {
+        include: { tipo: true, ano: true },
+    },
+    comissao: {
+        select: { id: true, nome: true, sigla: true },
+    },
     votacao: {
         select: {
             id: true,
             tipoVotacao: true,
             resultado: true,
             realizadaAt: true,
+            votosSim: true,
+            votosNao: true,
+            abstencoes: true,
         },
     },
 } as const;
@@ -369,6 +384,68 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         });
     }
 
+    private async findPautaAtiva(sessaoId: string, tenantId: string) {
+        return this.prisma.pauta.findFirst({
+            where: { sessaoId, tenantId, isRemoved: false },
+            include: {
+                _count: { select: { itens: { where: { isRemoved: false } } } },
+            },
+        });
+    }
+
+    private async getOrCreatePautaAtiva(sessaoId: string, tenantId: string) {
+        const existente = await this.findPautaAtiva(sessaoId, tenantId);
+        if (existente) return existente;
+
+        return this.prisma.pauta.create({
+            data: { tenantId, sessaoId },
+            include: {
+                _count: { select: { itens: { where: { isRemoved: false } } } },
+            },
+        });
+    }
+
+    private async findMateriaEmOutraPautaAtiva(
+        tenantId: string,
+        materiaId: string,
+        sessaoAtualId: string,
+    ) {
+        return this.prisma.pautaItem.findFirst({
+            where: {
+                materiaId,
+                isRemoved: false,
+                sessaoId: { not: sessaoAtualId },
+                pauta: {
+                    isRemoved: false,
+                    status: {
+                        in: [
+                            PrismaStatusPautaItem.RASCUNHO,
+                            PrismaStatusPautaItem.PUBLICADA,
+                        ],
+                    },
+                    sessao: { tenantId, isRemoved: false },
+                },
+            },
+            select: { materiaId: true, sessaoId: true },
+        });
+    }
+
+    private async encerrarPautaDaSessao(sessaoId: string, tenantId: string) {
+        const pauta = await this.findPautaAtiva(sessaoId, tenantId);
+        if (!pauta) return;
+
+        await this.prisma.$transaction([
+            this.prisma.pauta.update({
+                where: { id: pauta.id },
+                data: { status: PrismaStatusPautaItem.ENCERRADA },
+            }),
+            this.prisma.pautaItem.updateMany({
+                where: { pautaId: pauta.id, isRemoved: false },
+                data: { statusPauta: PrismaStatusPautaItem.ENCERRADA },
+            }),
+        ]);
+    }
+
     async listPautaItens(
         tenantId: string,
         sessaoId: string,
@@ -404,8 +481,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             throw new NotFoundException('Item de pauta não encontrado');
         }
 
-        const materia = item.materia;
-        if (materia.tenantId !== tenantId) {
+        if (item.materia && item.materia.tenantId !== tenantId) {
             throw new NotFoundException('Matéria não encontrada');
         }
 
@@ -419,15 +495,12 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
     ) {
         await this.assertSessaoGerenciaPauta(tenantId, sessaoId);
 
-        const materia = await this.prisma.materia.findFirst({
-            where: { id: dto.materiaId, ...tenantWhere(tenantId) },
-            include: { tipo: true },
-        });
-        if (!materia) throw new NotFoundException('Matéria não encontrada');
+        const categoria = dto.categoria ?? 'MATERIA';
+
+        const pauta = await this.getOrCreatePautaAtiva(sessaoId, tenantId);
+        assertPautaPodeReceberItens({ status: pauta.status as never });
 
         const activeItems = await this.listActivePautaItems(sessaoId);
-        assertMateriaNaoDuplicadaNaPauta(dto.materiaId, activeItems);
-
         const ordem =
             dto.ordem ??
             (activeItems.length === 0
@@ -435,25 +508,148 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 : Math.max(...activeItems.map((i) => i.ordem)) + 1);
         assertOrdemDisponivelNaPauta(ordem, activeItems);
 
-        // RN-SPL-04: Inferir tipoPautaItem e fase pela sigla do tipo de matéria
-        const sigla = materia.tipo?.sigla ?? '';
-        const SIGLAS_LEITURA = ['OFC', 'IND', 'REQ'];
-        const isLeitura = SIGLAS_LEITURA.includes(sigla);
-        const tipoPautaItemInferido = isLeitura ? 'LEITURA' : 'DELIBERACAO';
-        const faseInferida = isLeitura ? 'PEQUENO_EXPEDIENTE' : 'ORDEM_DO_DIA';
+        const referencia = await this.resolverReferenciaPautaItem(
+            tenantId,
+            sessaoId,
+            categoria,
+            dto,
+            activeItems,
+        );
 
         const pautaItem = await this.prisma.pautaItem.create({
             data: {
+                pautaId: pauta.id,
                 sessaoId,
-                materiaId: dto.materiaId,
+                categoria: categoria as never,
+                materiaId: referencia.materiaId,
+                atoId: referencia.atoId,
+                normaId: referencia.normaId,
+                comissaoId: referencia.comissaoId,
+                avisoTitulo: referencia.avisoTitulo,
+                avisoTexto: referencia.avisoTexto,
                 ordem,
-                fase: (dto.fase ?? faseInferida) as any,
-                tipoPautaItem: (dto.tipoPautaItem ?? tipoPautaItemInferido) as any,
+                fase: (dto.fase ?? referencia.faseInferida) as never,
+                tipoPautaItem: (dto.tipoPautaItem ??
+                    referencia.tipoInferido) as never,
             },
             include: pautaItemInclude,
         });
 
         return pautaItem;
+    }
+
+    /** Valida e resolve a referência do item conforme a categoria. */
+    private async resolverReferenciaPautaItem(
+        tenantId: string,
+        sessaoId: string,
+        categoria: string,
+        dto: AddPautaItemDto,
+        activeItems: { id: string; ordem: number; materiaId: string | null }[],
+    ): Promise<{
+        materiaId: string | null;
+        atoId: string | null;
+        normaId: string | null;
+        comissaoId: string | null;
+        avisoTitulo: string | null;
+        avisoTexto: string | null;
+        faseInferida: string;
+        tipoInferido: string;
+    }> {
+        const base = {
+            materiaId: null as string | null,
+            atoId: null as string | null,
+            normaId: null as string | null,
+            comissaoId: null as string | null,
+            avisoTitulo: null as string | null,
+            avisoTexto: null as string | null,
+            faseInferida: 'ORDEM_DO_DIA',
+            tipoInferido: 'DELIBERACAO',
+        };
+
+        if (categoria === 'MATERIA' || categoria === 'COMISSAO') {
+            if (!dto.materiaId) {
+                throw new BadRequestException('Matéria é obrigatória para este item');
+            }
+            const materia = await this.prisma.materia.findFirst({
+                where: { id: dto.materiaId, ...tenantWhere(tenantId) },
+                include: { tipo: true },
+            });
+            if (!materia) throw new NotFoundException('Matéria não encontrada');
+
+            const conflito = await this.findMateriaEmOutraPautaAtiva(
+                tenantId,
+                dto.materiaId,
+                sessaoId,
+            );
+            assertMateriaSemPautaAtivaEmOutraSessao(
+                dto.materiaId,
+                sessaoId,
+                conflito,
+            );
+            assertMateriaNaoDuplicadaNaPauta(dto.materiaId, activeItems);
+
+            // RN-SPL-04: inferir fase/tipo pela sigla do tipo de matéria
+            const sigla = materia.tipo?.sigla ?? '';
+            const isLeitura = ['OFC', 'IND', 'REQ'].includes(sigla);
+            base.materiaId = dto.materiaId;
+
+            if (categoria === 'COMISSAO') {
+                if (!dto.comissaoId) {
+                    throw new BadRequestException('Comissão é obrigatória para o parecer');
+                }
+                const comissao = await this.prisma.comissao.findFirst({
+                    where: { id: dto.comissaoId, ...tenantWhere(tenantId), isRemoved: false },
+                    select: { id: true },
+                });
+                if (!comissao) throw new NotFoundException('Comissão não encontrada');
+                base.comissaoId = dto.comissaoId;
+                base.faseInferida = 'ORDEM_DO_DIA';
+                base.tipoInferido = 'DELIBERACAO';
+            } else {
+                base.faseInferida = isLeitura ? 'PEQUENO_EXPEDIENTE' : 'ORDEM_DO_DIA';
+                base.tipoInferido = isLeitura ? 'LEITURA' : 'DELIBERACAO';
+            }
+            return base;
+        }
+
+        if (categoria === 'ATO') {
+            if (!dto.atoId) throw new BadRequestException('Ato é obrigatório para este item');
+            const ato = await this.prisma.ato.findFirst({
+                where: { id: dto.atoId, tenantId, isRemoved: false },
+                select: { id: true },
+            });
+            if (!ato) throw new NotFoundException('Ato não encontrado');
+            base.atoId = dto.atoId;
+            base.faseInferida = 'PEQUENO_EXPEDIENTE';
+            base.tipoInferido = 'LEITURA';
+            return base;
+        }
+
+        if (categoria === 'NORMA') {
+            if (!dto.normaId) throw new BadRequestException('Norma é obrigatória para este item');
+            const norma = await this.prisma.norma.findFirst({
+                where: { id: dto.normaId, tenantId, isRemoved: false },
+                select: { id: true },
+            });
+            if (!norma) throw new NotFoundException('Norma não encontrada');
+            base.normaId = dto.normaId;
+            base.faseInferida = 'PEQUENO_EXPEDIENTE';
+            base.tipoInferido = 'LEITURA';
+            return base;
+        }
+
+        if (categoria === 'AVISO') {
+            if (!dto.avisoTitulo?.trim()) {
+                throw new BadRequestException('Título do aviso é obrigatório');
+            }
+            base.avisoTitulo = dto.avisoTitulo.trim();
+            base.avisoTexto = dto.avisoTexto?.trim() || null;
+            base.faseInferida = 'PEQUENO_EXPEDIENTE';
+            base.tipoInferido = 'COMUNICACAO';
+            return base;
+        }
+
+        throw new BadRequestException('Categoria de item de pauta inválida');
     }
 
     async updatePautaItem(
@@ -499,11 +695,17 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         });
         if (!item) throw new NotFoundException('Item de pauta não encontrado');
 
+        if (item.statusPauta !== PrismaStatusPautaItem.RASCUNHO) {
+            throw new BadRequestException(
+                'Itens publicados não podem ser removidos da pauta',
+            );
+        }
+
         const votacaoAberta =
             !!item.votacao && item.votacao.realizadaAt === null;
         assertPodeRemoverItemPauta(votacaoAberta);
 
-        if (item.materia.status === StatusMateria.EM_PAUTA) {
+        if (item.materiaId && item.materia?.status === StatusMateria.EM_PAUTA) {
             await this.materiaRepository.tramitarMateria(
                 tenantId,
                 item.materiaId,
@@ -552,18 +754,20 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         if (!pautaItem)
             throw new NotFoundException('Item de pauta não encontrado');
 
-        if (pautaItem.materia.tenantId !== tenantId) {
+        if (pautaItem.materia && pautaItem.materia.tenantId !== tenantId) {
             throw new NotFoundException('Matéria não encontrada');
         }
 
-        await this.materiaRepository.tramitarMateria(
-            tenantId,
-            pautaItem.materiaId,
-            {
-                action: this.mapResultadoParaAcao(dto.resultado),
-                observacao: `Resultado registrado na pauta: ${dto.resultado}`,
-            },
-        );
+        if (pautaItem.materiaId && pautaItem.materia) {
+            await this.materiaRepository.tramitarMateria(
+                tenantId,
+                pautaItem.materiaId,
+                {
+                    action: this.mapResultadoParaAcao(dto.resultado),
+                    observacao: `Resultado registrado na pauta: ${dto.resultado}`,
+                },
+            );
+        }
 
         return this.prisma.pautaItem.update({
             where: { id: pautaItemId },
@@ -840,6 +1044,10 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 ...dataFields,
             },
         });
+
+        if (dados.novoStatus === StatusSessao.ENCERRADA) {
+            await this.encerrarPautaDaSessao(id, tenantId);
+        }
     }
 
     async calcularQuorum(sessaoId: string, tenantId: string): Promise<QuorumInfo> {
@@ -876,17 +1084,38 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             where: { id: sessaoId, tenantId, isRemoved: false },
         });
 
-        await this.prisma.pautaItem.updateMany({
-            where: {
-                sessaoId,
-                isRemoved: false,
-                statusPauta: PrismaStatusPautaItem.RASCUNHO,
-            },
-            data: {
-                statusPauta: PrismaStatusPautaItem.PUBLICADA,
-                publicadaEm: new Date(),
-            },
-        });
+        const pauta = await this.findPautaAtiva(sessaoId, tenantId);
+        assertPautaPodeSerPublicada(
+            pauta
+                ? {
+                      status: pauta.status as never,
+                      totalItens: pauta._count.itens,
+                  }
+                : null,
+        );
+
+        const agora = new Date();
+
+        await this.prisma.$transaction([
+            this.prisma.pauta.update({
+                where: { id: pauta!.id },
+                data: {
+                    status: PrismaStatusPautaItem.PUBLICADA,
+                    publicadaEm: agora,
+                },
+            }),
+            this.prisma.pautaItem.updateMany({
+                where: {
+                    pautaId: pauta!.id,
+                    isRemoved: false,
+                    statusPauta: PrismaStatusPautaItem.RASCUNHO,
+                },
+                data: {
+                    statusPauta: PrismaStatusPautaItem.PUBLICADA,
+                    publicadaEm: agora,
+                },
+            }),
+        ]);
     }
 
     // M11 — setar fase da sessão

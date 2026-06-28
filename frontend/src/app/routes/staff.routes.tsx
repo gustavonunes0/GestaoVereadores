@@ -10,6 +10,7 @@ import { page } from './page-loader';
 export const staffRoutes = {
     element: <StaffRoute />,
     children: [
+        { path: 'sessoes/:id/painel', element: page(Pages.sessaoPainel) },
         {
             element: <Layout />,
             children: [

@@ -15,6 +15,7 @@ const CFG: Record<MateriaStatus, StatusCfg> = {
     PROTOCOLADA: { label: MATERIA_STATUS_LABELS.PROTOCOLADA, severity: 'info', icon: 'pi pi-file-check' },
     EM_TRAMITACAO: { label: MATERIA_STATUS_LABELS.EM_TRAMITACAO, severity: 'warning', icon: 'pi pi-search' },
     EM_PAUTA: { label: MATERIA_STATUS_LABELS.EM_PAUTA, severity: 'warning', icon: 'pi pi-list-check' },
+    EM_VOTACAO: { label: MATERIA_STATUS_LABELS.EM_VOTACAO, severity: 'warning', icon: 'pi pi-play' },
     APROVADA: { label: MATERIA_STATUS_LABELS.APROVADA, severity: 'success', icon: 'pi pi-check-circle' },
     REJEITADA: { label: MATERIA_STATUS_LABELS.REJEITADA, severity: 'danger', icon: 'pi pi-times-circle' },
     ARQUIVADA: { label: MATERIA_STATUS_LABELS.ARQUIVADA, severity: 'secondary', icon: 'pi pi-inbox' },

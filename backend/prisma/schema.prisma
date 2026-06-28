@@ -119,6 +119,7 @@ model Tenant {
     autores             Autor[]
     normas              Norma[]
     sessoesPlenarias    SessaoPlenaria[]
+    pautas                Pauta[]
     tiposMateria        TipoMateria[]
     tiposComissao       TipoComissao[]
     tiposAutor          TipoAutor[]
@@ -525,6 +526,7 @@ enum StatusMateria {
     PROTOCOLADA
     EM_TRAMITACAO
     EM_PAUTA
+    EM_VOTACAO
     APROVADA
     REJEITADA
     ARQUIVADA
@@ -551,6 +553,14 @@ enum StatusPautaItem {
     RASCUNHO
     PUBLICADA
     ENCERRADA
+}
+
+enum CategoriaPautaItem {
+    MATERIA
+    ATO
+    NORMA
+    AVISO
+    COMISSAO
 }
 
 enum CodigoTipoSessao {
@@ -905,6 +915,7 @@ model Comissao {
     createdAt           DateTime         @default(now())
     updatedAt           DateTime         @updatedAt
     membros             ComissaoMembro[]
+    pautaItens          PautaItem[]
 
     @@unique([tenantId, sigla])
     @@index([tenantId])
@@ -1027,6 +1038,7 @@ model SessaoPlenaria {
     updatedAt             DateTime           @updatedAt
     mesasDiretoras        MesaDiretora[]
     pautaItens            PautaItem[]
+    pautas                Pauta[]
     presencas             PresencaSessao[]
     pedidosPalavra        PedidoPalavra[]
     responsavelAbertura   TenantUser?        @relation("SessaoAbertaPor", fields: [responsavelAberturaId], references: [id])
@@ -1203,6 +1215,7 @@ model Norma {
     publicacoesOficiais  PublicacaoOficial[]
     normaRevogante       Norma?              @relation("NormaRevogante", fields: [normaRevoganteId], references: [id])
     normasRevogadas      Norma[]             @relation("NormaRevogante")
+    pautaItens           PautaItem[]
 
     @@index([tenantId])
 }
@@ -1233,6 +1246,7 @@ model Ato {
     updatedAt            DateTime            @updatedAt
     tenant               Tenant?             @relation(fields: [tenantId], references: [id])
     identificador        IdentificadorNorma? @relation(fields: [identificadorId], references: [id])
+    pautaItens           PautaItem[]
 
     @@index([tenantId])
     @@index([tenantId, isRemoved])
@@ -1415,12 +1429,45 @@ model AgendaLegislativa {
     @@index([tenantId, sessaoPlenariaId])
 }
 
-model PautaItem {
+model Pauta {
     id          String           @id @default(uuid())
+    tenantId    String
+    tenant      Tenant           @relation(fields: [tenantId], references: [id])
     sessaoId    String
     sessao      SessaoPlenaria   @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
-    materiaId   String
-    materia     Materia          @relation(fields: [materiaId], references: [id])
+    status      StatusPautaItem  @default(RASCUNHO)
+    publicadaEm DateTime?
+    isRemoved   Boolean          @default(false)
+    createdAt   DateTime         @default(now())
+    updatedAt   DateTime         @updatedAt
+    itens       PautaItem[]
+
+    @@index([tenantId])
+    @@index([sessaoId])
+    @@index([tenantId, status])
+    @@map("pautas")
+}
+
+model PautaItem {
+    id          String           @id @default(uuid())
+    pautaId     String
+    pauta       Pauta            @relation(fields: [pautaId], references: [id], onDelete: Cascade)
+    sessaoId    String
+    sessao      SessaoPlenaria   @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+    // M13 — item polimórfico (matéria, ato, norma, aviso ou parecer de comissão)
+    categoria   CategoriaPautaItem @default(MATERIA)
+    // matéria: obrigatória para MATERIA; também usada como objeto do parecer (COMISSAO)
+    materiaId   String?
+    materia     Materia?         @relation(fields: [materiaId], references: [id])
+    atoId       String?
+    ato         Ato?             @relation(fields: [atoId], references: [id])
+    normaId     String?
+    norma       Norma?           @relation(fields: [normaId], references: [id])
+    comissaoId  String?
+    comissao    Comissao?        @relation(fields: [comissaoId], references: [id])
+    // AVISO — texto livre lido em plenário
+    avisoTitulo String?
+    avisoTexto  String?          @db.Text
     ordem       Int
     fase        FasePauta        @default(ORDEM_DO_DIA)
     resultado   ResultadoPauta?
@@ -1435,6 +1482,10 @@ model PautaItem {
     updatedAt   DateTime         @updatedAt
     votacao     Votacao?
 
+    @@index([atoId])
+    @@index([normaId])
+    @@index([comissaoId])
+    @@index([pautaId])
     @@index([sessaoId])
 }
 
