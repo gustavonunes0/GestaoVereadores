@@ -21,11 +21,12 @@ export function useDominios() {
         tiposAto: dominios?.tiposAto ?? [],
         classificacoesAto: dominios?.classificacoesAto ?? [],
         tiposSessao: dominios?.tiposSessao ?? [],
+        situacoesSessao: dominios?.situacoesSessao ?? [],
         tiposComissao: dominios?.tiposComissao ?? [],
         tiposAutor: dominios?.tiposAutor ?? [],
         esferasFederacao: dominios?.esferasFederacao ?? [],
         identificadoresNorma: dominios?.identificadoresNorma ?? [],
         parlamentares: dominios?.parlamentares ?? [],
-        tiposAutorExterno: dominios?.tiposAutorExterno ?? [],
+        tiposPartner: dominios?.tiposPartner ?? [],
     };
 }

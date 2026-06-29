@@ -44,13 +44,13 @@ describe('TramitarMateriaUseCase', () => {
             removerAutor: jest.fn(),
             getAutoria: jest.fn(),
             setAutorParlamentar: jest.fn(),
-            setAutorExterno: jest.fn(),
+            setTenantPartner: jest.fn(),
             addCoautor: jest.fn(),
             removeCoautor: jest.fn(),
             setRelator: jest.fn(),
             replaceCoautores: jest.fn(),
             proximoNumero: jest.fn(),
-            listAutoresExternos: jest.fn(),
+            listTenantPartners: jest.fn(),
             addPublicacao: jest.fn(),
         } as jest.Mocked<MateriaRepository>;
 

@@ -42,10 +42,10 @@ export class ParliamentarianNotFoundForMatterError extends Error {
     }
 }
 
-export class GuestUserNotFoundForMatterError extends Error {
+export class TenantPartnerNotFoundForMatterError extends Error {
     constructor() {
-        super('Autor externo (GuestUser) não encontrado nesta Câmara');
-        this.name = 'GuestUserNotFoundForMatterError';
+        super('Parceiro externo não encontrado nesta Câmara');
+        this.name = 'TenantPartnerNotFoundForMatterError';
     }
 }
 

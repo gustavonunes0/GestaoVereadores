@@ -50,3 +50,31 @@ export class PautaItemComVotacaoAbertaError extends Error {
         this.name = 'PautaItemComVotacaoAbertaError';
     }
 }
+
+export class PautaJaPublicadaError extends Error {
+    constructor() {
+        super('Pauta já está publicada');
+        this.name = 'PautaJaPublicadaError';
+    }
+}
+
+export class PautaVaziaError extends Error {
+    constructor() {
+        super('Não é possível publicar uma pauta vazia');
+        this.name = 'PautaVaziaError';
+    }
+}
+
+export class PautaNaoEncontradaError extends Error {
+    constructor() {
+        super('Não há pauta cadastrada para esta sessão');
+        this.name = 'PautaNaoEncontradaError';
+    }
+}
+
+export class PautaMateriaEmOutraSessaoError extends Error {
+    constructor() {
+        super('Matéria já consta na pauta ativa de outra sessão plenária');
+        this.name = 'PautaMateriaEmOutraSessaoError';
+    }
+}

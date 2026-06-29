@@ -8,6 +8,7 @@ import {
     UpdateVotoDto,
 } from '../../application/dto/voto.dto';
 import { VotacaoEntity, ResultadoVotacaoEnum } from '../entities/votacao.entity';
+import { TipoQuorum } from '../enums/tipo-quorum.enum';
 import { ContagemVotos } from '../services/contagem-votos.service';
 
 export type EncerrarVotacaoDados = {
@@ -15,7 +16,11 @@ export type EncerrarVotacaoDados = {
     votosNao: number;
     abstencoes: number;
     resultado: ResultadoVotacaoEnum;
-    responsavelId: string;
+    responsavelId?: string;
+    tipoQuorum?: TipoQuorum;
+    totalMembros?: number;
+    votoQualidade?: boolean;
+    presidenteId?: string;
     quorumVotacao?: number;
     motivoEmpate?: string;
     observacoes?: string;
@@ -86,7 +91,8 @@ export abstract class VotacaoRepository {
         votacaoId: string,
         pautaItemId: string,
         tenantId: string,
-        materiaId: string,
+        materiaId: string | null,
+        categoria: string,
         dados: EncerrarVotacaoDados,
     ): Promise<void>;
 }

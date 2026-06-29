@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class EncerrarVotacaoDto {
     @IsOptional()
@@ -13,4 +13,9 @@ export class EncerrarVotacaoDto {
     @IsOptional()
     @IsString()
     observacoes?: string;
+
+    /** Voto de qualidade do presidente — aceito APENAS em empate por MAIORIA_SIMPLES */
+    @IsOptional()
+    @IsBoolean()
+    votoQualidade?: boolean;
 }

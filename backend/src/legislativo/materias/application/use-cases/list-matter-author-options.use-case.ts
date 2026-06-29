@@ -58,7 +58,7 @@ export class ListMatterAuthorOptionsUseCase {
             return { kind: 'parliamentarian' as const, options };
         }
 
-        const externos = await this.repository.listAutoresExternos(
+        const externos = await this.repository.listTenantPartners(
             tenantId,
             tipoAutorId,
         );

@@ -39,7 +39,7 @@ export class CreateMateriaUseCase {
         }
 
         const {
-            autorExternoId,
+            tenantPartnerId,
             authorParliamentarianId: dtoAuthorParliamentarianId,
             coautorIds,
             relatoresIds,
@@ -52,11 +52,11 @@ export class CreateMateriaUseCase {
             authorParliamentarianId = user.parliamentarianId;
         }
 
-        if (!authorParliamentarianId && !autorExternoId) {
+        if (!authorParliamentarianId && !tenantPartnerId) {
             throw new MatterAuthorshipValidationError('Autor é obrigatório');
         }
 
-        if (authorParliamentarianId && autorExternoId) {
+        if (authorParliamentarianId && tenantPartnerId) {
             throw new MatterAuthorshipValidationError(
                 'Informe apenas um tipo de autor por matéria',
             );
@@ -73,9 +73,9 @@ export class CreateMateriaUseCase {
             await this.repository.setAutorParlamentar(tenantId, created.id, {
                 parliamentarianId: authorParliamentarianId,
             });
-        } else if (autorExternoId) {
-            await this.repository.setAutorExterno(tenantId, created.id, {
-                autorExternoId,
+        } else if (tenantPartnerId) {
+            await this.repository.setTenantPartner(tenantId, created.id, {
+                tenantPartnerId,
             });
         }
 

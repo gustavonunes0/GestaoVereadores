@@ -6,10 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { isStaffUser } from '../types/auth';
 import { LegislaturaProvider } from '../contexts/LegislaturaContext';
 import { AppFeedbackProvider } from '../hooks/useAppToast';
-import { SiglButton } from './common/SiglButton';
 import { SidebarNav } from './SidebarNav';
 import { FooterBar } from './FooterBar';
-import { LegislaturaBar } from './LegislaturaBar';
 import logoSrc from '../../assets/logo.png';
 
 export function Layout() {
@@ -54,7 +52,7 @@ export function Layout() {
 
                     <div className="main">
                         <header className="topbar">
-                            <div className="topbar__start">
+                            {/* <div className="topbar__start">
                                 <SiglButton
                                     type="button"
                                     className="sidebar-toggle"
@@ -67,7 +65,7 @@ export function Layout() {
                                     onClick={() => setMenuOpen((open) => !open)}
                                 />
                                 <LegislaturaBar />
-                            </div>
+                            </div> */}
 
                             <div className="topbar-user">
                                 <span className="topbar-user-info">

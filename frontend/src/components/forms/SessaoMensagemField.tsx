@@ -13,15 +13,16 @@ export function SessaoMensagemField({
     label = 'Mensagem / observações',
 }: Props) {
     return (
-        <label htmlFor={id}>
-            {label}
+        <div className="sigl-filtro-campo">
+            <label htmlFor={id}>{label}</label>
             <textarea
                 id={id}
+                className="p-inputtext p-component w-full"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                rows={2}
+                rows={3}
                 placeholder="Observações internas (opcional)"
             />
-        </label>
+        </div>
     );
 }

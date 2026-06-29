@@ -28,6 +28,11 @@ services:
       PORT: 3000
       JWT_SECRET: gestao-vereadores-jwt-dev-altere-em-producao
       CORS_ORIGIN: http://localhost:5173,http://localhost:8080,http://127.0.0.1:8080,http://localhost
+      # --- Jitsi (mesmos valores do bloco jitsi-* abaixo) ---
+      JITSI_DOMAIN: ${JITSI_PUBLIC_HOST:-localhost}:${JITSI_HTTPS_PORT:-8444}
+      JITSI_APP_ID: ${JWT_APP_ID:-gestao_vereadores}
+      JITSI_APP_SECRET: ${JWT_APP_SECRET:-troque-por-um-segredo-forte}
+      JITSI_SUB: '*'
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,5 +62,128 @@ services:
       api:
         condition: service_healthy
 
+  # ==========================================================================
+  # Jitsi Meet self-hosted (web + prosody + jicofo + jvb) com autenticação JWT.
+  # O backend emite o token; estes serviços validam e transmitem o vídeo.
+  #
+  # Para web + app em dev na mesma rede, defina no .env raiz:
+  #   JITSI_PUBLIC_HOST=<IP LAN da sua máquina, ex.: 192.168.100.7>
+  #   DOCKER_HOST_ADDRESS=<o mesmo IP LAN>
+  # ==========================================================================
+  jitsi-web:
+    image: jitsi/web:stable-9779
+    restart: unless-stopped
+    ports:
+      - '${JITSI_HTTP_PORT:-8000}:80'
+      - '${JITSI_HTTPS_PORT:-8444}:443'
+    volumes:
+      - jitsi-web-config:/config:Z
+      - jitsi-web-crontabs:/var/spool/cron/crontabs:Z
+      - jitsi-transcripts:/usr/share/jitsi-meet/transcripts:Z
+    environment:
+      ENABLE_AUTH: 1
+      ENABLE_GUESTS: 1
+      AUTH_TYPE: jwt
+      JWT_APP_ID: ${JWT_APP_ID:-gestao_vereadores}
+      JWT_APP_SECRET: ${JWT_APP_SECRET:-troque-por-um-segredo-forte}
+      JWT_ACCEPT_TIME_LEEWAY: 60
+      PUBLIC_URL: https://${JITSI_PUBLIC_HOST:-localhost}:${JITSI_HTTPS_PORT:-8444}
+      TZ: ${TZ:-America/Sao_Paulo}
+      XMPP_DOMAIN: meet.jitsi
+      XMPP_AUTH_DOMAIN: auth.meet.jitsi
+      XMPP_BOSH_URL_BASE: http://jitsi-prosody:5280
+      XMPP_GUEST_DOMAIN: guest.meet.jitsi
+      XMPP_MUC_DOMAIN: muc.meet.jitsi
+      XMPP_RECORDER_DOMAIN: recorder.meet.jitsi
+    depends_on:
+      - jitsi-prosody
+    networks:
+      meet.jitsi:
+
+  jitsi-prosody:
+    image: jitsi/prosody:stable-9779
+    restart: unless-stopped
+    expose:
+      - '5222'
+      - '5347'
+      - '5280'
+    volumes:
+      - jitsi-prosody-config:/config:Z
+      - jitsi-prosody-plugins:/prosody-plugins-custom:Z
+    environment:
+      AUTH_TYPE: jwt
+      ENABLE_AUTH: 1
+      ENABLE_GUESTS: 1
+      JWT_APP_ID: ${JWT_APP_ID:-gestao_vereadores}
+      JWT_APP_SECRET: ${JWT_APP_SECRET:-troque-por-um-segredo-forte}
+      JWT_ACCEPT_TIME_LEEWAY: 60
+      JICOFO_AUTH_PASSWORD: ${JICOFO_AUTH_PASSWORD:-jicofopass}
+      JVB_AUTH_PASSWORD: ${JVB_AUTH_PASSWORD:-jvbpass}
+      JIGASI_XMPP_PASSWORD: ${JIGASI_XMPP_PASSWORD:-jigasipass}
+      JIBRI_RECORDER_PASSWORD: ${JIBRI_RECORDER_PASSWORD:-jibrirecorderpass}
+      JIBRI_XMPP_PASSWORD: ${JIBRI_XMPP_PASSWORD:-jibripass}
+      TZ: ${TZ:-America/Sao_Paulo}
+      XMPP_DOMAIN: meet.jitsi
+      XMPP_AUTH_DOMAIN: auth.meet.jitsi
+      XMPP_GUEST_DOMAIN: guest.meet.jitsi
+      XMPP_MUC_DOMAIN: muc.meet.jitsi
+      XMPP_INTERNAL_MUC_DOMAIN: internal-muc.meet.jitsi
+      XMPP_RECORDER_DOMAIN: recorder.meet.jitsi
+    networks:
+      meet.jitsi:
+        aliases:
+          - xmpp.meet.jitsi
+
+  jitsi-jicofo:
+    image: jitsi/jicofo:stable-9779
+    restart: unless-stopped
+    volumes:
+      - jitsi-jicofo-config:/config:Z
+    environment:
+      AUTH_TYPE: jwt
+      ENABLE_AUTH: 1
+      JICOFO_AUTH_PASSWORD: ${JICOFO_AUTH_PASSWORD:-jicofopass}
+      TZ: ${TZ:-America/Sao_Paulo}
+      XMPP_DOMAIN: meet.jitsi
+      XMPP_AUTH_DOMAIN: auth.meet.jitsi
+      XMPP_INTERNAL_MUC_DOMAIN: internal-muc.meet.jitsi
+      XMPP_MUC_DOMAIN: muc.meet.jitsi
+      XMPP_SERVER: jitsi-prosody
+    depends_on:
+      - jitsi-prosody
+    networks:
+      meet.jitsi:
+
+  jitsi-jvb:
+    image: jitsi/jvb:stable-9779
+    restart: unless-stopped
+    ports:
+      - '${JVB_PORT:-10000}:${JVB_PORT:-10000}/udp'
+    volumes:
+      - jitsi-jvb-config:/config:Z
+    environment:
+      DOCKER_HOST_ADDRESS: ${DOCKER_HOST_ADDRESS:-127.0.0.1}
+      JVB_AUTH_PASSWORD: ${JVB_AUTH_PASSWORD:-jvbpass}
+      JVB_PORT: ${JVB_PORT:-10000}
+      JVB_AUTH_USER: jvb
+      TZ: ${TZ:-America/Sao_Paulo}
+      XMPP_AUTH_DOMAIN: auth.meet.jitsi
+      XMPP_INTERNAL_MUC_DOMAIN: internal-muc.meet.jitsi
+      XMPP_SERVER: jitsi-prosody
+    depends_on:
+      - jitsi-prosody
+    networks:
+      meet.jitsi:
+
 volumes:
   pgdata:
+  jitsi-web-config:
+  jitsi-web-crontabs:
+  jitsi-transcripts:
+  jitsi-prosody-config:
+  jitsi-prosody-plugins:
+  jitsi-jicofo-config:
+  jitsi-jvb-config:
+
+networks:
+  meet.jitsi:

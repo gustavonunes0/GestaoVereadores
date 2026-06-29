@@ -11,9 +11,11 @@ import {
     StatusMateria,
     StatusSessao as PrismaStatusSessao,
     StatusPautaItem as PrismaStatusPautaItem,
+    FaseSessao as PrismaFaseSessao,
 } from '@prisma/client';
 import { SessaoPlenariaEntity } from '../../domain/entities/sessao-plenaria.entity';
-import { StatusSessao } from '../../domain/enums/status-sessao.enum';
+import { StatusSessao, statusSessaoToCodigoSituacao } from '../../domain/enums/status-sessao.enum';
+import { FaseSessao } from '../../domain/enums/fase-sessao.enum';
 import {
     QuorumInfo,
     TransicionarStatusDados,
@@ -26,9 +28,6 @@ import {
 } from '../../../../common/prisma/prisma-includes';
 import { tenantWhere } from '../../../../common/prisma/tenant-scope';
 import { PrismaService } from '../../../../prisma/prisma.service';
-import {
-    assertMateriaPodeEntrarNaPauta,
-} from '../../../materias/domain/services/materia-workflow';
 import { MatterTramitationAction } from '../../../materias/domain/enums/matter-tramitation-action.enum';
 import { MateriaRepository } from '../../../materias/domain/repositories/materia.repository';
 import { MATERIA_REPOSITORY } from '../../../materias/materias.tokens';
@@ -51,7 +50,10 @@ import { assertParliamentarianHasActiveMandate } from '../../../parlamentares/ma
 import { ACTIVE_PARLIAMENTARIAN_MANDATE_CHECKER } from '../../../parlamentares/mandatos/mandatos.tokens';
 import {
     assertMateriaNaoDuplicadaNaPauta,
+    assertMateriaSemPautaAtivaEmOutraSessao,
     assertOrdemDisponivelNaPauta,
+    assertPautaPodeReceberItens,
+    assertPautaPodeSerPublicada,
     assertPodeRemoverItemPauta,
     getDefaultFasePauta,
 } from '../../domain/services/pauta-workflow';
@@ -83,18 +85,31 @@ const pautaItemInclude = {
             ano: true,
         },
     },
+    ato: {
+        include: { tipo: true, classificacao: true },
+    },
+    norma: {
+        include: { tipo: true, ano: true },
+    },
+    comissao: {
+        select: { id: true, nome: true, sigla: true },
+    },
     votacao: {
         select: {
             id: true,
             tipoVotacao: true,
             resultado: true,
             realizadaAt: true,
+            votosSim: true,
+            votosNao: true,
+            abstencoes: true,
         },
     },
 } as const;
 
 const presencaInclude = {
     parlamentar: { include: { pessoa: true } },
+    parliamentarian: true,
 } as const;
 
 type LifecycleEntry = {
@@ -149,7 +164,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
 
     private async assertTipoSessaoDoTenant(tenantId: string, tipoSessaoId: string) {
         const tipo = await this.prisma.tipoSessao.findFirst({
-            where: { id: tipoSessaoId, ...tenantWhere(tenantId) },
+            where: { id: tipoSessaoId, tenantId },
         });
         if (!tipo) {
             throw new NotFoundException(
@@ -171,6 +186,11 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         );
         const status = SessionStatus.AGENDADA;
 
+        const sessaoLegislativaId =
+            dto.sessaoLegislativaId ??
+            (await this.resolveDefaultSessaoLegislativaId(tenantId)) ??
+            undefined;
+
         return this.prisma.sessaoPlenaria.create({
             data: {
                 tenantId,
@@ -178,7 +198,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 dataFim,
                 tipoSessaoId: dto.tipoSessaoId,
                 situacaoId,
-                sessaoLegislativaId: dto.sessaoLegislativaId,
+                sessaoLegislativaId,
                 mensagem: dto.mensagem,
                 cicloVidaJson: this.appendCicloVida([], {
                     status,
@@ -347,6 +367,12 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         if (!sessao) {
             throw new NotFoundException('Sessão plenária não encontrada');
         }
+        if (
+            sessao.statusSessao === PrismaStatusSessao.AGENDADA ||
+            sessao.statusSessao === PrismaStatusSessao.ABERTA
+        ) {
+            return sessao;
+        }
         assertSessaoAceitaPauta(sessao.situacao);
         return sessao;
     }
@@ -361,6 +387,68 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 isRemoved: true,
             },
         });
+    }
+
+    private async findPautaAtiva(sessaoId: string, tenantId: string) {
+        return this.prisma.pauta.findFirst({
+            where: { sessaoId, tenantId, isRemoved: false },
+            include: {
+                _count: { select: { itens: { where: { isRemoved: false } } } },
+            },
+        });
+    }
+
+    private async getOrCreatePautaAtiva(sessaoId: string, tenantId: string) {
+        const existente = await this.findPautaAtiva(sessaoId, tenantId);
+        if (existente) return existente;
+
+        return this.prisma.pauta.create({
+            data: { tenantId, sessaoId },
+            include: {
+                _count: { select: { itens: { where: { isRemoved: false } } } },
+            },
+        });
+    }
+
+    private async findMateriaEmOutraPautaAtiva(
+        tenantId: string,
+        materiaId: string,
+        sessaoAtualId: string,
+    ) {
+        return this.prisma.pautaItem.findFirst({
+            where: {
+                materiaId,
+                isRemoved: false,
+                sessaoId: { not: sessaoAtualId },
+                pauta: {
+                    isRemoved: false,
+                    status: {
+                        in: [
+                            PrismaStatusPautaItem.RASCUNHO,
+                            PrismaStatusPautaItem.PUBLICADA,
+                        ],
+                    },
+                    sessao: { tenantId, isRemoved: false },
+                },
+            },
+            select: { materiaId: true, sessaoId: true },
+        });
+    }
+
+    private async encerrarPautaDaSessao(sessaoId: string, tenantId: string) {
+        const pauta = await this.findPautaAtiva(sessaoId, tenantId);
+        if (!pauta) return;
+
+        await this.prisma.$transaction([
+            this.prisma.pauta.update({
+                where: { id: pauta.id },
+                data: { status: PrismaStatusPautaItem.ENCERRADA },
+            }),
+            this.prisma.pautaItem.updateMany({
+                where: { pautaId: pauta.id, isRemoved: false },
+                data: { statusPauta: PrismaStatusPautaItem.ENCERRADA },
+            }),
+        ]);
     }
 
     async listPautaItens(
@@ -398,8 +486,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             throw new NotFoundException('Item de pauta não encontrado');
         }
 
-        const materia = item.materia;
-        if (materia.tenantId !== tenantId) {
+        if (item.materia && item.materia.tenantId !== tenantId) {
             throw new NotFoundException('Matéria não encontrada');
         }
 
@@ -413,37 +500,161 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
     ) {
         await this.assertSessaoGerenciaPauta(tenantId, sessaoId);
 
-        const materia = await this.prisma.materia.findFirst({
-            where: { id: dto.materiaId, ...tenantWhere(tenantId) },
-        });
-        if (!materia) throw new NotFoundException('Matéria não encontrada');
+        const categoria = dto.categoria ?? 'MATERIA';
 
-        assertMateriaPodeEntrarNaPauta(materia);
+        const pauta = await this.getOrCreatePautaAtiva(sessaoId, tenantId);
+        assertPautaPodeReceberItens({ status: pauta.status as never });
 
         const activeItems = await this.listActivePautaItems(sessaoId);
-        assertMateriaNaoDuplicadaNaPauta(dto.materiaId, activeItems);
-        assertOrdemDisponivelNaPauta(dto.ordem, activeItems);
+        const ordem =
+            dto.ordem ??
+            (activeItems.length === 0
+                ? 1
+                : Math.max(...activeItems.map((i) => i.ordem)) + 1);
+        assertOrdemDisponivelNaPauta(ordem, activeItems);
+
+        const referencia = await this.resolverReferenciaPautaItem(
+            tenantId,
+            sessaoId,
+            categoria,
+            dto,
+            activeItems,
+        );
 
         const pautaItem = await this.prisma.pautaItem.create({
             data: {
+                pautaId: pauta.id,
                 sessaoId,
-                materiaId: dto.materiaId,
-                ordem: dto.ordem,
-                fase: dto.fase ?? getDefaultFasePauta(),
+                categoria: categoria as never,
+                materiaId: referencia.materiaId,
+                atoId: referencia.atoId,
+                normaId: referencia.normaId,
+                comissaoId: referencia.comissaoId,
+                avisoTitulo: referencia.avisoTitulo,
+                avisoTexto: referencia.avisoTexto,
+                ordem,
+                fase: (dto.fase ?? referencia.faseInferida) as never,
+                tipoPautaItem: (dto.tipoPautaItem ??
+                    referencia.tipoInferido) as never,
             },
             include: pautaItemInclude,
         });
 
-        await this.materiaRepository.tramitarMateria(
-            tenantId,
-            dto.materiaId,
-            {
-                action: MatterTramitationAction.COLOCAR_EM_PAUTA,
-                observacao: 'Matéria incluída na pauta da sessão plenária',
-            },
-        );
-
         return pautaItem;
+    }
+
+    /** Valida e resolve a referência do item conforme a categoria. */
+    private async resolverReferenciaPautaItem(
+        tenantId: string,
+        sessaoId: string,
+        categoria: string,
+        dto: AddPautaItemDto,
+        activeItems: { id: string; ordem: number; materiaId: string | null }[],
+    ): Promise<{
+        materiaId: string | null;
+        atoId: string | null;
+        normaId: string | null;
+        comissaoId: string | null;
+        avisoTitulo: string | null;
+        avisoTexto: string | null;
+        faseInferida: string;
+        tipoInferido: string;
+    }> {
+        const base = {
+            materiaId: null as string | null,
+            atoId: null as string | null,
+            normaId: null as string | null,
+            comissaoId: null as string | null,
+            avisoTitulo: null as string | null,
+            avisoTexto: null as string | null,
+            faseInferida: 'ORDEM_DO_DIA',
+            tipoInferido: 'DELIBERACAO',
+        };
+
+        if (categoria === 'MATERIA' || categoria === 'COMISSAO') {
+            if (!dto.materiaId) {
+                throw new BadRequestException('Matéria é obrigatória para este item');
+            }
+            const materia = await this.prisma.materia.findFirst({
+                where: { id: dto.materiaId, ...tenantWhere(tenantId) },
+                include: { tipo: true },
+            });
+            if (!materia) throw new NotFoundException('Matéria não encontrada');
+
+            const conflito = await this.findMateriaEmOutraPautaAtiva(
+                tenantId,
+                dto.materiaId,
+                sessaoId,
+            );
+            assertMateriaSemPautaAtivaEmOutraSessao(
+                dto.materiaId,
+                sessaoId,
+                conflito,
+            );
+            assertMateriaNaoDuplicadaNaPauta(dto.materiaId, activeItems);
+
+            // RN-SPL-04: inferir fase/tipo pela sigla do tipo de matéria
+            const sigla = materia.tipo?.sigla ?? '';
+            const isLeitura = ['OFC', 'IND', 'REQ'].includes(sigla);
+            base.materiaId = dto.materiaId;
+
+            if (categoria === 'COMISSAO') {
+                if (!dto.comissaoId) {
+                    throw new BadRequestException('Comissão é obrigatória para o parecer');
+                }
+                const comissao = await this.prisma.comissao.findFirst({
+                    where: { id: dto.comissaoId, ...tenantWhere(tenantId), isRemoved: false },
+                    select: { id: true },
+                });
+                if (!comissao) throw new NotFoundException('Comissão não encontrada');
+                base.comissaoId = dto.comissaoId;
+                base.faseInferida = 'ORDEM_DO_DIA';
+                base.tipoInferido = 'DELIBERACAO';
+            } else {
+                base.faseInferida = isLeitura ? 'PEQUENO_EXPEDIENTE' : 'ORDEM_DO_DIA';
+                base.tipoInferido = isLeitura ? 'LEITURA' : 'DELIBERACAO';
+            }
+            return base;
+        }
+
+        if (categoria === 'ATO') {
+            if (!dto.atoId) throw new BadRequestException('Ato é obrigatório para este item');
+            const ato = await this.prisma.ato.findFirst({
+                where: { id: dto.atoId, tenantId, isRemoved: false },
+                select: { id: true },
+            });
+            if (!ato) throw new NotFoundException('Ato não encontrado');
+            base.atoId = dto.atoId;
+            base.faseInferida = 'PEQUENO_EXPEDIENTE';
+            base.tipoInferido = 'LEITURA';
+            return base;
+        }
+
+        if (categoria === 'NORMA') {
+            if (!dto.normaId) throw new BadRequestException('Norma é obrigatória para este item');
+            const norma = await this.prisma.norma.findFirst({
+                where: { id: dto.normaId, tenantId, isRemoved: false },
+                select: { id: true },
+            });
+            if (!norma) throw new NotFoundException('Norma não encontrada');
+            base.normaId = dto.normaId;
+            base.faseInferida = 'PEQUENO_EXPEDIENTE';
+            base.tipoInferido = 'LEITURA';
+            return base;
+        }
+
+        if (categoria === 'AVISO') {
+            if (!dto.avisoTitulo?.trim()) {
+                throw new BadRequestException('Título do aviso é obrigatório');
+            }
+            base.avisoTitulo = dto.avisoTitulo.trim();
+            base.avisoTexto = dto.avisoTexto?.trim() || null;
+            base.faseInferida = 'PEQUENO_EXPEDIENTE';
+            base.tipoInferido = 'COMUNICACAO';
+            return base;
+        }
+
+        throw new BadRequestException('Categoria de item de pauta inválida');
     }
 
     async updatePautaItem(
@@ -489,11 +700,17 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         });
         if (!item) throw new NotFoundException('Item de pauta não encontrado');
 
+        if (item.statusPauta !== PrismaStatusPautaItem.RASCUNHO) {
+            throw new BadRequestException(
+                'Itens publicados não podem ser removidos da pauta',
+            );
+        }
+
         const votacaoAberta =
             !!item.votacao && item.votacao.realizadaAt === null;
         assertPodeRemoverItemPauta(votacaoAberta);
 
-        if (item.materia.status === StatusMateria.EM_PAUTA) {
+        if (item.materiaId && item.materia?.status === StatusMateria.EM_PAUTA) {
             await this.materiaRepository.tramitarMateria(
                 tenantId,
                 item.materiaId,
@@ -542,18 +759,20 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         if (!pautaItem)
             throw new NotFoundException('Item de pauta não encontrado');
 
-        if (pautaItem.materia.tenantId !== tenantId) {
+        if (pautaItem.materia && pautaItem.materia.tenantId !== tenantId) {
             throw new NotFoundException('Matéria não encontrada');
         }
 
-        await this.materiaRepository.tramitarMateria(
-            tenantId,
-            pautaItem.materiaId,
-            {
-                action: this.mapResultadoParaAcao(dto.resultado),
-                observacao: `Resultado registrado na pauta: ${dto.resultado}`,
-            },
-        );
+        if (pautaItem.materiaId && pautaItem.materia) {
+            await this.materiaRepository.tramitarMateria(
+                tenantId,
+                pautaItem.materiaId,
+                {
+                    action: this.mapResultadoParaAcao(dto.resultado),
+                    observacao: `Resultado registrado na pauta: ${dto.resultado}`,
+                },
+            );
+        }
 
         return this.prisma.pautaItem.update({
             where: { id: pautaItemId },
@@ -655,6 +874,48 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         const sessao = await this.findOne(tenantId, sessaoId);
         assertSessaoNaoEncerrada(sessao.situacao);
 
+        if (dto.parliamentarianId) {
+            const parliamentarian = await this.prisma.parliamentarian.findFirst({
+                where: {
+                    id: dto.parliamentarianId,
+                    tenantId,
+                    isRemoved: false,
+                },
+            });
+            if (!parliamentarian) {
+                throw new NotFoundException('Parlamentar não encontrado');
+            }
+
+            await this.assertMandateIfProvided(tenantId, dto);
+
+            const existing = await this.prisma.presencaSessao.findUnique({
+                where: {
+                    sessaoId_parliamentarianId: {
+                        sessaoId,
+                        parliamentarianId: dto.parliamentarianId,
+                    },
+                },
+            });
+            assertPresencaNaoDuplicada(!!existing);
+
+            const campos = resolveCamposPresenca(dto);
+
+            return this.prisma.presencaSessao.create({
+                data: {
+                    sessaoId,
+                    parliamentarianId: dto.parliamentarianId,
+                    ...campos,
+                },
+                include: presencaInclude,
+            });
+        }
+
+        if (!dto.parlamentarId) {
+            throw new BadRequestException(
+                'Informe parlamentarId ou parliamentarianId',
+            );
+        }
+
         const parlamentar = await this.prisma.parlamentar.findFirst({
             where: { id: dto.parlamentarId, ...tenantWhere(tenantId) },
         });
@@ -728,11 +989,13 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         entity.dataInicio = raw.dataInicio;
         entity.dataFim = raw.dataFim;
         entity.statusSessao = raw.statusSessao as unknown as StatusSessao;
+        entity.faseAtual = raw.faseAtual as unknown as FaseSessao;
         entity.dataAbertura = raw.dataAbertura;
         entity.dataSuspensao = raw.dataSuspensao;
         entity.dataEncerramento = raw.dataEncerramento;
         entity.quorumMinimo = raw.quorumMinimo;
         entity.quorumPresente = raw.quorumPresente;
+        entity.modoTeste = raw.modoTeste;
         entity.responsavelAberturaId = raw.responsavelAberturaId;
         entity.observacoes = raw.observacoes;
         entity.isRemoved = raw.isRemoved;
@@ -753,14 +1016,24 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             dataEncerramento: Date;
             responsavelAberturaId: string;
             quorumPresente: number;
+            quorumMinimo: number;
+            modoTeste: boolean;
             observacoes: string;
         }> = {};
 
         if (dados.novoStatus === StatusSessao.ABERTA) {
             dataFields.dataAbertura = agora;
-            dataFields.responsavelAberturaId = dados.responsavelId;
+            if (dados.responsavelId) {
+                dataFields.responsavelAberturaId = dados.responsavelId;
+            }
             if (dados.quorumPresente !== undefined) {
                 dataFields.quorumPresente = dados.quorumPresente;
+            }
+            if (dados.quorumMinimo !== undefined) {
+                dataFields.quorumMinimo = dados.quorumMinimo;
+            }
+            if (dados.modoTeste !== undefined) {
+                dataFields.modoTeste = dados.modoTeste;
             }
         } else if (dados.novoStatus === StatusSessao.SUSPENSA) {
             dataFields.dataSuspensao = agora;
@@ -772,13 +1045,23 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             dataFields.observacoes = dados.observacao;
         }
 
+        const codigoSituacao = statusSessaoToCodigoSituacao(
+            dados.novoStatus,
+        ) as CodigoSituacaoSessao;
+        const situacaoId = await this.resolveSituacaoIdByCodigo(codigoSituacao);
+
         await this.prisma.sessaoPlenaria.update({
             where: { id, tenantId, isRemoved: false },
             data: {
                 statusSessao: dados.novoStatus as unknown as PrismaStatusSessao,
+                situacaoId,
                 ...dataFields,
             },
         });
+
+        if (dados.novoStatus === StatusSessao.ENCERRADA) {
+            await this.encerrarPautaDaSessao(id, tenantId);
+        }
     }
 
     async calcularQuorum(sessaoId: string, tenantId: string): Promise<QuorumInfo> {
@@ -790,6 +1073,15 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             },
         });
         if (!sessao) throw new Error('Sessão não encontrada');
+
+        if (sessao.modoTeste) {
+            const quorumPresente = sessao.presencas.length;
+            return {
+                quorumMinimo: 1,
+                quorumPresente,
+                temQuorum: quorumPresente >= 1,
+            };
+        }
 
         const legislaturaId = sessao.sessaoLegislativa?.legislaturaId;
         const totalParlamentares = await this.prisma.parlamentarMandato.count({
@@ -815,15 +1107,142 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             where: { id: sessaoId, tenantId, isRemoved: false },
         });
 
-        await this.prisma.pautaItem.updateMany({
+        const pauta = await this.findPautaAtiva(sessaoId, tenantId);
+        assertPautaPodeSerPublicada(
+            pauta
+                ? {
+                      status: pauta.status as never,
+                      totalItens: pauta._count.itens,
+                  }
+                : null,
+        );
+
+        const agora = new Date();
+
+        await this.prisma.$transaction([
+            this.prisma.pauta.update({
+                where: { id: pauta!.id },
+                data: {
+                    status: PrismaStatusPautaItem.PUBLICADA,
+                    publicadaEm: agora,
+                },
+            }),
+            this.prisma.pautaItem.updateMany({
+                where: {
+                    pautaId: pauta!.id,
+                    isRemoved: false,
+                    statusPauta: PrismaStatusPautaItem.RASCUNHO,
+                },
+                data: {
+                    statusPauta: PrismaStatusPautaItem.PUBLICADA,
+                    publicadaEm: agora,
+                },
+            }),
+        ]);
+    }
+
+    // M11 — setar fase da sessão
+    async setFase(id: string, tenantId: string, fase: FaseSessao): Promise<void> {
+        await this.prisma.sessaoPlenaria.update({
+            where: { id, tenantId, isRemoved: false },
+            data: { faseAtual: fase as unknown as PrismaFaseSessao },
+        });
+    }
+
+    // M13 — buscar sessão ativa (ABERTA ou SUSPENSA) para o parlamentar
+    async findAtiva(tenantId: string): Promise<SessaoPlenariaEntity | null> {
+        const raw = await this.prisma.sessaoPlenaria.findFirst({
             where: {
-                sessaoId,
+                tenantId,
                 isRemoved: false,
-                statusPauta: PrismaStatusPautaItem.RASCUNHO,
+                statusSessao: {
+                    in: ['ABERTA', 'SUSPENSA'] as PrismaStatusSessao[],
+                },
             },
-            data: {
-                statusPauta: PrismaStatusPautaItem.PUBLICADA,
-                publicadaEm: new Date(),
+            orderBy: { dataAbertura: 'desc' },
+        });
+        if (!raw) return null;
+
+        const entity = new SessaoPlenariaEntity();
+        entity.id = raw.id;
+        entity.tenantId = raw.tenantId;
+        entity.tipoSessaoId = raw.tipoSessaoId;
+        entity.sessaoLegislativaId = raw.sessaoLegislativaId;
+        entity.dataInicio = raw.dataInicio;
+        entity.dataFim = raw.dataFim;
+        entity.statusSessao = raw.statusSessao as unknown as StatusSessao;
+        entity.faseAtual = raw.faseAtual as unknown as FaseSessao;
+        entity.dataAbertura = raw.dataAbertura;
+        entity.dataSuspensao = raw.dataSuspensao;
+        entity.dataEncerramento = raw.dataEncerramento;
+        entity.quorumMinimo = raw.quorumMinimo;
+        entity.quorumPresente = raw.quorumPresente;
+        entity.modoTeste = raw.modoTeste;
+        entity.responsavelAberturaId = raw.responsavelAberturaId;
+        entity.observacoes = raw.observacoes;
+        entity.isRemoved = raw.isRemoved;
+        entity.createdAt = raw.createdAt;
+        entity.updatedAt = raw.updatedAt;
+        return entity;
+    }
+
+    async resolveDefaultSessaoLegislativaId(
+        tenantId: string,
+    ): Promise<string | null> {
+        const vigente = await this.findVigenteLegislaturaPt(tenantId);
+        if (!vigente) return null;
+        const sessao = vigente.sessoesLegislativas[0];
+        return sessao?.id ?? null;
+    }
+
+    async getLegislaturaContexto(tenantId: string) {
+        const legislaturas = await this.prisma.legislatura.findMany({
+            where: { tenantId, isRemoved: false },
+            orderBy: { numero: 'desc' },
+            include: {
+                sessoesLegislativas: { orderBy: { numero: 'asc' } },
+            },
+        });
+
+        const mapped = legislaturas.map((leg) => ({
+            id: leg.id,
+            numero: leg.numero,
+            sessoesLegislativas: leg.sessoesLegislativas.map((sl) => ({
+                id: sl.id,
+                numero: sl.numero,
+            })),
+        }));
+
+        const vigentePt = await this.findVigenteLegislaturaPt(tenantId);
+        const vigente = vigentePt
+            ? {
+                  legislaturaId: vigentePt.id,
+                  legislaturaNumero: vigentePt.numero,
+                  sessaoLegislativaId:
+                      vigentePt.sessoesLegislativas.at(-1)?.id ?? null,
+                  sessaoLegislativaNumero:
+                      vigentePt.sessoesLegislativas.at(-1)?.numero ?? null,
+              }
+            : null;
+
+        return { legislaturas: mapped, vigente };
+    }
+
+    /** Resolve legislatura legada (PT) a partir da legislatura em exercício (EN). */
+    private async findVigenteLegislaturaPt(tenantId: string) {
+        const current = await this.prisma.legislature.findFirst({
+            where: { tenantId, isCurrent: true, isRemoved: false },
+        });
+        if (!current) return null;
+
+        return this.prisma.legislatura.findFirst({
+            where: {
+                tenantId,
+                numero: current.number,
+                isRemoved: false,
+            },
+            include: {
+                sessoesLegislativas: { orderBy: { numero: 'asc' } },
             },
         });
     }

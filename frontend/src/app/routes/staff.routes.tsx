@@ -10,12 +10,14 @@ import { page } from './page-loader';
 export const staffRoutes = {
     element: <StaffRoute />,
     children: [
+        { path: 'sessoes/:id/painel', element: page(Pages.sessaoPainel) },
         {
             element: <Layout />,
             children: [
                 { index: true, element: page(Pages.dashboard) },
                 { path: 'materias', element: page(Pages.materias) },
                 { path: 'sessoes', element: page(Pages.sessoes) },
+                { path: 'sessoes/:id', element: page(Pages.sessaoDetalhe) },
                 { path: 'agenda', element: page(Pages.agenda) },
                 { path: 'relatorios', element: page(Pages.relatorios) },
                 { path: 'normas-juridicas', element: page(Pages.normas) },

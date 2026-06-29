@@ -44,9 +44,27 @@ export type PautaItemDeliberacao = {
 type Presenca = {
     parlamentarId?: string;
     presente: boolean;
-    situacao?: string;
-    parlamentar?: { id: string; pessoa?: { nome: string } };
+    situacao?: string | { value?: string };
+    parlamentar?: {
+        id: string;
+        nome?: string;
+        pessoa?: { nome: string };
+    };
 };
+
+function presencaNome(p: Presenca): string {
+    return (
+        p.parlamentar?.pessoa?.nome ??
+        p.parlamentar?.nome ??
+        '—'
+    );
+}
+
+function presencaEstaPresente(p: Presenca): boolean {
+    if (p.presente) return true;
+    if (typeof p.situacao === 'string') return p.situacao === 'PRESENTE';
+    return p.situacao?.value === 'PRESENTE';
+}
 
 type Props = {
     sessaoId: string;
@@ -234,10 +252,8 @@ export function SessaoDeliberacaoPanel({
                 <ul className="presenca-list">
                     {presencas.map((p, i) => (
                         <li key={p.parlamentarId ?? p.parlamentar?.id ?? i}>
-                            {p.parlamentar?.pessoa?.nome ?? '—'} —{' '}
-                            {p.presente || p.situacao === 'PRESENTE'
-                                ? 'Presente'
-                                : 'Ausente'}
+                            {presencaNome(p)} —{' '}
+                            {presencaEstaPresente(p) ? 'Presente' : 'Ausente'}
                         </li>
                     ))}
                 </ul>

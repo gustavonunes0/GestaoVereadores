@@ -15,7 +15,7 @@ import { FiltroLayout } from '../components/common/FiltroLayout';
 import { PageHeader } from '../components/PageHeader';
 import { ParlamentarComissoesDialog } from '../components/parlamentares/ParlamentarComissoesDialog';
 import { ParlamentarCreateDialog } from '../components/parlamentares/ParlamentarCreateDialog';
-import { ParlamentarEditDialog } from '../components/parlamentares/ParlamentarEditDialog';
+import { ParlamentarVerDialog } from '../components/parlamentares/ParlamentarVerDialog';
 import {
     ParlamentarListCard,
     ParlamentarTableLinkCell,
@@ -51,7 +51,7 @@ export function ParlamentaresPage() {
     const [filtrosApplied, setFiltrosApplied] = useState<Record<string, string>>({});
 
     const [dialogCriar, setDialogCriar] = useState(false);
-    const [dialogEditar, setDialogEditar] = useState<Parliamentarian | null>(null);
+    const [dialogVer, setDialogVer] = useState<string | null>(null);
     const [dialogDeletar, setDialogDeletar] = useState<Parliamentarian | null>(null);
     const [dialogMandatos, setDialogMandatos] = useState<Parliamentarian | null>(null);
     const [dialogComissoes, setDialogComissoes] = useState<Parliamentarian | null>(null);
@@ -232,7 +232,8 @@ export function ParlamentaresPage() {
                         </>
                     }
                     canWrite={canEdit}
-                    onEditar={canEdit ? setDialogEditar : undefined}
+                    onVer={(row) => setDialogVer(row.id)}
+                    onEditar={canEdit ? (row) => setDialogVer(row.id) : undefined}
                     onDeletar={canDelete ? setDialogDeletar : undefined}
                 />
             </section>
@@ -243,11 +244,11 @@ export function ParlamentaresPage() {
                     onSaved={() => void buscar()}
                 />
             )}
-            {dialogEditar && (
-                <ParlamentarEditDialog
-                    parlamentar={dialogEditar}
-                    onClose={() => setDialogEditar(null)}
-                    onSaved={() => void buscar()}
+            {dialogVer && (
+                <ParlamentarVerDialog
+                    parlamentarianId={dialogVer}
+                    onClose={() => setDialogVer(null)}
+                    onChanged={() => void buscar()}
                 />
             )}
             {dialogDeletar && (

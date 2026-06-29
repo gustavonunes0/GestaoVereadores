@@ -19,6 +19,7 @@ import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
 import { CurrentUser } from '../../../../auth/decorators/current-user.decorator';
 import {
     ADMIN_ONLY,
+    ALL_AUTHENTICATED,
     STAFF_AND_ABOVE,
 } from '../../../../auth/guards/guard-combos';
 import { ParlamentarianGuard } from '../../../../auth/guards/parliamentarian.guard';
@@ -47,9 +48,14 @@ import { GetParliamentarianByIdUseCase } from '../use-cases/get-parliamentarian-
 import { GetParliamentarianProfileUseCase } from '../use-cases/get-parliamentarian-profile.use-case';
 import { GrantParliamentarianAccessUseCase } from '../use-cases/grant-parliamentarian-access.use-case';
 import { ListParliamentariansUseCase } from '../use-cases/list-parliamentarians.use-case';
+import { ListActiveParliamentarianUsersUseCase } from '../use-cases/list-active-parliamentarian-users.use-case';
 import { RemoveParliamentarianUseCase } from '../use-cases/remove-parliamentarian.use-case';
 import { RevokeParliamentarianAccessUseCase } from '../use-cases/revoke-parliamentarian-access.use-case';
 import { UpdateParliamentarianUseCase } from '../use-cases/update-parliamentarian.use-case';
+import { UpdateMeuPerfilUseCase } from '../use-cases/update-meu-perfil.use-case';
+import { UpdateMinhaBiografiaUseCase } from '../use-cases/update-minha-biografia.use-case';
+import { UpdateMeuPerfilDto } from '../dto/update-meu-perfil.dto';
+import { UpdateMinhaBiografiaDto } from '../dto/update-minha-biografia.dto';
 import { ParliamentarianViewModel } from '../view-models/parliamentarian.view-model';
 
 @ApiTags('legislative-parlamentares')
@@ -59,12 +65,15 @@ export class ParliamentariansController {
     constructor(
         private readonly createParliamentarianUseCase: CreateParliamentarianUseCase,
         private readonly listParliamentariansUseCase: ListParliamentariansUseCase,
+        private readonly listActiveParliamentarianUsersUseCase: ListActiveParliamentarianUsersUseCase,
         private readonly getParliamentarianByIdUseCase: GetParliamentarianByIdUseCase,
         private readonly getParliamentarianProfileUseCase: GetParliamentarianProfileUseCase,
         private readonly grantParliamentarianAccessUseCase: GrantParliamentarianAccessUseCase,
         private readonly revokeParliamentarianAccessUseCase: RevokeParliamentarianAccessUseCase,
         private readonly updateParliamentarianUseCase: UpdateParliamentarianUseCase,
         private readonly removeParliamentarianUseCase: RemoveParliamentarianUseCase,
+        private readonly updateMeuPerfilUseCase: UpdateMeuPerfilUseCase,
+        private readonly updateMinhaBiografiaUseCase: UpdateMinhaBiografiaUseCase,
     ) {}
 
     @Get('me/perfil')
@@ -93,6 +102,12 @@ export class ParliamentariansController {
         @Query() query: ListParliamentariansQueryDto,
     ) {
         return this.listParliamentariansUseCase.execute(tenantId, query);
+    }
+
+    @TenantRoles(...ALL_AUTHENTICATED)
+    @Get('usuarios/ativos')
+    listUsuariosAtivos(@TenantId() tenantId: string) {
+        return this.listActiveParliamentarianUsersUseCase.execute(tenantId);
     }
 
     @TenantRoles(...STAFF_AND_ABOVE)
@@ -193,6 +208,32 @@ export class ParliamentariansController {
         } catch (error) {
             this.handleError(error);
         }
+    }
+
+    @Patch('me/perfil')
+    @UseGuards(ParlamentarianGuard)
+    async updateMeuPerfil(
+        @TenantId() tenantId: string,
+        @CurrentUser() user: AuthenticatedUser,
+        @Body() dto: UpdateMeuPerfilDto,
+    ) {
+        if (!isParlamentarianUser(user)) {
+            throw new NotFoundException('Parlamentar não encontrado');
+        }
+        return this.updateMeuPerfilUseCase.execute(user.parliamentarianId, tenantId, dto);
+    }
+
+    @Patch('me/biografia')
+    @UseGuards(ParlamentarianGuard)
+    async updateMinhaBiografia(
+        @TenantId() tenantId: string,
+        @CurrentUser() user: AuthenticatedUser,
+        @Body() dto: UpdateMinhaBiografiaDto,
+    ) {
+        if (!isParlamentarianUser(user)) {
+            throw new NotFoundException('Parlamentar não encontrado');
+        }
+        return this.updateMinhaBiografiaUseCase.execute(user.parliamentarianId, tenantId, dto);
     }
 
     private handleError(error: unknown): never {

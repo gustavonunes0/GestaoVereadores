@@ -6,7 +6,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { atosApi, type Ato, type CreateAtoDto } from '../../api/atos.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { DatePicker, Dropdown, FileUpload, mapDropdownOptions, withEmptyOption } from '../ui';
+import { DatePicker, Dropdown, FileUpload, mapDropdownOptions } from '../ui';
 
 interface Props {
     ato: Ato;
@@ -24,7 +24,7 @@ export function AtoEditDialog({ ato, onClose, onSaved }: Props) {
         classificacaoId: ato.classificacao?.id,
         numero: ato.numero,
         dataAto: ato.dataAto,
-        dataPublicacao: ato.dataPublicacao,
+        dataPublicacaoInicio: ato.dataPublicacaoInicio,
         ementa: ato.ementa,
     });
 
@@ -34,7 +34,7 @@ export function AtoEditDialog({ ato, onClose, onSaved }: Props) {
             classificacaoId: ato.classificacao?.id,
             numero: ato.numero,
             dataAto: ato.dataAto,
-            dataPublicacao: ato.dataPublicacao,
+            dataPublicacaoInicio: ato.dataPublicacaoInicio,
             ementa: ato.ementa,
         });
     }, [ato]);
@@ -44,10 +44,20 @@ export function AtoEditDialog({ ato, onClose, onSaved }: Props) {
     }
 
     async function handleSubmit() {
-        if (!form.tipoId || !form.numero?.trim()) return;
+        if (!form.tipoId || !form.classificacaoId || !form.numero?.trim()) return;
         setLoading(true);
         try {
-            await atosApi.update(ato.id, form);
+            const payload: Partial<CreateAtoDto> = {
+                tipoId: form.tipoId,
+                classificacaoId: form.classificacaoId,
+                numero: form.numero.trim(),
+                ...(form.dataAto ? { dataAto: form.dataAto } : {}),
+                ...(form.dataPublicacaoInicio
+                    ? { dataPublicacaoInicio: form.dataPublicacaoInicio }
+                    : { dataPublicacaoInicio: undefined }),
+                ...(form.ementa?.trim() ? { ementa: form.ementa.trim() } : {}),
+            };
+            await atosApi.update(ato.id, payload);
             if (anexo) {
                 await atosApi.uploadAnexo(ato.id, anexo);
             }
@@ -96,17 +106,12 @@ export function AtoEditDialog({ ato, onClose, onSaved }: Props) {
                             />
                         </div>
                         <div className="sigl-filtro-campo">
-                            <label htmlFor="ae-class">Classificação</label>
+                            <label htmlFor="ae-class">Classificação *</label>
                             <Dropdown
                                 id="ae-class"
                                 value={form.classificacaoId ?? ''}
-                                options={withEmptyOption(
-                                    mapDropdownOptions(classificacoesAto, 'nome', 'id'),
-                                    'Nenhuma',
-                                )}
-                                onChange={(v) =>
-                                    patch({ classificacaoId: v ? String(v) : undefined })
-                                }
+                                options={mapDropdownOptions(classificacoesAto, 'nome', 'id')}
+                                onChange={(v) => patch({ classificacaoId: String(v) })}
                             />
                         </div>
                         <div className="sigl-filtro-campo">
@@ -149,10 +154,14 @@ export function AtoEditDialog({ ato, onClose, onSaved }: Props) {
                         <DatePicker
                             id="ae-pub"
                             label="Data de publicação"
-                            value={form.dataPublicacao ? new Date(form.dataPublicacao) : null}
+                            value={
+                                form.dataPublicacaoInicio
+                                    ? new Date(form.dataPublicacaoInicio)
+                                    : null
+                            }
                             onChange={(d) =>
                                 patch({
-                                    dataPublicacao: d
+                                    dataPublicacaoInicio: d
                                         ? d.toISOString().split('T')[0]
                                         : undefined,
                                 })

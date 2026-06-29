@@ -7,10 +7,10 @@ export class SetAutorParlamentarDto {
     parliamentarianId!: string;
 }
 
-export class SetAutorExternoDto {
-    @ApiProperty({ description: 'Autor externo cadastrado no tenant' })
+export class SetTenantPartnerDto {
+    @ApiProperty({ description: 'TenantPartner cadastrado no tenant' })
     @IsUUID()
-    autorExternoId!: string;
+    tenantPartnerId!: string;
 }
 
 export class AddCoautorMateriaDto {

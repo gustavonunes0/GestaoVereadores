@@ -9,7 +9,7 @@ export type CamaraUserProfile = {
     email: string;
     firstName: string;
     lastName: string;
-    cpf: string;
+    cpf: string | null;
 };
 
 export abstract class CamaraAuthRepository {
@@ -36,4 +36,6 @@ export abstract class CamaraAuthRepository {
 
     abstract touchLastAccess(tenantUserId: string): Promise<void>;
     abstract touchParlamentarianLastAccess(parliamentarianUserId: string): Promise<void>;
+
+    abstract isPartnerOnlyUser(userId: string): Promise<boolean>;
 }

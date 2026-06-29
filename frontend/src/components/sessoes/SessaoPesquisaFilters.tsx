@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { InputText } from 'primereact/inputtext';
 import { PesquisaFiltersCard } from '../common/PesquisaFiltersCard';
+import { Dropdown, withEmptyOption } from '../ui';
 import { MESES_OPCOES, anosPesquisaSessao } from '../../utils/sessaoPesquisa';
 
 export type SessaoFiltrosForm = {
@@ -160,63 +162,93 @@ export function SessaoPesquisaFilters({
         setPeriodoModoState('intervalo');
     }
 
-    const fields = (
+    const campos = (
         <>
-            <div className="sessao-filters-section">
-                <p className="sessao-filters-section__title">Contexto</p>
-                <div className="sessao-filters-grid sessao-filters-grid--2">
-                    <label className="filter-field">
-                        <span className="filter-field__label">Legislatura</span>
-                        <select
-                            value={filtros.legislaturaId}
-                            onChange={(e) =>
-                                onChange({
-                                    legislaturaId: e.target.value,
-                                    sessaoLegislativaId: '',
-                                })
-                            }
-                        >
-                            <option value="">Todas</option>
-                            {legislaturas.map((l) => (
-                                <option key={l.id} value={l.id}>
-                                    {l.numero}ª legislatura
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="filter-field">
-                        <span className="filter-field__label">
-                            Sessão legislativa
-                        </span>
-                        <select
-                            value={filtros.sessaoLegislativaId}
-                            onChange={(e) =>
-                                onChange({
-                                    sessaoLegislativaId: e.target.value,
-                                })
-                            }
-                            disabled={!filtros.legislaturaId}
-                        >
-                            <option value="">
-                                {filtros.legislaturaId
-                                    ? 'Todas na legislatura'
-                                    : 'Selecione a legislatura'}
-                            </option>
-                            {sessoesLeg.map((s) => (
-                                <option key={s.id} value={s.id}>
-                                    {s.numero}ª sessão legislativa
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
+            <div className="sigl-filtro-campo">
+                <label htmlFor="sf-legislatura">Legislatura</label>
+                <Dropdown
+                    id="sf-legislatura"
+                    value={filtros.legislaturaId}
+                    options={withEmptyOption(
+                        legislaturas.map((l) => ({
+                            label: `${l.numero}ª legislatura`,
+                            value: l.id,
+                        })),
+                        'Todas',
+                    )}
+                    onChange={(v) =>
+                        onChange({
+                            legislaturaId: String(v),
+                            sessaoLegislativaId: '',
+                        })
+                    }
+                    placeholder="Todas"
+                />
             </div>
 
-            <div className="sessao-filters-section">
+            <div className="sigl-filtro-campo">
+                <label htmlFor="sf-sessao-leg">Sessão legislativa</label>
+                <Dropdown
+                    id="sf-sessao-leg"
+                    value={filtros.sessaoLegislativaId}
+                    options={withEmptyOption(
+                        sessoesLeg.map((s) => ({
+                            label: `${s.numero}ª sessão legislativa`,
+                            value: s.id,
+                        })),
+                        filtros.legislaturaId
+                            ? 'Todas na legislatura'
+                            : 'Selecione a legislatura',
+                    )}
+                    onChange={(v) =>
+                        onChange({ sessaoLegislativaId: String(v) })
+                    }
+                    disabled={!filtros.legislaturaId}
+                    placeholder={
+                        filtros.legislaturaId
+                            ? 'Todas na legislatura'
+                            : 'Selecione a legislatura'
+                    }
+                />
+            </div>
+
+            <div className="sigl-filtro-campo">
+                <label htmlFor="sf-tipo">Tipo de sessão</label>
+                <Dropdown
+                    id="sf-tipo"
+                    value={filtros.tipoSessaoId}
+                    options={withEmptyOption(
+                        tiposSessao.map((t) => ({
+                            label: t.nome,
+                            value: t.id,
+                        })),
+                        'Todos os tipos',
+                    )}
+                    onChange={(v) => onChange({ tipoSessaoId: String(v) })}
+                    placeholder="Todos os tipos"
+                />
+            </div>
+
+            <div className="sigl-filtro-campo">
+                <label htmlFor="sf-situacao">Situação</label>
+                <Dropdown
+                    id="sf-situacao"
+                    value={filtros.situacaoId}
+                    options={withEmptyOption(
+                        situacoesSessao.map((s) => ({
+                            label: s.nome,
+                            value: s.id,
+                        })),
+                        'Todas as situações',
+                    )}
+                    onChange={(v) => onChange({ situacaoId: String(v) })}
+                    placeholder="Todas as situações"
+                />
+            </div>
+
+            <div className="sigl-filtro-campo sigl-col-full">
                 <div className="sessao-filters-section__row">
-                    <p className="sessao-filters-section__title">
-                        Período da sessão
-                    </p>
+                    <span className="filter-field__label">Período da sessão</span>
                     <div
                         className="segmented"
                         role="tablist"
@@ -242,7 +274,6 @@ export function SessaoPesquisaFilters({
                         </button>
                     </div>
                 </div>
-
                 <div className="sessao-filters-presets">
                     <button
                         type="button"
@@ -266,135 +297,87 @@ export function SessaoPesquisaFilters({
                         Últimos 30 dias
                     </button>
                 </div>
-
-                {periodoModo === 'rapido' ? (
-                    <div className="sessao-filters-grid sessao-filters-grid--3">
-                        <label className="filter-field">
-                            <span className="filter-field__label">Ano</span>
-                            <select
-                                value={filtros.ano}
-                                onChange={(e) =>
-                                    onChange({ ano: e.target.value })
-                                }
-                            >
-                                <option value="">Qualquer</option>
-                                {anos.map((a) => (
-                                    <option key={a} value={String(a)}>
-                                        {a}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                        <label className="filter-field">
-                            <span className="filter-field__label">Mês</span>
-                            <select
-                                value={filtros.mes}
-                                onChange={(e) =>
-                                    onChange({ mes: e.target.value })
-                                }
-                                disabled={!filtros.ano}
-                            >
-                                {MESES_OPCOES.map((m) => (
-                                    <option
-                                        key={m.value || 'v'}
-                                        value={m.value}
-                                    >
-                                        {m.value
-                                            ? (MESES_LABEL[m.value] ?? m.label)
-                                            : 'Qualquer'}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                        <label className="filter-field">
-                            <span className="filter-field__label">Dia</span>
-                            <input
-                                type="number"
-                                min={1}
-                                max={31}
-                                value={filtros.dia}
-                                onChange={(e) =>
-                                    onChange({ dia: e.target.value })
-                                }
-                                placeholder="—"
-                                disabled={!filtros.mes}
-                            />
-                        </label>
-                    </div>
-                ) : (
-                    <div className="sessao-filters-grid sessao-filters-grid--2">
-                        <label className="filter-field">
-                            <span className="filter-field__label">
-                                Data início (de)
-                            </span>
-                            <input
-                                type="date"
-                                value={filtros.dataDe}
-                                onChange={(e) =>
-                                    onChange({ dataDe: e.target.value })
-                                }
-                            />
-                        </label>
-                        <label className="filter-field">
-                            <span className="filter-field__label">
-                                Data início (até)
-                            </span>
-                            <input
-                                type="date"
-                                value={filtros.dataAte}
-                                onChange={(e) =>
-                                    onChange({ dataAte: e.target.value })
-                                }
-                            />
-                        </label>
-                    </div>
-                )}
             </div>
 
-            <div className="sessao-filters-section">
-                <p className="sessao-filters-section__title">Classificação</p>
-                <div className="sessao-filters-grid sessao-filters-grid--2">
-                    <label className="filter-field">
-                        <span className="filter-field__label">
-                            Tipo de sessão
-                        </span>
-                        <select
-                            value={filtros.tipoSessaoId}
+            {periodoModo === 'rapido' ? (
+                <>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="sf-ano">Ano</label>
+                        <Dropdown
+                            id="sf-ano"
+                            value={filtros.ano}
+                            options={withEmptyOption(
+                                anos.map((a) => ({
+                                    label: String(a),
+                                    value: String(a),
+                                })),
+                                'Qualquer',
+                            )}
+                            onChange={(v) => onChange({ ano: String(v) })}
+                            placeholder="Qualquer"
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="sf-mes">Mês</label>
+                        <Dropdown
+                            id="sf-mes"
+                            value={filtros.mes}
+                            options={MESES_OPCOES.map((m) => ({
+                                label: m.value
+                                    ? (MESES_LABEL[m.value] ?? m.label)
+                                    : 'Qualquer',
+                                value: m.value,
+                            }))}
+                            onChange={(v) => onChange({ mes: String(v) })}
+                            disabled={!filtros.ano}
+                            placeholder="Qualquer"
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="sf-dia">Dia</label>
+                        <InputText
+                            id="sf-dia"
+                            type="number"
+                            min={1}
+                            max={31}
+                            value={filtros.dia}
+                            onChange={(e) => onChange({ dia: e.target.value })}
+                            placeholder="—"
+                            disabled={!filtros.mes}
+                        />
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="sf-data-de">Data início (de)</label>
+                        <InputText
+                            id="sf-data-de"
+                            type="date"
+                            value={filtros.dataDe}
                             onChange={(e) =>
-                                onChange({ tipoSessaoId: e.target.value })
+                                onChange({ dataDe: e.target.value })
                             }
-                        >
-                            <option value="">Todos os tipos</option>
-                            {tiposSessao.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.nome}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="filter-field">
-                        <span className="filter-field__label">Situação</span>
-                        <select
-                            value={filtros.situacaoId}
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="sf-data-ate">Data início (até)</label>
+                        <InputText
+                            id="sf-data-ate"
+                            type="date"
+                            value={filtros.dataAte}
                             onChange={(e) =>
-                                onChange({ situacaoId: e.target.value })
+                                onChange({ dataAte: e.target.value })
                             }
-                        >
-                            <option value="">Todas as situações</option>
-                            {situacoesSessao.map((s) => (
-                                <option key={s.id} value={s.id}>
-                                    {s.nome}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
-            </div>
+                        />
+                    </div>
+                </>
+            )}
         </>
     );
 
     if (embedded) {
-        return <div className="col-span-12">{fields}</div>;
+        return campos;
     }
 
     return (
@@ -408,7 +391,7 @@ export function SessaoPesquisaFilters({
             onPesquisar={onPesquisar}
             onClear={onClear}
         >
-            {fields}
+            <div className="sigl-filtro-campos">{campos}</div>
         </PesquisaFiltersCard>
     );
 }

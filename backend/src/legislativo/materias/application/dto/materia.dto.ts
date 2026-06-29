@@ -73,7 +73,7 @@ export class CreateMateriaDto {
 
     @IsOptional()
     @IsUUID()
-    autorExternoId?: string;
+    tenantPartnerId?: string;
 
     @IsOptional()
     @IsString()

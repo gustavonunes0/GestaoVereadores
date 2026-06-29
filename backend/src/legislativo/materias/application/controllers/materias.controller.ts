@@ -27,13 +27,13 @@ import { AdicionarMateriaAutorDto } from '../dto/materia-autor.dto';
 import { CreateMateriaDto, FilterMateriaDto } from '../dto/materia.dto';
 import {
     AddCoautorMateriaDto,
-    SetAutorExternoDto,
+    SetTenantPartnerDto,
     SetAutorParlamentarDto,
     SetRelatorMateriaDto,
 } from '../dto/matter-autoria.dto';
 import { UpdateMateriaDto } from '../dto/update-materia.dto';
 import {
-    GuestUserNotFoundForMatterError,
+    TenantPartnerNotFoundForMatterError,
     MatterAuthorshipValidationError,
     MatterCoauthorAlreadyExistsError,
     MatterCoauthorNotFoundError,
@@ -55,7 +55,7 @@ import {
     AddMatterCoauthorUseCase,
     RemoveMatterCoauthorUseCase,
 } from '../use-cases/manage-matter-coauthors.use-case';
-import { SetMatterAutorExternoUseCase } from '../use-cases/set-matter-autor-externo.use-case';
+import { SetMatterTenantPartnerUseCase } from '../use-cases/set-matter-autor-externo.use-case';
 import { SetMatterAutorParlamentarUseCase } from '../use-cases/set-matter-autor-parlamentar.use-case';
 import { SetMatterRelatorUseCase } from '../use-cases/set-matter-relator.use-case';
 import { ListMateriaAutoresUseCase } from '../use-cases/list-materia-autores.use-case';
@@ -70,12 +70,15 @@ import { TramitarMateriaDto } from '../dto/tramitar-materia.dto';
 import { CreatePublicacaoDto } from '../dto/create-publicacao.dto';
 import { TramitarMateriaUseCase } from '../use-cases/tramitar-materia.use-case';
 import { AddPublicacaoMateriaUseCase } from '../use-cases/add-publicacao-materia.use-case';
-import { ListAutoresExternosUseCase } from '../use-cases/list-autores-externos.use-case';
+import { ListTenantPartnersForMatterUseCase } from '../use-cases/list-autores-externos.use-case';
 import { ListMatterAuthorOptionsUseCase } from '../use-cases/list-matter-author-options.use-case';
 import { UploadMatterTextoOriginalUseCase } from '../use-cases/upload-matter-texto-original.use-case';
-import { Req } from '@nestjs/common';
+import { ListMinhasMateriasUseCase } from '../use-cases/list-minhas-materias.use-case';
+import { MinhasMateriasQueryDto } from '../dto/list-minhas-materias-query.dto';
+import { ParlamentarianGuard } from '../../../../auth/guards/parliamentarian.guard';
+import { Req, UseGuards } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import { RequestWithTenant } from '../../../../common/types/authenticated-request';
+import { RequestWithTenant, isParlamentarianUser } from '../../../../common/types/authenticated-request';
 
 @ApiTags('legislative-materias')
 @ApiBearerAuth()
@@ -96,15 +99,16 @@ export class MateriasController {
         private readonly getMatterWorkflow: GetMatterWorkflowUseCase,
         private readonly getMatterAuthorship: GetMatterAuthorshipUseCase,
         private readonly setAutorParlamentar: SetMatterAutorParlamentarUseCase,
-        private readonly setAutorExterno: SetMatterAutorExternoUseCase,
+        private readonly setTenantPartner: SetMatterTenantPartnerUseCase,
         private readonly addCoautor: AddMatterCoauthorUseCase,
         private readonly removeCoautor: RemoveMatterCoauthorUseCase,
         private readonly setRelator: SetMatterRelatorUseCase,
         private readonly tramitarMateria: TramitarMateriaUseCase,
         private readonly addPublicacao: AddPublicacaoMateriaUseCase,
-        private readonly listAutoresExternos: ListAutoresExternosUseCase,
+        private readonly listTenantPartnersForMatter: ListTenantPartnersForMatterUseCase,
         private readonly listMatterAuthorOptions: ListMatterAuthorOptionsUseCase,
         private readonly uploadMatterTextoOriginal: UploadMatterTextoOriginalUseCase,
+        private readonly listMinhasMaterias: ListMinhasMateriasUseCase,
     ) {}
 
     @Get('status')
@@ -115,6 +119,37 @@ export class MateriasController {
     @Get()
     findAll(@TenantId() tenantId: string, @Query() filters: FilterMateriaDto) {
         return this.listMaterias.execute(tenantId, filters);
+    }
+
+    @Get('minhas')
+    @UseGuards(ParlamentarianGuard)
+    minhas(
+        @Query() filtros: MinhasMateriasQueryDto,
+        @TenantId() tenantId: string,
+        @CurrentUser() user: AuthenticatedUser,
+    ) {
+        if (!isParlamentarianUser(user)) {
+            throw new BadRequestException('Acesso permitido apenas para parlamentares autenticados');
+        }
+        return this.listMinhasMaterias.execute(user.parliamentarianId, tenantId, filtros);
+    }
+
+    @TenantRoles(...ALL_AUTHENTICATED)
+    @Get('tenant-partners')
+    listarTenantPartners(
+        @TenantId() tenantId: string,
+        @Query('tipoAutorId') tipoAutorId?: string,
+    ) {
+        return this.listTenantPartnersForMatter.execute(tenantId, tipoAutorId);
+    }
+
+    @TenantRoles(...ALL_AUTHENTICATED)
+    @Get('opcoes-autor')
+    listarOpcoesAutor(
+        @TenantId() tenantId: string,
+        @Query('tipoAutorId') tipoAutorId: string,
+    ) {
+        return this.listMatterAuthorOptions.execute(tenantId, tipoAutorId);
     }
 
     @Get(':id/fluxo')
@@ -157,13 +192,13 @@ export class MateriasController {
 
     @TenantRoles(...STAFF_AND_ABOVE)
     @Put(':id/autoria/autor-externo')
-    async definirAutorExterno(
+    async definirTenantPartner(
         @TenantId() tenantId: string,
         @Param('id', ParseUUIDPipe) id: string,
-        @Body() dto: SetAutorExternoDto,
+        @Body() dto: SetTenantPartnerDto,
     ) {
         try {
-            return await this.setAutorExterno.execute(tenantId, id, dto);
+            return await this.setTenantPartner.execute(tenantId, id, dto);
         } catch (error) {
             this.handleError(error);
         }
@@ -183,7 +218,7 @@ export class MateriasController {
         }
     }
 
-    @TenantRoles(...ADMIN_ONLY)
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Delete(':id/autoria/coautores/:coauthorId')
     async removerCoautor(
         @TenantId() tenantId: string,
@@ -272,7 +307,7 @@ export class MateriasController {
         }
     }
 
-    @TenantRoles(...ADMIN_ONLY)
+    @TenantRoles(...STAFF_AND_ABOVE)
     @Patch(':id')
     async update(
         @TenantId() tenantId: string,
@@ -337,24 +372,6 @@ export class MateriasController {
         return this.removeMateria.execute(tenantId, id);
     }
 
-    // ── Novos endpoints (SPEC-001 / PROMPTS SESSÃO 2) ─────────────────────
-
-    @Get('autores-externos')
-    listarAutoresExternos(
-        @TenantId() tenantId: string,
-        @Query('tipoAutorId') tipoAutorId?: string,
-    ) {
-        return this.listAutoresExternos.execute(tenantId, tipoAutorId);
-    }
-
-    @Get('opcoes-autor')
-    listarOpcoesAutor(
-        @TenantId() tenantId: string,
-        @Query('tipoAutorId') tipoAutorId: string,
-    ) {
-        return this.listMatterAuthorOptions.execute(tenantId, tipoAutorId);
-    }
-
     @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/tramitar')
     async tramitar(
@@ -408,7 +425,7 @@ export class MateriasController {
         if (
             error instanceof MatterNotFoundError ||
             error instanceof ParliamentarianNotFoundForMatterError ||
-            error instanceof GuestUserNotFoundForMatterError ||
+            error instanceof TenantPartnerNotFoundForMatterError ||
             error instanceof TipoAutorNotFoundForMatterError ||
             error instanceof MatterCoauthorNotFoundError
         ) {

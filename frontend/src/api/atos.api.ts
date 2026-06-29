@@ -7,8 +7,12 @@ export interface Ato {
     classificacao?: { id: string; nome: string };
     identificador?: { id: string; nome: string };
     numero: string;
+    dataInicio?: string;
+    dataFim?: string;
+    dataPublicacaoInicio?: string;
+    dataPublicacaoFim?: string;
     dataAto?: string;
-    dataPublicacao?: string;
+    mensagem?: string;
     ementa?: string;
     anexoUrl?: string;
     textoUrl?: string;
@@ -16,11 +20,15 @@ export interface Ato {
 
 export interface CreateAtoDto {
     tipoId: string;
-    classificacaoId?: string;
+    classificacaoId: string;
     identificadorId?: string;
     numero: string;
+    dataInicio?: string;
+    dataFim?: string;
+    dataPublicacaoInicio?: string;
+    dataPublicacaoFim?: string;
     dataAto?: string;
-    dataPublicacao?: string;
+    mensagem?: string;
     ementa?: string;
 }
 

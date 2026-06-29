@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { IdentidadeModule } from '../../identidade/identidade.module';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { MateriasController } from './application/controllers/materias.controller';
 import { AddMateriaAutorUseCase } from './application/use-cases/add-materia-autor.use-case';
@@ -11,7 +12,7 @@ import {
     AddMatterCoauthorUseCase,
     RemoveMatterCoauthorUseCase,
 } from './application/use-cases/manage-matter-coauthors.use-case';
-import { SetMatterAutorExternoUseCase } from './application/use-cases/set-matter-autor-externo.use-case';
+import { SetMatterTenantPartnerUseCase } from './application/use-cases/set-matter-autor-externo.use-case';
 import { SetMatterAutorParlamentarUseCase } from './application/use-cases/set-matter-autor-parlamentar.use-case';
 import { SetMatterRelatorUseCase } from './application/use-cases/set-matter-relator.use-case';
 import { ListMateriaAutoresUseCase } from './application/use-cases/list-materia-autores.use-case';
@@ -23,9 +24,10 @@ import { RemoveMateriaUseCase } from './application/use-cases/remove-materia.use
 import { UpdateMateriaUseCase } from './application/use-cases/update-materia.use-case';
 import { TramitarMateriaUseCase } from './application/use-cases/tramitar-materia.use-case';
 import { AddPublicacaoMateriaUseCase } from './application/use-cases/add-publicacao-materia.use-case';
-import { ListAutoresExternosUseCase } from './application/use-cases/list-autores-externos.use-case';
+import { ListTenantPartnersForMatterUseCase } from './application/use-cases/list-autores-externos.use-case';
 import { ListMatterAuthorOptionsUseCase } from './application/use-cases/list-matter-author-options.use-case';
 import { UploadMatterTextoOriginalUseCase } from './application/use-cases/upload-matter-texto-original.use-case';
+import { ListMinhasMateriasUseCase } from './application/use-cases/list-minhas-materias.use-case';
 import { MvpMatterCommitteeOpinionGate } from './infra/gates/mvp-matter-committee-opinion.gate';
 import { PrismaMateriaRepository } from './infra/prisma/prisma-materia.repository';
 import { PrismaTramitacaoHistoricoRepository } from './infra/prisma/prisma-tramitacao-historico.repository';
@@ -36,7 +38,7 @@ import {
 import { TramitacaoHistoricoRepository } from './domain/repositories/tramitacao-historico.repository';
 
 @Module({
-    imports: [PrismaModule],
+    imports: [PrismaModule, IdentidadeModule],
     controllers: [MateriasController],
     providers: [
         CreateMateriaUseCase,
@@ -53,15 +55,16 @@ import { TramitacaoHistoricoRepository } from './domain/repositories/tramitacao-
         RemoveMateriaAutorUseCase,
         GetMatterAuthorshipUseCase,
         SetMatterAutorParlamentarUseCase,
-        SetMatterAutorExternoUseCase,
+        SetMatterTenantPartnerUseCase,
         AddMatterCoauthorUseCase,
         RemoveMatterCoauthorUseCase,
         SetMatterRelatorUseCase,
         TramitarMateriaUseCase,
         AddPublicacaoMateriaUseCase,
-        ListAutoresExternosUseCase,
+        ListTenantPartnersForMatterUseCase,
         ListMatterAuthorOptionsUseCase,
         UploadMatterTextoOriginalUseCase,
+        ListMinhasMateriasUseCase,
         PrismaMateriaRepository,
         PrismaTramitacaoHistoricoRepository,
         MvpMatterCommitteeOpinionGate,

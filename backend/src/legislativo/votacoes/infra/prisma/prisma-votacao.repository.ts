@@ -7,7 +7,9 @@ import {
 import {
     ResultadoPauta,
     ResultadoVotacao,
+    StatusMateria,
     TipoVotacao,
+    TipoPautaItem,
     Prisma,
     Voto,
 } from '@prisma/client';
@@ -85,6 +87,14 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         sessaoId: string,
         requerQuorum: boolean,
     ) {
+        const sessao = await this.prisma.sessaoPlenaria.findFirst({
+            where: { id: sessaoId, ...tenantWhere(tenantId), isRemoved: false },
+            select: { modoTeste: true },
+        });
+        if (sessao?.modoTeste) {
+            return;
+        }
+
         const [presencas, totalParlamentares] = await Promise.all([
             this.prisma.presencaSessao.findMany({
                 where: { sessaoId },
@@ -129,7 +139,7 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         if (!pautaItem) {
             throw new NotFoundException('Item de pauta não encontrado');
         }
-        if (pautaItem.materia.tenantId !== tenantId) {
+        if (pautaItem.materia && pautaItem.materia.tenantId !== tenantId) {
             throw new NotFoundException('Matéria não encontrada');
         }
 
@@ -258,6 +268,40 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             pautaItemId,
         );
 
+        // Apenas matéria e parecer de comissão podem ir à votação
+        if (
+            pautaItem.categoria !== 'MATERIA' &&
+            pautaItem.categoria !== 'COMISSAO'
+        ) {
+            throw new BadRequestException(
+                'Apenas matérias e pareceres de comissão podem ser votados',
+            );
+        }
+        if (!pautaItem.materiaId) {
+            throw new BadRequestException(
+                'Item de pauta sem matéria associada não pode ser votado',
+            );
+        }
+        const materiaId: string = pautaItem.materiaId;
+
+        // Bloqueia votação em itens de leitura ou comunicação
+        const tipoPautaItemAtual = pautaItem.tipoPautaItem as TipoPautaItem;
+        if (
+            tipoPautaItemAtual === TipoPautaItem.LEITURA ||
+            tipoPautaItemAtual === TipoPautaItem.COMUNICACAO
+        ) {
+            throw new BadRequestException(
+                'Item de pauta do tipo LEITURA ou COMUNICAÇÃO não permite votação',
+            );
+        }
+
+        // Bloqueia se item já foi deliberado
+        if (pautaItem.resultado !== null) {
+            throw new BadRequestException(
+                'Item de pauta já possui resultado registrado',
+            );
+        }
+
         assertVotacaoNaoExisteParaPauta(!!pautaItem.votacao);
 
         await this.assertQuorumSessao(
@@ -266,14 +310,50 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             sessao.tipoSessao.requerQuorum,
         );
 
-        return this.prisma.votacao.create({
+        // Buscar tipoQuorum do tipo de matéria e totalMembros
+        const materiaComTipo = await this.prisma.materia.findUnique({
+            where: { id: materiaId },
+            include: { tipo: true },
+        });
+        const tipoQuorum = (materiaComTipo?.tipo?.tipoQuorum ?? 'MAIORIA_SIMPLES') as any;
+
+        const totalMembros = await this.prisma.parlamentar.count({
+            where: { ...tenantWhere(tenantId), ativo: true },
+        });
+
+        const votacao = await this.prisma.votacao.create({
             data: {
                 pautaItemId,
                 tipoVotacao: dto.tipoVotacao,
                 exigePresenca: dto.exigePresenca ?? true,
+                tipoQuorum,
+                totalMembros,
             },
             include: votacaoInclude.include,
         });
+
+        // Tramitação da matéria só ocorre na votação da própria matéria.
+        // Parecer de comissão não altera o status da matéria objeto.
+        if (
+            pautaItem.categoria === 'MATERIA' &&
+            pautaItem.materia?.status === StatusMateria.EM_PAUTA
+        ) {
+            try {
+                await this.materiaRepository.tramitarMateria(
+                    tenantId,
+                    materiaId,
+                    {
+                        action: MatterTramitationAction.INICIAR_VOTACAO,
+                        observacao: 'Votação aberta na sessão plenária',
+                    },
+                );
+            } catch (error) {
+                await this.prisma.votacao.delete({ where: { id: votacao.id } });
+                throw error;
+            }
+        }
+
+        return votacao;
     }
 
     async obterVotacao(
@@ -518,7 +598,8 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
     private async aplicarResultadoNaPautaEMateria(
         tenantId: string,
         pautaItemId: string,
-        materiaId: string,
+        materiaId: string | null,
+        categoria: string,
         payload: ReturnType<typeof montarResultadoVotacao>,
     ) {
         if (payload.atualizaPauta && payload.resultadoPauta) {
@@ -528,7 +609,13 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             });
         }
 
-        if (payload.atualizaMateria && payload.resultadoPauta) {
+        // Parecer de comissão não altera o status da matéria objeto.
+        if (
+            categoria === 'MATERIA' &&
+            materiaId &&
+            payload.atualizaMateria &&
+            payload.resultadoPauta
+        ) {
             await this.materiaRepository.tramitarMateria(tenantId, materiaId, {
                 action: this.mapResultadoParaAcao(
                     payload.resultadoPauta as 'APROVADO' | 'REJEITADO',
@@ -580,6 +667,7 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             tenantId,
             pautaItemId,
             pautaItem.materiaId,
+            pautaItem.categoria,
             payload,
         );
 
@@ -612,6 +700,10 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         entity.quorumVotacao = raw.quorumVotacao;
         entity.motivoEmpate = raw.motivoEmpate;
         entity.observacoes = raw.observacoes;
+        entity.tipoQuorum = raw.tipoQuorum as unknown as import('../../domain/enums/tipo-quorum.enum').TipoQuorum | null;
+        entity.totalMembros = raw.totalMembros;
+        entity.votoQualidade = raw.votoQualidade;
+        entity.presidenteId = raw.presidenteId;
         entity.createdAt = raw.createdAt;
         return entity;
     }
@@ -630,7 +722,8 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         votacaoId: string,
         pautaItemId: string,
         tenantId: string,
-        materiaId: string,
+        materiaId: string | null,
+        categoria: string,
         dados: EncerrarVotacaoDados,
     ): Promise<void> {
         const resultadoPauta =
@@ -654,6 +747,10 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
                     motivoEmpate: dados.motivoEmpate,
                     observacoes: dados.observacoes,
                     realizadaAt: new Date(),
+                    tipoQuorum: dados.tipoQuorum as unknown as any,
+                    totalMembros: dados.totalMembros,
+                    votoQualidade: dados.votoQualidade ?? false,
+                    presidenteId: dados.presidenteId,
                 },
             });
 
@@ -665,9 +762,12 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             }
         });
 
+        // Parecer de comissão não altera o status da matéria objeto.
         if (
-            dados.resultado === ResultadoVotacaoEnum.APROVADO ||
-            dados.resultado === ResultadoVotacaoEnum.REJEITADO
+            categoria === 'MATERIA' &&
+            materiaId &&
+            (dados.resultado === ResultadoVotacaoEnum.APROVADO ||
+                dados.resultado === ResultadoVotacaoEnum.REJEITADO)
         ) {
             await this.materiaRepository.tramitarMateria(tenantId, materiaId, {
                 action: this.mapResultadoParaAcao(dados.resultado as 'APROVADO' | 'REJEITADO'),

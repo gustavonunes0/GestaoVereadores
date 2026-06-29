@@ -18,7 +18,7 @@ export type Dominios = {
     tiposSessao: LookupOption[];
     situacoesSessao: LookupOption[];
     tiposAutor: LookupOption[];
-    tiposAutorExterno: LookupOption[];
+    tiposPartner: LookupOption[];
     statusTramitacao: LookupOption[];
     unidadesTramitacao: LookupOption[];
     cargosMesa: LookupOption[];

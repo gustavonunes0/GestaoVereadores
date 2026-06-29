@@ -20,6 +20,16 @@ export abstract class ParlamentarianUserRepository {
         parliamentarianId: string,
     ): Promise<ParlamentarianUserEntity>;
 
+    abstract findLatestByParliamentarianId(
+        tenantId: string,
+        parliamentarianId: string,
+    ): Promise<ParlamentarianUserEntity | null>;
+
+    abstract activate(
+        tenantId: string,
+        parliamentarianId: string,
+    ): Promise<ParlamentarianUserEntity>;
+
     abstract updatePoliticalParty(
         tenantId: string,
         parliamentarianId: string,

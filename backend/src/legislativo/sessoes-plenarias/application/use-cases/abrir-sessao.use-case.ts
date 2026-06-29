@@ -2,8 +2,11 @@ import { BadRequestException, Inject, Injectable, NotFoundException, Unprocessab
 import { SESSAO_PLENARIA_REPOSITORY } from '../../sessoes-plenarias.tokens';
 import { SessaoPlenariaRepository } from '../../domain/repositories/sessao-plenaria.repository';
 import { StatusSessao } from '../../domain/enums/status-sessao.enum';
+import { FaseSessao } from '../../domain/enums/fase-sessao.enum';
 import { AbrirSessaoDto } from '../dto/abrir-sessao.dto';
 import { QuorumService } from '../../domain/services/quorum.service';
+
+const QUORUM_MINIMO_SESSAO_TESTE = 1;
 
 @Injectable()
 export class AbrirSessaoUseCase {
@@ -18,8 +21,8 @@ export class AbrirSessaoUseCase {
         tenantId: string,
         sessaoId: string,
         dto: AbrirSessaoDto,
-        responsavelId: string,
-    ): Promise<{ statusSessao: StatusSessao; quorumPresente: number | null }> {
+        responsavelId?: string,
+    ): Promise<{ statusSessao: StatusSessao; quorumPresente: number | null; modoTeste: boolean }> {
         const sessao = await this.repository.findSessaoById(sessaoId, tenantId);
         if (!sessao) throw new NotFoundException('Sessão plenária não encontrada');
 
@@ -29,17 +32,24 @@ export class AbrirSessaoUseCase {
             );
         }
 
+        const modoTeste = dto.modoTeste === true;
         const quorumInfo = await this.repository.calcularQuorum(sessaoId, tenantId);
         const quorumPresente = dto.quorumPresente ?? quorumInfo.quorumPresente;
 
-        const infoAtual = this.quorumService.verificarAtual(
-            quorumPresente,
-            quorumInfo.quorumMinimo,
-        );
+        if (!modoTeste) {
+            const infoAtual = this.quorumService.verificarAtual(
+                quorumPresente,
+                quorumInfo.quorumMinimo,
+            );
 
-        if (!infoAtual.temQuorum) {
+            if (!infoAtual.temQuorum) {
+                throw new UnprocessableEntityException(
+                    `Quórum insuficiente: ${quorumPresente} presentes, mínimo ${quorumInfo.quorumMinimo}`,
+                );
+            }
+        } else if (quorumPresente < QUORUM_MINIMO_SESSAO_TESTE) {
             throw new UnprocessableEntityException(
-                `Quórum insuficiente: ${quorumPresente} presentes, mínimo ${quorumInfo.quorumMinimo}`,
+                'Sessão de teste exige ao menos 1 parlamentar presente',
             );
         }
 
@@ -48,8 +58,13 @@ export class AbrirSessaoUseCase {
             responsavelId,
             observacao: dto.observacao,
             quorumPresente,
+            quorumMinimo: modoTeste ? QUORUM_MINIMO_SESSAO_TESTE : quorumInfo.quorumMinimo,
+            modoTeste,
         });
 
-        return { statusSessao: StatusSessao.ABERTA, quorumPresente };
+        // RN-SPL-02: ao abrir, fase vai automaticamente para EXPEDIENTE
+        await this.repository.setFase(sessaoId, tenantId, FaseSessao.EXPEDIENTE);
+
+        return { statusSessao: StatusSessao.ABERTA, quorumPresente, modoTeste };
     }
 }

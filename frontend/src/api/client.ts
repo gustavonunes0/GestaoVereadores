@@ -36,9 +36,7 @@ export async function api<T>(
         ...(options.headers as Record<string, string>),
     };
     const hasBody =
-        options.body !== undefined &&
-        options.body !== null &&
-        options.body !== '';
+        options.body !== undefined && options.body !== null && options.body !== '';
     if (hasBody && !headers['Content-Type'] && !headers['content-type']) {
         headers['Content-Type'] = 'application/json';
     }

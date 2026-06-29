@@ -3,11 +3,8 @@ import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined';
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
 import { CalendarGrid } from './CalendarGrid';
-import {
-    addMonths,
-    formatRange,
-    startOfDay,
-} from './date-utils';
+import { DateRangeValue } from './DateRangeValue';
+import { addMonths, startOfDay } from './date-utils';
 
 export interface DateRangePickerProps {
     id?: string;
@@ -42,8 +39,15 @@ export function DateRangePicker({
         startOfDay(value[0] ?? new Date()),
     );
 
-    const hasValue = Boolean(value[0] || value[1]);
+    const displayRange = open ? draft : value;
+    const hasValue = Boolean(displayRange[0] || displayRange[1]);
     const nextMonth = addMonths(currentMonth, 1);
+
+    useEffect(() => {
+        if (!open) {
+            setDraft(value);
+        }
+    }, [value, open]);
 
     useEffect(() => {
         function handleOutside(event: MouseEvent) {
@@ -113,7 +117,10 @@ export function DateRangePicker({
                 </label>
             ) : null}
 
-            <div ref={containerRef} className="relative">
+            <div
+                ref={containerRef}
+                className={`relative${open ? ' sigl-date-range-picker--open' : ''}`}
+            >
                 <div
                     id={fieldId}
                     role="button"
@@ -129,7 +136,7 @@ export function DateRangePicker({
                         }
                     }}
                     className={[
-                        'flex items-center gap-2 px-3 py-2 rounded-[6px] border bg-[#fafbfc] transition-colors',
+                        'sigl-date-range-trigger flex items-center gap-2 px-3 py-2 rounded-[6px] border bg-[#fafbfc] transition-colors min-w-0 select-none',
                         disabled
                             ? 'opacity-50 cursor-not-allowed border-[#dde2ea]'
                             : 'cursor-pointer border-[#dde2ea] hover:border-[#b0bac8]',
@@ -140,18 +147,24 @@ export function DateRangePicker({
                 >
                     <CalendarMonthOutlined
                         sx={{ fontSize: 16, color: '#8492a6' }}
+                        className="shrink-0"
                         aria-hidden="true"
                     />
-                    <span
-                        className={`text-[13px] flex-1 ${hasValue ? 'text-[#374151]' : 'text-[#b0bac8]'}`}
-                    >
-                        {hasValue ? formatRange(value) : placeholder}
-                    </span>
+                    {hasValue ? (
+                        <DateRangeValue
+                            range={displayRange}
+                            showEndPlaceholder={open && Boolean(displayRange[0] && !displayRange[1])}
+                        />
+                    ) : (
+                        <span className="text-[13px] flex-1 min-w-0 text-[#b0bac8]">
+                            {placeholder}
+                        </span>
+                    )}
                     {hasValue && !disabled ? (
                         <button
                             type="button"
                             onClick={handleClear}
-                            className="text-[#b0bac8] hover:text-[#8492a6]"
+                            className="shrink-0 text-[#b0bac8] hover:text-[#8492a6]"
                             aria-label="Limpar período"
                         >
                             <CloseOutlined sx={{ fontSize: 14 }} aria-hidden="true" />
@@ -163,7 +176,7 @@ export function DateRangePicker({
                     <div
                         role="dialog"
                         aria-label="Selecionar período"
-                        className="absolute z-50 top-full left-0 mt-1 bg-white border border-[#eef0f3] rounded-[10px] shadow-[0_4px_24px_rgba(0,0,0,0.10)] p-4"
+                        className="sigl-date-range-popover absolute top-full left-0 mt-1 bg-white border border-[#eef0f3] rounded-[10px] shadow-[0_4px_24px_rgba(0,0,0,0.10)] p-4"
                     >
                         <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
                             <CalendarGrid

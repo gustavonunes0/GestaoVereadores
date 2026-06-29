@@ -7,6 +7,7 @@ export type ParliamentarianUserSummary = {
     firstName: string;
     lastName: string;
     email: string;
+    cpf: string | null;
     politicalParty?: ParliamentarianPartySummary | null;
 };
 
@@ -27,6 +28,8 @@ export type ParliamentarianWithRelations = {
     entity: ParliamentarianEntity;
     /** Dados do User resolvidos via ParlamentarianUser (opcional — parlamentar pode não ter acesso). */
     user?: ParliamentarianUserSummary;
+    /** Status do vínculo ParlamentarianUser (ACTIVE, INACTIVE, …). */
+    accessStatus?: string;
     activeMandatesCount?: number;
     stats?: {
         authoredMattersCount: number;

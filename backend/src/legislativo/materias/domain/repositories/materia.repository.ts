@@ -2,7 +2,7 @@ import { AlterarStatusMateriaDto } from '../../application/dto/alterar-status-ma
 import { AdicionarMateriaAutorDto } from '../../application/dto/materia-autor.dto';
 import {
     AddCoautorMateriaDto,
-    SetAutorExternoDto,
+    SetTenantPartnerDto,
     SetAutorParlamentarDto,
     SetRelatorMateriaDto,
 } from '../../application/dto/matter-autoria.dto';
@@ -25,7 +25,7 @@ export type TramitarMateriaData = {
     unidadeDestinoId?: string;
 };
 
-export type AutorExternoListItem = {
+export type TenantPartnerListItem = {
     id: string;
     nome: string;
     cargo: string | null;
@@ -86,10 +86,10 @@ export abstract class MateriaRepository {
         matterId: string,
         dto: SetAutorParlamentarDto,
     ): Promise<MatterAuthorshipPayload>;
-    abstract setAutorExterno(
+    abstract setTenantPartner(
         tenantId: string,
         matterId: string,
-        dto: SetAutorExternoDto,
+        dto: SetTenantPartnerDto,
     ): Promise<MatterAuthorshipPayload>;
     abstract addCoautor(
         tenantId: string,
@@ -128,11 +128,11 @@ export abstract class MateriaRepository {
         dados: TramitarMateriaData,
     ): Promise<void>;
 
-    /** Lista AutorExterno do tenant, opcionalmente filtrado por tipo. */
-    abstract listAutoresExternos(
+    /** Lista TenantPartner do tenant, opcionalmente filtrado por tipo. */
+    abstract listTenantPartners(
         tenantId: string,
         tipoAutorId?: string,
-    ): Promise<AutorExternoListItem[]>;
+    ): Promise<TenantPartnerListItem[]>;
 
     /** Adiciona PublicacaoOficial vinculada a uma Materia. */
     abstract addPublicacao(

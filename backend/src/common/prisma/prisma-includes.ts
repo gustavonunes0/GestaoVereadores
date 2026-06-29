@@ -44,7 +44,7 @@ export const materiaRelationsInclude = {
     origem: true,
     autor: {
         include: {
-            autorExterno: {
+            tenantPartner: {
                 select: {
                     id: true,
                     nome: true,
@@ -78,10 +78,7 @@ export const materiaAutoriaInclude = {
     ...materiaRelationsInclude,
     autor: {
         include: {
-            guestUser: {
-                select: { id: true, fullName: true, type: true },
-            },
-            autorExterno: {
+            tenantPartner: {
                 select: { id: true, nome: true, tipoAutorId: true },
             },
             parliamentarian: { select: materiaParliamentarianSelect },
@@ -104,6 +101,9 @@ export const sessaoPlenariaInclude = {
     pautaItens: {
         include: {
             materia: true,
+            ato: { include: { tipo: true, classificacao: true } },
+            norma: { include: { tipo: true, ano: true } },
+            comissao: { select: { id: true, nome: true, sigla: true } },
             votacao: votacaoInclude,
         },
         orderBy: { ordem: 'asc' as const },

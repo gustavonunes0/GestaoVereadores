@@ -1,14 +1,44 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/dialog';
+import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
-import { DatePicker, Dropdown, MultiSelect, mapDropdownOptions } from '../../components/ui';
 import { materiasApi } from '../../api/legislative/materias.api';
+import type { Materia, MatterAuthorship } from '../../api/legislative/materias.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import type { LookupOption } from '../../api/dominios.api';
-import type { Materia, MatterAuthorship } from '../../api/legislative/materias.api';
-import { resolveMateriaIdentificacao, resolveMateriaNumeroAno } from '../../utils/materiaDisplay';
+import { DatePicker, FileUpload } from '../../components/ui';
+import {
+    resolveMateriaIdentificacao,
+    resolveMateriaNumeroAno,
+    resolveMateriaAno,
+    resolveMateriaStatus,
+} from '../../utils/materiaDisplay';
+import type { MateriaStatus } from '../../types/legislative';
+import type {
+    AutorSelecionado,
+    CoautorFormItem,
+} from '../../types/materias';
+import {
+    gerarOpcoesStatus,
+    statusTransicaoPermitida,
+} from '../../types/materias';
+import {
+    autorFromMatterAuthorship,
+    coautoresFromMatterAuthorship,
+    extractParlamentarianCoautorIds,
+    resolveAnoIdFromNumeroAno,
+    validateAutorSelecionado,
+    validateCoautores,
+} from '../../utils/autorMateria';
+import {
+    formatNumeroAnoInput,
+    formatarIdentificacao,
+    parseNumeroAnoMateria,
+} from '../../utils/materiaIdentificacao';
+import { AutorField } from './AutorField';
+import { CoautorList } from './CoautorList';
+import { MateriaFormShell, type MateriaFormTab } from './MateriaFormShell';
+import { MateriaStatusField } from './MateriaStatusField';
 
 interface Props {
     materia: Materia;
@@ -16,134 +46,158 @@ interface Props {
     onSaved: () => void;
 }
 
-/** idNegocio global do tipo Parlamentar (seed). */
-const PARLAMENTAR_TIPO_AUTOR_ID_NEGOCIO = '1';
-
-function findParlamentarTipoId(tiposAutor: LookupOption[]): string {
-    const match = tiposAutor.find(
-        (t) =>
-            t.codigo === PARLAMENTAR_TIPO_AUTOR_ID_NEGOCIO ||
-            t.nome.trim().toLowerCase() === 'parlamentar',
-    );
-    return match?.id ?? '';
-}
-
-function resolveAutoriaInicial(
-    autoria: MatterAuthorship,
-    parlamentarTipoId: string,
-): { tipoAutorId: string; autorId: string; kind: 'parliamentarian' | 'external' } | null {
-    const author = autoria.primaryAuthor;
-    if (!author) return null;
-
-    if (author.type === 'parliamentarian' && author.parliamentarian) {
-        return {
-            tipoAutorId: parlamentarTipoId,
-            autorId: author.parliamentarian.id,
-            kind: 'parliamentarian',
-        };
-    }
-
-    if (author.type === 'external') {
-        const externoId =
-            ('autorExterno' in author && author.autorExterno?.id) ||
-            undefined;
-        const tipoId =
-            ('autorExterno' in author && author.autorExterno?.tipoAutorId) ||
-            undefined;
-        if (externoId && tipoId) {
-            return { tipoAutorId: tipoId, autorId: externoId, kind: 'external' };
-        }
-    }
-
-    return null;
-}
+const EDIT_TABS: MateriaFormTab[] = ['identificacao', 'autoria', 'conteudo'];
 
 export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     const { showSuccess, showApiError } = useAppToast();
-    const { tiposAutor } = useDominios();
-
-    const parlamentarTipoId = useMemo(
-        () => findParlamentarTipoId(tiposAutor),
-        [tiposAutor],
-    );
-
+    const { anos } = useDominios();
     const [saving, setSaving] = useState(false);
     const [loadingAutoria, setLoadingAutoria] = useState(true);
+    const [activeTab, setActiveTab] = useState<MateriaFormTab>('identificacao');
+
+    const resolvedStatus = resolveMateriaStatus(materia.status);
+
+    const isRascunho = resolvedStatus === 'DRAFT';
+    const isProtocolada = resolvedStatus === 'PROTOCOLADA';
+    const canEditConteudo = isRascunho || isProtocolada;
+
+    const [numeroAno, setNumeroAno] = useState(() =>
+        formatNumeroAnoInput(materia.numero, resolveMateriaAno(materia)),
+    );
     const [ementa, setEmenta] = useState(materia.ementa);
+    const [justificativa, setJustificativa] = useState('');
     const [dataProtocolo, setDataProtocolo] = useState<Date | null>(
         materia.dataProtocolo ? new Date(materia.dataProtocolo) : null,
     );
-    const [tipoAutorId, setTipoAutorId] = useState('');
-    const [autorId, setAutorId] = useState('');
-    const [authorKind, setAuthorKind] = useState<'parliamentarian' | 'external' | null>(null);
-    const [autorInicial, setAutorInicial] = useState<{ tipoAutorId: string; autorId: string } | null>(null);
-    const [relatorIds, setRelatorIds] = useState<string[]>(
-        materia.relatores?.map((r) => r.parlamentarId) ?? [],
-    );
+    const [statusMateria, setStatusMateria] = useState<MateriaStatus>(resolvedStatus);
+    const [autorPrincipal, setAutorPrincipal] = useState<AutorSelecionado | null>(null);
+    const [coautores, setCoautores] = useState<CoautorFormItem[]>([]);
+    const [textoOriginal, setTextoOriginal] = useState<File | null>(null);
 
-    const [autorOptions, setAutorOptions] = useState<LookupOption[]>([]);
-    const [relatorOptions, setRelatorOptions] = useState<LookupOption[]>([]);
-    const [loadingAutores, setLoadingAutores] = useState(false);
+    const coautoresIniciaisRef = useRef<Array<{ id: string; parliamentarianId: string }>>([]);
+    const autorInicialRef = useRef<AutorSelecionado | null>(null);
 
     useEffect(() => {
-        if (!parlamentarTipoId) return;
-        void materiasApi.listOpcoesAutor(parlamentarTipoId).then((res) => {
-            setRelatorOptions(res.options.map((o) => ({ id: o.id, nome: o.label })));
-        });
-    }, [parlamentarTipoId]);
-
-    useEffect(() => {
-        if (!parlamentarTipoId) return;
         setLoadingAutoria(true);
-        void materiasApi
+        materiasApi
             .getAutoria(materia.id)
-            .then((autoria) => {
-                const inicial = resolveAutoriaInicial(autoria, parlamentarTipoId);
-                if (inicial) {
-                    setTipoAutorId(inicial.tipoAutorId);
-                    setAutorId(inicial.autorId);
-                    setAuthorKind(inicial.kind);
-                    setAutorInicial({
-                        tipoAutorId: inicial.tipoAutorId,
-                        autorId: inicial.autorId,
-                    });
-                }
+            .then((autoria: MatterAuthorship) => {
+                const autor = autorFromMatterAuthorship(autoria);
+                setAutorPrincipal(autor);
+                autorInicialRef.current = autor;
+                setCoautores(coautoresFromMatterAuthorship(autoria));
+                coautoresIniciaisRef.current = (autoria.coauthors ?? []).map((c) => ({
+                    id: c.id,
+                    parliamentarianId: c.parliamentarian.id,
+                }));
             })
             .catch(showApiError)
             .finally(() => setLoadingAutoria(false));
-    }, [materia.id, parlamentarTipoId, showApiError]);
+    }, [materia.id, showApiError]);
 
-    useEffect(() => {
-        if (!tipoAutorId) {
-            setAutorOptions([]);
-            return;
+    const statusOptions = useMemo(
+        () => gerarOpcoesStatus(resolvedStatus),
+        [resolvedStatus],
+    );
+
+    function handleStatusChange(next: MateriaStatus) {
+        if (statusTransicaoPermitida(resolvedStatus, next)) {
+            setStatusMateria(next);
+        }
+    }
+
+    const numeroAnoParsed = parseNumeroAnoMateria(numeroAno);
+    const previewIdentificacao = formatarIdentificacao({
+        tipo: materia.tipo,
+        sigla: materia.sigla,
+        numero: isRascunho && numeroAnoParsed.ok ? numeroAnoParsed.numero : materia.numero,
+        ano: isRascunho && numeroAnoParsed.ok ? numeroAnoParsed.ano : materia.ano,
+    });
+
+    const numeroAnoHint =
+        isRascunho && numeroAno.trim() && !numeroAnoParsed.ok
+            ? numeroAnoParsed.message
+            : null;
+
+    async function syncCoautores() {
+        const desejados = extractParlamentarianCoautorIds(coautores);
+        const iniciais = coautoresIniciaisRef.current;
+
+        const desejadosSet = new Set(desejados);
+        const iniciaisPorParlId = new Map(
+            iniciais.map((c) => [c.parliamentarianId, c.id]),
+        );
+
+        for (const inicial of iniciais) {
+            if (!desejadosSet.has(inicial.parliamentarianId)) {
+                await materiasApi.removeCoautor(materia.id, inicial.id);
+            }
         }
 
-        setLoadingAutores(true);
-        void materiasApi
-            .listOpcoesAutor(tipoAutorId)
-            .then((res) => {
-                setAuthorKind(res.kind);
-                setAutorOptions(res.options.map((o) => ({ id: o.id, nome: o.label })));
-            })
-            .catch(showApiError)
-            .finally(() => setLoadingAutores(false));
-    }, [tipoAutorId, showApiError]);
-
-    useEffect(() => {
-        if (!tipoAutorId || !autorInicial) return;
-        if (tipoAutorId !== autorInicial.tipoAutorId) {
-            setAutorId('');
+        for (const parlId of desejados) {
+            if (!iniciaisPorParlId.has(parlId)) {
+                await materiasApi.addCoautor(materia.id, { parliamentarianId: parlId });
+            }
         }
-    }, [tipoAutorId, autorInicial]);
+    }
+
+    async function syncAutor() {
+        if (!isRascunho || !autorPrincipal) return;
+
+        const inicial = autorInicialRef.current;
+        const autorAlterado =
+            !inicial ||
+            inicial.tipo !== autorPrincipal.tipo ||
+            (autorPrincipal.tipo === 'PARLAMENTAR' &&
+                inicial.parlamentarianId !== autorPrincipal.parlamentarianId) ||
+            (autorPrincipal.tipo === 'TENANT_PARTNER' &&
+                inicial.tenantPartnerId !== autorPrincipal.tenantPartnerId);
+
+        if (!autorAlterado) return;
+
+        if (autorPrincipal.tipo === 'PARLAMENTAR' && autorPrincipal.parlamentarianId) {
+            await materiasApi.setAutorParlamentar(
+                materia.id,
+                autorPrincipal.parlamentarianId,
+            );
+        } else if (autorPrincipal.tipo === 'TENANT_PARTNER' && autorPrincipal.tenantPartnerId) {
+            await materiasApi.setTenantPartner(materia.id, autorPrincipal.tenantPartnerId);
+        }
+    }
 
     async function handleSubmit() {
         if (!ementa.trim()) {
             showApiError(new Error('Ementa é obrigatória.'));
+            setActiveTab('conteudo');
             return;
         }
-        if (!tipoAutorId || !autorId) {
-            showApiError(new Error('Tipo de autor e autor são obrigatórios.'));
+
+        let numeroUpdate: { numero: number; anoId: string } | undefined;
+
+        if (isRascunho) {
+            const numeroResolvido = resolveAnoIdFromNumeroAno(numeroAno, anos);
+            if (!numeroResolvido.ok) {
+                showApiError(new Error(numeroResolvido.message));
+                setActiveTab('identificacao');
+                return;
+            }
+            numeroUpdate = {
+                numero: numeroResolvido.numero,
+                anoId: numeroResolvido.anoId,
+            };
+
+            const autorError = validateAutorSelecionado(autorPrincipal);
+            if (autorError) {
+                showApiError(new Error(autorError));
+                setActiveTab('autoria');
+                return;
+            }
+        }
+
+        const coautorError = validateCoautores(coautores);
+        if (coautorError) {
+            showApiError(new Error(coautorError));
+            setActiveTab('autoria');
             return;
         }
 
@@ -151,20 +205,25 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
         try {
             await materiasApi.update(materia.id, {
                 ementa: ementa.trim(),
+                ...(justificativa.trim() ? { justificativa: justificativa.trim() } : {}),
                 dataProtocolo: dataProtocolo?.toISOString(),
+                ...(numeroUpdate ?? {}),
             });
 
-            const autoriaAlterada =
-                !autorInicial ||
-                autorInicial.tipoAutorId !== tipoAutorId ||
-                autorInicial.autorId !== autorId;
+            if (isRascunho) {
+                await syncAutor();
+            }
 
-            if (autoriaAlterada) {
-                if (authorKind === 'parliamentarian') {
-                    await materiasApi.setAutorParlamentar(materia.id, autorId);
-                } else {
-                    await materiasApi.setAutorExterno(materia.id, autorId);
-                }
+            await syncCoautores();
+
+            if (textoOriginal) {
+                await materiasApi.uploadTextoOriginal(materia.id, textoOriginal);
+            }
+
+            if (statusMateria !== resolvedStatus) {
+                await materiasApi.tramitar(materia.id, {
+                    novoStatus: statusMateria,
+                });
             }
 
             showSuccess('Matéria atualizada com sucesso.');
@@ -178,92 +237,133 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     }
 
     const footer = (
-        <div className="flex justify-content-end gap-2">
-            <Button label="Cancelar" severity="secondary" onClick={onClose} disabled={saving} />
-            <Button label="Salvar" icon="pi pi-check" loading={saving} onClick={() => void handleSubmit()} />
-        </div>
+        <>
+            <Button label="Cancelar" severity="secondary" outlined onClick={onClose} disabled={saving} />
+            <Button
+                label="Salvar"
+                icon="pi pi-check"
+                loading={saving}
+                onClick={() => void handleSubmit()}
+            />
+        </>
     );
 
     return (
-        <Dialog
-            header={`Editar — ${resolveMateriaIdentificacao(materia)}`}
-            visible
-            onHide={() => !saving && onClose()}
-            style={{ width: 'min(96vw, 700px)' }}
+        <MateriaFormShell
+            title={`Editar — ${resolveMateriaIdentificacao(materia)}`}
+            icon="pi-pencil"
+            tabs={EDIT_TABS}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onClose={onClose}
             footer={footer}
-            modal
+            saving={saving}
         >
-            <div className="sigl-dialog-body">
-                <div className="sigl-dialog-secao">
-                    <span className="sigl-dialog-secao-titulo">Identificação</span>
-                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                        <div className="sigl-filtro-campo">
-                            <label className="text-xs text-color-secondary">Tipo de Matéria</label>
-                            <p className="font-semibold m-0">{materia.tipo.nome}</p>
-                        </div>
-                        <div className="sigl-filtro-campo">
-                            <label className="text-xs text-color-secondary">Número / Ano</label>
-                            <p className="font-semibold m-0">{resolveMateriaNumeroAno(materia)}</p>
-                        </div>
+            {activeTab === 'identificacao' && (
+                <div className="materia-form-secao">
+                    <div className="materia-form-secao-titulo">
+                        <i className="pi pi-id-card" aria-hidden />
+                        Identificação
                     </div>
-                </div>
-
-                <div className="sigl-dialog-secao">
-                    <span className="sigl-dialog-secao-titulo">Autoria</span>
-                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="edit-tipo-autor">Tipo de Autor *</label>
-                            <Dropdown
-                                id="edit-tipo-autor"
-                                value={tipoAutorId}
-                                options={mapDropdownOptions(tiposAutor, 'nome', 'id')}
-                                placeholder={loadingAutoria ? 'Carregando...' : 'Selecione o tipo'}
-                                onChange={(v) => setTipoAutorId(String(v))}
-                                disabled={loadingAutoria}
-                            />
+                    <div className="materia-form-grid-2">
+                        <div className="materia-form-field">
+                            <label>Tipo de Matéria</label>
+                            <p className="materia-form-readonly-value">{materia.tipo.nome}</p>
                         </div>
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="edit-autor">Autor *</label>
-                            <Dropdown
-                                id="edit-autor"
-                                value={autorId}
-                                options={mapDropdownOptions(autorOptions, 'nome', 'id')}
-                                placeholder={
-                                    loadingAutores
-                                        ? 'Carregando...'
-                                        : tipoAutorId
-                                          ? 'Selecione o autor'
-                                          : 'Selecione o tipo primeiro'
-                                }
-                                onChange={(v) => setAutorId(String(v))}
-                                disabled={!tipoAutorId || loadingAutoria || loadingAutores}
-                            />
+                        <div className="materia-form-field">
+                            <label>Número / Ano {isRascunho ? '*' : ''}</label>
+                            {isRascunho ? (
+                                <>
+                                    <InputText
+                                        id="edit-numero-ano"
+                                        value={numeroAno}
+                                        onChange={(e) => setNumeroAno(e.target.value)}
+                                        placeholder="Ex: 85/2026"
+                                        className="w-full"
+                                    />
+                                    {numeroAnoHint ? (
+                                        <span
+                                            className="materia-form-hint"
+                                            style={{ color: 'var(--danger, #ef4444)' }}
+                                        >
+                                            {numeroAnoHint}
+                                        </span>
+                                    ) : (
+                                        <span className="materia-form-hint">
+                                            Informe número e ano separados por barra.
+                                        </span>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="materia-form-readonly-value">
+                                    {resolveMateriaNumeroAno(materia)}
+                                </p>
+                            )}
                         </div>
-                        <div className="sigl-filtro-campo">
+                        <div className="materia-form-field">
                             <DatePicker
                                 id="edit-data-protocolo"
-                                label="Data Protocolo"
+                                label="Data de protocolo"
                                 value={dataProtocolo}
                                 onChange={setDataProtocolo}
                             />
                         </div>
-                        <div className="sigl-filtro-campo sigl-col-full">
-                            <MultiSelect
-                                id="edit-relatores"
-                                label="Relator(es)"
-                                value={relatorIds}
-                                options={mapDropdownOptions(relatorOptions, 'nome', 'id')}
-                                placeholder="Selecione relatores"
-                                onChange={(ids) => setRelatorIds(ids.map(String))}
-                                filter
-                            />
-                        </div>
                     </div>
-                </div>
+                    <span className="materia-form-id-preview">
+                        Identificação: <strong>{previewIdentificacao}</strong>
+                    </span>
+                    {!isRascunho && (
+                        <span className="materia-form-hint block mt-1">
+                            Tipo e número não podem ser alterados após protocolação.
+                        </span>
+                    )}
 
-                <div className="sigl-dialog-secao">
-                    <span className="sigl-dialog-secao-titulo">Conteúdo</span>
-                    <div className="sigl-filtro-campo">
+                    <MateriaStatusField
+                        id="edit-status"
+                        value={statusMateria}
+                        options={statusOptions}
+                        onChange={handleStatusChange}
+                    />
+                </div>
+            )}
+
+            {activeTab === 'autoria' && (
+                <>
+                    {loadingAutoria ? (
+                        <p className="text-color-secondary m-0">Carregando autoria…</p>
+                    ) : (
+                        <>
+                            <div className="materia-form-secao">
+                                <div className="materia-form-secao-titulo">
+                                    <i className="pi pi-user" aria-hidden />
+                                    Autoria
+                                </div>
+                                <AutorField
+                                    value={autorPrincipal}
+                                    onChange={setAutorPrincipal}
+                                    labelTipo="Tipo de Autor *"
+                                    labelAutor="Autor *"
+                                    disabled={!isRascunho}
+                                />
+                            </div>
+
+                            <div className="materia-form-separador" />
+
+                            <div className="materia-form-secao">
+                                <CoautorList value={coautores} onChange={setCoautores} />
+                            </div>
+                        </>
+                    )}
+                </>
+            )}
+
+            {activeTab === 'conteudo' && (
+                <div className="materia-form-secao">
+                    <div className="materia-form-secao-titulo">
+                        <i className="pi pi-align-left" aria-hidden />
+                        Conteúdo
+                    </div>
+                    <div className="materia-form-field" style={{ marginBottom: 10 }}>
                         <label htmlFor="edit-ementa">Ementa *</label>
                         <InputTextarea
                             id="edit-ementa"
@@ -271,10 +371,36 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                             onChange={(e) => setEmenta(e.target.value)}
                             rows={3}
                             autoResize
+                            placeholder="Descreva o objetivo da matéria…"
+                            disabled={!canEditConteudo}
+                            className="w-full"
                         />
                     </div>
+                    <div className="materia-form-field" style={{ marginBottom: 10 }}>
+                        <label htmlFor="edit-justificativa">Justificativa</label>
+                        <InputTextarea
+                            id="edit-justificativa"
+                            value={justificativa}
+                            onChange={(e) => setJustificativa(e.target.value)}
+                            rows={4}
+                            autoResize
+                            placeholder="Fundamentos e motivações (opcional)…"
+                            disabled={!canEditConteudo}
+                            className="w-full"
+                        />
+                    </div>
+                    {canEditConteudo && (
+                        <FileUpload
+                            id="edit-texto-original"
+                            label="Texto Original"
+                            value={textoOriginal}
+                            onChange={setTextoOriginal}
+                            accept=".pdf,.doc,.docx"
+                        />
+                    )}
                 </div>
-            </div>
-        </Dialog>
+            )}
+
+        </MateriaFormShell>
     );
 }

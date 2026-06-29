@@ -2,7 +2,7 @@ import { AgendaPhase } from '../enums/agenda-phase.enum';
 
 export type ActiveAgendaItem = {
     id: string;
-    materiaId: string;
+    materiaId: string | null;
     ordem: number;
     isRemoved?: boolean;
 };
@@ -35,7 +35,10 @@ export class SessionAgendaDomainService {
 
     assertMatterNotInAgenda(materiaId: string, items: ActiveAgendaItem[]) {
         const duplicate = items.find(
-            (item) => item.materiaId === materiaId && !item.isRemoved,
+            (item) =>
+                item.materiaId != null &&
+                item.materiaId === materiaId &&
+                !item.isRemoved,
         );
         if (duplicate) {
             throw new Error('Matéria já consta na pauta desta sessão');

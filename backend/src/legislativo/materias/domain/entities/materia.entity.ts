@@ -11,9 +11,14 @@ const TRANSICOES: Record<MatterStatus, MatterStatus[]> = {
         MatterStatus.RETIRADA,
     ],
     [MatterStatus.EM_PAUTA]: [
+        MatterStatus.EM_VOTACAO,
         MatterStatus.APROVADA,
         MatterStatus.REJEITADA,
         MatterStatus.EM_TRAMITACAO,
+    ],
+    [MatterStatus.EM_VOTACAO]: [
+        MatterStatus.APROVADA,
+        MatterStatus.REJEITADA,
     ],
     [MatterStatus.APROVADA]: [MatterStatus.TRANSFORMADA_EM_NORMA],
     [MatterStatus.REJEITADA]: [],

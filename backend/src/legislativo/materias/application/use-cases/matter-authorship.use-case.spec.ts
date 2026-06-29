@@ -3,7 +3,7 @@ import { StatusMateria } from '@prisma/client';
 import { MatterAuthorType } from '../../domain/enums/matter-author-type.enum';
 import { MatterAuthorshipDomainService } from '../../domain/services/matter-authorship-domain.service';
 import { SetMatterAutorParlamentarUseCase } from './set-matter-autor-parlamentar.use-case';
-import { SetMatterAutorExternoUseCase } from './set-matter-autor-externo.use-case';
+import { SetMatterTenantPartnerUseCase } from './set-matter-autor-externo.use-case';
 import {
     AddMatterCoauthorUseCase,
     RemoveMatterCoauthorUseCase,
@@ -20,7 +20,7 @@ function buildMateriaRepositoryMock() {
     return {
         getAutoria: jest.fn(),
         setAutorParlamentar: jest.fn(),
-        setAutorExterno: jest.fn(),
+        setTenantPartner: jest.fn(),
         addCoautor: jest.fn(),
         removeCoautor: jest.fn(),
         setRelator: jest.fn(),
@@ -102,16 +102,16 @@ describe('SetMatterAutorParlamentarUseCase', () => {
     });
 });
 
-describe('SetMatterAutorExternoUseCase', () => {
-    it('registra autor externo via AutorExterno', async () => {
+describe('SetMatterTenantPartnerUseCase', () => {
+    it('registra autor externo via TenantPartner', async () => {
         const repository = buildMateriaRepositoryMock();
-        repository.setAutorExterno.mockResolvedValue({
+        repository.setTenantPartner.mockResolvedValue({
             ...authorshipPayload,
             authorParliamentarian: null,
             autor: {
                 id: 'autor-1',
                 nome: 'Cidadão Externo',
-                autorExterno: {
+                tenantPartner: {
                     id: 'ext-1',
                     nome: 'Cidadão Externo',
                     tipoAutorId: 'tipo-popular',
@@ -120,16 +120,16 @@ describe('SetMatterAutorExternoUseCase', () => {
             autorId: 'autor-1',
         });
 
-        const useCase = new SetMatterAutorExternoUseCase(repository as never);
+        const useCase = new SetMatterTenantPartnerUseCase(repository as never);
         const result = await useCase.execute('tenant-1', 'matter-1', {
-            autorExternoId: 'ext-1',
+            tenantPartnerId: 'ext-1',
         });
 
         expect(result.primaryAuthor?.type).toBe(MatterAuthorType.EXTERNAL);
         expect(
             result.primaryAuthor &&
-                'autorExterno' in result.primaryAuthor &&
-                result.primaryAuthor.autorExterno?.nome,
+                'tenantPartner' in result.primaryAuthor &&
+                (result.primaryAuthor as { tenantPartner?: { nome: string } }).tenantPartner?.nome,
         ).toBe('Cidadão Externo');
     });
 });
@@ -212,7 +212,7 @@ describe('MatterAuthorshipViewModel', () => {
             autor: {
                 id: 'autor-1',
                 nome: 'Externo',
-                autorExterno: {
+                tenantPartner: {
                     id: 'ext-1',
                     nome: 'Externo',
                     tipoAutorId: 'tipo-1',
