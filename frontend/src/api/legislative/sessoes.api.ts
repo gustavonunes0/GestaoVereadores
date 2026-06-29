@@ -91,7 +91,7 @@ export const sessoesApi = {
 
     remove: (id: string) => api<void>(`${base}/${id}`, { method: 'DELETE' }),
 
-    abrir: (id: string, body?: { observacao?: string; quorumPresente?: number }) =>
+    abrir: (id: string, body?: { observacao?: string; quorumPresente?: number; modoTeste?: boolean }) =>
         api<SessaoPlenaria>(API_PATHS.sessoesAbrir(id), {
             method: 'POST',
             body: JSON.stringify(body ?? {}),

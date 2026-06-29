@@ -995,6 +995,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         entity.dataEncerramento = raw.dataEncerramento;
         entity.quorumMinimo = raw.quorumMinimo;
         entity.quorumPresente = raw.quorumPresente;
+        entity.modoTeste = raw.modoTeste;
         entity.responsavelAberturaId = raw.responsavelAberturaId;
         entity.observacoes = raw.observacoes;
         entity.isRemoved = raw.isRemoved;
@@ -1015,6 +1016,8 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             dataEncerramento: Date;
             responsavelAberturaId: string;
             quorumPresente: number;
+            quorumMinimo: number;
+            modoTeste: boolean;
             observacoes: string;
         }> = {};
 
@@ -1025,6 +1028,12 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             }
             if (dados.quorumPresente !== undefined) {
                 dataFields.quorumPresente = dados.quorumPresente;
+            }
+            if (dados.quorumMinimo !== undefined) {
+                dataFields.quorumMinimo = dados.quorumMinimo;
+            }
+            if (dados.modoTeste !== undefined) {
+                dataFields.modoTeste = dados.modoTeste;
             }
         } else if (dados.novoStatus === StatusSessao.SUSPENSA) {
             dataFields.dataSuspensao = agora;
@@ -1064,6 +1073,15 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             },
         });
         if (!sessao) throw new Error('Sessão não encontrada');
+
+        if (sessao.modoTeste) {
+            const quorumPresente = sessao.presencas.length;
+            return {
+                quorumMinimo: 1,
+                quorumPresente,
+                temQuorum: quorumPresente >= 1,
+            };
+        }
 
         const legislaturaId = sessao.sessaoLegislativa?.legislaturaId;
         const totalParlamentares = await this.prisma.parlamentarMandato.count({
@@ -1159,6 +1177,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         entity.dataEncerramento = raw.dataEncerramento;
         entity.quorumMinimo = raw.quorumMinimo;
         entity.quorumPresente = raw.quorumPresente;
+        entity.modoTeste = raw.modoTeste;
         entity.responsavelAberturaId = raw.responsavelAberturaId;
         entity.observacoes = raw.observacoes;
         entity.isRemoved = raw.isRemoved;

@@ -1060,8 +1060,9 @@ textarea:not(:disabled):focus {
     overflow: visible;
 }
 
-.materia-form-dialog .p-dropdown-panel {
-    z-index: 1200;
+/* Painéis flutuantes (dropdown, etc.) acima de modais PrimeReact (~1100–1101) */
+.sigl-ui-dropdown-panel {
+    z-index: 1300;
 }
 
 .materia-form-card {

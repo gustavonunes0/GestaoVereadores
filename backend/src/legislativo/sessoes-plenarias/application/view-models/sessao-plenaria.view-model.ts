@@ -53,6 +53,7 @@ export type SessaoPlenariaPrismaPayload = {
     dataSuspensao?: Date | null;
     quorumMinimo?: number | null;
     quorumPresente?: number | null;
+    modoTeste?: boolean;
     sessaoLegislativaId?: string | null;
     faseAtual?: PrismaFaseSessao;
     linkJitsi?: string | null;
@@ -125,6 +126,7 @@ export class SessaoPlenariaViewModel {
             dataSuspensao: data.dataSuspensao?.toISOString() ?? null,
             quorumMinimo: data.quorumMinimo ?? null,
             quorumPresente: data.quorumPresente ?? null,
+            modoTeste: data.modoTeste ?? false,
             sessaoLegislativaId: data.sessaoLegislativaId ?? null,
             tipo: {
                 id: data.tipoSessao.id,

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
+import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Message } from 'primereact/message';
@@ -20,6 +21,7 @@ export function AbrirSessaoDialog({ sessaoId, onClose, onSaved }: Props) {
     const [quorum, setQuorum] = useState<QuorumInfo | null>(null);
     const [loadingQuorum, setLoadingQuorum] = useState(true);
     const [observacoes, setObservacoes] = useState('');
+    const [modoTeste, setModoTeste] = useState(false);
 
     useEffect(() => {
         sessoesApi
@@ -29,13 +31,22 @@ export function AbrirSessaoDialog({ sessaoId, onClose, onSaved }: Props) {
             .finally(() => setLoadingQuorum(false));
     }, [sessaoId]);
 
+    const podeAbrir = modoTeste
+        ? (quorum?.presente ?? 0) >= 1
+        : quorum?.temQuorum ?? false;
+
     async function handleConfirmar() {
         setSaving(true);
         try {
             await sessoesApi.abrir(sessaoId, {
                 observacao: observacoes.trim() || undefined,
+                modoTeste,
             });
-            showSuccess('Sessão aberta com sucesso.');
+            showSuccess(
+                modoTeste
+                    ? 'Sessão de teste aberta com sucesso.'
+                    : 'Sessão aberta com sucesso.',
+            );
             onSaved();
             onClose();
         } catch (err) {
@@ -56,9 +67,10 @@ export function AbrirSessaoDialog({ sessaoId, onClose, onSaved }: Props) {
         <div className="flex justify-content-end gap-2">
             <Button label="Cancelar" severity="secondary" onClick={onClose} disabled={loading} />
             <Button
-                label="Abrir Sessão"
+                label={modoTeste ? 'Abrir sessão de teste' : 'Abrir Sessão'}
                 icon="pi pi-play"
                 loading={loading}
+                disabled={loadingQuorum || !podeAbrir}
                 onClick={() => void handleConfirmar()}
             />
         </div>
@@ -80,15 +92,42 @@ export function AbrirSessaoDialog({ sessaoId, onClose, onSaved }: Props) {
                     </div>
                 ) : quorum ? (
                     <Message
-                        severity={quorum.temQuorum ? 'success' : 'warn'}
-                        text={`Quórum mínimo: ${quorum.minimo} — Presentes: ${quorum.presente} — ${quorum.temQuorum ? '✅ Tem quórum' : '⚠️ Sem quórum'}`}
+                        severity={modoTeste || quorum.temQuorum ? 'success' : 'warn'}
+                        text={
+                            modoTeste
+                                ? `Modo teste: mínimo 1 presente — Presentes: ${quorum.presente}`
+                                : `Quórum mínimo: ${quorum.minimo} — Presentes: ${quorum.presente} — ${quorum.temQuorum ? '✅ Tem quórum' : '⚠️ Sem quórum'}`
+                        }
                         className="w-full"
                     />
                 ) : null}
 
-                {quorum && !quorum.temQuorum && (
-                    <p className="text-sm text-color-secondary m-0">
-                        Atenção: a sessão pode ser aberta mesmo sem quórum, mas o backend pode rejeitar dependendo da configuração.
+                <div className="flex align-items-start gap-2 mt-3">
+                    <Checkbox
+                        inputId="abrir-modo-teste"
+                        checked={modoTeste}
+                        onChange={(e) => setModoTeste(e.checked === true)}
+                    />
+                    <label htmlFor="abrir-modo-teste" className="cursor-pointer">
+                        <span className="font-medium block">Sessão de teste</span>
+                        <span className="text-sm text-color-secondary">
+                            Dispensa o quórum completo. Basta 1 parlamentar presente para abrir e
+                            votar.
+                        </span>
+                    </label>
+                </div>
+
+                {modoTeste && quorum && quorum.presente < 1 && (
+                    <Message
+                        severity="warn"
+                        text="Marque ao menos 1 parlamentar como presente antes de abrir."
+                        className="w-full mt-2"
+                    />
+                )}
+
+                {!modoTeste && quorum && !quorum.temQuorum && (
+                    <p className="text-sm text-color-secondary m-0 mt-2">
+                        Marque mais parlamentares como presentes ou use a opção de sessão de teste.
                     </p>
                 )}
 

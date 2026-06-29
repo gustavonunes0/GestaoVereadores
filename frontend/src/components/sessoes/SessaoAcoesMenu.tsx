@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Menu } from 'primereact/menu';
-import { useRef } from 'react';
 import type { MenuItem } from 'primereact/menuitem';
 import { sessoesApi } from '../../api/legislative/sessoes.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import type { StatusSessao } from '../../types/sessoes';
+import { AbrirSessaoDialog } from './AbrirSessaoDialog';
 
 interface Props {
     sessaoId: string;
@@ -31,7 +31,6 @@ const ACOES: Record<StatusSessao, Array<{ label: string; path: 'abrir' | 'suspen
 };
 
 const ACAO_API: Record<string, (id: string) => Promise<unknown>> = {
-    abrir:     (id) => sessoesApi.abrir(id),
     suspender: (id) => sessoesApi.suspender(id),
     encerrar:  (id) => sessoesApi.encerrar(id),
     cancelar:  (id) => sessoesApi.cancelar(id),
@@ -41,6 +40,7 @@ export function SessaoAcoesMenu({ sessaoId, status, onUpdated }: Props) {
     const menu = useRef<Menu>(null);
     const { showSuccess, showApiError, confirmDestructive } = useAppToast();
     const [loading, setLoading] = useState(false);
+    const [dialogAbrir, setDialogAbrir] = useState(false);
 
     const acoes = ACOES[status] ?? [];
     if (acoes.length === 0) return null;
@@ -63,6 +63,10 @@ export function SessaoAcoesMenu({ sessaoId, status, onUpdated }: Props) {
         icon: a.destrutiva ? 'pi pi-exclamation-triangle' : 'pi pi-play',
         className: a.destrutiva ? 'p-menuitem-danger' : undefined,
         command: () => {
+            if (a.path === 'abrir') {
+                setDialogAbrir(true);
+                return;
+            }
             if (a.destrutiva) {
                 confirmDestructive(
                     `Confirma: ${a.label.toLowerCase()}?`,
@@ -88,6 +92,13 @@ export function SessaoAcoesMenu({ sessaoId, status, onUpdated }: Props) {
                 onClick={(e) => menu.current?.toggle(e)}
                 aria-label="Ações da sessão"
             />
+            {dialogAbrir && (
+                <AbrirSessaoDialog
+                    sessaoId={sessaoId}
+                    onClose={() => setDialogAbrir(false)}
+                    onSaved={onUpdated}
+                />
+            )}
         </>
     );
 }

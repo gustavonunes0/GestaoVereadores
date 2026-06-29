@@ -73,7 +73,33 @@ describe('AbrirSessaoUseCase', () => {
         expect(repo.transicionarStatus).toHaveBeenCalledWith('s1', 't1', expect.objectContaining({
             novoStatus: StatusSessao.ABERTA,
             responsavelId: 'user-1',
+            quorumMinimo: 5,
+            modoTeste: false,
         }));
         expect(result.statusSessao).toBe(StatusSessao.ABERTA);
+    });
+
+    it('abre em modo teste sem exigir quórum completo', async () => {
+        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.AGENDADA));
+        repo.calcularQuorum.mockResolvedValue({ quorumMinimo: 3, quorumPresente: 1, temQuorum: false });
+        repo.transicionarStatus.mockResolvedValue(undefined);
+
+        const result = await useCase.execute('t1', 's1', { modoTeste: true }, 'user-1');
+
+        expect(repo.transicionarStatus).toHaveBeenCalledWith('s1', 't1', expect.objectContaining({
+            novoStatus: StatusSessao.ABERTA,
+            quorumMinimo: 1,
+            modoTeste: true,
+            quorumPresente: 1,
+        }));
+        expect(result.modoTeste).toBe(true);
+    });
+
+    it('modo teste exige ao menos 1 presente', async () => {
+        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.AGENDADA));
+        repo.calcularQuorum.mockResolvedValue({ quorumMinimo: 3, quorumPresente: 0, temQuorum: false });
+
+        await expect(useCase.execute('t1', 's1', { modoTeste: true }, 'user-1'))
+            .rejects.toThrow(UnprocessableEntityException);
     });
 });

@@ -1026,6 +1026,7 @@ model SessaoPlenaria {
     dataSuspensao         DateTime?
     quorumMinimo          Int?
     quorumPresente        Int?
+    modoTeste             Boolean            @default(false)
     responsavelAberturaId String?
     observacoes           String?
     // M11 — fase atual como indicador (não trava)

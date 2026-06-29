@@ -23,6 +23,7 @@ export class SessaoPlenariaEntity {
     dataEncerramento: Date | null;
     quorumMinimo: number | null;
     quorumPresente: number | null;
+    modoTeste: boolean;
     responsavelAberturaId: string | null;
     observacoes: string | null;
     isRemoved: boolean;

@@ -33,6 +33,7 @@ export interface SessaoPlenariaDetalhe {
     dataSuspensao?: string | null;
     quorumMinimo?: number | null;
     quorumPresente?: number | null;
+    modoTeste?: boolean;
     sessaoLegislativaId?: string | null;
     /** Resposta da API (`SessaoPlenariaViewModel`) */
     tipo: {

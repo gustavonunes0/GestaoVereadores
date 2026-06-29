@@ -176,7 +176,7 @@ export function Dropdown({
         open && typeof document !== 'undefined' ? (
             <div
                 ref={panelRef}
-                className="bg-white border border-[#eef0f3] rounded-[8px] shadow-[0_4px_16px_rgba(0,0,0,0.08)] overflow-hidden"
+                className="sigl-ui-dropdown-panel bg-white border border-[#eef0f3] rounded-[8px] shadow-[0_4px_16px_rgba(0,0,0,0.08)] overflow-hidden"
                 style={{
                     position: 'fixed',
                     top: panelPos.top,

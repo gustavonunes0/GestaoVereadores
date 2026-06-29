@@ -21,6 +21,8 @@ export type TransicionarStatusDados = {
     responsavelId?: string;
     observacao?: string;
     quorumPresente?: number;
+    quorumMinimo?: number;
+    modoTeste?: boolean;
 };
 
 export type QuorumInfo = {

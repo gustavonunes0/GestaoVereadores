@@ -87,6 +87,14 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         sessaoId: string,
         requerQuorum: boolean,
     ) {
+        const sessao = await this.prisma.sessaoPlenaria.findFirst({
+            where: { id: sessaoId, ...tenantWhere(tenantId), isRemoved: false },
+            select: { modoTeste: true },
+        });
+        if (sessao?.modoTeste) {
+            return;
+        }
+
         const [presencas, totalParlamentares] = await Promise.all([
             this.prisma.presencaSessao.findMany({
                 where: { sessaoId },
