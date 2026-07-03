@@ -2,6 +2,7 @@ import {
     BadRequestException,
     Inject,
     Injectable,
+    InternalServerErrorException,
     NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -55,6 +56,13 @@ export class GetJitsiTokenUseCase {
         const roomName = `sessao-${sessaoId.replace(/-/g, '').slice(0, 16)}`;
         const appId = this.config.get<string>('JITSI_APP_ID')?.trim();
         const appSecret = this.config.get<string>('JITSI_APP_SECRET')?.trim();
+
+        const isSelfHosted = domain !== 'meet.jit.si';
+        if (isSelfHosted && (!appId || !appSecret)) {
+            throw new InternalServerErrorException(
+                'Jitsi self-hosted mal configurado: defina JITSI_APP_ID e JITSI_APP_SECRET no servidor (devem ser iguais ao JWT_APP_ID / JWT_APP_SECRET do docker-compose).',
+            );
+        }
         // No Jitsi self-hosted o "sub" é o tenant/domínio XMPP (ex.: meet.jitsi),
         // não o host público. Default "*" é aceito pela maioria das instalações.
         const sub = this.config.get<string>('JITSI_SUB')?.trim() || '*';

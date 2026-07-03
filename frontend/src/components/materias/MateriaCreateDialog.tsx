@@ -22,7 +22,7 @@ import { AutorField } from './AutorField';
 import { CoautorList } from './CoautorList';
 import { MateriaFormShell, type MateriaFormTab } from './MateriaFormShell';
 
-const CREATE_TABS: MateriaFormTab[] = ['identificacao', 'autoria', 'conteudo'];
+const CREATE_TABS: MateriaFormTab[] = ['identificacao', 'autoria'];
 
 interface Props {
     onClose: () => void;
@@ -219,7 +219,45 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
                             />
                         </div>
                     </div>
+                    <div className="materia-form-secao">
+                        <div className="materia-form-secao-titulo">
+                            <i className="pi pi-align-left" aria-hidden />
+                            Conteúdo
+                        </div>
+                        <div className="materia-form-field" style={{ marginBottom: 10 }}>
+                            <label htmlFor="mc-ementa">Ementa *</label>
+                            <InputTextarea
+                                id="mc-ementa"
+                                value={ementa}
+                                onChange={(e) => setEmenta(e.target.value)}
+                                rows={3}
+                                autoResize
+                                placeholder="Descreva o objetivo da matéria…"
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="materia-form-field" style={{ marginBottom: 10 }}>
+                            <label htmlFor="mc-justificativa">Justificativa</label>
+                            <InputTextarea
+                                id="mc-justificativa"
+                                value={justificativa}
+                                onChange={(e) => setJustificativa(e.target.value)}
+                                rows={4}
+                                autoResize
+                                placeholder="Fundamentos e motivações (opcional)…"
+                                className="w-full"
+                            />
+                        </div>
+                        <FileUpload
+                            id="mc-texto-original"
+                            label="Texto Original"
+                            value={textoOriginal}
+                            onChange={setTextoOriginal}
+                            accept=".pdf,.doc,.docx"
+                        />
+                    </div>
                 </div>
+                
             )}
 
             {activeTab === 'autoria' && (
@@ -243,46 +281,6 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
                         <CoautorList value={coautores} onChange={setCoautores} />
                     </div>
                 </>
-            )}
-
-            {activeTab === 'conteudo' && (
-                <div className="materia-form-secao">
-                    <div className="materia-form-secao-titulo">
-                        <i className="pi pi-align-left" aria-hidden />
-                        Conteúdo
-                    </div>
-                    <div className="materia-form-field" style={{ marginBottom: 10 }}>
-                        <label htmlFor="mc-ementa">Ementa *</label>
-                        <InputTextarea
-                            id="mc-ementa"
-                            value={ementa}
-                            onChange={(e) => setEmenta(e.target.value)}
-                            rows={3}
-                            autoResize
-                            placeholder="Descreva o objetivo da matéria…"
-                            className="w-full"
-                        />
-                    </div>
-                    <div className="materia-form-field" style={{ marginBottom: 10 }}>
-                        <label htmlFor="mc-justificativa">Justificativa</label>
-                        <InputTextarea
-                            id="mc-justificativa"
-                            value={justificativa}
-                            onChange={(e) => setJustificativa(e.target.value)}
-                            rows={4}
-                            autoResize
-                            placeholder="Fundamentos e motivações (opcional)…"
-                            className="w-full"
-                        />
-                    </div>
-                    <FileUpload
-                        id="mc-texto-original"
-                        label="Texto Original"
-                        value={textoOriginal}
-                        onChange={setTextoOriginal}
-                        accept=".pdf,.doc,.docx"
-                    />
-                </div>
             )}
         </MateriaFormShell>
     );

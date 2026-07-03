@@ -1,7 +1,5 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Button } from 'primereact/button';
-import { Menu } from 'primereact/menu';
-import type { MenuItem } from 'primereact/menuitem';
 import { sessoesApi } from '../../api/legislative/sessoes.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import type { StatusSessao } from '../../types/sessoes';
@@ -13,31 +11,45 @@ interface Props {
     onUpdated: () => void;
 }
 
-const ACOES: Record<StatusSessao, Array<{ label: string; path: 'abrir' | 'suspender' | 'encerrar' | 'cancelar'; destrutiva?: boolean }>> = {
-    AGENDADA:  [
-        { label: 'Abrir sessão',    path: 'abrir' },
+type AcaoPath = 'abrir' | 'suspender' | 'encerrar' | 'cancelar';
+
+type AcaoDef = {
+    label: string;
+    path: AcaoPath;
+    destrutiva?: boolean;
+};
+
+const ACOES: Record<StatusSessao, AcaoDef[]> = {
+    AGENDADA: [
+        { label: 'Abrir sessão', path: 'abrir' },
         { label: 'Cancelar sessão', path: 'cancelar', destrutiva: true },
     ],
-    ABERTA:    [
+    ABERTA: [
         { label: 'Suspender sessão', path: 'suspender' },
-        { label: 'Encerrar sessão',  path: 'encerrar', destrutiva: true },
+        { label: 'Encerrar sessão', path: 'encerrar', destrutiva: true },
     ],
-    SUSPENSA:  [
-        { label: 'Retomar sessão',  path: 'abrir' },
+    SUSPENSA: [
+        { label: 'Retomar sessão', path: 'abrir' },
         { label: 'Encerrar sessão', path: 'encerrar', destrutiva: true },
     ],
     ENCERRADA: [],
     CANCELADA: [],
 };
 
-const ACAO_API: Record<string, (id: string) => Promise<unknown>> = {
+const ACAO_API: Record<Exclude<AcaoPath, 'abrir'>, (id: string) => Promise<unknown>> = {
     suspender: (id) => sessoesApi.suspender(id),
-    encerrar:  (id) => sessoesApi.encerrar(id),
-    cancelar:  (id) => sessoesApi.cancelar(id),
+    encerrar: (id) => sessoesApi.encerrar(id),
+    cancelar: (id) => sessoesApi.cancelar(id),
 };
 
+function acaoIcon(path: AcaoPath): string {
+    if (path === 'abrir') return 'pi pi-play';
+    if (path === 'suspender') return 'pi pi-pause';
+    if (path === 'cancelar') return 'pi pi-times';
+    return 'pi pi-stop-circle';
+}
+
 export function SessaoAcoesMenu({ sessaoId, status, onUpdated }: Props) {
-    const menu = useRef<Menu>(null);
     const { showSuccess, showApiError, confirmDestructive } = useAppToast();
     const [loading, setLoading] = useState(false);
     const [dialogAbrir, setDialogAbrir] = useState(false);
@@ -45,7 +57,7 @@ export function SessaoAcoesMenu({ sessaoId, status, onUpdated }: Props) {
     const acoes = ACOES[status] ?? [];
     if (acoes.length === 0) return null;
 
-    async function executar(path: string) {
+    async function executar(path: Exclude<AcaoPath, 'abrir'>) {
         setLoading(true);
         try {
             await ACAO_API[path](sessaoId);
@@ -58,40 +70,43 @@ export function SessaoAcoesMenu({ sessaoId, status, onUpdated }: Props) {
         }
     }
 
-    const items: MenuItem[] = acoes.map((a) => ({
-        label: a.label,
-        icon: a.destrutiva ? 'pi pi-exclamation-triangle' : 'pi pi-play',
-        className: a.destrutiva ? 'p-menuitem-danger' : undefined,
-        command: () => {
-            if (a.path === 'abrir') {
-                setDialogAbrir(true);
-                return;
-            }
-            if (a.destrutiva) {
-                confirmDestructive(
-                    `Confirma: ${a.label.toLowerCase()}?`,
-                    () => executar(a.path),
-                    a.label,
-                );
-            } else {
-                void executar(a.path);
-            }
-        },
-    }));
+    function handleAcao(acao: AcaoDef) {
+        const path = acao.path;
+
+        if (path === 'abrir') {
+            setDialogAbrir(true);
+            return;
+        }
+
+        if (acao.destrutiva) {
+            confirmDestructive(
+                `Confirma: ${acao.label.toLowerCase()}?`,
+                () => executar(path),
+                acao.label,
+            );
+            return;
+        }
+
+        void executar(path);
+    }
 
     return (
         <>
-            <Menu ref={menu} model={items} popup />
-            <Button
-                label="Ações"
-                icon="pi pi-chevron-down"
-                iconPos="right"
-                size="small"
-                outlined
-                loading={loading}
-                onClick={(e) => menu.current?.toggle(e)}
-                aria-label="Ações da sessão"
-            />
+            <div className="sessao-acoes-buttons">
+                {acoes.map((acao) => (
+                    <Button
+                        key={acao.path}
+                        label={acao.label}
+                        icon={acaoIcon(acao.path)}
+                        size="small"
+                        outlined={acao.destrutiva || acao.path === 'suspender'}
+                        severity={acao.destrutiva ? 'danger' : acao.path === 'suspender' ? 'secondary' : undefined}
+                        loading={loading}
+                        onClick={() => handleAcao(acao)}
+                    />
+                ))}
+            </div>
+
             {dialogAbrir && (
                 <AbrirSessaoDialog
                     sessaoId={sessaoId}

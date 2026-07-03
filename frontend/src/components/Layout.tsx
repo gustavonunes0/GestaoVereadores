@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react';
-import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Tag } from 'primereact/tag';
-import { useAuth } from '../contexts/AuthContext';
-import { isStaffUser } from '../types/auth';
 import { LegislaturaProvider } from '../contexts/LegislaturaContext';
 import { AppFeedbackProvider } from '../hooks/useAppToast';
 import { SidebarNav } from './SidebarNav';
-import { FooterBar } from './FooterBar';
 import logoSrc from '../../assets/logo.png';
+import { FooterBar } from './FooterBar';
 
 export function Layout() {
-    const { user, logout } = useAuth();
     const { pathname } = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -47,65 +42,14 @@ export function Layout() {
                             </h1>
                         </div>
 
-                        <SidebarNav />
+                        <SidebarNav showUserFooter />
+                        <FooterBar compact className="footer-bar--sidebar" />
                     </aside>
 
                     <div className="main">
-                        <header className="topbar">
-                            {/* <div className="topbar__start">
-                                <SiglButton
-                                    type="button"
-                                    className="sidebar-toggle"
-                                    icon="pi pi-bars"
-                                    severity="secondary"
-                                    text
-                                    aria-label="Abrir menu"
-                                    aria-expanded={menuOpen}
-                                    aria-controls="app-sidebar"
-                                    onClick={() => setMenuOpen((open) => !open)}
-                                />
-                                <LegislaturaBar />
-                            </div> */}
-
-                            <div className="topbar-user">
-                                <span className="topbar-user-info">
-                                    <strong>{user?.name}</strong>
-                                    <Tag
-                                        value={
-                                            user && isStaffUser(user)
-                                                ? user.role
-                                                : user?.sessionType === 'parliamentarian'
-                                                  ? 'Parlamentar'
-                                                  : '—'
-                                        }
-                                        severity="secondary"
-                                        className="topbar-role-tag"
-                                    />
-                                    {user?.tenantName && (
-                                        <span className="topbar-tenant">
-                                            {user.tenantName}
-                                        </span>
-                                    )}
-                                </span>
-                                <button
-                                    type="button"
-                                    className="btn-sair"
-                                    onClick={logout}
-                                >
-                                    <LogoutOutlined
-                                        sx={{ fontSize: 16 }}
-                                        aria-hidden="true"
-                                    />
-                                    Sair
-                                </button>
-                            </div>
-                        </header>
-
                         <main className="content">
                             <Outlet />
                         </main>
-
-                        <FooterBar />
                     </div>
                 </div>
             </AppFeedbackProvider>

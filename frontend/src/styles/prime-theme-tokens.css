@@ -126,10 +126,12 @@
     --transition-fast: 0.15s ease;
     --transition-base: 0.2s ease;
 
-    /* Sidebar — paleta institucional clara */
-    --sidebar-bg: #f8f9fb;
-    --sidebar-border: #eef0f3;
-    --sidebar-logo-area-bg: #f8f9fb;
+    /* Sidebar — fundo branco */
+    --sidebar-bg: #ffffff;
+    --sidebar-bg-top: #ffffff;
+    --sidebar-bg-bottom: #ffffff;
+    --sidebar-border: #e8ecf2;
+    --sidebar-logo-area-bg: #ffffff;
     --sidebar-logo-text: #1c3557;
     --sidebar-logo-sub: #6b7280;
     --sidebar-group-label: #6b7280;
@@ -145,10 +147,8 @@
     --sidebar-hint-bg: #f3f4f6;
 
     /* Aliases legados (outros estilos do app) */
-    --sidebar-bg-base: var(--sidebar-bg);
-    --sidebar-bg-top: var(--sidebar-bg);
-    --sidebar-bg-bottom: var(--sidebar-bg);
-    --sidebar-brand-surface: var(--sidebar-logo-area-bg);
+    --sidebar-bg-base: #ffffff;
+    --sidebar-brand-surface: #ffffff;
     --sidebar-text: var(--sidebar-item-active-text);
     --sidebar-text-muted: var(--sidebar-item-text);
     --sidebar-section-label: var(--sidebar-group-label);

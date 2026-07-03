@@ -4,6 +4,11 @@ import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { JitsiTokenData } from '../../../types/sessoes';
+import {
+    buildJitsiOrigin,
+    ensureJitsiExternalApi,
+    isJitsiScriptLoadError,
+} from '../../../utils/jitsiExternalApi';
 import { ConvidarParticipantesJitsi } from './ConvidarParticipantesJitsi';
 
 interface Participante {
@@ -40,6 +45,35 @@ export function CameraSelector({
 }: Props) {
     const { showToast } = useAppToast();
     const [telaCheia, setTelaCheia] = useState(false);
+    const [scriptReady, setScriptReady] = useState(!!window.JitsiMeetExternalAPI);
+    const [scriptError, setScriptError] = useState<string | null>(null);
+    const jitsiOrigin = buildJitsiOrigin(jitsiData.domain);
+
+    useEffect(() => {
+        let cancelled = false;
+        setScriptError(null);
+
+        ensureJitsiExternalApi(jitsiData.domain)
+            .then(() => {
+                if (!cancelled) setScriptReady(true);
+            })
+            .catch((err: unknown) => {
+                if (cancelled) return;
+                const message = err instanceof Error ? err.message : 'Falha ao carregar o Jitsi';
+                setScriptError(message);
+                if (isJitsiScriptLoadError(message)) {
+                    showToast(
+                        'warn',
+                        'Certificado do Jitsi',
+                        'Abra https://localhost:8444, aceite o certificado e tente novamente.',
+                    );
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [jitsiData.domain, showToast]);
 
     useEffect(() => {
         const onChange = () => setTelaCheia(document.fullscreenElement === jitsiContainerRef.current);
@@ -75,29 +109,84 @@ export function CameraSelector({
     return (
         <div className="flex flex-column gap-4">
             <div ref={jitsiContainerRef} className="jitsi-stage" style={{ position: 'relative' }}>
-                <JitsiMeeting
-                    domain={jitsiData.domain}
-                    roomName={jitsiData.roomName}
-                    {...(jitsiData.token ? { jwt: jitsiData.token } : {})}
-                    configOverwrite={{
-                        startWithAudioMuted: false,
-                        startWithVideoMuted: false,
-                        prejoinPageEnabled: false,
-                        enableWelcomePage: false,
-                    }}
-                    interfaceConfigOverwrite={{
-                        DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
-                        TOOLBAR_BUTTONS: ['microphone', 'camera', 'desktop', 'fullscreen', 'tileview', 'hangup'],
-                    }}
-                    userInfo={{ displayName: userName, email: '' }}
-                    onApiReady={handleApiReady}
-                    getIFrameRef={(ref) => {
-                        ref.style.height = '100%';
-                        ref.style.width = '100%';
-                        ref.style.borderRadius = '8px';
-                        ref.style.border = '1px solid var(--surface-border)';
-                    }}
-                />
+                {scriptError ? (
+                    <div className="transmissao-jitsi-hint jitsi-stage__cert-hint">
+                        <i className="pi pi-shield" aria-hidden />
+                        <div>
+                            <strong>Não foi possível carregar o Jitsi</strong>
+                            <p className="m-0 mt-1 text-sm text-color-secondary">
+                                O navegador bloqueou o script por causa do certificado HTTPS local.
+                                Abra o link abaixo, aceite o certificado (Avançado → Continuar) e
+                                clique em &quot;Tentar novamente&quot;.
+                            </p>
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                <Button
+                                    type="button"
+                                    label="Abrir Jitsi (aceitar certificado)"
+                                    icon="pi pi-external-link"
+                                    size="small"
+                                    onClick={() => window.open(jitsiOrigin, '_blank', 'noopener,noreferrer')}
+                                />
+                                <Button
+                                    type="button"
+                                    label="Tentar novamente"
+                                    icon="pi pi-refresh"
+                                    size="small"
+                                    outlined
+                                    onClick={() => {
+                                        setScriptReady(false);
+                                        setScriptError(null);
+                                        ensureJitsiExternalApi(jitsiData.domain)
+                                            .then(() => setScriptReady(true))
+                                            .catch((err: unknown) => {
+                                                const message =
+                                                    err instanceof Error
+                                                        ? err.message
+                                                        : 'Falha ao carregar o Jitsi';
+                                                setScriptError(message);
+                                            });
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                ) : !scriptReady ? (
+                    <div className="transmissao-jitsi-hint jitsi-stage__cert-hint">
+                        <i className="pi pi-spin pi-spinner" aria-hidden />
+                        <span>Carregando sala de vídeo…</span>
+                    </div>
+                ) : (
+                    <JitsiMeeting
+                        domain={jitsiData.domain}
+                        roomName={jitsiData.roomName}
+                        {...(jitsiData.token ? { jwt: jitsiData.token } : {})}
+                        configOverwrite={{
+                            startWithAudioMuted: false,
+                            startWithVideoMuted: false,
+                            prejoinPageEnabled: false,
+                            enableWelcomePage: false,
+                        }}
+                        interfaceConfigOverwrite={{
+                            DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+                            TOOLBAR_BUTTONS: [
+                                'microphone',
+                                'camera',
+                                'desktop',
+                                'fullscreen',
+                                'tileview',
+                                'hangup',
+                            ],
+                        }}
+                        userInfo={{ displayName: userName, email: '' }}
+                        onApiReady={handleApiReady}
+                        getIFrameRef={(ref) => {
+                            ref.style.height = '100%';
+                            ref.style.width = '100%';
+                            ref.style.borderRadius = '8px';
+                            ref.style.border = '1px solid var(--surface-border)';
+                        }}
+                    />
+                )}
                 <button
                     className="jitsi-fullscreen-btn"
                     onClick={handleFullscreen}

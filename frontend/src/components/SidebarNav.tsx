@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import ExpandLessOutlined from '@mui/icons-material/ExpandLessOutlined';
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -10,12 +10,15 @@ import {
 } from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { SidebarIcon } from './ui/SidebarIcon';
+import { SidebarUserMenu } from './SidebarUserMenu';
 
 type Props = {
     menu?: NavGroupDef[];
+    /** Rodapé com usuário logado e botão sair (layout staff). */
+    showUserFooter?: boolean;
 };
 
-export function SidebarNav({ menu = STAFF_NAV_MENU }: Props) {
+export function SidebarNav({ menu = STAFF_NAV_MENU, showUserFooter = false }: Props) {
     const { pathname } = useLocation();
     const { isAdminStaff } = useAuth();
     const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -45,7 +48,7 @@ export function SidebarNav({ menu = STAFF_NAV_MENU }: Props) {
         );
     }
 
-    function renderItem(item: NavItemDef, nested = false): React.ReactNode {
+    function renderItem(item: NavItemDef, nested = false): ReactNode {
         if (item.adminOnly && !isAdminStaff) return null;
 
         if (item.children) {
@@ -112,13 +115,17 @@ export function SidebarNav({ menu = STAFF_NAV_MENU }: Props) {
     }
 
     return (
-        <nav className="sidebar-nav" aria-label="Navegação principal">
-            {menu.map((group) => (
-                <div key={group.label} className="sidebar-nav__group">
-                    <div className="sidebar-group-label">{group.label}</div>
-                    {group.items.map((item) => renderItem(item))}
-                </div>
-            ))}
-        </nav>
+        <>
+            <nav className="sidebar-nav" aria-label="Navegação principal">
+                {menu.map((group) => (
+                    <div key={group.label} className="sidebar-nav__group">
+                        <div className="sidebar-group-label">{group.label}</div>
+                        {group.items.map((item) => renderItem(item))}
+                    </div>
+                ))}
+            </nav>
+
+            {showUserFooter ? <SidebarUserMenu /> : null}
+        </>
     );
 }

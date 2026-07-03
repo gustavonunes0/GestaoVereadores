@@ -10,3 +10,10 @@ interface ImportMetaEnv {
 interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
+
+interface Window {
+    JitsiMeetExternalAPI?: new (
+        domain: string,
+        options: Record<string, unknown>,
+    ) => unknown;
+}

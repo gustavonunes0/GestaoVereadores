@@ -35,6 +35,13 @@ export default defineConfig({
                 target: 'http://127.0.0.1:3000',
                 changeOrigin: true,
             },
+            /** Jitsi self-hosted (dev): evita bloqueio do certificado ao carregar external_api.js */
+            '/__jitsi': {
+                target: 'https://localhost:8444',
+                changeOrigin: true,
+                secure: false,
+                rewrite: (path) => path.replace(/^\/__jitsi/, ''),
+            },
         },
     },
 });
