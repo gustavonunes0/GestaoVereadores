@@ -113,7 +113,7 @@ function AuthorPhotoBox({ autor }: { autor: MateriaAutorResumo | null }) {
     const initial = autor.nome.charAt(0).toUpperCase();
     return (
         <div className="w-11 h-11 rounded-[9px] bg-[#e8edf5] flex items-center justify-center overflow-hidden">
-            {autor.tipo === 'tenant_partner' || autor.tipo === 'externo' ? (
+            {autor.tipo === 'tenant_partner' ? (
                 <PersonOutlined sx={{ fontSize: 22, color: '#1c3557' }} aria-hidden />
             ) : (
                 <span className="text-[18px] font-bold text-[#1c3557] leading-none">

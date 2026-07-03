@@ -98,11 +98,14 @@ export interface Materia {
         coauthors?: Array<{
             id: string;
             ordem: number;
-            parliamentarian: {
+            type?: 'parliamentarian' | 'tenant_partner';
+            label?: string;
+            parliamentarian?: {
                 id: string;
                 parliamentaryName: string;
                 photoUrl?: string | null;
             };
+            tenantPartner?: { id: string; nome: string; tipoAutorId?: string };
         }>;
     };
     statusTramitacao?: { id: string; nome: string } | null;

@@ -74,10 +74,7 @@ function EmentaTruncavel({ texto }: { texto: string }) {
 
 function resolveAutorTipo(materia: Materia): TipoAutorMateria | 'parlamentar' | 'tenant_partner' {
     if (materia.autor?.tipo === 'parlamentar') return 'PARLAMENTAR';
-    if (
-        materia.autor?.tipo === 'tenant_partner' ||
-        materia.autor?.tipo === 'externo'
-    ) {
+    if (materia.autor?.tipo === 'tenant_partner') {
         return 'TENANT_PARTNER';
     }
     if (materia.authorship?.authorParliamentarian) return 'PARLAMENTAR';
@@ -225,14 +222,21 @@ export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
                                 Coautores ({coautores.length})
                             </p>
                             <ul className="list-none p-0 m-0 flex flex-column gap-2">
-                                {coautores.map((c) => (
-                                    <li key={c.id}>
-                                        <AutorLinha
-                                            nome={c.parliamentarian.parliamentaryName}
-                                            tipo="PARLAMENTAR"
-                                        />
-                                    </li>
-                                ))}
+                                {coautores.map((c) => {
+                                    const nome =
+                                        c.parliamentarian?.parliamentaryName ??
+                                        c.label ??
+                                        c.tenantPartner?.nome ??
+                                        '—';
+                                    const tipo = c.tenantPartner
+                                        ? 'TENANT_PARTNER'
+                                        : 'PARLAMENTAR';
+                                    return (
+                                        <li key={c.id}>
+                                            <AutorLinha nome={nome} tipo={tipo} />
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </section>
                     )}

@@ -1,4 +1,4 @@
-import type { TooltipOptions } from 'primereact/tooltip';
+import type { TooltipOptions } from 'primereact/tooltip/tooltipoptions';
 
 const appendToBody =
     typeof document !== 'undefined' ? document.body : undefined;

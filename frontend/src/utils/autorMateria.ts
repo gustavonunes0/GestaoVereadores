@@ -33,7 +33,7 @@ export function autorFromMatterAuthorship(
         };
     }
 
-    if (author.type === 'tenant_partner' || author.type === 'external') {
+    if (author.type === 'tenant_partner') {
         const partner = author.tenantPartner;
         if (partner?.id) {
             return {
@@ -53,9 +53,7 @@ export function coautoresFromMatterAuthorship(
 ): CoautorFormItem[] {
     return (authorship.coauthors ?? []).map((c) => {
         if (
-            (c.type === 'tenant_partner' ||
-                c.type === 'external' ||
-                c.tenantPartner) &&
+            (c.type === 'tenant_partner' || c.tenantPartner) &&
             c.tenantPartner?.id
         ) {
             return {

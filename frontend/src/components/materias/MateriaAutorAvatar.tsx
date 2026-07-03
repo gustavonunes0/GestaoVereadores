@@ -9,7 +9,7 @@ interface Props {
 export function MateriaAutorAvatar({ autor, size = 'large' }: Props) {
     const initial = autor.nome.charAt(0).toUpperCase();
     const icon =
-        autor.tipo === 'tenant_partner' || autor.tipo === 'externo'
+        autor.tipo === 'tenant_partner'
             ? 'pi pi-building'
             : undefined;
 
