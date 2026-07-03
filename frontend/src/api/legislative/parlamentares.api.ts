@@ -62,6 +62,8 @@ export type ParlamentarMandato = {
         endDate?: string;
         isCurrent: boolean;
     };
+    partyAcronym?: string | null;
+    partyName?: string | null;
     startedAt: string;
     endedAt?: string;
     status: string;

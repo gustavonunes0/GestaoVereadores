@@ -437,9 +437,21 @@ input[type='checkbox'] + label {
 }
 
 .p-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.55rem;
     border-radius: 999px;
     font-weight: 600;
     font-size: 0.75rem;
+    line-height: 1.25;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.p-tag .p-tag-value {
+    line-height: inherit;
 }
 
 .p-tag.p-tag-success {
