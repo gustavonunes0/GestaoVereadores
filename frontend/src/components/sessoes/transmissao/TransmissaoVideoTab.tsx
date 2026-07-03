@@ -106,12 +106,12 @@ export function TransmissaoVideoTab({
                         <div className="transmissao-jitsi-hint">
                             <i className="pi pi-info-circle" aria-hidden />
                             <span>
-                                Vá à aba <strong>Transmissão</strong> e clique em{' '}
+                                No card <strong>Transmissão</strong>, clique em{' '}
                                 <strong>Iniciar transmissão</strong> para abrir a sala Jitsi.
                             </span>
                         </div>
                     )}
-                    <div className="transmissao-cam-grid transmissao-cam-grid-2" style={{ height: 200 }}>
+                    <div className="transmissao-cam-grid transmissao-cam-grid-2">
                         <CamCell cam={mainCam} highlight librasConectado={librasConectado} />
                         <div className="flex flex-column" style={{ gap: 2 }}>
                             {side.map((cam) => (

@@ -4,9 +4,8 @@ import { Dialog } from 'primereact/dialog';
 import { Tag } from 'primereact/tag';
 import { AutoComplete } from 'primereact/autocomplete';
 import { Dropdown as PrDropdown } from 'primereact/dropdown';
-import { materiasApi } from '../../api/legislative/materias.api';
+import { materiasApi, type MatterTenantPartnerOption } from '../../api/legislative/materias.api';
 import { parlamentaresApi, type Parliamentarian } from '../../api/legislative/parlamentares.api';
-import { tenantPartnersApi, type TenantPartner } from '../../api/tenant-partners.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import type { CoautorMateria, TipoAutorMateria } from '../../types/materias';
 
@@ -28,8 +27,7 @@ interface AddCoautorDialogProps {
 }
 
 function AddCoautorDialog({ materiaId, onClose, onSaved }: AddCoautorDialogProps) {
-    const { showSuccess, showApiError, showToast } = useAppToast();
-    const showWarning = (msg: string) => showToast('warn', 'Aviso', msg);
+    const { showSuccess, showApiError } = useAppToast();
     const [saving, setSaving] = useState(false);
     const [tipoCoautor, setTipoCoautor] = useState<TipoAutorMateria | ''>('');
 
@@ -38,8 +36,8 @@ function AddCoautorDialog({ materiaId, onClose, onSaved }: AddCoautorDialogProps
     const [parlSelecionado, setParlSelecionado] = useState<Parliamentarian | null>(null);
 
     // TENANT_PARTNER
-    const [partners, setPartners] = useState<TenantPartner[]>([]);
-    const [partnerSelecionado, setPartnerSelecionado] = useState<TenantPartner | null>(null);
+    const [partners, setPartners] = useState<MatterTenantPartnerOption[]>([]);
+    const [partnerSelecionado, setPartnerSelecionado] = useState<MatterTenantPartnerOption | null>(null);
     const [loadingPartners, setLoadingPartners] = useState(false);
 
     const buscarParlamentar = async (query: string) => {
@@ -55,8 +53,8 @@ function AddCoautorDialog({ materiaId, onClose, onSaved }: AddCoautorDialogProps
     useEffect(() => {
         if (tipoCoautor !== 'TENANT_PARTNER') return;
         setLoadingPartners(true);
-        tenantPartnersApi.list({ limit: 100 })
-            .then((r) => setPartners(r.data))
+        materiasApi.listTenantPartners()
+            .then((items) => setPartners(items))
             .catch(() => setPartners([]))
             .finally(() => setLoadingPartners(false));
     }, [tipoCoautor]);
@@ -66,11 +64,8 @@ function AddCoautorDialog({ materiaId, onClose, onSaved }: AddCoautorDialogProps
         setPartnerSelecionado(null);
     }, [tipoCoautor]);
 
-    const handleSelectPartner = (partner: TenantPartner | null) => {
+    const handleSelectPartner = (partner: MatterTenantPartnerOption | null) => {
         setPartnerSelecionado(partner);
-        if (partner && !partner.usuario && !partner.usuarioVinculado) {
-            showWarning('Esta instituição não possui usuário vinculado. Vincule em Câmara > Autores.');
-        }
     };
 
     async function handleSubmit() {
@@ -98,7 +93,23 @@ function AddCoautorDialog({ materiaId, onClose, onSaved }: AddCoautorDialogProps
         }
 
         if (tipoCoautor === 'TENANT_PARTNER') {
-            showApiError(new Error('Coautores de instituição parceira ainda não são suportados.'));
+            if (!partnerSelecionado) {
+                showApiError(new Error('Selecione a instituição parceira coautora.'));
+                return;
+            }
+            setSaving(true);
+            try {
+                await materiasApi.addCoautor(materiaId, {
+                    tenantPartnerId: partnerSelecionado.id,
+                });
+                showSuccess('Coautor adicionado.');
+                onSaved();
+                onClose();
+            } catch (err) {
+                showApiError(err);
+            } finally {
+                setSaving(false);
+            }
         }
     }
 
@@ -164,9 +175,9 @@ function AddCoautorDialog({ materiaId, onClose, onSaved }: AddCoautorDialogProps
                         <PrDropdown
                             value={partnerSelecionado}
                             options={partners}
-                            optionLabel="nome"
+                            optionLabel="nomeExibicao"
                             placeholder={loadingPartners ? 'Carregando...' : 'Selecione a instituição'}
-                            onChange={(e) => handleSelectPartner(e.value as TenantPartner)}
+                            onChange={(e) => handleSelectPartner(e.value as MatterTenantPartnerOption)}
                             className="w-full"
                             disabled={loadingPartners}
                             filter

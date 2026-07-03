@@ -21,6 +21,14 @@ type ParliamentarianSummary = {
     } | null;
 };
 
+function formatLinkedUserName(
+    user?: { firstName?: string | null; lastName?: string | null } | null,
+): string | null {
+    if (!user) return null;
+    const nome = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+    return nome || null;
+}
+
 function mapParlamentar(parlamentar: ParlamentarResumo | null | undefined) {
     if (!parlamentar) return null;
     return {
@@ -72,13 +80,39 @@ function buildIdentificacao(data: MateriaPrismaPayload): string {
     return tipoLabel;
 }
 
+type TenantPartnerAutorResumo = {
+    id: string;
+    nome: string;
+    cargo?: string | null;
+    instituicao?: string | null;
+    tenantPartnerUser?: {
+        user?: { firstName?: string | null; lastName?: string | null } | null;
+    } | null;
+};
+
+function mapTenantPartnerAutor(partner: TenantPartnerAutorResumo) {
+    const subtitulo = [partner.cargo, partner.instituicao]
+        .filter(Boolean)
+        .join(' — ');
+    const linkedUser = partner.tenantPartnerUser?.user;
+    return {
+        id: partner.id,
+        tipo: 'tenant_partner' as const,
+        tenantPartnerId: partner.id,
+        nome: formatLinkedUserName(linkedUser) ?? partner.nome,
+        instituicaoNome: partner.nome,
+        photoUrl: null,
+        subtitulo: subtitulo || partner.nome || null,
+    };
+}
+
 function mapAutorPrincipal(data: MateriaPrismaPayload) {
     if (data.authorParliamentarian) {
         return {
             id: data.authorParliamentarian.id,
             tipo: 'parlamentar' as const,
+            parlamentarianId: data.authorParliamentarian.id,
             nome: data.authorParliamentarian.parliamentaryName,
-            parlamentarId: data.authorParliamentarian.id,
             photoUrl: data.authorParliamentarian.photoUrl ?? null,
             subtitulo: data.authorParliamentarian.officeNumber
                 ? `Gabinete ${data.authorParliamentarian.officeNumber}`
@@ -86,32 +120,19 @@ function mapAutorPrincipal(data: MateriaPrismaPayload) {
         };
     }
 
-    const externo = data.autor?.autorExterno;
-    if (externo?.nome) {
-        const subtitulo = [externo.cargo, externo.instituicao]
-            .filter(Boolean)
-            .join(' — ');
-        return {
-            id: externo.id,
-            tipo: 'externo' as const,
-            nome: externo.nome,
-            photoUrl: null,
-            subtitulo: subtitulo || null,
-        };
-    }
-
-    if (data.autor?.nome) {
-        return {
-            id: data.autor.id,
-            tipo: 'externo' as const,
-            nome: data.autor.nome,
-            photoUrl: null,
-            subtitulo: null,
-        };
+    const partner = data.autor?.tenantPartner;
+    if (partner?.nome) {
+        return mapTenantPartnerAutor(partner);
     }
 
     if (data.autorId) {
-        return { id: data.autorId, tipo: 'externo' as const, nome: '—' };
+        return {
+            id: data.autorId,
+            tipo: 'tenant_partner' as const,
+            nome: data.autor?.nome ?? '—',
+            photoUrl: null,
+            subtitulo: null,
+        };
     }
 
     return null;
@@ -163,12 +184,7 @@ export type MateriaPrismaPayload = {
     autor?: {
         id: string;
         nome: string;
-        autorExterno?: {
-            id: string;
-            nome: string;
-            cargo?: string | null;
-            instituicao?: string | null;
-        } | null;
+        tenantPartner?: TenantPartnerAutorResumo | null;
     } | null;
     relator?: ParlamentarResumo | null;
     primeiroAutor?: ParlamentarResumo | null;
@@ -176,7 +192,15 @@ export type MateriaPrismaPayload = {
     matterCoauthors?: Array<{
         id: string;
         ordem: number;
-        parliamentarian: ParliamentarianSummary;
+        parliamentarian?: ParliamentarianSummary | null;
+        tenantPartner?: {
+            id: string;
+            nome: string;
+            tipoAutorId?: string;
+            tenantPartnerUser?: {
+                user?: { firstName?: string | null; lastName?: string | null } | null;
+            } | null;
+        } | null;
     }>;
     authorParliamentarian?: ParliamentarianSummary | null;
     rapporteurParliamentarian?: ParliamentarianSummary | null;
@@ -257,13 +281,41 @@ export class MatterViewModel {
                 rapporteurParliamentarian: data.rapporteurParliamentarian
                     ? mapParliamentarianSummary(data.rapporteurParliamentarian)
                     : null,
-                coauthors: (data.matterCoauthors ?? []).map((item) => ({
-                    id: item.id,
-                    ordem: item.ordem,
-                    parliamentarian: mapParliamentarianSummary(
+                coauthors: (data.matterCoauthors ?? []).map((item) => {
+                    const parliamentarian = mapParliamentarianSummary(
                         item.parliamentarian,
-                    ),
-                })),
+                    );
+                    if (parliamentarian) {
+                        return {
+                            id: item.id,
+                            ordem: item.ordem,
+                            type: 'parliamentarian' as const,
+                            parliamentarian,
+                        };
+                    }
+                    const partner = item.tenantPartner;
+                    if (partner) {
+                        return {
+                            id: item.id,
+                            ordem: item.ordem,
+                            type: 'tenant_partner' as const,
+                            tenantPartner: {
+                                id: partner.id,
+                                nome: partner.nome,
+                            },
+                            label:
+                                formatLinkedUserName(
+                                    partner.tenantPartnerUser?.user,
+                                ) ?? partner.nome,
+                        };
+                    }
+                    return {
+                        id: item.id,
+                        ordem: item.ordem,
+                        type: 'tenant_partner' as const,
+                        label: 'Coautor',
+                    };
+                }),
             },
             workflow: {
                 capabilities,

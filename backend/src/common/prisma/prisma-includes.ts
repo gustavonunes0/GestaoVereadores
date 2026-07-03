@@ -50,6 +50,13 @@ export const materiaRelationsInclude = {
                     nome: true,
                     cargo: true,
                     instituicao: true,
+                    tenantPartnerUser: {
+                        select: {
+                            user: {
+                                select: { firstName: true, lastName: true },
+                            },
+                        },
+                    },
                 },
             },
             tipoAutor: { select: { id: true, nome: true } },
@@ -70,6 +77,20 @@ export const materiaRelationsInclude = {
         orderBy: { ordem: 'asc' as const },
         include: {
             parliamentarian: { select: materiaParliamentarianSelect },
+            tenantPartner: {
+                select: {
+                    id: true,
+                    nome: true,
+                    tipoAutorId: true,
+                    tenantPartnerUser: {
+                        select: {
+                            user: {
+                                select: { firstName: true, lastName: true },
+                            },
+                        },
+                    },
+                },
+            },
         },
     },
 } as const;

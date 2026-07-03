@@ -16,6 +16,7 @@ import { PublicarPautaDialog } from './PublicarPautaDialog';
 import { AbrirVotacaoDialog } from './AbrirVotacaoDialog';
 import { FecharVotacaoDialog } from './FecharVotacaoDialog';
 import { enviarItemParaPainel, painelUrl } from '../../../utils/sessaoPainelChannel';
+import { SIGL_TOOLTIP_BOTTOM } from '../../../utils/primeTooltip';
 
 const CATEGORIA_ORDEM: PautaItemCategoria[] = ['MATERIA', 'COMISSAO', 'ATO', 'NORMA', 'AVISO'];
 
@@ -120,7 +121,7 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
                                     outlined
                                     onClick={abrirPainel}
                                     tooltip="Abre o monitor do plenário em nova janela"
-                                    tooltipOptions={{ position: 'bottom' }}
+                                    tooltipOptions={SIGL_TOOLTIP_BOTTOM}
                                 />
                             )}
                             {pautaPublicada && (
@@ -162,7 +163,7 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
                                         outlined
                                         disabled
                                         tooltip="A pauta só pode ser publicada enquanto a sessão está agendada."
-                                        tooltipOptions={{ position: 'bottom' }}
+                                        tooltipOptions={SIGL_TOOLTIP_BOTTOM}
                                     />
                                 )
                             )}

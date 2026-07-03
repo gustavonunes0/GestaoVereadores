@@ -403,8 +403,6 @@ model BoardMember {
     parliamentarian Parliamentarian @relation(fields: [parliamentarianId], references: [id])
     boardRole       BoardRole       @relation(fields: [boardRoleId], references: [id])
 
-    @@unique([boardId, boardRoleId])
-    @@unique([boardId, parliamentarianId])
     @@index([tenantId, boardId])
     @@index([tenantId, isRemoved])
     @@map("board_members")
@@ -1157,22 +1155,23 @@ model Materia {
     @@index([tenantId, isRemoved])
 }
 
-/** Coautores (parlamentares) — modelo alinhado ao módulo Parliamentarian. */
+/** Coautores — parlamentar ou instituição parceira. */
 model MatterCoauthor {
-    id                String @id @default(uuid())
+    id                String  @id @default(uuid())
     tenantId          String
     matterId          String
-    parliamentarianId String
+    parliamentarianId String?
+    tenantPartnerId   String?
     ordem             Int
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    tenant          Tenant          @relation(fields: [tenantId], references: [id])
-    matter          Materia         @relation(fields: [matterId], references: [id], onDelete: Cascade)
-    parliamentarian Parliamentarian @relation(fields: [parliamentarianId], references: [id])
+    tenant          Tenant           @relation(fields: [tenantId], references: [id])
+    matter          Materia          @relation(fields: [matterId], references: [id], onDelete: Cascade)
+    parliamentarian Parliamentarian? @relation(fields: [parliamentarianId], references: [id])
+    tenantPartner   TenantPartner?   @relation(fields: [tenantPartnerId], references: [id])
 
-    @@unique([matterId, parliamentarianId])
     @@unique([matterId, ordem])
     @@index([tenantId, matterId])
     @@map("matter_coauthors")
@@ -1280,6 +1279,7 @@ model TenantPartner {
     tipoAutor         TipoAutor          @relation(fields: [tipoAutorId], references: [id])
     tenantPartnerUser TenantPartnerUser?
     autores           Autor[]
+    matterCoauthorships MatterCoauthor[]
 
     @@index([tenantId])
     @@index([tenantId, isRemoved])

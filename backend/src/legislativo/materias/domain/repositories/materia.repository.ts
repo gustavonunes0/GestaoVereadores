@@ -36,6 +36,11 @@ export type TenantPartnerListItem = {
     tipoAutor: { id: string; nome: string; idNegocio: number | null };
 };
 
+export type MatterCoauthorInput = {
+    parliamentarianId?: string;
+    tenantPartnerId?: string;
+};
+
 export abstract class MateriaRepository {
     abstract create(tenantId: string, dto: CreateMateriaDto): Promise<unknown>;
     abstract findAll(
@@ -109,7 +114,7 @@ export abstract class MateriaRepository {
     abstract replaceCoautores(
         tenantId: string,
         matterId: string,
-        coautorIds: string[],
+        coautores: MatterCoauthorInput[],
     ): Promise<MatterAuthorshipPayload>;
 
     // ── Métodos novos (clean DDD) ──────────────────────────────────────────

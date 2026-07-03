@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import { IsOptional, IsUUID } from 'class-validator';
 
 export class SetAutorParlamentarDto {
     @ApiProperty()
@@ -14,9 +14,13 @@ export class SetTenantPartnerDto {
 }
 
 export class AddCoautorMateriaDto {
-    @ApiProperty()
+    @IsOptional()
     @IsUUID()
-    parliamentarianId!: string;
+    parliamentarianId?: string;
+
+    @IsOptional()
+    @IsUUID()
+    tenantPartnerId?: string;
 }
 
 export class SetRelatorMateriaDto {

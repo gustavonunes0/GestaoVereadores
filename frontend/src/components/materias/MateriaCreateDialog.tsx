@@ -116,9 +116,7 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
             const msg =
                 statusFinal === 'PROTOCOLADA'
                     ? `${idStr} protocolada com sucesso.`
-                    : statusFinal === 'DRAFT'
-                      ? `${idStr} salva como rascunho.`
-                      : `${idStr} salva com sucesso.`;
+                    : `${idStr} salva como rascunho.`;
             showSuccess(msg);
             onSaved();
             onClose();
@@ -137,12 +135,6 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
                 severity="secondary"
                 outlined
                 icon="pi pi-save"
-                loading={saving}
-                onClick={() => void submit('DRAFT')}
-            />
-            <Button
-                label="Salvar"
-                icon="pi pi-check"
                 loading={saving}
                 onClick={() => void submit('DRAFT')}
             />

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Button } from 'primereact/button';
-import { Tooltip } from 'primereact/tooltip';
 import { PautaItemLeitura } from './PautaItemLeitura';
 import {
     CategoriaPautaBadge,
@@ -20,6 +19,7 @@ import {
 } from '../../../types/sessoes';
 import { STATUS_MATERIA_LABELS } from '../../../types/materias';
 import type { MateriaStatus } from '../../../types/legislative';
+import { SIGL_TOOLTIP_TOP } from '../../../utils/primeTooltip';
 
 interface Props {
     sessaoId: string;
@@ -154,86 +154,68 @@ export function PautaItemRow({
                 </td>
                 <td className="col-act">
                     <div className="pauta-act-wrap">
-                        <Tooltip
-                            target={`.btn-ler-${item.id}`}
-                            content={expandido ? 'Recolher' : 'Ler item'}
-                        />
                         <Button
                             icon={expandido ? 'pi pi-eye-slash' : 'pi pi-eye'}
                             text
                             size="small"
-                            className={`btn-ler-${item.id}`}
                             aria-label={expandido ? 'Recolher leitura' : 'Ler conteúdo completo'}
                             aria-expanded={expandido}
+                            tooltip={expandido ? 'Recolher leitura' : 'Ler conteúdo completo'}
+                            tooltipOptions={SIGL_TOOLTIP_TOP}
                             onClick={() => setExpandido((v) => !v)}
                         />
                         {exibirNoPainel && (
-                            <>
-                                <Tooltip
-                                    target={`.btn-painel-${item.id}`}
-                                    content="Exibir no telão do plenário"
-                                />
-                                <Button
-                                    icon="pi pi-desktop"
-                                    text
-                                    size="small"
-                                    className={`btn-painel-${item.id}`}
-                                    aria-label="Exibir no telão do plenário"
-                                    onClick={onExibirNoPainel}
-                                />
-                            </>
+                            <Button
+                                icon="pi pi-desktop"
+                                text
+                                size="small"
+                                aria-label="Exibir no telão do plenário"
+                                tooltip="Exibir no telão do plenário"
+                                tooltipOptions={SIGL_TOOLTIP_TOP}
+                                onClick={onExibirNoPainel}
+                            />
                         )}
                         {exibirFecharVotacao && (
-                            <>
-                                <Tooltip
-                                    target={`.btn-fechar-vot-${item.id}`}
-                                    content="Fechar votação"
-                                />
-                                <Button
-                                    icon="pi pi-stop-circle"
-                                    text
-                                    size="small"
-                                    severity="danger"
-                                    className={`btn-fechar-vot-${item.id}`}
-                                    aria-label="Fechar votação"
-                                    onClick={onFecharVotacao}
-                                />
-                            </>
+                            <Button
+                                icon="pi pi-stop-circle"
+                                text
+                                size="small"
+                                severity="danger"
+                                aria-label="Fechar votação"
+                                tooltip="Fechar votação"
+                                tooltipOptions={SIGL_TOOLTIP_TOP}
+                                onClick={onFecharVotacao}
+                            />
                         )}
                         {exibirAbrirVotacao && (
-                            <>
-                                <Tooltip
-                                    target={`.btn-votar-${item.id}`}
-                                    content="Abrir votação"
-                                />
-                                <Button
-                                    icon="pi pi-play"
-                                    text
-                                    size="small"
-                                    severity="success"
-                                    className={`btn-votar-${item.id}`}
-                                    aria-label="Abrir votação"
-                                    onClick={onAbrirVotacao}
-                                />
-                            </>
+                            <Button
+                                icon="pi pi-play"
+                                text
+                                size="small"
+                                severity="success"
+                                aria-label="Abrir votação"
+                                tooltip="Abrir votação"
+                                tooltipOptions={SIGL_TOOLTIP_TOP}
+                                onClick={onAbrirVotacao}
+                            />
                         )}
                         {!somenteLeitura && (
-                            <>
-                                <Tooltip
-                                    target={`.btn-remover-${item.id}`}
-                                    content={publicada ? 'Pauta publicada — remoção bloqueada' : 'Remover'}
-                                />
-                                <Button
-                                    icon="pi pi-times"
-                                    text
-                                    size="small"
-                                    severity="danger"
-                                    className={`btn-remover-${item.id} pauta-remove-btn`}
-                                    disabled={publicada}
-                                    onClick={() => setConfirmando(true)}
-                                    aria-label="Remover item da pauta"
-                                />
-                            </>
+                            <Button
+                                icon="pi pi-times"
+                                text
+                                size="small"
+                                severity="danger"
+                                className="pauta-remove-btn"
+                                disabled={publicada}
+                                onClick={() => setConfirmando(true)}
+                                aria-label="Remover item da pauta"
+                                tooltip={
+                                    publicada
+                                        ? 'Pauta publicada — remoção bloqueada'
+                                        : 'Remover item da pauta'
+                                }
+                                tooltipOptions={SIGL_TOOLTIP_TOP}
+                            />
                         )}
                     </div>
                 </td>

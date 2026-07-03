@@ -57,13 +57,13 @@ describe('MatterAuthorshipDomainService', () => {
 
     it('exige autor externo informado', () => {
         expect(() => service.assertExternalAuthorProvided(null)).toThrow(
-            'Autor externo é obrigatório',
+            'Instituição parceira autora é obrigatória',
         );
     });
 
     it('impede coautor duplicado', () => {
         expect(() => service.assertCoauthorNotDuplicate(true)).toThrow(
-            'Parlamentar já é coautor desta matéria',
+            'Este autor já é coautor desta matéria',
         );
     });
 });
@@ -125,7 +125,7 @@ describe('SetMatterTenantPartnerUseCase', () => {
             tenantPartnerId: 'ext-1',
         });
 
-        expect(result.primaryAuthor?.type).toBe(MatterAuthorType.EXTERNAL);
+        expect(result.primaryAuthor?.type).toBe(MatterAuthorType.TENANT_PARTNER);
         expect(
             result.primaryAuthor &&
                 'tenantPartner' in result.primaryAuthor &&
@@ -164,7 +164,7 @@ describe('AddMatterCoauthorUseCase', () => {
     it('bloqueia coautor duplicado', async () => {
         const repository = buildMateriaRepositoryMock();
         repository.addCoautor.mockRejectedValue(
-            new ConflictException('Parlamentar já é coautor desta matéria'),
+            new ConflictException('Este autor já é coautor desta matéria'),
         );
 
         const useCase = new AddMatterCoauthorUseCase(repository as never);
@@ -206,7 +206,7 @@ describe('MatterAuthorshipViewModel', () => {
             MatterAuthorType.PARLIAMENTARIAN,
         );
 
-        const externo = MatterAuthorshipViewModel.toHttp({
+        const partner = MatterAuthorshipViewModel.toHttp({
             ...authorshipPayload,
             authorParliamentarian: null,
             autor: {
@@ -219,7 +219,7 @@ describe('MatterAuthorshipViewModel', () => {
                 },
             },
         });
-        expect(externo.primaryAuthor?.type).toBe(MatterAuthorType.EXTERNAL);
+        expect(partner.primaryAuthor?.type).toBe(MatterAuthorType.TENANT_PARTNER);
     });
 });
 

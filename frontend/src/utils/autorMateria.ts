@@ -33,7 +33,7 @@ export function autorFromMatterAuthorship(
         };
     }
 
-    if (author.type === 'external') {
+    if (author.type === 'tenant_partner' || author.type === 'external') {
         const partner = author.tenantPartner;
         if (partner?.id) {
             return {
@@ -51,15 +51,44 @@ export function autorFromMatterAuthorship(
 export function coautoresFromMatterAuthorship(
     authorship: MatterAuthorship,
 ): CoautorFormItem[] {
-    return (authorship.coauthors ?? []).map((c) => ({
-        localId: crypto.randomUUID(),
-        tipo: 'PARLAMENTAR',
-        selecionado: {
-            tipo: 'PARLAMENTAR',
-            parlamentarianId: c.parliamentarian.id,
-            parlamentarianUserNome: c.parliamentarian.parliamentaryName,
-        },
-    }));
+    return (authorship.coauthors ?? []).map((c) => {
+        if (
+            (c.type === 'tenant_partner' ||
+                c.type === 'external' ||
+                c.tenantPartner) &&
+            c.tenantPartner?.id
+        ) {
+            return {
+                localId: crypto.randomUUID(),
+                tipo: 'TENANT_PARTNER' as const,
+                selecionado: {
+                    tipo: 'TENANT_PARTNER' as const,
+                    tenantPartnerId: c.tenantPartner.id,
+                    tenantPartnerNome: c.tenantPartner.nome,
+                    tenantPartnerUserNome: c.label,
+                },
+            };
+        }
+
+        const parl = c.parliamentarian;
+        if (!parl?.id) {
+            return {
+                localId: crypto.randomUUID(),
+                tipo: '' as const,
+                selecionado: null,
+            };
+        }
+
+        return {
+            localId: crypto.randomUUID(),
+            tipo: 'PARLAMENTAR' as const,
+            selecionado: {
+                tipo: 'PARLAMENTAR' as const,
+                parlamentarianId: parl.id,
+                parlamentarianUserNome: parl.parliamentaryName,
+            },
+        };
+    });
 }
 
 export function resolveAutorDisplayNome(autor: AutorSelecionado): string {
@@ -98,11 +127,14 @@ export function validateCoautores(coautores: CoautorFormItem[]): string | null {
             return `Complete a seleção do coautor ${i + 1}.`;
         }
         const sel = coautores[i].selecionado!;
-        if (sel.tipo !== 'PARLAMENTAR') {
-            return `Coautor ${i + 1}: apenas parlamentares podem ser coautores no momento.`;
+        if (sel.tipo === 'COMISSAO') {
+            return `Coautor ${i + 1}: comissão ainda não é suportada como coautor.`;
         }
-        if (!sel.parlamentarianId) {
+        if (sel.tipo === 'PARLAMENTAR' && !sel.parlamentarianId) {
             return `Selecione o parlamentar coautor ${i + 1}.`;
+        }
+        if (sel.tipo === 'TENANT_PARTNER' && !sel.tenantPartnerId) {
+            return `Selecione a instituição parceira coautora ${i + 1}.`;
         }
     }
     return null;
@@ -144,18 +176,27 @@ export function buildCreateMateriaApiBody(params: {
         body.tenantPartnerId = params.autor.tenantPartnerId;
     }
 
-    const coautorIds = params.coautores
+    const coautoresApi = params.coautores
         .map((c) => c.selecionado)
+        .filter((sel): sel is AutorSelecionado => sel != null)
+        .map((sel) => {
+            if (sel.tipo === 'PARLAMENTAR' && sel.parlamentarianId) {
+                return { parliamentarianId: sel.parlamentarianId };
+            }
+            if (sel.tipo === 'TENANT_PARTNER' && sel.tenantPartnerId) {
+                return { tenantPartnerId: sel.tenantPartnerId };
+            }
+            return null;
+        })
         .filter(
-            (sel): sel is AutorSelecionado =>
-                sel != null &&
-                sel.tipo === 'PARLAMENTAR' &&
-                Boolean(sel.parlamentarianId),
-        )
-        .map((sel) => sel.parlamentarianId!);
+            (
+                item,
+            ): item is { parliamentarianId: string } | { tenantPartnerId: string } =>
+                item != null,
+        );
 
-    if (coautorIds.length > 0) {
-        body.coautorIds = coautorIds;
+    if (coautoresApi.length > 0) {
+        body.coautores = coautoresApi;
     }
 
     return body;
@@ -179,6 +220,28 @@ export function resolveAnoIdFromNumeroAno(
     return { ok: true, numero: parsed.numero, anoId, ano: parsed.ano };
 }
 
+export function coautorIdentityKey(sel: AutorSelecionado): string {
+    if (sel.tipo === 'PARLAMENTAR' && sel.parlamentarianId) {
+        return `p:${sel.parlamentarianId}`;
+    }
+    if (sel.tipo === 'TENANT_PARTNER' && sel.tenantPartnerId) {
+        return `t:${sel.tenantPartnerId}`;
+    }
+    return '';
+}
+
+export function buildAddCoautorDto(
+    sel: AutorSelecionado,
+): { parliamentarianId?: string; tenantPartnerId?: string } | null {
+    if (sel.tipo === 'PARLAMENTAR' && sel.parlamentarianId) {
+        return { parliamentarianId: sel.parlamentarianId };
+    }
+    if (sel.tipo === 'TENANT_PARTNER' && sel.tenantPartnerId) {
+        return { tenantPartnerId: sel.tenantPartnerId };
+    }
+    return null;
+}
+
 export function extractParlamentarianCoautorIds(
     coautores: CoautorFormItem[],
 ): string[] {
@@ -193,9 +256,9 @@ export function extractParlamentarianCoautorIds(
         .map((sel) => sel.parlamentarianId!);
 }
 
-export function autorTipoIcon(tipo: TipoAutorMateria | 'parlamentar' | 'externo'): string {
+export function autorTipoIcon(tipo: TipoAutorMateria | 'parlamentar' | 'tenant_partner' | 'externo'): string {
     if (tipo === 'PARLAMENTAR' || tipo === 'parlamentar') return 'pi-user';
-    if (tipo === 'TENANT_PARTNER' || tipo === 'externo') return 'pi-building';
+    if (tipo === 'TENANT_PARTNER' || tipo === 'tenant_partner' || tipo === 'externo') return 'pi-building';
     return 'pi-users';
 }
 

@@ -33,7 +33,14 @@ export class AddMatterCoauthorUseCase {
         dto: AddCoautorMateriaDto,
     ) {
         this.domainService.assertTenantIdProvided(tenantId);
-        this.domainService.assertCoauthorMustBeParliamentarian();
+
+        const hasParl = Boolean(dto.parliamentarianId?.trim());
+        const hasPartner = Boolean(dto.tenantPartnerId?.trim());
+        if (hasParl === hasPartner) {
+            throw new MatterAuthorshipValidationError(
+                'Informe parlamentar ou instituição parceira como coautor',
+            );
+        }
 
         try {
             const data = await this.repository.addCoautor(
@@ -47,6 +54,9 @@ export class AddMatterCoauthorUseCase {
                 const msg = error.message;
                 if (msg.includes('Parlamentar')) {
                     throw new ParliamentarianNotFoundForMatterError();
+                }
+                if (msg.includes('Instituição parceira')) {
+                    throw new MatterAuthorshipValidationError(msg);
                 }
                 throw new MatterNotFoundError();
             }

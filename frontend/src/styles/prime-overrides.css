@@ -537,3 +537,15 @@ input[type='checkbox'] + label {
     justify-content: flex-end;
     gap: var(--layout-gap-sm);
 }
+
+.p-tooltip {
+    z-index: 1200;
+    max-width: min(20rem, 90vw);
+}
+
+.p-tooltip .p-tooltip-text {
+    white-space: nowrap;
+    line-height: 1.35;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
+}

@@ -24,18 +24,18 @@ export interface MatterTenantPartnerOption {
 export interface MatterAuthorOption {
     id: string;
     label: string;
-    kind: 'parliamentarian' | 'external';
+    kind: 'parliamentarian' | 'tenant_partner';
 }
 
 export interface MatterAuthorOptionsResponse {
-    kind: 'parliamentarian' | 'external';
+    kind: 'parliamentarian' | 'tenant_partner';
     options: MatterAuthorOption[];
 }
 
 export interface MatterAuthorship {
     matterId: string;
     primaryAuthor?: {
-        type: 'parliamentarian' | 'external';
+        type: 'parliamentarian' | 'tenant_partner';
         label: string;
         parliamentarian?: { id: string; parliamentaryName: string };
         tenantPartner?: { id: string; nome: string; tipoAutorId?: string };
@@ -44,16 +44,19 @@ export interface MatterAuthorship {
     coauthors?: Array<{
         id: string;
         ordem: number;
-        parliamentarian: { id: string; parliamentaryName: string };
+        type?: 'parliamentarian' | 'tenant_partner';
+        label?: string;
+        parliamentarian?: { id: string; parliamentaryName: string };
+        tenantPartner?: { id: string; nome: string; tipoAutorId?: string };
     }>;
 }
 
 export interface AutorMateria {
     id: string;
-    tipo: 'parlamentar' | 'externo';
+    tipo: 'parlamentar' | 'tenant_partner';
     nome: string;
-    parlamentarId?: string;
-    autorExternoId?: string;
+    parlamentarianId?: string;
+    tenantPartnerId?: string;
     photoUrl?: string | null;
     subtitulo?: string | null;
 }
@@ -136,6 +139,10 @@ export interface CreateMateriaDto {
     tenantPartnerId?: string;
     autorExternoId?: string;
     coautorIds?: string[];
+    coautores?: Array<{
+        parliamentarianId?: string;
+        tenantPartnerId?: string;
+    }>;
     relatoresIds?: string[];
 }
 
@@ -235,7 +242,10 @@ export const materiasApi = {
     listCoautores: (id: string) =>
         api<CoautorMateria[]>(API_PATHS.materiaCoautores(id)),
 
-    addCoautor: (id: string, dto: { parliamentarianId: string }) =>
+    addCoautor: (
+        id: string,
+        dto: { parliamentarianId?: string; tenantPartnerId?: string },
+    ) =>
         api<CoautorMateria>(API_PATHS.materiaCoautores(id), { method: 'POST', body: JSON.stringify(dto) }),
 
     removeCoautor: (materiaId: string, coautorId: string) =>

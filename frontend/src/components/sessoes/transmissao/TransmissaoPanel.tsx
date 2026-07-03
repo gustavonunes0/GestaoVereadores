@@ -9,20 +9,12 @@ import { TransmissaoVideoTab } from './TransmissaoVideoTab';
 import { TransmissaoStreamTab } from './TransmissaoStreamTab';
 import { TransmissaoFullscreenOverlay } from './TransmissaoFullscreenOverlay';
 
-type TransmissaoTab = 'video' | 'audio' | 'stream';
-
 const CANAIS_PADRAO: AudioChannel[] = [
     { id: 'mic', label: 'Microfone', volume: 85, muted: false },
     { id: 'camera1', label: 'Câmera 1', volume: 70, muted: false },
     { id: 'camera2', label: 'Câmera 2', volume: 60, muted: false },
     { id: 'libras', label: 'Libras', volume: 80, muted: true, isOptional: true },
     { id: 'master', label: 'Volume geral', volume: 100, muted: false },
-];
-
-const TABS: { id: TransmissaoTab; label: string; icon: string }[] = [
-    { id: 'video', label: 'Câmeras', icon: 'pi pi-desktop' },
-    { id: 'audio', label: 'Áudio', icon: 'pi pi-chart-line' },
-    { id: 'stream', label: 'Transmissão', icon: 'pi pi-youtube' },
 ];
 
 interface Props {
@@ -37,7 +29,6 @@ export function TransmissaoPanel({ sessao, userName }: Props) {
     const jitsiContainerRef = useRef<HTMLDivElement>(null);
     const externalApiRef = useRef<unknown>(null);
 
-    const [tab, setTab] = useState<TransmissaoTab>('video');
     const [cameraAtiva, setCameraAtiva] = useState('camera1');
     const [librasConectado, setLibrasConectado] = useState(false);
     const [librasParticipantId, setLibrasParticipantId] = useState<string | null>(null);
@@ -190,7 +181,6 @@ export function TransmissaoPanel({ sessao, userName }: Props) {
             setTransmitindo(true);
             setDuracao(0);
             timerRef.current = setInterval(() => setDuracao((d) => d + 1), 1000);
-            setTab('video');
             showToast('success', 'Sala iniciada', 'Conectando ao Jitsi…');
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Não foi possível iniciar a transmissão';
@@ -211,32 +201,18 @@ export function TransmissaoPanel({ sessao, userName }: Props) {
 
     return (
         <div className="transmissao-panel-wrap">
-            <div className="transmissao-panel">
+            <div className="transmissao-card transmissao-card--status">
                 <StatusConexaoJitsi
                     conectado={jitsiConectado}
                     transmitindo={transmitindo}
                     roomName={roomName}
                     participantCount={participantCount}
                 />
+            </div>
 
-                <div className="transmissao-tab-row" role="tablist">
-                    {TABS.map((t) => (
-                        <button
-                            key={t.id}
-                            type="button"
-                            role="tab"
-                            aria-selected={tab === t.id}
-                            className={`transmissao-stab${tab === t.id ? ' active' : ''}`}
-                            onClick={() => setTab(t.id)}
-                        >
-                            <i className={t.icon} aria-hidden />
-                            {t.label}
-                        </button>
-                    ))}
-                </div>
-
-                {tab === 'video' && (
-                    jitsiData ? (
+            <div className="transmissao-layout">
+                <div className="transmissao-card transmissao-layout__video">
+                    {jitsiData ? (
                         <div className="transmissao-section">
                             <div className="transmissao-sec-title">
                                 <i className="pi pi-th-large" aria-hidden />
@@ -264,38 +240,40 @@ export function TransmissaoPanel({ sessao, userName }: Props) {
                             onSelectCamera={handleSelectCamera}
                             onToggleFullscreen={handleToggleFullscreen}
                         />
-                    )
-                )}
+                    )}
+                </div>
 
-                {tab === 'audio' && (
-                    <div className="transmissao-section">
-                        <div className="transmissao-sec-title">
-                            <i className="pi pi-sliders-h" aria-hidden />
-                            Mixer de áudio
+                <div className="transmissao-layout__side">
+                    <div className="transmissao-card">
+                        <div className="transmissao-section">
+                            <div className="transmissao-sec-title">
+                                <i className="pi pi-sliders-h" aria-hidden />
+                                Mixer de áudio
+                            </div>
+                            <AudioMixer
+                                canais={canais}
+                                librasConectado={librasConectado}
+                                audioLevels={audioLevels}
+                                onVolumeChange={handleVolumeChange}
+                                onMute={handleMute}
+                            />
                         </div>
-                        <AudioMixer
-                            canais={canais}
-                            librasConectado={librasConectado}
-                            audioLevels={audioLevels}
-                            onVolumeChange={handleVolumeChange}
-                            onMute={handleMute}
+                    </div>
+
+                    <div className="transmissao-card">
+                        <TransmissaoStreamTab
+                            sessaoId={sessao.id}
+                            linkYoutube={linkYoutube}
+                            transmitindo={transmitindo}
+                            iniciando={iniciandoJitsi}
+                            duracao={duracao}
+                            modoTelaCheia={modoTelaCheia}
+                            onLinkChange={setLinkYoutube}
+                            onToggleStream={handleToggleStream}
+                            onToggleFullscreen={handleToggleFullscreen}
                         />
                     </div>
-                )}
-
-                {tab === 'stream' && (
-                    <TransmissaoStreamTab
-                        sessaoId={sessao.id}
-                        linkYoutube={linkYoutube}
-                        transmitindo={transmitindo}
-                        iniciando={iniciandoJitsi}
-                        duracao={duracao}
-                        modoTelaCheia={modoTelaCheia}
-                        onLinkChange={setLinkYoutube}
-                        onToggleStream={handleToggleStream}
-                        onToggleFullscreen={handleToggleFullscreen}
-                    />
-                )}
+                </div>
             </div>
 
             {modoTelaCheia && !jitsiData && (

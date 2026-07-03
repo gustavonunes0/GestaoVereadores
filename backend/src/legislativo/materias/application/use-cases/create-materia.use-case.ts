@@ -3,7 +3,7 @@ import {
     AuthenticatedUser,
     isParlamentarianUser,
 } from '../../../../common/types/authenticated-request';
-import { MateriaRepository } from '../../domain/repositories/materia.repository';
+import { MateriaRepository, MatterCoauthorInput } from '../../domain/repositories/materia.repository';
 import { LegislativeMatterDomainService } from '../../domain/services/legislative-matter-domain.service';
 import { MATERIA_REPOSITORY } from '../../materias.tokens';
 import { CreateMateriaDto } from '../dto/materia.dto';
@@ -42,6 +42,7 @@ export class CreateMateriaUseCase {
             tenantPartnerId,
             authorParliamentarianId: dtoAuthorParliamentarianId,
             coautorIds,
+            coautores,
             relatoresIds,
             ...createDto
         } = dto;
@@ -79,11 +80,20 @@ export class CreateMateriaUseCase {
             });
         }
 
-        if (coautorIds?.length) {
+        const coautoresResolved: MatterCoauthorInput[] = coautores?.length
+            ? coautores.map((item) => ({
+                  parliamentarianId: item.parliamentarianId,
+                  tenantPartnerId: item.tenantPartnerId,
+              }))
+            : (coautorIds ?? []).map((parliamentarianId) => ({
+                  parliamentarianId,
+              }));
+
+        if (coautoresResolved.length) {
             await this.repository.replaceCoautores(
                 tenantId,
                 created.id,
-                coautorIds,
+                coautoresResolved,
             );
         }
 

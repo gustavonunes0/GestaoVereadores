@@ -27,6 +27,7 @@ import { MatterTramitationDomainService } from '../../domain/services/matter-tra
 import {
     TenantPartnerListItem,
     MateriaRepository,
+    MatterCoauthorInput,
     TramitarMateriaData,
 } from '../../domain/repositories/materia.repository';
 import {
@@ -152,39 +153,99 @@ export class PrismaMateriaRepository implements MateriaRepository {
         }
     }
 
+    private async assertTenantPartnerAuthorEligible(
+        tenantId: string,
+        tenantPartnerId: string,
+    ) {
+        const row = await this.prisma.tenantPartner.findFirst({
+            where: {
+                id: tenantPartnerId,
+                tenantId,
+                isRemoved: false,
+                tenantPartnerUser: { isRemoved: false },
+            },
+        });
+        if (!row) {
+            throw new NotFoundException(
+                'Instituição parceira sem usuário vinculado não pode figurar como autora ou coautora desta matéria',
+            );
+        }
+        return row;
+    }
+
     private async syncCoautores(
         tenantId: string,
         matterId: string,
-        coautorIds?: string[],
+        coautores: MatterCoauthorInput[] | undefined,
         authorParliamentarianId?: string | null,
+        authorTenantPartnerId?: string | null,
     ) {
-        if (coautorIds === undefined) return;
+        if (coautores === undefined) return;
         await this.prisma.matterCoauthor.deleteMany({ where: { matterId } });
-        const ids = coautorIds.filter((id) => id !== authorParliamentarianId);
-        if (!ids.length) return;
+        if (!coautores.length) return;
 
-        await this.assertParliamentariansWithUser(tenantId, ids);
-        await this.prisma.matterCoauthor.createMany({
-            data: ids.map((parliamentarianId, index) => ({
-                tenantId,
-                matterId,
-                parliamentarianId,
-                ordem: index + 1,
-            })),
-        });
+        const parliamentarianIds = coautores
+            .map((c) => c.parliamentarianId)
+            .filter((id): id is string => Boolean(id));
+        if (parliamentarianIds.length) {
+            await this.assertParliamentariansWithUser(tenantId, parliamentarianIds);
+        }
+
+        const ordemRows: Prisma.MatterCoauthorCreateManyInput[] = [];
+
+        let ordem = 1;
+        for (const item of coautores) {
+            if (item.parliamentarianId) {
+                if (item.parliamentarianId === authorParliamentarianId) {
+                    throw new BadRequestException(
+                        'Autor principal não pode ser listado novamente como coautor',
+                    );
+                }
+                ordemRows.push({
+                    tenantId,
+                    matterId,
+                    parliamentarianId: item.parliamentarianId,
+                    ordem: ordem++,
+                });
+                continue;
+            }
+            if (item.tenantPartnerId) {
+                await this.assertTenantPartnerAuthorEligible(
+                    tenantId,
+                    item.tenantPartnerId,
+                );
+                if (item.tenantPartnerId === authorTenantPartnerId) {
+                    throw new BadRequestException(
+                        'Autor principal não pode ser listado novamente como coautor',
+                    );
+                }
+                ordemRows.push({
+                    tenantId,
+                    matterId,
+                    tenantPartnerId: item.tenantPartnerId,
+                    ordem: ordem++,
+                });
+            }
+        }
+
+        if (!ordemRows.length) return;
+
+        await this.prisma.matterCoauthor.createMany({ data: ordemRows });
     }
 
     async replaceCoautores(
         tenantId: string,
         matterId: string,
-        coautorIds: string[],
+        coautores: MatterCoauthorInput[],
     ) {
         const matter = await this.findAutoriaOrThrow(tenantId, matterId);
+        const authorTenantPartnerId = matter.autor?.tenantPartner?.id ?? null;
         await this.syncCoautores(
             tenantId,
             matterId,
-            coautorIds,
+            coautores,
             matter.authorParliamentarianId,
+            authorTenantPartnerId,
         );
         return this.findAutoriaOrThrow(tenantId, matterId);
     }
@@ -272,7 +333,10 @@ export class PrismaMateriaRepository implements MateriaRepository {
             emTramitacao: _em,
             representanteIds,
             coautorIds: _coautorIds,
+            coautores: _coautores,
             relatoresIds: _relatoresIds,
+            tenantPartnerId: _tenantPartnerId,
+            authorParliamentarianId: _authorParliamentarianId,
             ...rest
         } = dto;
         const { dataApresentacaoInicio, dataApresentacaoFim } =
@@ -390,6 +454,10 @@ export class PrismaMateriaRepository implements MateriaRepository {
             emTramitacao: _em,
             representanteIds,
             coautorIds,
+            coautores,
+            relatoresIds: _relatoresIds,
+            tenantPartnerId: _tenantPartnerId,
+            authorParliamentarianId: _authorParliamentarianId,
             ...rest
         } = dto;
         const { dataApresentacaoInicio, dataApresentacaoFim } =
@@ -418,11 +486,21 @@ export class PrismaMateriaRepository implements MateriaRepository {
         });
 
         await this.syncRepresentantes(tenantId, id, representanteIds);
+        const coautoresSync =
+            coautores !== undefined
+                ? coautores.map((item) => ({
+                      parliamentarianId: item.parliamentarianId,
+                      tenantPartnerId: item.tenantPartnerId,
+                  }))
+                : coautorIds?.map((parliamentarianId) => ({
+                      parliamentarianId,
+                  }));
         await this.syncCoautores(
             tenantId,
             id,
-            coautorIds,
+            coautoresSync,
             atual.authorParliamentarianId,
+            atual.autor?.tenantPartner?.id ?? null,
         );
         return this.findOne(tenantId, id);
     }
@@ -631,18 +709,10 @@ export class PrismaMateriaRepository implements MateriaRepository {
         dto: SetTenantPartnerDto,
     ) {
         await this.findAutoriaOrThrow(tenantId, matterId);
-        const tenantPartner = await this.prisma.tenantPartner.findFirst({
-            where: {
-                id: dto.tenantPartnerId,
-                ...tenantWhere(tenantId),
-                isRemoved: false,
-            },
-        });
-        if (!tenantPartner) {
-            throw new NotFoundException(
-                'Autor externo não encontrado nesta Câmara',
-            );
-        }
+        const tenantPartner = await this.assertTenantPartnerAuthorEligible(
+            tenantId,
+            dto.tenantPartnerId,
+        );
 
         let autor = await this.prisma.autor.findFirst({
             where: {
@@ -680,24 +750,56 @@ export class PrismaMateriaRepository implements MateriaRepository {
         dto: AddCoautorMateriaDto,
     ) {
         const matter = await this.findAutoriaOrThrow(tenantId, matterId);
-        await this.assertParliamentarianAuthorEligible(
-            tenantId,
-            dto.parliamentarianId,
-        );
+        const parliamentarianId = dto.parliamentarianId?.trim();
+        const tenantPartnerId = dto.tenantPartnerId?.trim();
+        const hasParl = Boolean(parliamentarianId);
+        const hasPartner = Boolean(tenantPartnerId);
 
-        if (matter.authorParliamentarianId === dto.parliamentarianId) {
+        if (hasParl === hasPartner) {
             throw new BadRequestException(
-                'Autor principal não pode ser listado novamente como coautor',
+                'Informe parlamentar ou instituição parceira como coautor',
             );
         }
 
-        const duplicate = await this.prisma.matterCoauthor.findFirst({
-            where: { matterId, parliamentarianId: dto.parliamentarianId },
-        });
-        if (duplicate) {
-            throw new ConflictException(
-                'Parlamentar já é coautor desta matéria',
+        const authorTenantPartnerId = matter.autor?.tenantPartner?.id ?? null;
+
+        if (parliamentarianId) {
+            await this.assertParliamentarianAuthorEligible(
+                tenantId,
+                parliamentarianId,
             );
+
+            if (matter.authorParliamentarianId === parliamentarianId) {
+                throw new BadRequestException(
+                    'Autor principal não pode ser listado novamente como coautor',
+                );
+            }
+
+            const duplicate = await this.prisma.matterCoauthor.findFirst({
+                where: { matterId, parliamentarianId },
+            });
+            if (duplicate) {
+                throw new ConflictException(
+                    'Parlamentar já é coautor desta matéria',
+                );
+            }
+        } else if (tenantPartnerId) {
+            await this.assertTenantPartnerAuthorEligible(tenantId, tenantPartnerId);
+
+            if (authorTenantPartnerId === tenantPartnerId) {
+                throw new BadRequestException(
+                    'Autor principal não pode ser listado novamente como coautor',
+                );
+            }
+
+            const duplicate = await this.prisma.matterCoauthor.findFirst({
+                where: { matterId, tenantPartnerId },
+            });
+            if (duplicate) {
+                throw new ConflictException(
+                    'Instituição parceira já é coautora desta matéria',
+                );
+            }
         }
 
         const maxOrdem = await this.prisma.matterCoauthor.aggregate({
@@ -706,14 +808,17 @@ export class PrismaMateriaRepository implements MateriaRepository {
         });
         const ordem = (maxOrdem._max.ordem ?? 0) + 1;
 
-        await this.prisma.matterCoauthor.create({
-            data: {
-                tenantId,
-                matterId,
-                parliamentarianId: dto.parliamentarianId,
-                ordem,
-            },
-        });
+        const coauthorData: Prisma.MatterCoauthorUncheckedCreateInput =
+            parliamentarianId
+                ? { tenantId, matterId, ordem, parliamentarianId }
+                : {
+                      tenantId,
+                      matterId,
+                      ordem,
+                      tenantPartnerId: tenantPartnerId!,
+                  };
+
+        await this.prisma.matterCoauthor.create({ data: coauthorData });
 
         return this.findAutoriaOrThrow(tenantId, matterId);
     }

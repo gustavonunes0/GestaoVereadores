@@ -24,8 +24,9 @@ import {
 } from '../../types/materias';
 import {
     autorFromMatterAuthorship,
+    buildAddCoautorDto,
+    coautorIdentityKey,
     coautoresFromMatterAuthorship,
-    extractParlamentarianCoautorIds,
     resolveAnoIdFromNumeroAno,
     validateAutorSelecionado,
     validateCoautores,
@@ -74,7 +75,9 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     const [coautores, setCoautores] = useState<CoautorFormItem[]>([]);
     const [textoOriginal, setTextoOriginal] = useState<File | null>(null);
 
-    const coautoresIniciaisRef = useRef<Array<{ id: string; parliamentarianId: string }>>([]);
+    const coautoresIniciaisRef = useRef<
+        Array<{ id: string; identityKey: string }>
+    >([]);
     const autorInicialRef = useRef<AutorSelecionado | null>(null);
 
     useEffect(() => {
@@ -86,10 +89,26 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                 setAutorPrincipal(autor);
                 autorInicialRef.current = autor;
                 setCoautores(coautoresFromMatterAuthorship(autoria));
-                coautoresIniciaisRef.current = (autoria.coauthors ?? []).map((c) => ({
-                    id: c.id,
-                    parliamentarianId: c.parliamentarian.id,
-                }));
+                coautoresIniciaisRef.current = (autoria.coauthors ?? [])
+                    .map((c) => {
+                        if (c.tenantPartner?.id) {
+                            return {
+                                id: c.id,
+                                identityKey: `t:${c.tenantPartner.id}`,
+                            };
+                        }
+                        if (c.parliamentarian?.id) {
+                            return {
+                                id: c.id,
+                                identityKey: `p:${c.parliamentarian.id}`,
+                            };
+                        }
+                        return null;
+                    })
+                    .filter(
+                        (item): item is { id: string; identityKey: string } =>
+                            item != null,
+                    );
             })
             .catch(showApiError)
             .finally(() => setLoadingAutoria(false));
@@ -120,23 +139,29 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
             : null;
 
     async function syncCoautores() {
-        const desejados = extractParlamentarianCoautorIds(coautores);
-        const iniciais = coautoresIniciaisRef.current;
+        const desejados = coautores
+            .map((c) => c.selecionado)
+            .filter((sel): sel is AutorSelecionado => sel != null);
 
-        const desejadosSet = new Set(desejados);
-        const iniciaisPorParlId = new Map(
-            iniciais.map((c) => [c.parliamentarianId, c.id]),
+        const desejadosKeys = new Set(
+            desejados.map((sel) => coautorIdentityKey(sel)).filter(Boolean),
+        );
+        const iniciaisPorKey = new Map(
+            coautoresIniciaisRef.current.map((c) => [c.identityKey, c.id]),
         );
 
-        for (const inicial of iniciais) {
-            if (!desejadosSet.has(inicial.parliamentarianId)) {
+        for (const inicial of coautoresIniciaisRef.current) {
+            if (!desejadosKeys.has(inicial.identityKey)) {
                 await materiasApi.removeCoautor(materia.id, inicial.id);
             }
         }
 
-        for (const parlId of desejados) {
-            if (!iniciaisPorParlId.has(parlId)) {
-                await materiasApi.addCoautor(materia.id, { parliamentarianId: parlId });
+        for (const sel of desejados) {
+            const key = coautorIdentityKey(sel);
+            if (!key || iniciaisPorKey.has(key)) continue;
+            const dto = buildAddCoautorDto(sel);
+            if (dto) {
+                await materiasApi.addCoautor(materia.id, dto);
             }
         }
     }

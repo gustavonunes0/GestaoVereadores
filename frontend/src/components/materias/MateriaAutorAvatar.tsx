@@ -8,7 +8,10 @@ interface Props {
 
 export function MateriaAutorAvatar({ autor, size = 'large' }: Props) {
     const initial = autor.nome.charAt(0).toUpperCase();
-    const icon = autor.tipo === 'externo' ? 'pi pi-user' : undefined;
+    const icon =
+        autor.tipo === 'tenant_partner' || autor.tipo === 'externo'
+            ? 'pi pi-building'
+            : undefined;
 
     if (autor.photoUrl) {
         return <Avatar image={autor.photoUrl} shape="circle" size={size} />;

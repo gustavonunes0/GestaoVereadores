@@ -6,7 +6,7 @@ import { MATERIA_REPOSITORY } from '../../materias.tokens';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { tenantWhere } from '../../../../common/prisma/tenant-scope';
 
-export type MatterAuthorOptionKind = 'parliamentarian' | 'external';
+export type MatterAuthorOptionKind = 'parliamentarian' | 'tenant_partner';
 
 export type MatterAuthorOptionHttp = {
     id: string;
@@ -71,9 +71,9 @@ export class ListMatterAuthorOptionsUseCase {
                 instituicao: autor.instituicao,
                 registro: autor.registro,
             }),
-            kind: 'external',
+            kind: 'tenant_partner',
         }));
 
-        return { kind: 'external' as const, options };
+        return { kind: 'tenant_partner' as const, options };
     }
 }

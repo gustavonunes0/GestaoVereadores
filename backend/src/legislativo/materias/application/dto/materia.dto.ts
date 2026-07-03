@@ -10,8 +10,19 @@ import {
     IsString,
     IsUUID,
     MinLength,
+    ValidateNested,
 } from 'class-validator';
 import { PaginationQueryDto } from '../../../../common/dto/pagination.dto';
+
+export class MatterCoauthorItemDto {
+    @IsOptional()
+    @IsUUID()
+    parliamentarianId?: string;
+
+    @IsOptional()
+    @IsUUID()
+    tenantPartnerId?: string;
+}
 
 export class CreateMateriaDto {
     @IsString()
@@ -113,7 +124,14 @@ export class CreateMateriaDto {
     @IsUUID('4', { each: true })
     representanteIds?: string[];
 
-    /** Coautores — Projeto de Lei (vereadores). */
+    /** Coautores — parlamentar ou instituição parceira (ordem preservada). */
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => MatterCoauthorItemDto)
+    coautores?: MatterCoauthorItemDto[];
+
+    /** @deprecated Preferir `coautores` (parlamentar ou instituição parceira com usuário vinculado). */
     @IsOptional()
     @IsArray()
     @IsUUID('4', { each: true })

@@ -120,7 +120,7 @@ export type MateriaAutorResumo = {
     id: string;
     nome: string;
     photoUrl?: string | null;
-    tipo: 'parlamentar' | 'externo';
+    tipo: 'parlamentar' | 'tenant_partner';
     subtitulo?: string | null;
 };
 
@@ -158,14 +158,25 @@ export function resolveMateriaAutores(materia: Materia): MateriaAutorResumo[] {
     }
 
     for (const coauthor of materia.authorship?.coauthors ?? []) {
-        const parliamentarian = coauthor.parliamentarian;
-        pushAutor({
-            id: parliamentarian.id,
-            nome: parliamentarian.parliamentaryName,
-            photoUrl: parliamentarian.photoUrl ?? null,
-            tipo: 'parlamentar',
-            subtitulo: null,
-        });
+        if (coauthor.parliamentarian?.id) {
+            pushAutor({
+                id: coauthor.parliamentarian.id,
+                nome: coauthor.parliamentarian.parliamentaryName,
+                photoUrl: coauthor.parliamentarian.photoUrl ?? null,
+                tipo: 'parlamentar',
+                subtitulo: null,
+            });
+            continue;
+        }
+        if (coauthor.tenantPartner?.id) {
+            pushAutor({
+                id: coauthor.tenantPartner.id,
+                nome: coauthor.label ?? coauthor.tenantPartner.nome,
+                photoUrl: null,
+                tipo: 'tenant_partner',
+                subtitulo: coauthor.tenantPartner.nome,
+            });
+        }
     }
 
     return autores;

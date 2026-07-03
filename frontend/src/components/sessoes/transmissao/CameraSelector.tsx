@@ -254,14 +254,14 @@ export function CameraSelector({
                                             <Tag
                                                 value={libras ? 'LIBRAS' : 'DESTAQUE'}
                                                 severity={libras ? 'success' : 'info'}
-                                                style={{ position: 'absolute', top: 4, left: 4, fontSize: '9px' }}
+                                                style={{ position: 'absolute', top: 4, left: 4, fontSize: '12px' }}
                                             />
                                         )}
                                         {libras && !ativa && (
                                             <Tag
                                                 value="Libras"
                                                 severity="success"
-                                                style={{ position: 'absolute', top: 4, left: 4, fontSize: '9px' }}
+                                                style={{ position: 'absolute', top: 4, left: 4, fontSize: '12px' }}
                                             />
                                         )}
                                     </div>

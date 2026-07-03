@@ -1,5 +1,6 @@
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
+import { SIGL_TOOLTIP_TOP } from '../../../utils/primeTooltip';
 
 interface Props {
     transmitindo: boolean;
@@ -39,7 +40,7 @@ export function StreamControles({
                             size="small"
                             disabled={!linkYoutube}
                             tooltip={!linkYoutube ? 'Configure o link do YouTube abaixo' : undefined}
-                            tooltipOptions={{ position: 'top' }}
+                            tooltipOptions={SIGL_TOOLTIP_TOP}
                             onClick={onIniciarStream}
                         />
                     ) : (
@@ -52,7 +53,7 @@ export function StreamControles({
                         />
                     )}
                     {transmitindo && (
-                        <div className="flex align-items-center gap-2">
+                        <div className="flex align-items-center gap-2 mt-2">
                             <span
                                 style={{
                                     width: 8, height: 8, borderRadius: '50%',
@@ -70,7 +71,7 @@ export function StreamControles({
 
             <hr style={{ borderColor: 'var(--surface-border)', margin: 0 }} />
 
-            <div>
+            <div className="mt-2">
                 <p className="text-sm font-semibold mb-1">Tela cheia</p>
                 <Button
                     label={modoTelaCheia ? 'Sair da tela cheia' : 'Expandir sala de vídeo'}

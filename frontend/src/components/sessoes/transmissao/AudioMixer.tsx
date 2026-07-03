@@ -40,7 +40,7 @@ export function AudioMixer({ canais, librasConectado, audioLevels, onVolumeChang
                         <i className={CANAL_ICONS[canal.id] ?? 'pi pi-volume-up'} style={{ fontSize: 12 }} />
                         <span>{canal.label}</span>
                         {isLibras && librasConectado && (
-                            <Tag value="Conectado" severity="success" style={{ fontSize: '9px', padding: '1px 4px' }} />
+                            <Tag value="Conectado" severity="success" style={{ fontSize: '12px', padding: '1px 4px' }} />
                         )}
                     </div>
                     <input

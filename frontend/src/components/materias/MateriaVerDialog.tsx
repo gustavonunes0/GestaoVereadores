@@ -72,11 +72,16 @@ function EmentaTruncavel({ texto }: { texto: string }) {
     );
 }
 
-function resolveAutorTipo(materia: Materia): TipoAutorMateria | 'parlamentar' | 'externo' {
+function resolveAutorTipo(materia: Materia): TipoAutorMateria | 'parlamentar' | 'tenant_partner' {
     if (materia.autor?.tipo === 'parlamentar') return 'PARLAMENTAR';
-    if (materia.autor?.tipo === 'externo') return 'TENANT_PARTNER';
+    if (
+        materia.autor?.tipo === 'tenant_partner' ||
+        materia.autor?.tipo === 'externo'
+    ) {
+        return 'TENANT_PARTNER';
+    }
     if (materia.authorship?.authorParliamentarian) return 'PARLAMENTAR';
-    return 'externo';
+    return 'tenant_partner';
 }
 
 function AutorLinha({
@@ -86,7 +91,7 @@ function AutorLinha({
 }: {
     nome: string;
     subtitulo?: string | null;
-    tipo: TipoAutorMateria | 'parlamentar' | 'externo';
+    tipo: TipoAutorMateria | 'parlamentar' | 'tenant_partner';
 }) {
     return (
         <div className="flex align-items-center gap-2">

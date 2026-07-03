@@ -80,7 +80,7 @@ function AuthorAvatarGroup({ autores }: { autores: MateriaAutorResumo[] }) {
                 />
             ))}
             {restantes > 0 ? (
-                <span className="-ml-2 w-6 h-6 rounded-full bg-[#e8edf5] border-2 border-white text-[#1c3557] text-[9px] font-bold flex items-center justify-center">
+                <span className="-ml-2 w-6 h-6 rounded-full bg-[#e8edf5] border-2 border-white text-[#1c3557] text-[12px] font-bold flex items-center justify-center">
                     +{restantes}
                 </span>
             ) : null}
@@ -113,7 +113,7 @@ function AuthorPhotoBox({ autor }: { autor: MateriaAutorResumo | null }) {
     const initial = autor.nome.charAt(0).toUpperCase();
     return (
         <div className="w-11 h-11 rounded-[9px] bg-[#e8edf5] flex items-center justify-center overflow-hidden">
-            {autor.tipo === 'externo' ? (
+            {autor.tipo === 'tenant_partner' || autor.tipo === 'externo' ? (
                 <PersonOutlined sx={{ fontSize: 22, color: '#1c3557' }} aria-hidden />
             ) : (
                 <span className="text-[18px] font-bold text-[#1c3557] leading-none">
@@ -156,7 +156,7 @@ export function MateriaListCard({
 
             <div className="flex flex-col items-center gap-1.5 w-14 flex-shrink-0">
                 <AuthorPhotoBox autor={autorPrincipal} />
-                <span className="text-[9px] font-semibold text-[#374151] text-center leading-tight line-clamp-2">
+                <span className="text-[12px] font-semibold text-[#374151] text-center leading-tight line-clamp-2">
                     {autorPrincipal?.nome ?? 'Sem autor'}
                 </span>
             </div>
@@ -230,7 +230,7 @@ export function MateriaListCard({
                     ) : null}
                 </div>
 
-                <p className="text-[12.5px] text-[#6b7280] leading-relaxed line-clamp-2 m-0">
+                <p className="text-[14px] text-[#6b7280] leading-relaxed line-clamp-2 m-0">
                     {materia.ementa}
                 </p>
 
@@ -238,7 +238,7 @@ export function MateriaListCard({
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-1 min-w-0">
-                        <span className="text-[9.5px] font-semibold text-[#9aa3b2] uppercase tracking-wide">
+                        <span className="text-[12px] font-semibold text-[#9aa3b2] uppercase tracking-wide">
                             Autoria
                         </span>
                         {autorPrincipal ? (
@@ -254,7 +254,7 @@ export function MateriaListCard({
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <span className="text-[9.5px] font-semibold text-[#9aa3b2] uppercase tracking-wide">
+                        <span className="text-[12px] font-semibold text-[#9aa3b2] uppercase tracking-wide">
                             Última tramitação
                         </span>
                         <span className="text-[12px] text-[#374151] font-medium">
@@ -263,7 +263,7 @@ export function MateriaListCard({
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <span className="text-[9.5px] font-semibold text-[#9aa3b2] uppercase tracking-wide">
+                        <span className="text-[12px] font-semibold text-[#9aa3b2] uppercase tracking-wide">
                             Autor(es)
                         </span>
                         <AuthorAvatarGroup autores={autores} />

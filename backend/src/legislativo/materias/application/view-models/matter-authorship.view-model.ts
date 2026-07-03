@@ -4,6 +4,14 @@ import {
 } from '../../domain/enums/matter-author-type.enum';
 import { MateriaPrismaPayload } from './matter.view-model';
 
+type UserNameParts = { firstName?: string | null; lastName?: string | null };
+
+function formatLinkedUserName(user?: UserNameParts | null): string | null {
+    if (!user) return null;
+    const nome = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+    return nome || null;
+}
+
 type ParliamentarianAuthorshipSummary = {
     id: string;
     parliamentaryName: string;
@@ -26,13 +34,24 @@ function mapParliamentarian(
     };
 }
 
-export type MatterAuthorshipPayload = MateriaPrismaPayload & {
+export type MatterAuthorshipPayload = Omit<
+    MateriaPrismaPayload,
+    'matterCoauthors'
+> & {
     authorParliamentarian?: ParliamentarianAuthorshipSummary | null;
     rapporteurParliamentarian?: ParliamentarianAuthorshipSummary | null;
     matterCoauthors?: Array<{
         id: string;
         ordem: number;
-        parliamentarian: ParliamentarianAuthorshipSummary;
+        parliamentarian?: ParliamentarianAuthorshipSummary | null;
+        tenantPartner?: {
+            id: string;
+            nome: string;
+            tipoAutorId: string;
+            tenantPartnerUser?: {
+                user?: UserNameParts | null;
+            } | null;
+        } | null;
     }>;
     autor?: {
         id: string;
@@ -46,11 +65,13 @@ export type MatterAuthorshipPayload = MateriaPrismaPayload & {
     } | null;
 };
 
-function buildExternalAuthor(autor: NonNullable<MatterAuthorshipPayload['autor']>) {
+function buildTenantPartnerAuthor(
+    autor: NonNullable<MatterAuthorshipPayload['autor']>,
+) {
     if (autor.tenantPartner) {
         return {
-            type: MatterAuthorType.EXTERNAL,
-            label: MATTER_AUTHOR_TYPE_LABELS[MatterAuthorType.EXTERNAL],
+            type: MatterAuthorType.TENANT_PARTNER,
+            label: MATTER_AUTHOR_TYPE_LABELS[MatterAuthorType.TENANT_PARTNER],
             autorId: autor.id,
             tenantPartner: {
                 id: autor.tenantPartner.id,
@@ -68,8 +89,8 @@ export class MatterAuthorshipViewModel {
         const parliamentaryAuthor = mapParliamentarian(
             data.authorParliamentarian,
         );
-        const externalAuthor = data.autor
-            ? buildExternalAuthor(data.autor)
+        const tenantPartnerAuthor = data.autor
+            ? buildTenantPartnerAuthor(data.autor)
             : null;
 
         const primaryAuthor = parliamentaryAuthor
@@ -80,18 +101,49 @@ export class MatterAuthorshipViewModel {
                   ],
                   parliamentarian: parliamentaryAuthor,
               }
-            : externalAuthor;
+            : tenantPartnerAuthor;
 
         return {
             matterId: data.id,
             primaryAuthor,
             coauthors: (data.matterCoauthors ?? [])
                 .sort((a, b) => a.ordem - b.ordem)
-                .map((item) => ({
-                    id: item.id,
-                    ordem: item.ordem,
-                    parliamentarian: mapParliamentarian(item.parliamentarian),
-                })),
+                .map((item) => {
+                    const parliamentarian = mapParliamentarian(
+                        item.parliamentarian,
+                    );
+                    if (parliamentarian) {
+                        return {
+                            id: item.id,
+                            ordem: item.ordem,
+                            type: MatterAuthorType.PARLIAMENTARIAN,
+                            parliamentarian,
+                        };
+                    }
+                    const partner = item.tenantPartner;
+                    if (partner) {
+                        return {
+                            id: item.id,
+                            ordem: item.ordem,
+                            type: MatterAuthorType.TENANT_PARTNER,
+                            tenantPartner: {
+                                id: partner.id,
+                                nome: partner.nome,
+                                tipoAutorId: partner.tipoAutorId,
+                            },
+                            label:
+                                formatLinkedUserName(
+                                    partner.tenantPartnerUser?.user,
+                                ) ?? partner.nome,
+                        };
+                    }
+                    return {
+                        id: item.id,
+                        ordem: item.ordem,
+                        type: MatterAuthorType.TENANT_PARTNER,
+                        label: 'Coautor',
+                    };
+                }),
             rapporteur: mapParliamentarian(data.rapporteurParliamentarian),
             legacy: {
                 autorId: data.autorId,

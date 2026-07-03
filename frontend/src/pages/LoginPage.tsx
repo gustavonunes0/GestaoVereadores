@@ -63,7 +63,7 @@ export function LoginPage() {
     return (
         <main className="login-page">
             <div className="login-card">
-                <div className="login-card__header">
+                <div className="text-center">
                     <h1>SIGL</h1>
                     <p className="subtitle">Sistema de Gestão Legislativa</p>
                 </div>
@@ -81,7 +81,7 @@ export function LoginPage() {
                             className="w-full"
                         />
                     </div>
-                    <div className="field" >
+                    <div className="field mt-3" >
                         <label htmlFor="senha">Senha</label>
                         <input
                             type="password"

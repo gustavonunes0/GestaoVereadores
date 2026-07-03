@@ -39,29 +39,31 @@ export class ListTenantPartnersForMatterUseCase {
             if (user) usersById.set(userId, user);
         }
 
-        return partners.map((a) => {
-            const userId = userIdByPartnerId.get(a.id);
-            const user = userId ? usersById.get(userId) : undefined;
-            const usuario = user ? TenantPartnerViewModel.userToHttp(user) : null;
+        return partners
+            .map((a) => {
+                const userId = userIdByPartnerId.get(a.id);
+                const user = userId ? usersById.get(userId) : undefined;
+                const usuario = user ? TenantPartnerViewModel.userToHttp(user) : null;
 
-            return {
-                id: a.id,
-                nomeExibicao: this.autorResolver.resolverNomeCompleto({
+                return {
+                    id: a.id,
+                    nomeExibicao: this.autorResolver.resolverNomeCompleto({
+                        nome: a.nome,
+                        cargo: a.cargo,
+                        instituicao: a.instituicao,
+                        registro: a.registro,
+                    }),
                     nome: a.nome,
                     cargo: a.cargo,
                     instituicao: a.instituicao,
                     registro: a.registro,
-                }),
-                nome: a.nome,
-                cargo: a.cargo,
-                instituicao: a.instituicao,
-                registro: a.registro,
-                partido: a.partido,
-                uf: a.uf,
-                tipoAutor: a.tipoAutor,
-                usuarioVinculado: !!userId,
-                usuario,
-            };
-        });
+                    partido: a.partido,
+                    uf: a.uf,
+                    tipoAutor: a.tipoAutor,
+                    usuarioVinculado: !!userId,
+                    usuario,
+                };
+            })
+            .filter((item) => item.usuarioVinculado);
     }
 }

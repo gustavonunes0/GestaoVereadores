@@ -7,6 +7,7 @@ import {
     type BoardMember,
     type BoardRole,
 } from '../../api/legislative/mesa-diretora.api';
+import { useAppToast } from '../../hooks/useAppToast';
 import { Modal } from '../Modal';
 import { usePermissions } from '../../hooks/usePermissions';
 import {
@@ -31,12 +32,14 @@ export function MesaComposicaoTable({
     onChanged,
 }: Props) {
     const { canWrite } = usePermissions();
+    const { showApiError } = useAppToast();
     const [open, setOpen] = useState(false);
     const [parlamentares, setParlamentares] = useState<
         { id: string; parliamentaryName: string }[]
     >([]);
     const [cargos, setCargos] = useState<BoardRole[]>([]);
     const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [parliamentarianId, setParliamentarianId] = useState('');
     const [boardRoleId, setBoardRoleId] = useState('');
@@ -52,6 +55,16 @@ export function MesaComposicaoTable({
         [membros],
     );
 
+    const cargosOcupados = useMemo(
+        () => new Set(membros.map((m) => m.boardRole.id).filter(Boolean)),
+        [membros],
+    );
+
+    const parlamentaresNaMesa = useMemo(
+        () => new Set(membros.map((m) => m.parliamentarian.id)),
+        [membros],
+    );
+
     useEffect(() => {
         if (!open) return;
         setLoading(true);
@@ -61,14 +74,18 @@ export function MesaComposicaoTable({
             mesaDiretoraApi.listCargos(),
         ])
             .then(([parlRes, cargosRes]) => {
-                const lista = parlRes.data.map((p) => ({
-                    id: p.id,
-                    parliamentaryName: p.parliamentaryName,
-                }));
+                const lista = parlRes.data
+                    .filter((p) => !parlamentaresNaMesa.has(p.id))
+                    .map((p) => ({
+                        id: p.id,
+                        parliamentaryName: p.parliamentaryName,
+                    }));
                 setParlamentares(lista);
                 setParliamentarianId(lista[0]?.id ?? '');
                 setCargos(cargosRes);
-                setBoardRoleId(cargosRes[0]?.id ?? '');
+                const primeiroCargoLivre =
+                    cargosRes.find((c) => !cargosOcupados.has(c.id))?.id ?? '';
+                setBoardRoleId(primeiroCargoLivre);
             })
             .catch((err: unknown) => {
                 setLoadError(
@@ -78,29 +95,48 @@ export function MesaComposicaoTable({
                 );
             })
             .finally(() => setLoading(false));
-    }, [open]);
+    }, [open, membros, cargosOcupados, parlamentaresNaMesa]);
+
+    const cargoSelecionadoOcupado = boardRoleId
+        ? cargosOcupados.has(boardRoleId)
+        : false;
+
+    const podeSalvar =
+        !loading &&
+        !submitting &&
+        Boolean(parliamentarianId) &&
+        Boolean(boardRoleId) &&
+        !cargoSelecionadoOcupado;
 
     async function handleAdd(e: FormEvent) {
         e.preventDefault();
-        await mesaDiretoraApi.addMembro(boardId, {
-            parliamentarianId,
-            boardRoleId,
-        });
-        setOpen(false);
-        onChanged();
+        if (!podeSalvar) return;
+        setSubmitting(true);
+        try {
+            await mesaDiretoraApi.addMembro(boardId, {
+                parliamentarianId,
+                boardRoleId,
+            });
+            setOpen(false);
+            onChanged();
+        } catch (err) {
+            showApiError(err);
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     async function handleRemove(membro: BoardMember) {
         const nome =
             membro.parliamentarian.parliamentaryName ?? 'este parlamentar';
         if (!confirm(`Remover ${nome} da ${entityLabel}?`)) return;
-        await mesaDiretoraApi.removeMembro(boardId, membro.id);
-        onChanged();
+        try {
+            await mesaDiretoraApi.removeMembro(boardId, membro.id);
+            onChanged();
+        } catch (err) {
+            showApiError(err);
+        }
     }
-
-    const cargosOcupados = new Set(
-        membros.map((m) => m.boardRole.id).filter(Boolean),
-    );
 
     return (
         <div className="mesa-composicao">
@@ -226,7 +262,7 @@ export function MesaComposicaoTable({
                                     <option value="">
                                         {loading
                                             ? 'Carregando...'
-                                            : 'Nenhum parlamentar'}
+                                            : 'Nenhum parlamentar disponível'}
                                     </option>
                                 ) : (
                                     parlamentares.map((p) => (
@@ -240,7 +276,19 @@ export function MesaComposicaoTable({
                         {loadError && (
                             <p className="alert alert-warn">{loadError}</p>
                         )}
-                        <label>
+                        {!loading && parlamentares.length === 0 ? (
+                            <p className="alert alert-warn">
+                                Todos os parlamentares já integram esta composição.
+                            </p>
+                        ) : null}
+                        {!loading &&
+                        cargos.length > 0 &&
+                        cargos.every((c) => cargosOcupados.has(c.id)) ? (
+                            <p className="alert alert-warn">
+                                Todos os cargos da mesa já estão ocupados.
+                            </p>
+                        ) : null}
+                        <label className="mt-3">
                             Cargo na mesa *
                             <select
                                 value={boardRoleId}
@@ -273,13 +321,9 @@ export function MesaComposicaoTable({
                             <button
                                 type="submit"
                                 className="btn btn-primary"
-                                disabled={
-                                    loading ||
-                                    !parliamentarianId ||
-                                    !boardRoleId
-                                }
+                                disabled={!podeSalvar}
                             >
-                                Salvar
+                                {submitting ? 'Salvando...' : 'Salvar'}
                             </button>
                         </div>
                     </form>
