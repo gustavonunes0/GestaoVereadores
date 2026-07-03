@@ -39,10 +39,14 @@ export class PrismaExceptionFilter implements ExceptionFilter {
                 );
             case 'P2025':
                 return new NotFoundException('Registro não encontrado');
-            default:
+            default: {
+                const detail = `${exception.code}: ${exception.message}`;
                 return new BadRequestException(
-                    'Erro ao processar operação no banco de dados',
+                    process.env.NODE_ENV === 'production'
+                        ? `Erro ao processar operação no banco de dados (${exception.code})`
+                        : `Erro ao processar operação no banco de dados — ${detail}`,
                 );
+            }
         }
     }
 }

@@ -4,7 +4,7 @@
     "description": "API NestJS — Atividade Legislativa (SIGL)",
     "private": true,
     "scripts": {
-        "build": "node scripts/resolve-vercel-env.cjs && node scripts/prisma-generate.cjs && nest build",
+        "build": "node scripts/resolve-vercel-env.cjs && node scripts/prisma-generate.cjs && node scripts/prisma-migrate-deploy.cjs && nest build",
         "start": "nest start",
         "start:dev": "nest start --watch",
         "start:prod": "node dist/main",
