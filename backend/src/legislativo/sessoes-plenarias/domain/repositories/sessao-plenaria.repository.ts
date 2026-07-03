@@ -29,6 +29,7 @@ export type QuorumInfo = {
     quorumMinimo: number;
     quorumPresente: number;
     temQuorum: boolean;
+    totalMembros: number;
 };
 
 export abstract class SessaoPlenariaRepository {

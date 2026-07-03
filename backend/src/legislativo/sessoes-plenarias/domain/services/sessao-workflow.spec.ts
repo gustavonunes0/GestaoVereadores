@@ -1,6 +1,7 @@
 import { CodigoSituacaoSessao } from '@prisma/client';
 import { SessionLifecycleAction } from '../../domain/enums/session-lifecycle-action.enum';
 import { SessionStatus } from '../../domain/enums/session-status.enum';
+import { StatusSessao } from '../../domain/enums/status-sessao.enum';
 import {
     assertSessaoAceitaPauta,
     assertSessaoNaoEncerrada,
@@ -41,6 +42,18 @@ describe('sessao-workflow', () => {
                 nome: 'Encerrada',
             }),
         ).toThrow('encerrada ou cancelada');
+    });
+
+    it('prioriza statusSessao ABERTA sobre situacao legada encerrada', () => {
+        expect(() =>
+            assertSessaoNaoEncerrada(
+                {
+                    codigo: CodigoSituacaoSessao.ENCERRADA,
+                    nome: 'Encerrada',
+                },
+                StatusSessao.ABERTA,
+            ),
+        ).not.toThrow();
     });
 
     it('expõe capacidades do fluxo', () => {

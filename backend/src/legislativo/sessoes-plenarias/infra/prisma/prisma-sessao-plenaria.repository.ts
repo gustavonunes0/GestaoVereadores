@@ -14,7 +14,7 @@ import {
     FaseSessao as PrismaFaseSessao,
 } from '@prisma/client';
 import { SessaoPlenariaEntity } from '../../domain/entities/sessao-plenaria.entity';
-import { StatusSessao, statusSessaoToCodigoSituacao } from '../../domain/enums/status-sessao.enum';
+import { StatusSessao, sessionStatusToStatusSessao, statusSessaoToCodigoSituacao } from '../../domain/enums/status-sessao.enum';
 import { FaseSessao } from '../../domain/enums/fase-sessao.enum';
 import {
     QuorumInfo,
@@ -254,7 +254,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
 
     async update(tenantId: string, id: string, dto: UpdateSessaoPlenariaDto) {
         const sessao = await this.findOne(tenantId, id);
-        assertSessaoNaoEncerrada(sessao.situacao);
+        assertSessaoNaoEncerrada(sessao.situacao, sessao.statusSessao as StatusSessao);
 
         if (dto.situacaoId !== undefined) {
             throw new BadRequestException(
@@ -323,6 +323,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         const situacaoId = await this.resolveSituacaoIdByCodigo(
             nextStatus as CodigoSituacaoSessao,
         );
+        const statusSessao = sessionStatusToStatusSessao(nextStatus);
 
         const dataFim =
             dto.action === SessionLifecycleAction.ENCERRAR
@@ -333,6 +334,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             where: { id },
             data: {
                 situacaoId,
+                statusSessao: statusSessao as unknown as PrismaStatusSessao,
                 dataFim,
                 cicloVidaJson: this.appendCicloVida(sessao.cicloVidaJson ?? [], {
                     status: nextStatus,
@@ -849,7 +851,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         dto: UpdatePresencaDto,
     ) {
         const sessao = await this.findOne(tenantId, sessaoId);
-        assertSessaoNaoEncerrada(sessao.situacao);
+        assertSessaoNaoEncerrada(sessao.situacao, sessao.statusSessao as StatusSessao);
 
         const existing = await this.getPresencaById(
             tenantId,
@@ -872,7 +874,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         dto: RegistrarPresencaDto,
     ) {
         const sessao = await this.findOne(tenantId, sessaoId);
-        assertSessaoNaoEncerrada(sessao.situacao);
+        assertSessaoNaoEncerrada(sessao.situacao, sessao.statusSessao as StatusSessao);
 
         if (dto.parliamentarianId) {
             const parliamentarian = await this.prisma.parliamentarian.findFirst({
@@ -1080,6 +1082,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 quorumMinimo: 1,
                 quorumPresente,
                 temQuorum: quorumPresente >= 1,
+                totalMembros: quorumPresente,
             };
         }
 
@@ -1099,6 +1102,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             quorumMinimo,
             quorumPresente,
             temQuorum: quorumPresente >= quorumMinimo,
+            totalMembros: totalParlamentares,
         };
     }
 

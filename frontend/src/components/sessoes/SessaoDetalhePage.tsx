@@ -259,6 +259,7 @@ export function SessaoDetalhePage() {
                         sessaoId={sessao.id}
                         legislatureId={sessao.sessaoLegislativa?.legislatura?.id}
                         legislaturaNumero={sessao.sessaoLegislativa?.legislatura?.numero}
+                        statusSessao={sessao.statusSessao}
                     />
                 </TabPanel>
 

@@ -439,7 +439,9 @@ export class SessoesController {
         @Body() dto: RegistrarPresencaDto,
     ) {
         try {
-            return await this.registrarPresenca.execute(tenantId, id, dto);
+            const result = await this.registrarPresenca.execute(tenantId, id, dto);
+            await this.emitPresencaAtualizada(tenantId, id, result, 'STAFF');
+            return result;
         } catch (error) {
             this.handleError(error);
         }
@@ -480,12 +482,14 @@ export class SessoesController {
         @Body() dto: UpdatePresencaDto,
     ) {
         try {
-            return await this.updatePresenca.execute(
+            const result = await this.updatePresenca.execute(
                 tenantId,
                 id,
                 presencaId,
                 dto,
             );
+            await this.emitPresencaAtualizada(tenantId, id, result, 'STAFF');
+            return result;
         } catch (error) {
             this.handleError(error);
         }
@@ -793,7 +797,17 @@ export class SessoesController {
             parliamentarianId: parliamentarianUser.parliamentarianId,
             parliamentaryName: parliamentarianUser.parliamentaryName,
         };
-        return this.registrarMinhaPresenca.execute(id, parliamentarianPayload);
+        const result = await this.registrarMinhaPresenca.execute(id, parliamentarianPayload);
+        await this.emitPresencaAtualizada(
+            tenantId,
+            id,
+            {
+                parliamentarianId: parliamentarianPayload.parliamentarianId,
+                presente: true,
+            },
+            'APP',
+        );
+        return result;
     }
 
     @TenantRoles(...PARLIAMENTARIAN_ONLY)
@@ -886,6 +900,36 @@ export class SessoesController {
         @TenantId() tenantId: string,
     ) {
         return this.encerrarPedidoPalavra.execute(pedidoId, tenantId);
+    }
+
+    private async emitPresencaAtualizada(
+        tenantId: string,
+        sessaoId: string,
+        presenca: {
+            parliamentarianId?: string | null;
+            parlamentarId?: string | null;
+            presente?: boolean;
+        },
+        origem: 'APP' | 'STAFF',
+    ) {
+        const parliamentarianId =
+            presenca.parliamentarianId ?? presenca.parlamentarId ?? null;
+        if (!parliamentarianId) return;
+
+        const quorum = await this.calcularQuorum.execute(tenantId, sessaoId);
+        const presentes = quorum.quorumPresente;
+        const ausentes = Math.max(0, quorum.totalMembros - presentes);
+
+        this.realtimeGateway.emitPresencaAtualizada(tenantId, {
+            sessaoId,
+            parliamentarianId,
+            parlamentarianUserId: parliamentarianId,
+            presente: presenca.presente ?? true,
+            origem,
+            presentes,
+            ausentes,
+            temQuorum: quorum.temQuorum,
+        });
     }
 
     private handleError(error: unknown): never {

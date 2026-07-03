@@ -49,6 +49,18 @@ export type SessaoEncerradaPayload = {
     sessaoId: string;
 };
 
+export type PresencaAtualizadaPayload = {
+    sessaoId: string;
+    parliamentarianId: string;
+    /** @deprecated use parliamentarianId */
+    parlamentarianUserId: string;
+    presente: boolean;
+    origem: 'APP' | 'STAFF';
+    presentes: number;
+    ausentes: number;
+    temQuorum: boolean;
+};
+
 @Injectable()
 @WebSocketGateway({ namespace: '/sessao', cors: { origin: '*' } })
 export class SessaoRealtimeGateway
@@ -127,6 +139,10 @@ export class SessaoRealtimeGateway
 
     emitSessaoEncerrada(tenantId: string, payload: SessaoEncerradaPayload) {
         this.server.to(`tenant:${tenantId}`).emit('sessao:encerrada', payload);
+    }
+
+    emitPresencaAtualizada(tenantId: string, payload: PresencaAtualizadaPayload) {
+        this.server.to(`tenant:${tenantId}`).emit('presenca:atualizada', payload);
     }
 
     emitirPalavraPedida(tenantId: string, payload: { pedidoId: string; parlamentarNome: string; sessaoId: string; criadoEm: Date }) {

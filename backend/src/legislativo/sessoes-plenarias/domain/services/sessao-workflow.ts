@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { CodigoSituacaoSessao } from '@prisma/client';
 import { SessionStatus } from '../enums/session-status.enum';
+import { StatusSessao } from '../enums/status-sessao.enum';
 import { PlenarySessionDomainService } from './plenary-session-domain.service';
 
 const domainService = new PlenarySessionDomainService();
@@ -51,7 +52,22 @@ export function assertSessaoAceitaPauta(situacao: SituacaoRef) {
     }
 }
 
-export function assertSessaoNaoEncerrada(situacao: SituacaoRef) {
+export function assertSessaoNaoEncerrada(
+    situacao: SituacaoRef,
+    statusSessao?: StatusSessao | string | null,
+) {
+    if (statusSessao) {
+        if (
+            statusSessao === StatusSessao.ENCERRADA ||
+            statusSessao === StatusSessao.CANCELADA
+        ) {
+            throw new BadRequestException(
+                'Sessão encerrada ou cancelada não permite alteração de presença',
+            );
+        }
+        return;
+    }
+
     const status = resolveSessionStatus(situacao);
     if (!status) return;
     try {

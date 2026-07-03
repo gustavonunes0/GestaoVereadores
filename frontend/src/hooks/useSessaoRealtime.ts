@@ -4,8 +4,10 @@ import { sessoesApi } from '../api/legislative/sessoes.api';
 import type { VotacaoAbertaEvent, VotacaoEncerradaEvent, VotacaoPlacarEvent } from '../types/legislative';
 import type { FaseSessao, PautaItemDetalhe } from '../types/sessoes';
 import { pautaItemRotulo } from '../types/sessoes';
+import { resolveSocketBaseUrl } from '../utils/socketUrl';
 
 export interface PresencaUpdate {
+    parliamentarianId?: string;
     parlamentarianUserId: string;
     presente: boolean;
     origem: 'APP' | 'STAFF';
@@ -99,10 +101,12 @@ export function useSessaoRealtime(sessaoId: string) {
         if (!sessaoId) return;
 
         const token = localStorage.getItem('access_token');
-        const socket = io('/sessao', {
+        const socketBase = resolveSocketBaseUrl();
+        const socket = io(`${socketBase}/sessao`, {
             auth: { token },
             query: { sessaoId },
-            transports: ['websocket'],
+            path: '/socket.io',
+            transports: ['websocket', 'polling'],
         });
 
         const handleVotacaoAberta = (data: Partial<VotacaoAbertaEvent> & Record<string, unknown>) => {

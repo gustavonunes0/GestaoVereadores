@@ -8,6 +8,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useSessaoRealtime } from '../../../hooks/useSessaoRealtime';
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { OrigemPresenca, PresencaSessao } from '../../../types/presenca';
+import type { StatusSessao } from '../../../types/sessoes';
 import {
     buildPresencaSessao,
     fetchMesaMembrosAtivos,
@@ -55,6 +56,7 @@ function togglePresencaLocal(
 function aplicarUpdate(
     prev: PresencaSessao,
     update: {
+        parliamentarianId?: string;
         parlamentarianUserId: string;
         presente: boolean;
         origem: 'APP' | 'STAFF';
@@ -63,7 +65,8 @@ function aplicarUpdate(
         temQuorum: boolean;
     },
 ): PresencaSessao {
-    const base = atualizarParlamentar(prev, update.parlamentarianUserId, {
+    const parliamentarianId = update.parliamentarianId ?? update.parlamentarianUserId;
+    const base = atualizarParlamentar(prev, parliamentarianId, {
         presente: update.presente,
         origem: update.origem,
         registradoEm: new Date().toISOString(),
@@ -80,16 +83,19 @@ export function PresencaPanel({
     sessaoId,
     legislatureId,
     legislaturaNumero,
+    statusSessao,
 }: {
     sessaoId: string;
     legislatureId?: string | null;
     /** Número da legislatura da sessão — usado para resolver o ID EN da mesa diretora. */
     legislaturaNumero?: number | null;
+    statusSessao?: StatusSessao | null;
 }) {
     const { canWrite } = useAuth();
     const { showApiError } = useAppToast();
     const [presenca, setPresenca] = useState<PresencaSessao | null>(null);
-    const podeRegistrar = canWrite;
+    const sessaoAceitaPresenca = ['AGENDADA', 'ABERTA', 'SUSPENSA'].includes(statusSessao ?? '');
+    const podeRegistrar = canWrite && sessaoAceitaPresenca;
 
     const carregar = useCallback(async () => {
         try {
@@ -121,12 +127,18 @@ export function PresencaPanel({
         void carregar();
     }, [carregar]);
 
-    const { presencaUpdate } = useSessaoRealtime(sessaoId);
+    const { presencaUpdate, wsConectado } = useSessaoRealtime(sessaoId);
     useEffect(() => {
         if (presencaUpdate) {
             setPresenca((prev) => (prev ? aplicarUpdate(prev, presencaUpdate) : prev));
         }
     }, [presencaUpdate]);
+
+    useEffect(() => {
+        if (wsConectado) return;
+        const timer = window.setInterval(() => void carregar(), 10000);
+        return () => window.clearInterval(timer);
+    }, [wsConectado, carregar]);
 
     const handleToggle = async (parliamentarianId: string) => {
         if (!presenca) return;
@@ -200,7 +212,12 @@ export function PresencaPanel({
                 podeRegistrar={podeRegistrar}
                 onToggle={handleToggle}
             />
-            {!podeRegistrar && (
+            {!podeRegistrar && canWrite && !sessaoAceitaPresenca && (
+                <p className="presenca-readonly-hint">
+                    Sessão encerrada ou cancelada — alteração de presença não é permitida.
+                </p>
+            )}
+            {!podeRegistrar && !canWrite && (
                 <p className="presenca-readonly-hint">
                     Visualização em tempo real. A presença é registrada pelos parlamentares no
                     aplicativo — as cadeiras ficam verdes conforme o registro.

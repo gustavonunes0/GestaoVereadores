@@ -12,6 +12,7 @@ export class QuorumService {
             quorumMinimo,
             quorumPresente: presentes,
             temQuorum: presentes >= quorumMinimo,
+            totalMembros: total,
         };
     }
 

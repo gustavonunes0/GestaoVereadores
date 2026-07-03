@@ -13,6 +13,7 @@ import { AppModule } from './app.module';
 import { buildCorsOptions } from './config/cors.config';
 import { resolveVercelDatabaseEnv } from './config/resolve-vercel-env';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 function validateRuntimeEnv(): void {
     resolveVercelDatabaseEnv();
@@ -47,6 +48,8 @@ async function bootstrap() {
     await app.register(multipart, {
         limits: { fileSize: 10 * 1024 * 1024 },
     });
+
+    app.useWebSocketAdapter(new IoAdapter(app));
 
     if (!process.env.VERCEL) {
         await app.register(fastifyStatic, {
