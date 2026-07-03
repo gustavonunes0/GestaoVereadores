@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
+import { InputMask } from 'primereact/inputmask';
 import { InputText } from 'primereact/inputtext';
 import { RadioButton } from 'primereact/radiobutton';
 import { apiList } from '../../api/client';
@@ -9,7 +10,7 @@ import { parlamentaresApi, type Parliamentarian } from '../../api/legislative/pa
 import type { CondicaoMandato, ParliamentarianUserStatus } from '../../types/parlamentares';
 import { useAppToast } from '../../hooks/useAppToast';
 import { DateRangePicker, Dropdown, FileUpload } from '../ui';
-import { formatCpf, isValidCpf, normalizeCpf } from '../../utils/cpf';
+import { isValidCpf, normalizeCpf } from '../../utils/cpf';
 import {
     PARLAMENTAR_PHOTO_ACCEPT,
     resolveParlamentarPhotoUrl,
@@ -106,6 +107,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
         return true;
     }, [periodoMandato, legislaturaSelecionada]);
 
+    const cpfDigitos = cpf.replace(/\D/g, '');
     const cpfValido = isValidCpf(cpf);
     const senhaValida = senha.length >= MIN_SENHA;
     const senhasConferem = senha === confirmarSenha && confirmarSenha.length > 0;
@@ -138,10 +140,6 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
         nomeValido &&
         !!legislaturaId &&
         periodoMandatoValido;
-
-    function handleCpfChange(raw: string) {
-        setCpf(formatCpf(raw));
-    }
 
     async function handleSubmit() {
         if (!canSubmit) return;
@@ -342,16 +340,16 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                     <div className="sigl-dialog-grid sigl-dialog-grid-2">
                         <div className="sigl-filtro-campo">
                             <label htmlFor="pc-cpf">CPF *</label>
-                            <InputText
+                            <InputMask
                                 id="pc-cpf"
+                                mask="999.999.999-99"
                                 value={cpf}
-                                onChange={(e) => handleCpfChange(e.target.value)}
+                                onChange={(e) => setCpf(e.value ?? '')}
                                 placeholder="000.000.000-00"
-                                className={`w-full${cpf && !cpfValido ? ' p-invalid' : ''}`}
-                                inputMode="numeric"
+                                className={`w-full${cpfDigitos.length > 0 && !cpfValido ? ' p-invalid' : ''}`}
                                 autoComplete="off"
                             />
-                            {cpf && !cpfValido && (
+                            {cpfDigitos.length > 0 && !cpfValido && (
                                 <small className="p-error">Informe um CPF com 11 dígitos.</small>
                             )}
                         </div>

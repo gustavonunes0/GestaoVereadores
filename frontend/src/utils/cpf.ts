@@ -13,5 +13,5 @@ export function formatCpf(value: string): string {
 }
 
 export function isValidCpf(value: string): boolean {
-    return normalizeCpf(value).length === 11;
+    return value.replace(/\D/g, '').length === 11;
 }
