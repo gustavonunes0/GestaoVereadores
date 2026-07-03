@@ -53,6 +53,7 @@ export const ROUTES = {
         comissoes: '/parlamentar/comissoes',
         mandato: '/parlamentar/mandato',
         filiacao: '/parlamentar/filiacao',
+        sessoes: '/parlamentar/sessoes',
     },
 } as const;
 
@@ -155,6 +156,16 @@ export const PARLAMENTAR_NAV_MENU: NavGroupDef[] = [
                 label: 'Dashboard',
                 route: ROUTES.parlamentar.dashboard,
                 sidebarIcon: 'dashboard',
+            },
+        ],
+    },
+    {
+        label: 'Plenário',
+        items: [
+            {
+                label: 'Sessões',
+                route: ROUTES.parlamentar.sessoes,
+                sidebarIcon: 'gavel',
             },
         ],
     },

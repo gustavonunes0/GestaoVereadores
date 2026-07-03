@@ -59,8 +59,10 @@ export const API_PATHS = {
 
     // ── Sessões Plenárias ─────────────────────────────────────────────────
     sessoes:             '/legislative/sessoes-plenarias',
+    sessaoAtiva:         '/legislative/sessoes-plenarias/sessao-ativa',
     sessoesContextoLegislatura: '/legislative/sessoes-plenarias/contexto-legislatura',
     sessaoById:          (id: string) => `/legislative/sessoes-plenarias/${id}`,
+    sessaoMinhaPresenca: (id: string) => `/legislative/sessoes-plenarias/${id}/minha-presenca`,
     sessoesAbrir:        (id: string) => `/legislative/sessoes-plenarias/${id}/abrir`,
     sessoesSuspender:    (id: string) => `/legislative/sessoes-plenarias/${id}/suspender`,
     sessoesEncerrar:     (id: string) => `/legislative/sessoes-plenarias/${id}/encerrar`,
@@ -70,6 +72,10 @@ export const API_PATHS = {
     sessoesPauta:        (id: string) => `/legislative/sessoes-plenarias/${id}/pauta`,
     sessoesPautaItem:    (sid: string, iid: string) => `/legislative/sessoes-plenarias/${sid}/pauta/${iid}`,
     sessoesPautaPublicar:(id: string) => `/legislative/sessoes-plenarias/${id}/pauta/publicar`,
+    sessoesPautaVotacao: (sid: string, iid: string) =>
+        `/legislative/sessoes-plenarias/${sid}/pauta/${iid}/votacao`,
+    sessoesPautaVotos: (sid: string, iid: string) =>
+        `/legislative/sessoes-plenarias/${sid}/pauta/${iid}/votacao/votos`,
     sessoesPresencas:        (id: string) => `/legislative/sessoes-plenarias/${id}/presencas`,
     sessaoPresencaToggle:    (id: string, presencaId: string) =>
                                  `/legislative/sessoes-plenarias/${id}/presencas/${presencaId}`,
@@ -77,6 +83,7 @@ export const API_PATHS = {
 
     // ── Votações ──────────────────────────────────────────────────────────
     votacoes:            '/legislative/votacoes',
+    votacoesValoresVoto: '/legislative/votacoes/votos/valores',
     votacoesVotos:       (id: string) => `/legislative/votacoes/${id}/votos`,
     votacoesEncerrar:    (id: string) => `/legislative/votacoes/${id}/encerrar`,
 

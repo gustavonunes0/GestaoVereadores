@@ -13,6 +13,8 @@ const parlamentarChildren = [
     { path: 'comissoes', element: page(Pages.parlamentarComissoes) },
     { path: 'mandato', element: page(Pages.parlamentarMandato) },
     { path: 'filiacao', element: page(Pages.parlamentarFiliacao) },
+    { path: 'sessoes', element: page(Pages.parlamentarSessoes) },
+    { path: 'sessoes/:id', element: page(Pages.parlamentarSessaoDetalhe) },
 ];
 
 /** Área autenticada PARLIAMENTARIAN (layout próprio). */

@@ -729,7 +729,7 @@ export class SessoesController {
         return this.cancelarSessao.execute(tenantId, id, dto, responsavelId);
     }
 
-    @TenantRoles(...STAFF_AND_ABOVE)
+    @TenantRoles(...STAFF_AND_ABOVE, ...PARLIAMENTARIAN_ONLY)
     @Get(':id/jitsi-token')
     getJitsiTokenHandler(
         @TenantId() tenantId: string,

@@ -32,4 +32,6 @@ export const Pages = {
     parlamentarComissoes: lazy(() => import('../../pages/parlamentar/ParlamentarComissoesPage').then((m) => ({ default: m.ParlamentarComissoesPage }))),
     parlamentarMandato: lazy(() => import('../../pages/parlamentar/ParlamentarMandatoPage').then((m) => ({ default: m.ParlamentarMandatoPage }))),
     parlamentarFiliacao: lazy(() => import('../../pages/parlamentar/ParlamentarFiliacaoPage').then((m) => ({ default: m.ParlamentarFiliacaoPage }))),
+    parlamentarSessoes: lazy(() => import('../../pages/parlamentar/ParlamentarSessoesPage').then((m) => ({ default: m.ParlamentarSessoesPage }))),
+    parlamentarSessaoDetalhe: lazy(() => import('../../pages/parlamentar/ParlamentarSessaoDetalhePage').then((m) => ({ default: m.ParlamentarSessaoDetalhePage }))),
 } as const;

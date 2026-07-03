@@ -1,7 +1,8 @@
 import { api, apiList } from '../client';
 import { API_PATHS } from '../paths';
 import type { SessaoStatus } from '../../types/legislative';
-import type { JitsiTokenData, PautaItemDetalhe, SessaoPlenariaDetalhe } from '../../types/sessoes';
+import type { JitsiTokenData, PautaItemDetalhe, SessaoPlenariaDetalhe, StatusSessao } from '../../types/sessoes';
+import type { PresencaRegistroApi } from '../../utils/presencaSessao';
 
 export interface SessaoPlenaria {
     id: string;
@@ -46,6 +47,27 @@ export type LegislaturaSessaoRef = {
     id: string;
     numero: number;
     sessoesLegislativas: { id: string; numero: number }[];
+};
+
+export type SessaoAtivaResumo = {
+    id: string;
+    statusSessao: StatusSessao;
+    faseAtual?: string | null;
+    minhaPresenca?: {
+        presente: boolean;
+        situacao: string;
+        autoRegistrado?: boolean;
+    } | null;
+    votacaoAberta?: {
+        votacaoId: string;
+        tipoVotacao: string;
+        pautaItem?: {
+            id: string;
+            ordem: number;
+            materia?: { id: string; ementa?: string } | null;
+        };
+    } | null;
+    euSouPresidente?: boolean;
 };
 
 export type LegislaturaContextoSessoes = {
@@ -150,6 +172,24 @@ export const sessoesApi = {
 
     getDetalhe: (id: string) =>
         api<SessaoPlenariaDetalhe>(API_PATHS.sessaoById(id)),
+
+    getSessaoAtiva: () =>
+        api<SessaoAtivaResumo | null>(API_PATHS.sessaoAtiva),
+
+    getPresencas: (sessaoId: string) =>
+        api<PresencaRegistroApi[]>(API_PATHS.sessoesPresencas(sessaoId)),
+
+    registrarMinhaPresenca: (sessaoId: string) =>
+        api<PresencaRegistroApi>(API_PATHS.sessaoMinhaPresenca(sessaoId), {
+            method: 'POST',
+            body: JSON.stringify({}),
+        }),
+
+    getVotacaoPautaItem: (sessaoId: string, pautaItemId: string) =>
+        api<Record<string, unknown> | null>(API_PATHS.sessoesPautaVotacao(sessaoId, pautaItemId)),
+
+    getVotosPautaItem: (sessaoId: string, pautaItemId: string) =>
+        api<Record<string, unknown>[]>(API_PATHS.sessoesPautaVotos(sessaoId, pautaItemId)),
 
     updateLinkYoutube: (id: string, linkYoutube: string) =>
         api<SessaoPlenariaDetalhe>(API_PATHS.sessaoById(id), {

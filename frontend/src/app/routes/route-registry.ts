@@ -32,6 +32,7 @@ export const REGISTERED_PARLAMENTAR_PATHS: readonly string[] = [
     ROUTES.parlamentar.comissoes,
     ROUTES.parlamentar.mandato,
     ROUTES.parlamentar.filiacao,
+    ROUTES.parlamentar.sessoes,
 ];
 
 export const REGISTERED_PUBLIC_PATHS: readonly string[] = [ROUTES.login];
