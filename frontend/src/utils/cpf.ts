@@ -5,9 +5,11 @@ export function normalizeCpf(value: string): string {
 }
 
 export function formatCpf(value: string): string {
-    const cpf = normalizeCpf(value);
-    if (cpf.length !== 11) return value;
-    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    return digits
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
 }
 
 export function isValidCpf(value: string): boolean {

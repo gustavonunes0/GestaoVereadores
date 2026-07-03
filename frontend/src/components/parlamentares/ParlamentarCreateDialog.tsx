@@ -140,8 +140,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
         periodoMandatoValido;
 
     function handleCpfChange(raw: string) {
-        const digits = normalizeCpf(raw).slice(0, 11);
-        setCpf(formatCpf(digits));
+        setCpf(formatCpf(raw));
     }
 
     async function handleSubmit() {
@@ -151,7 +150,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
             const photoUrl = await resolveParlamentarPhotoUrl(photoValue);
 
             const created = await parlamentaresApi.create({
-                cpf,
+                cpf: normalizeCpf(cpf),
                 password: senha,
                 parliamentaryName: parliamentaryName.trim(),
                 ...(email.trim() ? { email: email.trim().toLowerCase() } : {}),
