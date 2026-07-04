@@ -5,9 +5,9 @@ import {
     IsEnum,
     IsInt,
     IsOptional,
-    IsString,
     IsUUID,
     Min,
+    ValidateIf,
 } from 'class-validator';
 
 export class AbrirVotacaoDto {
@@ -21,8 +21,15 @@ export class AbrirVotacaoDto {
 }
 
 export class RegistrarVotoDto {
-    @IsString()
-    parlamentarId: string;
+    /** Modelo legado (Parlamentar). */
+    @ValidateIf((o: RegistrarVotoDto) => !o.parliamentarianId)
+    @IsUUID()
+    parlamentarId?: string;
+
+    /** Modelo novo (Parliamentarian) — app parlamentar. */
+    @ValidateIf((o: RegistrarVotoDto) => !o.parlamentarId)
+    @IsUUID()
+    parliamentarianId?: string;
 
     @IsEnum(Voto)
     voto: Voto;

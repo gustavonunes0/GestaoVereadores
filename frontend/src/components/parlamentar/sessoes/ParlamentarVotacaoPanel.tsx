@@ -108,7 +108,6 @@ export function ParlamentarVotacaoPanel({
         setLoadingVoto(true);
         try {
             await sessoesApi.registrarVoto(sessaoId, pautaItemId, {
-                parlamentarId: parliamentarianId,
                 voto: votoSelecionado,
             });
             setVotoRegistrado(votoSelecionado);

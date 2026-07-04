@@ -13,6 +13,10 @@ export class FilterVotoDto {
     parlamentarId?: string;
 
     @IsOptional()
+    @IsUUID()
+    parliamentarianId?: string;
+
+    @IsOptional()
     @IsEnum(Voto)
     voto?: Voto;
 }

@@ -588,9 +588,26 @@ export class SessoesController {
         @Param('id', ParseUUIDPipe) id: string,
         @Param('pautaItemId', ParseUUIDPipe) pautaItemId: string,
         @Body() dto: RegistrarVotoDto,
+        @Req() req: Request,
     ) {
         try {
-            const result = await this.registrarVoto.execute(tenantId, id, pautaItemId, dto);
+            const user = req.user;
+            const payload: RegistrarVotoDto =
+                user && isParlamentarianUser(user as never)
+                    ? {
+                          ...dto,
+                          parliamentarianId: (user as { parliamentarianId: string })
+                              .parliamentarianId,
+                          parlamentarId: undefined,
+                      }
+                    : dto;
+
+            const result = await this.registrarVoto.execute(
+                tenantId,
+                id,
+                pautaItemId,
+                payload,
+            );
             const votacao = await this.obterVotacao.execute(tenantId, id, pautaItemId);
             if (votacao) {
                 this.realtimeGateway.emitVotacaoPlacar(tenantId, {
