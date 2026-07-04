@@ -10,6 +10,7 @@ import {
     shouldHideNominalVotes,
     type TipoVotacao,
 } from '../../types/legislative';
+import { resolveVotoLabel } from '../../utils/votoDisplay';
 
 type ParlamentarOption = {
     id: string;
@@ -333,7 +334,7 @@ export function SessaoDeliberacaoPanel({
                                                                 ?.pessoa
                                                                 ?.nome ??
                                                                 v.parlamentarId}
-                                                            : {v.voto}
+                                                            : {resolveVotoLabel(v.voto)}
                                                         </li>
                                                     ))}
                                                 </ul>
