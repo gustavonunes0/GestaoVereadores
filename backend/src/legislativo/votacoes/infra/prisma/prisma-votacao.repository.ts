@@ -10,6 +10,7 @@ import {
     StatusMateria,
     TipoVotacao,
     TipoPautaItem,
+    MandateStatus,
     Prisma,
     Voto,
 } from '@prisma/client';
@@ -62,7 +63,13 @@ type MandateProfileRefs = {
 
 const votoParlamentarInclude = {
     parlamentar: { include: { pessoa: true } },
+    parliamentarian: true,
 } as const;
+
+type VotoActorRefs = {
+    parlamentarId?: string;
+    parliamentarianId?: string;
+};
 
 @Injectable()
 export class PrismaVotacaoRepository implements VotacaoRepository {
@@ -169,6 +176,23 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         assertParliamentarianHasActiveMandate(hasActiveMandate);
     }
 
+    private async assertParliamentarianMandatoAtivo(
+        tenantId: string,
+        parliamentarianId: string,
+    ) {
+        const mandato = await this.prisma.parliamentarianMandate.findFirst({
+            where: {
+                tenantId,
+                parliamentarianId,
+                isRemoved: false,
+                status: MandateStatus.ACTIVE,
+            },
+        });
+        if (!mandato) {
+            throw new BadRequestException('Parlamentar não possui mandato ativo');
+        }
+    }
+
     private async assertParlamentarMandatoAtivo(
         parlamentarId: string,
         legislaturaId?: string | null,
@@ -209,7 +233,7 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         tenantId: string,
         sessaoId: string,
         pautaItemId: string,
-        dto: MandateProfileRefs & { parlamentarId: string },
+        dto: MandateProfileRefs & VotoActorRefs,
     ) {
         const { sessao, pautaItem } = await this.getPautaItemVotacao(
             tenantId,
@@ -224,6 +248,50 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         const votacao = pautaItem.votacao;
         assertVotacaoAberta(votacao.realizadaAt);
         assertTipoAceitaVotoIndividual(votacao.tipoVotacao);
+
+        if (dto.parliamentarianId) {
+            const parliamentarian = await this.prisma.parliamentarian.findFirst({
+                where: {
+                    id: dto.parliamentarianId,
+                    tenantId,
+                    isRemoved: false,
+                },
+            });
+            if (!parliamentarian) {
+                throw new NotFoundException('Parlamentar não encontrado');
+            }
+
+            await this.assertParliamentarianMandatoAtivo(
+                tenantId,
+                dto.parliamentarianId,
+            );
+            await this.assertMandateIfProvided(tenantId, dto);
+
+            const presenca = await this.prisma.presencaSessao.findUnique({
+                where: {
+                    sessaoId_parliamentarianId: {
+                        sessaoId,
+                        parliamentarianId: dto.parliamentarianId,
+                    },
+                },
+            });
+            const estaPresente = parlamentarPresenteParaVotar(
+                presenca,
+                contaPresencaParaQuorum,
+            );
+            assertPresencaQuandoExigida(votacao.exigePresenca, estaPresente);
+
+            return {
+                votacao,
+                parliamentarianId: dto.parliamentarianId,
+            };
+        }
+
+        if (!dto.parlamentarId) {
+            throw new BadRequestException(
+                'Informe parlamentarId ou parliamentarianId',
+            );
+        }
 
         const parlamentar = await this.prisma.parlamentar.findFirst({
             where: { id: dto.parlamentarId, ...tenantWhere(tenantId) },
@@ -253,7 +321,10 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         );
         assertPresencaQuandoExigida(votacao.exigePresenca, estaPresente);
 
-        return { votacao };
+        return {
+            votacao,
+            parlamentarId: dto.parlamentarId,
+        };
     }
 
     async abrirVotacao(
@@ -396,6 +467,9 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             votacaoId: pautaItem.votacao.id,
         };
         if (filters.parlamentarId) where.parlamentarId = filters.parlamentarId;
+        if (filters.parliamentarianId) {
+            where.parliamentarianId = filters.parliamentarianId;
+        }
         if (filters.voto) where.voto = filters.voto;
 
         return this.prisma.votoParlamentar.findMany({
@@ -437,18 +511,42 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         pautaItemId: string,
         dto: RegistrarVotoDto,
     ) {
-        const { votacao } = await this.assertContextoVotoIndividual(
+        const ctx = await this.assertContextoVotoIndividual(
             tenantId,
             sessaoId,
             pautaItemId,
             dto,
         );
 
+        if (ctx.parliamentarianId) {
+            const existing = await this.prisma.votoParlamentar.findUnique({
+                where: {
+                    votacaoId_parliamentarianId: {
+                        votacaoId: ctx.votacao.id,
+                        parliamentarianId: ctx.parliamentarianId,
+                    },
+                },
+            });
+            assertVotoNaoDuplicado(!!existing);
+
+            const voto = await this.prisma.votoParlamentar.create({
+                data: {
+                    votacaoId: ctx.votacao.id,
+                    parliamentarianId: ctx.parliamentarianId,
+                    voto: dto.voto,
+                },
+                include: votoParlamentarInclude,
+            });
+
+            await this.recalcularTotaisVotacao(ctx.votacao.id);
+            return voto;
+        }
+
         const existing = await this.prisma.votoParlamentar.findUnique({
             where: {
                 votacaoId_parlamentarId: {
-                    votacaoId: votacao.id,
-                    parlamentarId: dto.parlamentarId,
+                    votacaoId: ctx.votacao.id,
+                    parlamentarId: ctx.parlamentarId!,
                 },
             },
         });
@@ -456,14 +554,14 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
 
         const voto = await this.prisma.votoParlamentar.create({
             data: {
-                votacaoId: votacao.id,
-                parlamentarId: dto.parlamentarId,
+                votacaoId: ctx.votacao.id,
+                parlamentarId: ctx.parlamentarId!,
                 voto: dto.voto,
             },
             include: votoParlamentarInclude,
         });
 
-        await this.recalcularTotaisVotacao(votacao.id);
+        await this.recalcularTotaisVotacao(ctx.votacao.id);
         return voto;
     }
 

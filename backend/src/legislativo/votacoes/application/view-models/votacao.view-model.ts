@@ -24,14 +24,22 @@ const votingService = new VotingDomainService();
 
 export type VotoParlamentarPayload = {
     id: string;
-    parlamentarId: string;
+    votacaoId?: string;
+    parlamentarId?: string | null;
+    parliamentarianId?: string | null;
     voto: Voto;
     parlamentar?: {
         id: string;
+        ativo?: boolean;
         pessoa?: {
             nome?: string | null;
             nomeParlamentar?: string | null;
         } | null;
+    } | null;
+    parliamentarian?: {
+        id: string;
+        parliamentaryName: string;
+        status?: string;
     } | null;
 };
 
@@ -110,7 +118,8 @@ export class VotacaoViewModel {
                       VotoParlamentarViewModel.toHttp({
                           id: item.id,
                           votacaoId: item.votacaoId ?? data.id,
-                          parlamentarId: item.parlamentarId,
+                          parlamentarId: item.parlamentarId ?? null,
+                          parliamentarianId: item.parliamentarianId ?? null,
                           voto: item.voto,
                           parlamentar: item.parlamentar
                               ? {
@@ -119,6 +128,7 @@ export class VotacaoViewModel {
                                     pessoa: item.parlamentar.pessoa,
                                 }
                               : null,
+                          parliamentarian: item.parliamentarian ?? null,
                       }),
                   ),
             createdAt: data.createdAt.toISOString(),

@@ -7,6 +7,7 @@ import { sessoesApi } from '../../../api/legislative/sessoes.api';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { VotacaoAbertaEvent } from '../../../types/legislative';
+import { resolveVotoLabel, resolveVotoValue, type VotoCampo } from '../../../utils/votoDisplay';
 
 const VOTO_OPTIONS = [
     { label: 'Sim', value: 'SIM' },
@@ -36,15 +37,10 @@ function findMyVote(
 
     if (!mine) return null;
     return (
-        (mine.voto as string | undefined) ??
-        (mine.valor as string | undefined) ??
-        (mine.value as string | undefined) ??
-        null
+        resolveVotoValue(mine.voto as VotoCampo) ??
+        resolveVotoValue(mine.valor as VotoCampo) ??
+        resolveVotoValue(mine.value as VotoCampo)
     );
-}
-
-function labelVoto(valor: string): string {
-    return VOTO_OPTIONS.find((opt) => opt.value === valor)?.label ?? valor;
 }
 
 export function ParlamentarVotacaoPanel({
@@ -94,7 +90,7 @@ export function ParlamentarVotacaoPanel({
 
         confirmDialog({
             header: 'Confirmar voto',
-            message: `Deseja registrar seu voto como "${labelVoto(votoSelecionado)}"?`,
+            message: `Deseja registrar seu voto como "${resolveVotoLabel(votoSelecionado)}"?`,
             icon: 'pi pi-question-circle',
             acceptLabel: 'Confirmar',
             rejectLabel: 'Cancelar',
@@ -108,7 +104,6 @@ export function ParlamentarVotacaoPanel({
         setLoadingVoto(true);
         try {
             await sessoesApi.registrarVoto(sessaoId, pautaItemId, {
-                parlamentarId: parliamentarianId,
                 voto: votoSelecionado,
             });
             setVotoRegistrado(votoSelecionado);
@@ -150,7 +145,7 @@ export function ParlamentarVotacaoPanel({
                     ) : votoRegistrado ? (
                         <div className="parl-sessao-presenca-ok">
                             <i className="pi pi-check-circle" aria-hidden />
-                            Voto registrado: {labelVoto(votoRegistrado)}
+                            Voto registrado: {resolveVotoLabel(votoRegistrado)}
                         </div>
                     ) : podeVotar ? (
                         <div className="parl-sessao-votacao-form">
