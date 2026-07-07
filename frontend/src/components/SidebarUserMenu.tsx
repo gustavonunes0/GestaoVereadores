@@ -8,6 +8,7 @@ import { ROUTES } from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import type { AuthUser } from '../types/auth';
 import { isStaffUser } from '../types/auth';
+import { AlterarSenhaDialog } from './auth/AlterarSenhaDialog';
 
 function staffRoleLabel(role: 'ADMIN_STAFF' | 'STAFF') {
     return role === 'ADMIN_STAFF' ? 'Administrador' : 'Operador';
@@ -64,11 +65,18 @@ export function SidebarUserMenu() {
     const menuRef = useRef<Menu>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [open, setOpen] = useState(false);
+    const [senhaDialogOpen, setSenhaDialogOpen] = useState(false);
 
     const actionItems = useMemo<MenuItem[]>(() => {
         if (!user) return [];
 
-        const items: MenuItem[] = [];
+        const items: MenuItem[] = [
+            {
+                label: 'Alterar senha',
+                icon: 'pi pi-lock',
+                command: () => setSenhaDialogOpen(true),
+            },
+        ];
 
         if (isAdminStaff && isStaffUser(user)) {
             items.push({
@@ -153,6 +161,10 @@ export function SidebarUserMenu() {
 
     return (
         <div className="sidebar-user">
+            <AlterarSenhaDialog
+                visible={senhaDialogOpen}
+                onHide={() => setSenhaDialogOpen(false)}
+            />
             <Menu
                 ref={menuRef}
                 id="sidebar-user-menu"

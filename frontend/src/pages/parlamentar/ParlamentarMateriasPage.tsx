@@ -50,7 +50,7 @@ export function ParlamentarMateriasPage() {
         if (!parliamentarianId) return;
         setLoading(true);
         try {
-            const res = await materiasApi.list({
+            const res = await materiasApi.listMinhas({
                 page,
                 limit: 20,
             });
@@ -83,7 +83,7 @@ export function ParlamentarMateriasPage() {
             <PageHeader
                 icon={MODULE_ICONS.materias}
                 title="Minhas matérias"
-                subtitle="Matérias onde você é autor, coautor ou relator."
+                subtitle="Matérias em que você é autor ou coautor."
             />
 
             <section aria-label="Lista de matérias" className="materias-table-section">

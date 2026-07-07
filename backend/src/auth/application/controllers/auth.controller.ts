@@ -3,6 +3,7 @@ import {
     Body,
     Controller,
     Get,
+    Patch,
     Post,
     Req,
     UnauthorizedException,
@@ -14,13 +15,16 @@ import { AuthenticatedUser } from '../../../common/types/authenticated-request';
 import { Public } from '../../decorators/public.decorator';
 import { LoginCamaraDto } from '../dto/login-camara.dto';
 import { LoginDto } from '../dto/login.dto';
+import { ChangeCamaraPasswordDto } from '../dto/change-camara-password.dto';
 import {
     InvalidCredentialsError,
+    InvalidCurrentPasswordError,
     InvalidTenantError,
     TenantMembershipRequiredError,
     TenantResolutionRequiredError,
 } from '../errors/auth.errors';
 import { GetCurrentUserUseCase } from '../use-cases/get-current-user.use-case';
+import { ChangeCamaraUserPasswordUseCase } from '../use-cases/change-camara-user-password.use-case';
 import { LoginCamaraUseCase } from '../use-cases/login-camara.use-case';
 import { LoginSiglUseCase } from '../use-cases/login-sigl.use-case';
 
@@ -32,6 +36,7 @@ export class AuthController {
         private readonly loginSigl: LoginSiglUseCase,
         private readonly loginCamara: LoginCamaraUseCase,
         private readonly getCurrentUser: GetCurrentUserUseCase,
+        private readonly changeCamaraUserPassword: ChangeCamaraUserPasswordUseCase,
     ) {}
 
     @Public()
@@ -73,7 +78,28 @@ export class AuthController {
         }
     }
 
+    @ApiBearerAuth()
+    @Patch('me/senha')
+    async changePassword(
+        @Req() req: { user: AuthenticatedUser },
+        @Body() dto: ChangeCamaraPasswordDto,
+    ) {
+        if (req.user.authType !== 'camara') {
+            throw new BadRequestException(
+                'Alteração de senha disponível apenas para usuários da câmara',
+            );
+        }
+        try {
+            return await this.changeCamaraUserPassword.execute(req.user.id, dto);
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
     private handleError(error: unknown): never {
+        if (error instanceof InvalidCurrentPasswordError) {
+            throw new BadRequestException(error.message);
+        }
         if (error instanceof InvalidCredentialsError) {
             throw new UnauthorizedException(error.message);
         }

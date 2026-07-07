@@ -3,6 +3,7 @@ export const API_PATHS = {
     // ── Auth ──────────────────────────────────────────────────────────────
     authLogin:   '/auth/login',
     authMe:      '/auth/me',
+    authMeSenha: '/auth/me/senha',
 
     // ── Domínios (lookups) ────────────────────────────────────────────────
     dominios:    '/dominios',

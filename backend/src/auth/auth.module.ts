@@ -7,6 +7,7 @@ import { UsersModule } from '../identidade/users/users.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthController } from './application/controllers/auth.controller';
 import { UsuariosController } from './application/controllers/usuarios.controller';
+import { ChangeCamaraUserPasswordUseCase } from './application/use-cases/change-camara-user-password.use-case';
 import { ChangeSiglUserPasswordUseCase } from './application/use-cases/change-sigl-user-password.use-case';
 import { CreateSiglUserUseCase } from './application/use-cases/create-sigl-user.use-case';
 import { GetCurrentUserUseCase } from './application/use-cases/get-current-user.use-case';
@@ -50,6 +51,7 @@ import { JwtTokenIssuer } from './infra/security/jwt-token.issuer';
         CreateSiglUserUseCase,
         UpdateSiglUserUseCase,
         ChangeSiglUserPasswordUseCase,
+        ChangeCamaraUserPasswordUseCase,
         JwtStrategy,
         PrismaSiglUserRepository,
         PrismaCamaraAuthRepository,

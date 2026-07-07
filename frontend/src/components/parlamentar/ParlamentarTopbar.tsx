@@ -1,7 +1,10 @@
 import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
+import LockOutlined from '@mui/icons-material/LockOutlined';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isParlamentarianUser } from '../../types/auth';
 import { SiglButton } from '../common/SiglButton';
+import { AlterarSenhaDialog } from '../auth/AlterarSenhaDialog';
 
 type Props = {
     menuOpen: boolean;
@@ -10,13 +13,19 @@ type Props = {
 
 export function ParlamentarTopbar({ menuOpen, onMenuToggle }: Props) {
     const { user, logout } = useAuth();
+    const [senhaDialogOpen, setSenhaDialogOpen] = useState(false);
     const parlUser = user && isParlamentarianUser(user) ? user : null;
     const nome = parlUser?.parliamentaryName ?? 'Parlamentar';
     const cargo = `${nome} Parlamentar`;
     const inicial = nome.charAt(0).toUpperCase();
 
     return (
-        <header className="topbar">
+        <>
+            <AlterarSenhaDialog
+                visible={senhaDialogOpen}
+                onHide={() => setSenhaDialogOpen(false)}
+            />
+            <header className="topbar">
             <div className="topbar__start">
                 <SiglButton
                     type="button"
@@ -52,11 +61,21 @@ export function ParlamentarTopbar({ menuOpen, onMenuToggle }: Props) {
                     </div>
                 )}
 
+                <button
+                    type="button"
+                    className="btn-sair"
+                    onClick={() => setSenhaDialogOpen(true)}
+                >
+                    <LockOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
+                    Senha
+                </button>
+
                 <button type="button" className="btn-sair" onClick={logout}>
                     <LogoutOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
                     Sair
                 </button>
             </div>
         </header>
+        </>
     );
 }

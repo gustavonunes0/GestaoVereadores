@@ -135,6 +135,12 @@ export const authApi = {
         }),
 
     me: (): Promise<AuthUser> => api(API_PATHS.authMe),
+
+    changePassword: (body: { currentPassword: string; newPassword: string }) =>
+        api<{ message: string }>(API_PATHS.authMeSenha, {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+        }),
 };
 
 export type { AuthUser } from '../types/auth';

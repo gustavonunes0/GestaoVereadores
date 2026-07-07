@@ -169,6 +169,13 @@ export const materiasApi = {
     list: (filtros?: MateriaFiltros) =>
         apiList<Materia>(API_PATHS.materias, filtros as Record<string, string | number | boolean | undefined>),
 
+    /** Matérias em que o parlamentar logado é autor ou coautor. */
+    listMinhas: (filtros?: Pick<MateriaFiltros, 'page' | 'limit' | 'tipoId' | 'status' | 'dataInicio' | 'dataFim'>) =>
+        apiList<Materia>(
+            API_PATHS.materiasMinhas,
+            filtros as Record<string, string | number | boolean | undefined>,
+        ),
+
     getById: (id: string) =>
         api<Materia>(`${API_PATHS.materias}/${id}`),
 

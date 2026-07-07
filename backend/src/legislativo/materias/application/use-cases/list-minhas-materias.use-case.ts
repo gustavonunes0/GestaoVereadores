@@ -16,8 +16,8 @@ export class ListMinhasMateriasUseCase {
             isRemoved: false,
             OR: [
                 { authorParliamentarianId: parliamentarianId },
-                { rapporteurParliamentarianId: parliamentarianId },
                 { matterCoauthors: { some: { parliamentarianId } } },
+                { autor: { parliamentarianId } },
             ],
             ...(filtros.tipoId && { tipoId: filtros.tipoId }),
             ...(filtros.status && { status: filtros.status }),
