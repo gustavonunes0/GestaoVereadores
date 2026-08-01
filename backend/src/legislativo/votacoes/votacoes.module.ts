@@ -3,6 +3,7 @@ import { PrismaModule } from '../../prisma/prisma.module';
 import { EncerrarVotacaoUseCase } from './application/use-cases/encerrar-votacao.use-case';
 import { MateriasModule } from '../materias/materias.module';
 import { ParlamentaresModule } from '../parlamentares/parlamentares.module';
+import { SessaoHistoricoModule } from '../sessao-historico/sessao-historico.module';
 import { VotacoesController } from './application/controllers/votacoes.controller';
 import {
     ListResultadoValoresUseCase,
@@ -25,7 +26,7 @@ import { PrismaVotacaoRepository } from './infra/prisma/prisma-votacao.repositor
 import { VOTACAO_REPOSITORY } from './votacoes.tokens';
 
 @Module({
-    imports: [PrismaModule, ParlamentaresModule, MateriasModule],
+    imports: [PrismaModule, ParlamentaresModule, MateriasModule, SessaoHistoricoModule],
     controllers: [VotacoesController],
     providers: [
         AbrirVotacaoUseCase,

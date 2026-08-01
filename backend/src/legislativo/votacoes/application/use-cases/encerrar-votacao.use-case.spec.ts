@@ -6,6 +6,7 @@ import { VotacaoEntity } from '../../domain/entities/votacao.entity';
 import { VOTACAO_REPOSITORY } from '../../votacoes.tokens';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { TipoQuorum } from '../../domain/enums/tipo-quorum.enum';
+import { SessaoHistoricoRepository } from '../../../sessao-historico/domain/repositories/sessao-historico.repository';
 
 function makeVotacao(encerrada: boolean): VotacaoEntity {
     const v = new VotacaoEntity();
@@ -42,6 +43,7 @@ describe('EncerrarVotacaoUseCase', () => {
                 EncerrarVotacaoUseCase,
                 { provide: VOTACAO_REPOSITORY, useValue: repo },
                 { provide: PrismaService, useValue: prisma },
+                { provide: SessaoHistoricoRepository, useValue: { registrar: jest.fn() } },
             ],
         }).compile();
 

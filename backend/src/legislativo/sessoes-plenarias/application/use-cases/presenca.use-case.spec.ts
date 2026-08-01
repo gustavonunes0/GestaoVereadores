@@ -40,7 +40,7 @@ describe('RegistrarPresencaUseCase', () => {
         const repository = buildRepositoryMock();
         repository.registrarPresenca.mockResolvedValue(presencaBase);
 
-        const useCase = new RegistrarPresencaUseCase(repository as never);
+        const useCase = new RegistrarPresencaUseCase(repository as never, { registrar: jest.fn() } as never);
         const result = await useCase.execute('tenant-1', 'sessao-1', {
             parlamentarId: 'parlamentar-1',
         });
@@ -58,7 +58,7 @@ describe('RegistrarPresencaUseCase', () => {
             ),
         );
 
-        const useCase = new RegistrarPresencaUseCase(repository as never);
+        const useCase = new RegistrarPresencaUseCase(repository as never, { registrar: jest.fn() } as never);
 
         await expect(
             useCase.execute('tenant-1', 'sessao-1', {
@@ -75,7 +75,7 @@ describe('RegistrarPresencaUseCase', () => {
             ),
         );
 
-        const useCase = new RegistrarPresencaUseCase(repository as never);
+        const useCase = new RegistrarPresencaUseCase(repository as never, { registrar: jest.fn() } as never);
 
         await expect(
             useCase.execute('tenant-1', 'sessao-1', {

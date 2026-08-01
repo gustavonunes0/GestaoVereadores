@@ -5,6 +5,8 @@ import { StatusSessao } from '../../domain/enums/status-sessao.enum';
 import { FaseSessao } from '../../domain/enums/fase-sessao.enum';
 import { AbrirSessaoDto } from '../dto/abrir-sessao.dto';
 import { QuorumService } from '../../domain/services/quorum.service';
+import { SessaoHistoricoRepository } from '../../../sessao-historico/domain/repositories/sessao-historico.repository';
+import { TipoEventoSessaoHistorico } from '../../../sessao-historico/domain/enums/tipo-evento-sessao-historico.enum';
 
 const QUORUM_MINIMO_SESSAO_TESTE = 1;
 
@@ -15,6 +17,7 @@ export class AbrirSessaoUseCase {
     constructor(
         @Inject(SESSAO_PLENARIA_REPOSITORY)
         private readonly repository: SessaoPlenariaRepository,
+        private readonly historicoRepository: SessaoHistoricoRepository,
     ) {}
 
     async execute(
@@ -64,6 +67,14 @@ export class AbrirSessaoUseCase {
 
         // RN-SPL-02: ao abrir, fase vai automaticamente para EXPEDIENTE
         await this.repository.setFase(sessaoId, tenantId, FaseSessao.EXPEDIENTE);
+
+        await this.historicoRepository.registrar({
+            sessaoId,
+            tipoEvento: TipoEventoSessaoHistorico.SESSAO_ABERTA,
+            responsavelId,
+            descricao: dto.observacao,
+            metadata: { quorumPresente, modoTeste },
+        });
 
         return { statusSessao: StatusSessao.ABERTA, quorumPresente, modoTeste };
     }

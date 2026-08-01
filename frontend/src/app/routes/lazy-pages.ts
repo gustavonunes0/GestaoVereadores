@@ -24,6 +24,7 @@ export const Pages = {
 
     sessaoDetalhe: lazy(() => import('../../components/sessoes/SessaoDetalhePage').then((m) => ({ default: m.SessaoDetalhePage }))),
     sessaoPainel: lazy(() => import('../../components/sessoes/painel/SessaoPainelPage').then((m) => ({ default: m.SessaoPainelPage }))),
+    sessaoResumoPublico: lazy(() => import('../../pages/publico/SessaoResumoPublicoPage').then((m) => ({ default: m.SessaoResumoPublicoPage }))),
 
     parlamentarPerfil: lazy(() => import('../../pages/parlamentar/ParlamentarPerfilPage').then((m) => ({ default: m.ParlamentarPerfilPage }))),
     parlamentarBiografia: lazy(() => import('../../pages/parlamentar/ParlamentarBiografiaPage').then((m) => ({ default: m.ParlamentarBiografiaPage }))),

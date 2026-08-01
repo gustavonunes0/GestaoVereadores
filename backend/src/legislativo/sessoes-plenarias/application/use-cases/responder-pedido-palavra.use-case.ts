@@ -4,6 +4,8 @@ import { PEDIDO_PALAVRA_REPOSITORY } from '../../sessoes-plenarias.tokens';
 import { PedidoPalavraRepository } from '../../domain/repositories/pedido-palavra.repository';
 import { SessaoRealtimeGateway } from '../../realtime/sessao-realtime.gateway';
 import { PedidoPalavraViewModel } from '../view-models/pedido-palavra.view-model';
+import { SessaoHistoricoRepository } from '../../../sessao-historico/domain/repositories/sessao-historico.repository';
+import { TipoEventoSessaoHistorico } from '../../../sessao-historico/domain/enums/tipo-evento-sessao-historico.enum';
 
 @Injectable()
 export class ResponderPedidoPalavraUseCase {
@@ -12,9 +14,15 @@ export class ResponderPedidoPalavraUseCase {
         private readonly pedidoRepo: PedidoPalavraRepository,
         private readonly prisma: PrismaService,
         private readonly gateway: SessaoRealtimeGateway,
+        private readonly historicoRepository: SessaoHistoricoRepository,
     ) {}
 
-    async execute(pedidoId: string, novoStatus: 'CONCEDIDO' | 'NEGADO', tenantId: string) {
+    async execute(
+        pedidoId: string,
+        novoStatus: 'CONCEDIDO' | 'NEGADO',
+        tenantId: string,
+        tempoConcedidoSegundos?: number,
+    ) {
         const pedido = await this.pedidoRepo.findById(pedidoId, tenantId);
         if (!pedido || pedido.status !== 'AGUARDANDO') {
             throw new ConflictException('Pedido não está aguardando resposta');
@@ -28,6 +36,9 @@ export class ResponderPedidoPalavraUseCase {
 
         const atualizado = await this.pedidoRepo.updateStatus(pedidoId, novoStatus, {
             respondidoEm: new Date(),
+            ...(novoStatus === 'CONCEDIDO' && tempoConcedidoSegundos !== undefined
+                ? { tempoConcedidoSegundos }
+                : {}),
         });
 
         if (novoStatus === 'CONCEDIDO') {
@@ -42,6 +53,13 @@ export class ResponderPedidoPalavraUseCase {
                 sessaoId: pedido.sessaoId,
             });
         }
+
+        await this.historicoRepository.registrar({
+            sessaoId: pedido.sessaoId,
+            tipoEvento: TipoEventoSessaoHistorico.PEDIDO_PALAVRA_RESPONDIDO,
+            descricao: `Pedido de palavra de ${parlamentarNome} — ${novoStatus}`,
+            metadata: { pedidoId, novoStatus },
+        });
 
         return PedidoPalavraViewModel.toHttp(atualizado, parlamentarNome);
     }

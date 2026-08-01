@@ -33,11 +33,8 @@ export class ListTenantPartnersForMatterUseCase {
             links.map((link) => [link.tenantPartnerId, link.userId]),
         );
         const uniqueUserIds = [...new Set(links.map((link) => link.userId))];
-        const usersById = new Map<string, Awaited<ReturnType<UserRepository['findById']>>>();
-        for (const userId of uniqueUserIds) {
-            const user = await this.userRepo.findById(userId);
-            if (user) usersById.set(userId, user);
-        }
+        const users = await this.userRepo.findByIds(uniqueUserIds);
+        const usersById = new Map(users.map((user) => [user.id, user]));
 
         return partners
             .map((a) => {

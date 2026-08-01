@@ -7,6 +7,8 @@ import { EncerrarVotacaoDto } from '../dto/encerrar-votacao.dto';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { TipoQuorum } from '../../domain/enums/tipo-quorum.enum';
 import { ResultadoVotacaoEnum } from '../../domain/entities/votacao.entity';
+import { SessaoHistoricoRepository } from '../../../sessao-historico/domain/repositories/sessao-historico.repository';
+import { TipoEventoSessaoHistorico } from '../../../sessao-historico/domain/enums/tipo-evento-sessao-historico.enum';
 
 @Injectable()
 export class EncerrarVotacaoUseCase {
@@ -17,6 +19,7 @@ export class EncerrarVotacaoUseCase {
         @Inject(VOTACAO_REPOSITORY)
         private readonly repository: VotacaoRepository,
         private readonly prisma: PrismaService,
+        private readonly historicoRepository: SessaoHistoricoRepository,
     ) {}
 
     async execute(
@@ -25,7 +28,14 @@ export class EncerrarVotacaoUseCase {
         pautaItemId: string,
         dto: EncerrarVotacaoDto,
         responsavelId?: string,
-    ): Promise<{ votacaoId: string; resultado: string; votosSim: number; votosNao: number; abstencoes: number }> {
+    ): Promise<{
+        votacaoId: string;
+        resultado: string;
+        votosSim: number;
+        votosNao: number;
+        abstencoes: number;
+        votoQualidade: boolean;
+    }> {
         // Resolve votacaoId via pautaItem
         const pautaItem = await this.prisma.pautaItem.findFirst({
             where: { id: pautaItemId, sessaoId, isRemoved: false },
@@ -100,12 +110,28 @@ export class EncerrarVotacaoUseCase {
             },
         );
 
+        await this.historicoRepository.registrar({
+            sessaoId,
+            tipoEvento: TipoEventoSessaoHistorico.VOTACAO_ENCERRADA,
+            responsavelId,
+            descricao: `Votação encerrada — resultado ${resultado}`,
+            metadata: {
+                pautaItemId: pautaItem.id,
+                resultado,
+                votosSim: contagem.votosSim,
+                votosNao: contagem.votosNao,
+                abstencoes: contagem.abstencoes,
+                votoQualidade,
+            },
+        });
+
         return {
             votacaoId,
             resultado,
             votosSim: contagem.votosSim,
             votosNao: contagem.votosNao,
             abstencoes: contagem.abstencoes,
+            votoQualidade,
         };
     }
 }

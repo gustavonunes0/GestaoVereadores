@@ -4,6 +4,7 @@ export interface UserRepository {
     create(user: UserEntity): Promise<UserEntity>;
     findAll(): Promise<UserEntity[]>;
     findById(id: string): Promise<UserEntity | null>;
+    findByIds(ids: string[]): Promise<UserEntity[]>;
     findByCpf(cpf: string): Promise<UserEntity | null>;
     findByEmail(email: string): Promise<UserEntity | null>;
     update(user: UserEntity): Promise<UserEntity>;

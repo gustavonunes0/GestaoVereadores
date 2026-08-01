@@ -42,8 +42,22 @@ import { CalcularQuorumUseCase } from './application/use-cases/calcular-quorum.u
 import { SetFaseSessaoUseCase } from './application/use-cases/set-fase-sessao.use-case';
 import { RegistrarMinhaPresencaUseCase } from './application/use-cases/registrar-minha-presenca.use-case';
 import { GetSessaoAtivaUseCase } from './application/use-cases/get-sessao-ativa.use-case';
+import { ChamarVereadoresUseCase } from './application/use-cases/chamar-vereadores.use-case';
+import { ReiniciarChamadaUseCase } from './application/use-cases/reiniciar-chamada.use-case';
+import { PdfModule } from '../../common/pdf/pdf.module';
+import { GetResumoPublicoSessaoUseCase } from './application/use-cases/get-resumo-publico-sessao.use-case';
+import { GetListaPresencaPdfUseCase } from './application/use-cases/get-lista-presenca-pdf.use-case';
+import { GetAtaPdfUseCase } from './application/use-cases/get-ata-pdf.use-case';
 import { PrismaSessaoPlenariaRepository } from './infra/prisma/prisma-sessao-plenaria.repository';
-import { SESSAO_PLENARIA_REPOSITORY } from './sessoes-plenarias.tokens';
+import { ATA_REPOSITORY, SESSAO_PLENARIA_REPOSITORY } from './sessoes-plenarias.tokens';
+import { SessaoHistoricoModule } from '../sessao-historico/sessao-historico.module';
+import { ListSessaoHistoricoUseCase } from '../sessao-historico/application/use-cases/list-sessao-historico.use-case';
+import { PrismaAtaRepository } from './ata/infra/prisma/prisma-ata.repository';
+import { AtaRepository } from './ata/domain/repositories/ata.repository';
+import { GerarRascunhoAtaUseCase } from './ata/application/use-cases/gerar-rascunho-ata.use-case';
+import { GetAtaBySessaoUseCase } from './ata/application/use-cases/get-ata-by-sessao.use-case';
+import { UpdateAtaUseCase } from './ata/application/use-cases/update-ata.use-case';
+import { AprovarAtaUseCase } from './ata/application/use-cases/aprovar-ata.use-case';
 import { SessaoRealtimeGateway } from './realtime/sessao-realtime.gateway';
 import { PresidenciaService } from './domain/services/presidencia.service';
 import { PresidentOrStaffGuard } from '../../auth/guards/president-or-staff.guard';
@@ -63,6 +77,8 @@ import { PEDIDO_PALAVRA_REPOSITORY } from './sessoes-plenarias.tokens';
         ParlamentaresModule,
         MateriasModule,
         VotacoesModule,
+        SessaoHistoricoModule,
+        PdfModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -103,6 +119,24 @@ import { PEDIDO_PALAVRA_REPOSITORY } from './sessoes-plenarias.tokens';
         SetFaseSessaoUseCase,
         RegistrarMinhaPresencaUseCase,
         GetSessaoAtivaUseCase,
+        ChamarVereadoresUseCase,
+        ReiniciarChamadaUseCase,
+        GerarRascunhoAtaUseCase,
+        GetAtaBySessaoUseCase,
+        UpdateAtaUseCase,
+        AprovarAtaUseCase,
+        GetResumoPublicoSessaoUseCase,
+        GetListaPresencaPdfUseCase,
+        GetAtaPdfUseCase,
+        PrismaAtaRepository,
+        {
+            provide: ATA_REPOSITORY,
+            useExisting: PrismaAtaRepository,
+        },
+        {
+            provide: AtaRepository,
+            useExisting: PrismaAtaRepository,
+        },
         SessaoRealtimeGateway,
         PresidenciaService,
         PresidentOrStaffGuard,

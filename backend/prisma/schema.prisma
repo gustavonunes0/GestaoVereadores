@@ -148,6 +148,7 @@ model Tenant {
     tenantPartnerUsers        TenantPartnerUser[]
     atos                      Ato[]
     parliamentarianUsers      ParlamentarianUser[]
+    atas                      Ata[]
 }
 
 model TenantUser {
@@ -190,6 +191,8 @@ model TenantUser {
     tramitacaoHistorico        TramitacaoHistorico[]
     sessoesAbertas             SessaoPlenaria[]     @relation("SessaoAbertaPor")
     votacoesEncerradas         Votacao[]            @relation("VotacaoEncerradaPor")
+    sessaoHistoricoRegistros   SessaoHistorico[]
+    atasAprovadas              Ata[]
 }
 
 model PoliticalParty {
@@ -1045,6 +1048,10 @@ model SessaoPlenaria {
     pedidosPalavra        PedidoPalavra[]
     responsavelAbertura   TenantUser?        @relation("SessaoAbertaPor", fields: [responsavelAberturaId], references: [id])
     agendas               AgendaLegislativa[] @relation("AgendaSessao")
+    // TASK-006 — Ata da sessão (1:1)
+    ata                   Ata?
+    // TASK-008 — trilha de auditoria estruturada
+    historico             SessaoHistorico[]
 
     @@index([tenantId])
     @@index([tenantId, statusSessao])
@@ -1481,6 +1488,9 @@ model PautaItem {
     ordemDia      Int?
     // M11 — tipo de item (bloqueia votação se LEITURA ou COMUNICACAO)
     tipoPautaItem TipoPautaItem    @default(DELIBERACAO)
+    // TASK-006 — referencia a Ata de uma sessão anterior (leitura/discussão no Expediente)
+    ataReferenciadaId String?
+    ataReferenciada   Ata?         @relation(fields: [ataReferenciadaId], references: [id])
     isRemoved     Boolean          @default(false)
     createdAt   DateTime         @default(now())
     updatedAt   DateTime         @updatedAt
@@ -1491,6 +1501,7 @@ model PautaItem {
     @@index([comissaoId])
     @@index([pautaId])
     @@index([sessaoId])
+    @@index([ataReferenciadaId])
 }
 
 model Votacao {
@@ -1610,6 +1621,10 @@ model PedidoPalavra {
     respondidoEm      DateTime?
     encerradoEm       DateTime?
     duracaoSegundos   Int?
+    // TASK-009c — orador expandido (campos opcionais, não quebram pedidos existentes)
+    tema                   String?
+    fase                   FaseSessao?
+    tempoConcedidoSegundos Int?
 
     sessao          SessaoPlenaria  @relation(fields: [sessaoId], references: [id])
     parliamentarian Parliamentarian @relation(fields: [parliamentarianId], references: [id])
@@ -1617,4 +1632,72 @@ model PedidoPalavra {
     @@index([sessaoId, status])
     @@index([sessaoId, parliamentarianId])
     @@map("pedidos_palavra")
+}
+
+// TASK-008 — Histórico de Sessão (auditoria / "Log")
+
+enum TipoEventoSessaoHistorico {
+    SESSAO_ABERTA
+    SESSAO_SUSPENSA
+    SESSAO_ENCERRADA
+    SESSAO_CANCELADA
+    FASE_ALTERADA
+    CHAMADA_REALIZADA
+    CHAMADA_REINICIADA
+    PRESENCA_REGISTRADA
+    VOTACAO_ABERTA
+    VOTACAO_ENCERRADA
+    PEDIDO_PALAVRA_CRIADO
+    PEDIDO_PALAVRA_RESPONDIDO
+    ATA_GERADA
+    ATA_APROVADA
+}
+
+model SessaoHistorico {
+    id            String                    @id @default(uuid())
+    sessaoId      String
+    sessao        SessaoPlenaria            @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+    tipoEvento    TipoEventoSessaoHistorico
+    dataHora      DateTime                  @default(now())
+    responsavelId String?
+    responsavel   TenantUser?               @relation(fields: [responsavelId], references: [id])
+    descricao     String?
+    metadataJson  Json?
+
+    @@index([sessaoId, dataHora])
+    @@index([sessaoId, tipoEvento])
+    @@map("sessao_historico")
+}
+
+// TASK-006 — Ata da Sessão
+
+enum StatusAta {
+    RASCUNHO
+    APROVADA
+    PUBLICADA
+}
+
+model Ata {
+    id                    String     @id @default(uuid())
+    tenantId              String
+    tenant                Tenant     @relation(fields: [tenantId], references: [id])
+    sessaoPlenariaId      String     @unique
+    sessaoPlenaria        SessaoPlenaria @relation(fields: [sessaoPlenariaId], references: [id])
+    status                StatusAta  @default(RASCUNHO)
+    conteudo              String     @db.Text
+    geradaAutomaticamente Boolean    @default(true)
+    aprovadaEm            DateTime?
+    aprovadaPorId         String?
+    aprovadaPor           TenantUser? @relation(fields: [aprovadaPorId], references: [id])
+    pdfUrl                String?
+    isRemoved             Boolean    @default(false)
+    removedAt             DateTime?
+    createdAt             DateTime   @default(now())
+    updatedAt             DateTime   @updatedAt
+
+    pautaItensReferenciando PautaItem[]
+
+    @@index([tenantId])
+    @@index([tenantId, isRemoved])
+    @@map("atas")
 }

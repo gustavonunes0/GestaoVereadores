@@ -105,8 +105,9 @@ export function FecharVotacaoDialog({
                     ...(votoQualidade ? { votoQualidade: true } : {}),
                 });
                 const label = RESULTADO_LABEL[res.resultado] ?? res.resultado;
+                const sufixoQualidade = res.votoQualidade ? ' — decidido por voto de qualidade da Presidência' : '';
                 showSuccess(
-                    `Votação encerrada — ${label} (Sim ${res.votosSim} · Não ${res.votosNao} · Abstenção ${res.abstencoes})`,
+                    `Votação encerrada — ${label} (Sim ${res.votosSim} · Não ${res.votosNao} · Abstenção ${res.abstencoes})${sufixoQualidade}`,
                 );
             }
             onFechada();

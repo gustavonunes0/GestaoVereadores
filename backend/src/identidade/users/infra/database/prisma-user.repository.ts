@@ -34,6 +34,16 @@ export class PrismaUserRepository implements UserRepository {
         return user ? this.toEntity(user) : null;
     }
 
+    async findByIds(ids: string[]): Promise<UserEntity[]> {
+        if (ids.length === 0) return [];
+
+        const users = await this.prisma.user.findMany({
+            where: { id: { in: ids }, isRemoved: false },
+        });
+
+        return users.map((user) => this.toEntity(user));
+    }
+
     async findByCpf(cpf: string): Promise<UserEntity | null> {
         const user = await this.prisma.user.findFirst({
             where: { cpf, isRemoved: false },

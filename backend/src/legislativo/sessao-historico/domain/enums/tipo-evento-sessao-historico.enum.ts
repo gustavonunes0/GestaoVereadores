@@ -1,0 +1,33 @@
+export enum TipoEventoSessaoHistorico {
+    SESSAO_ABERTA = 'SESSAO_ABERTA',
+    SESSAO_SUSPENSA = 'SESSAO_SUSPENSA',
+    SESSAO_ENCERRADA = 'SESSAO_ENCERRADA',
+    SESSAO_CANCELADA = 'SESSAO_CANCELADA',
+    FASE_ALTERADA = 'FASE_ALTERADA',
+    CHAMADA_REALIZADA = 'CHAMADA_REALIZADA',
+    CHAMADA_REINICIADA = 'CHAMADA_REINICIADA',
+    PRESENCA_REGISTRADA = 'PRESENCA_REGISTRADA',
+    VOTACAO_ABERTA = 'VOTACAO_ABERTA',
+    VOTACAO_ENCERRADA = 'VOTACAO_ENCERRADA',
+    PEDIDO_PALAVRA_CRIADO = 'PEDIDO_PALAVRA_CRIADO',
+    PEDIDO_PALAVRA_RESPONDIDO = 'PEDIDO_PALAVRA_RESPONDIDO',
+    ATA_GERADA = 'ATA_GERADA',
+    ATA_APROVADA = 'ATA_APROVADA',
+}
+
+export const TIPO_EVENTO_SESSAO_HISTORICO_LABELS: Record<TipoEventoSessaoHistorico, string> = {
+    [TipoEventoSessaoHistorico.SESSAO_ABERTA]: 'Sessão aberta',
+    [TipoEventoSessaoHistorico.SESSAO_SUSPENSA]: 'Sessão suspensa',
+    [TipoEventoSessaoHistorico.SESSAO_ENCERRADA]: 'Sessão encerrada',
+    [TipoEventoSessaoHistorico.SESSAO_CANCELADA]: 'Sessão cancelada',
+    [TipoEventoSessaoHistorico.FASE_ALTERADA]: 'Fase alterada',
+    [TipoEventoSessaoHistorico.CHAMADA_REALIZADA]: 'Chamada dos vereadores realizada',
+    [TipoEventoSessaoHistorico.CHAMADA_REINICIADA]: 'Chamada dos vereadores reiniciada',
+    [TipoEventoSessaoHistorico.PRESENCA_REGISTRADA]: 'Presença registrada',
+    [TipoEventoSessaoHistorico.VOTACAO_ABERTA]: 'Votação aberta',
+    [TipoEventoSessaoHistorico.VOTACAO_ENCERRADA]: 'Votação encerrada',
+    [TipoEventoSessaoHistorico.PEDIDO_PALAVRA_CRIADO]: 'Pedido de palavra criado',
+    [TipoEventoSessaoHistorico.PEDIDO_PALAVRA_RESPONDIDO]: 'Pedido de palavra respondido',
+    [TipoEventoSessaoHistorico.ATA_GERADA]: 'Ata gerada',
+    [TipoEventoSessaoHistorico.ATA_APROVADA]: 'Ata aprovada',
+};

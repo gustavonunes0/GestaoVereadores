@@ -2,6 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { VoteType, VOTE_TYPE_LABELS } from '../../domain/enums/vote-type.enum';
 import { VotacaoRepository } from '../../domain/repositories/votacao.repository';
 import { VOTACAO_REPOSITORY } from '../../votacoes.tokens';
+import { SessaoHistoricoRepository } from '../../../sessao-historico/domain/repositories/sessao-historico.repository';
+import { TipoEventoSessaoHistorico } from '../../../sessao-historico/domain/enums/tipo-evento-sessao-historico.enum';
 import {
     AbrirVotacaoDto,
     FinalizarVotacaoDto,
@@ -76,6 +78,7 @@ export class AbrirVotacaoUseCase {
     constructor(
         @Inject(VOTACAO_REPOSITORY)
         private readonly repository: VotacaoRepository,
+        private readonly historicoRepository: SessaoHistoricoRepository,
     ) {}
 
     async execute(
@@ -91,6 +94,12 @@ export class AbrirVotacaoUseCase {
                 pautaItemId,
                 dto,
             )) as VotacaoPrismaPayload;
+            await this.historicoRepository.registrar({
+                sessaoId,
+                tipoEvento: TipoEventoSessaoHistorico.VOTACAO_ABERTA,
+                descricao: `Votação (${VOTE_TYPE_LABELS[dto.tipoVotacao as VoteType]}) aberta`,
+                metadata: { pautaItemId, tipoVotacao: dto.tipoVotacao },
+            });
             return VotacaoViewModel.toHttp(votacao);
         } catch (error) {
             mapRepositoryError(error);

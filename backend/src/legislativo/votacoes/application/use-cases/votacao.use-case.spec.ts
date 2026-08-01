@@ -31,7 +31,7 @@ describe('AbrirVotacaoUseCase', () => {
         const repository = buildRepositoryMock();
         repository.abrirVotacao.mockResolvedValue(votacaoBase);
 
-        const useCase = new AbrirVotacaoUseCase(repository as never);
+        const useCase = new AbrirVotacaoUseCase(repository as never, { registrar: jest.fn() } as never);
         const result = await useCase.execute(
             'tenant-1',
             'sessao-1',
@@ -50,7 +50,7 @@ describe('AbrirVotacaoUseCase', () => {
             new Error('Já existe votação principal para este item de pauta'),
         );
 
-        const useCase = new AbrirVotacaoUseCase(repository as never);
+        const useCase = new AbrirVotacaoUseCase(repository as never, { registrar: jest.fn() } as never);
 
         await expect(
             useCase.execute('tenant-1', 'sessao-1', 'pauta-1', {

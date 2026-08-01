@@ -11,6 +11,9 @@ export class PedidoPalavraViewModel {
             respondidoEm: pedido.respondidoEm ?? null,
             encerradoEm: pedido.encerradoEm ?? null,
             duracaoSegundos: pedido.duracaoSegundos ?? null,
+            tema: pedido.tema ?? null,
+            fase: pedido.fase ?? null,
+            tempoConcedidoSegundos: pedido.tempoConcedidoSegundos ?? null,
         };
     }
 }

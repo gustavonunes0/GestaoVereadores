@@ -6,6 +6,9 @@ import { SessaoPlenariaRepository } from '../../domain/repositories/sessao-plena
 import { PedidoPalavraRepository } from '../../domain/repositories/pedido-palavra.repository';
 import { SessaoRealtimeGateway } from '../../realtime/sessao-realtime.gateway';
 import { PedidoPalavraViewModel } from '../view-models/pedido-palavra.view-model';
+import { SessaoHistoricoRepository } from '../../../sessao-historico/domain/repositories/sessao-historico.repository';
+import { TipoEventoSessaoHistorico } from '../../../sessao-historico/domain/enums/tipo-evento-sessao-historico.enum';
+import { PedirPalavraDto } from '../dto/pedir-palavra.dto';
 
 @Injectable()
 export class PedirPalavraUseCase {
@@ -16,9 +19,10 @@ export class PedirPalavraUseCase {
         private readonly pedidoRepo: PedidoPalavraRepository,
         private readonly prisma: PrismaService,
         private readonly gateway: SessaoRealtimeGateway,
+        private readonly historicoRepository: SessaoHistoricoRepository,
     ) {}
 
-    async execute(sessaoId: string, user: ParlamentarianJwtPayload) {
+    async execute(sessaoId: string, user: ParlamentarianJwtPayload, dto?: PedirPalavraDto) {
         const sessao = await this.sessaoRepo.findSessaoById(sessaoId, user.tenantId);
         if (!sessao || sessao.statusSessao !== 'ABERTA') {
             throw new UnprocessableEntityException('Pedido de palavra só é permitido em sessão aberta');
@@ -37,13 +41,25 @@ export class PedirPalavraUseCase {
             throw new ConflictException('Você já tem um pedido de palavra em andamento');
         }
 
-        const pedido = await this.pedidoRepo.create({ sessaoId, parliamentarianId: user.parliamentarianId });
+        const pedido = await this.pedidoRepo.create({
+            sessaoId,
+            parliamentarianId: user.parliamentarianId,
+            tema: dto?.tema,
+            fase: sessao.faseAtual,
+        });
 
         this.gateway.emitirPalavraPedida(user.tenantId, {
             pedidoId: pedido.id,
             parlamentarNome: user.parliamentaryName,
             sessaoId,
             criadoEm: pedido.criadoEm,
+        });
+
+        await this.historicoRepository.registrar({
+            sessaoId,
+            tipoEvento: TipoEventoSessaoHistorico.PEDIDO_PALAVRA_CRIADO,
+            descricao: `${user.parliamentaryName} pediu a palavra`,
+            metadata: { pedidoId: pedido.id, parliamentarianId: user.parliamentarianId },
         });
 
         return PedidoPalavraViewModel.toHttp(pedido, user.parliamentaryName);

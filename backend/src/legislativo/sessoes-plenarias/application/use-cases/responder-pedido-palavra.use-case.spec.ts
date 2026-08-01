@@ -31,7 +31,12 @@ describe('ResponderPedidoPalavraUseCase', () => {
             emitirPalavraNegada: jest.fn(),
         } as unknown as jest.Mocked<SessaoRealtimeGateway>;
 
-        useCase = new ResponderPedidoPalavraUseCase(pedidoRepo, prisma as any, gateway);
+        useCase = new ResponderPedidoPalavraUseCase(
+            pedidoRepo,
+            prisma as any,
+            gateway,
+            { registrar: jest.fn() } as any,
+        );
     });
 
     it('Pedido não AGUARDANDO → 409 em PT-BR', async () => {

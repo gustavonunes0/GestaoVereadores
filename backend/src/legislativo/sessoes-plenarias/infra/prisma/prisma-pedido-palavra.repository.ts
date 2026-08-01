@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { StatusPedidoPalavra as PrismaStatus } from '@prisma/client';
+import { StatusPedidoPalavra as PrismaStatus, FaseSessao as PrismaFaseSessao } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { PedidoPalavraEntity, StatusPedidoPalavra } from '../../domain/entities/pedido-palavra.entity';
+import { FaseSessao } from '../../domain/enums/fase-sessao.enum';
 import {
     CreatePedidoPalavraData,
     PedidoPalavraRepository,
@@ -17,6 +18,9 @@ function toEntity(raw: {
     respondidoEm: Date | null;
     encerradoEm: Date | null;
     duracaoSegundos: number | null;
+    tema?: string | null;
+    fase?: PrismaFaseSessao | null;
+    tempoConcedidoSegundos?: number | null;
 }): PedidoPalavraEntity {
     const entity = new PedidoPalavraEntity();
     entity.id = raw.id;
@@ -27,6 +31,11 @@ function toEntity(raw: {
     if (raw.respondidoEm) entity.respondidoEm = raw.respondidoEm;
     if (raw.encerradoEm) entity.encerradoEm = raw.encerradoEm;
     if (raw.duracaoSegundos !== null) entity.duracaoSegundos = raw.duracaoSegundos;
+    if (raw.tema) entity.tema = raw.tema;
+    if (raw.fase) entity.fase = raw.fase as unknown as FaseSessao;
+    if (raw.tempoConcedidoSegundos !== null && raw.tempoConcedidoSegundos !== undefined) {
+        entity.tempoConcedidoSegundos = raw.tempoConcedidoSegundos;
+    }
     return entity;
 }
 
@@ -41,6 +50,8 @@ export class PrismaPedidoPalavraRepository extends PedidoPalavraRepository {
             data: {
                 sessaoId: dados.sessaoId,
                 parliamentarianId: dados.parliamentarianId,
+                tema: dados.tema,
+                fase: dados.fase as unknown as PrismaFaseSessao | undefined,
             },
         });
         return toEntity(raw);
@@ -80,6 +91,9 @@ export class PrismaPedidoPalavraRepository extends PedidoPalavraRepository {
                 ...(dados?.respondidoEm && { respondidoEm: dados.respondidoEm }),
                 ...(dados?.encerradoEm && { encerradoEm: dados.encerradoEm }),
                 ...(dados?.duracaoSegundos !== undefined && { duracaoSegundos: dados.duracaoSegundos }),
+                ...(dados?.tempoConcedidoSegundos !== undefined && {
+                    tempoConcedidoSegundos: dados.tempoConcedidoSegundos,
+                }),
             },
         });
         return toEntity(raw);

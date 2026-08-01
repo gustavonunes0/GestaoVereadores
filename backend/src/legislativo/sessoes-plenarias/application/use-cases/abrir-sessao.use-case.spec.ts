@@ -5,6 +5,7 @@ import { SessaoPlenariaRepository } from '../../domain/repositories/sessao-plena
 import { SessaoPlenariaEntity } from '../../domain/entities/sessao-plenaria.entity';
 import { StatusSessao } from '../../domain/enums/status-sessao.enum';
 import { SESSAO_PLENARIA_REPOSITORY } from '../../sessoes-plenarias.tokens';
+import { SessaoHistoricoRepository } from '../../../sessao-historico/domain/repositories/sessao-historico.repository';
 
 function makeSessao(statusSessao: StatusSessao): SessaoPlenariaEntity {
     const s = new SessaoPlenariaEntity();
@@ -31,6 +32,7 @@ describe('AbrirSessaoUseCase', () => {
             providers: [
                 AbrirSessaoUseCase,
                 { provide: SESSAO_PLENARIA_REPOSITORY, useValue: repo },
+                { provide: SessaoHistoricoRepository, useValue: { registrar: jest.fn() } },
             ],
         }).compile();
 

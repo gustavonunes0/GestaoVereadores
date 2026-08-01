@@ -51,7 +51,13 @@ describe('PedirPalavraUseCase', () => {
         prisma = { presencaSessao: { findFirst: jest.fn() } };
         gateway = { emitirPalavraPedida: jest.fn() } as unknown as jest.Mocked<SessaoRealtimeGateway>;
 
-        useCase = new PedirPalavraUseCase(sessaoRepo, pedidoRepo, prisma as any, gateway);
+        useCase = new PedirPalavraUseCase(
+            sessaoRepo,
+            pedidoRepo,
+            prisma as any,
+            gateway,
+            { registrar: jest.fn() } as any,
+        );
     });
 
     it('Sessão não ABERTA → 422 em PT-BR', async () => {

@@ -1,12 +1,26 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { resolveVercelDatabaseEnv } from '../config/resolve-vercel-env';
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+type PrismaLogOptions = Prisma.PrismaClientOptions & {
+    log: [
+        { emit: 'event'; level: 'query' },
+        { emit: 'stdout'; level: 'warn' },
+        { emit: 'stdout'; level: 'error' },
+    ];
+};
+
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleDestroy {
+export class PrismaService
+    extends PrismaClient<PrismaLogOptions>
+    implements OnModuleDestroy
+{
     private readonly pool: Pool;
+    private readonly logger: Logger;
 
     constructor() {
         resolveVercelDatabaseEnv();
@@ -23,8 +37,23 @@ export class PrismaService extends PrismaClient implements OnModuleDestroy {
                 : undefined,
         });
 
-        super({ adapter: new PrismaPg(pool) });
+        super({
+            adapter: new PrismaPg(pool),
+            log: [
+                { emit: 'event', level: 'query' },
+                { emit: 'stdout', level: 'warn' },
+                { emit: 'stdout', level: 'error' },
+            ],
+        });
         this.pool = pool;
+        this.logger = new Logger(PrismaService.name);
+
+        this.$on('query', (event: Prisma.QueryEvent) => {
+            if (!isDevelopment) return;
+            this.logger.debug(
+                `${event.query} | params=${event.params} | ${event.duration}ms`,
+            );
+        });
     }
 
     async onModuleDestroy() {

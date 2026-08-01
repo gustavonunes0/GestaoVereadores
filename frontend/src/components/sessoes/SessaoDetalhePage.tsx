@@ -20,6 +20,8 @@ import { SessaoAcoesMenu } from './SessaoAcoesMenu';
 import { PautaManager } from './pauta/PautaManager';
 import { PresencaPanel } from './presencas/PresencaPanel';
 import { TransmissaoPanel } from './transmissao/TransmissaoPanel';
+import { AtaTab } from './ata/AtaTab';
+import { HistoricoTimeline } from './historico/HistoricoTimeline';
 import { RegistrarVotoDialog } from './RegistrarVotoDialog';
 import { FecharVotacaoDialog } from './pauta/FecharVotacaoDialog';
 
@@ -278,6 +280,30 @@ export function SessaoDetalhePage() {
                         <TransmissaoPanel sessao={sessao} userName={userName} />
                     </TabPanel>
                 )}
+
+                {sessao.statusSessao === 'ENCERRADA' && (
+                    <TabPanel
+                        header={
+                            <span className="sigl-tabview-menu-header">
+                                <i className="pi pi-file-edit" aria-hidden />
+                                Ata
+                            </span>
+                        }
+                    >
+                        <AtaTab sessaoId={sessao.id} statusSessao={sessao.statusSessao} />
+                    </TabPanel>
+                )}
+
+                <TabPanel
+                    header={
+                        <span className="sigl-tabview-menu-header">
+                            <i className="pi pi-history" aria-hidden />
+                            Histórico
+                        </span>
+                    }
+                >
+                    <HistoricoTimeline sessaoId={sessao.id} />
+                </TabPanel>
             </TabView>
 
             {dialogVoto && votacaoAberta && parliamentarianId && (

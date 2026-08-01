@@ -8,6 +8,7 @@ import {
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
+import underPressure from '@fastify/under-pressure';
 import { join } from 'path';
 import { AppModule } from './app.module';
 import { buildCorsOptions } from './config/cors.config';
@@ -48,6 +49,17 @@ async function bootstrap() {
     await app.register(multipart, {
         limits: { fileSize: 10 * 1024 * 1024 },
     });
+
+    if (process.env.NODE_ENV === 'development') {
+        await app.register(underPressure, {
+            maxEventLoopDelay: 1000,
+            maxHeapUsedBytes: 900_000_000,
+            maxRssBytes: 900_000_000,
+            pressureHandler: (_req, _rep, type, value) => {
+                console.warn(`[under-pressure] ${type}: ${value}`);
+            },
+        });
+    }
 
     app.useWebSocketAdapter(new IoAdapter(app));
 

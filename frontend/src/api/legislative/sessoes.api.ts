@@ -3,6 +3,31 @@ import { API_PATHS } from '../paths';
 import type { SessaoStatus } from '../../types/legislative';
 import type { JitsiTokenData, PautaItemDetalhe, SessaoPlenariaDetalhe, StatusSessao } from '../../types/sessoes';
 import type { PresencaRegistroApi } from '../../utils/presencaSessao';
+import type { Ata } from '../../types/ata';
+
+export type SessaoHistoricoEvento = {
+    id: string;
+    tipoEvento: { value: string; label: string };
+    dataHora: string;
+    responsavel: { id: string; nome: string | null } | null;
+    descricao: string | null;
+    metadata: Record<string, unknown> | null;
+};
+
+export type ChamadaResultado = {
+    totalParlamentares: number;
+    totalPresentes: number;
+    totalAusentes: number;
+};
+
+export type ResumoPublicoSessao = {
+    sessaoTitulo: string;
+    dataAbertura: string | null;
+    dataEncerramento: string | null;
+    mesaDiretora: { nome: string; cargo: string }[];
+    presencas: { nome: string; partido: string | null; situacao: string }[];
+    materias: { identificacao: string; ementa: string; resultado: string | null }[];
+};
 
 export interface SessaoPlenaria {
     id: string;
@@ -165,6 +190,7 @@ export const sessoesApi = {
             votosSim: number;
             votosNao: number;
             abstencoes: number;
+            votoQualidade: boolean;
         }>(`${base}/${sessaoId}/pauta/${pautaItemId}/votacao/encerrar`, {
             method: 'PATCH',
             body: JSON.stringify(body ?? {}),
@@ -220,4 +246,37 @@ export const sessoesApi = {
 
     publicarPauta: (sessaoId: string) =>
         api<void>(API_PATHS.sessoesPautaPublicar(sessaoId), { method: 'PATCH' }),
+
+    // ── Chamada dos Vereadores ────────────────────────────────────────────
+    chamarVereadores: (sessaoId: string) =>
+        api<ChamadaResultado>(API_PATHS.sessaoChamada(sessaoId), { method: 'POST' }),
+
+    reiniciarChamada: (sessaoId: string, justificativa: string) =>
+        api<{ reiniciada: boolean }>(API_PATHS.sessaoChamadaReiniciar(sessaoId), {
+            method: 'POST',
+            body: JSON.stringify({ justificativa }),
+        }),
+
+    // ── Histórico da Sessão ──────────────────────────────────────────────
+    getHistorico: (sessaoId: string, params?: { tipoEvento?: string; page?: number; limit?: number }) =>
+        apiList<SessaoHistoricoEvento>(API_PATHS.sessaoHistorico(sessaoId), params),
+
+    // ── Ata da Sessão ─────────────────────────────────────────────────────
+    getAta: (sessaoId: string) => api<Ata>(API_PATHS.sessaoAta(sessaoId)),
+
+    gerarRascunhoAta: (sessaoId: string) =>
+        api<Ata>(API_PATHS.sessaoAtaGerarRascunho(sessaoId), { method: 'POST' }),
+
+    updateAta: (sessaoId: string, conteudo: string) =>
+        api<Ata>(API_PATHS.sessaoAta(sessaoId), {
+            method: 'PATCH',
+            body: JSON.stringify({ conteudo }),
+        }),
+
+    aprovarAta: (sessaoId: string) =>
+        api<Ata>(API_PATHS.sessaoAtaAprovar(sessaoId), { method: 'POST' }),
+
+    // ── Portal Público ────────────────────────────────────────────────────
+    getResumoPublico: (sessaoId: string) =>
+        api<ResumoPublicoSessao>(API_PATHS.sessaoResumoPublico(sessaoId)),
 };

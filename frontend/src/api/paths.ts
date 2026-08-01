@@ -82,6 +82,23 @@ export const API_PATHS = {
                                  `/legislative/sessoes-plenarias/${id}/presencas/${presencaId}`,
     tiposSessao:             '/dominios/tipos-sessao',
 
+    // ── Chamada dos Vereadores ────────────────────────────────────────────
+    sessaoChamada:           (id: string) => `/legislative/sessoes-plenarias/${id}/chamada`,
+    sessaoChamadaReiniciar:  (id: string) => `/legislative/sessoes-plenarias/${id}/chamada/reiniciar`,
+
+    // ── Histórico da Sessão ("Log") ──────────────────────────────────────
+    sessaoHistorico:         (id: string) => `/legislative/sessoes-plenarias/${id}/historico`,
+
+    // ── Ata da Sessão ─────────────────────────────────────────────────────
+    sessaoAta:               (id: string) => `/legislative/sessoes-plenarias/${id}/ata`,
+    sessaoAtaGerarRascunho:  (id: string) => `/legislative/sessoes-plenarias/${id}/ata/gerar-rascunho`,
+    sessaoAtaAprovar:        (id: string) => `/legislative/sessoes-plenarias/${id}/ata/aprovar`,
+    sessaoAtaPdf:            (id: string) => `/legislative/sessoes-plenarias/${id}/ata/pdf`,
+
+    // ── Portal Público da Sessão ──────────────────────────────────────────
+    sessaoResumoPublico:     (id: string) => `/legislative/sessoes-plenarias/${id}/resumo-publico`,
+    sessaoListaPresencaPdf:  (id: string) => `/legislative/sessoes-plenarias/${id}/lista-presenca/pdf`,
+
     // ── Votações ──────────────────────────────────────────────────────────
     votacoes:            '/legislative/votacoes',
     votacoesValoresVoto: '/legislative/votacoes/votos/valores',

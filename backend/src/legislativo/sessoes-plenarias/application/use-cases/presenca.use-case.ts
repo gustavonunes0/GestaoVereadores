@@ -23,6 +23,8 @@ import {
     PresencaSessaoPrismaPayload,
     PresencaSessaoViewModel,
 } from '../view-models/presenca-sessao.view-model';
+import { SessaoHistoricoRepository } from '../../../sessao-historico/domain/repositories/sessao-historico.repository';
+import { TipoEventoSessaoHistorico } from '../../../sessao-historico/domain/enums/tipo-evento-sessao-historico.enum';
 
 function mapRepositoryError(error: unknown): never {
     if (!(error instanceof Error)) throw error;
@@ -106,6 +108,7 @@ export class RegistrarPresencaUseCase {
     constructor(
         @Inject(SESSAO_PLENARIA_REPOSITORY)
         private readonly repository: SessaoPlenariaRepository,
+        private readonly historicoRepository: SessaoHistoricoRepository,
     ) {}
 
     async execute(
@@ -119,6 +122,14 @@ export class RegistrarPresencaUseCase {
                 sessaoId,
                 dto,
             )) as PresencaSessaoPrismaPayload;
+            await this.historicoRepository.registrar({
+                sessaoId,
+                tipoEvento: TipoEventoSessaoHistorico.PRESENCA_REGISTRADA,
+                metadata: {
+                    parliamentarianId: dto.parliamentarianId ?? dto.parlamentarId ?? null,
+                    situacao: dto.situacao,
+                },
+            });
             return PresencaSessaoViewModel.toHttp(item);
         } catch (error) {
             mapRepositoryError(error);

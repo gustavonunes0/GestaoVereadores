@@ -95,11 +95,17 @@ Fluxo: `controller → use-case → domain service → prisma repo`
 
 ### Models que NÃO EXISTEM e precisam ser criados
 
-- `TramitacaoHistorico` — crítico
-- `AutorExterno` — crítico
-- `PublicacaoOficial` — crítico
-- Enum `StatusSessao { AGENDADA ABERTA SUSPENSA ENCERRADA }` — crítico
-- Enum `StatusPautaItem { RASCUNHO PUBLICADA ENCERRADA }` — alto
+> Revisado em 2026-07: `TramitacaoHistorico`, `AutorExterno`, `PublicacaoOficial`,
+> `StatusSessao` e `StatusPautaItem` (antes listados aqui como faltantes) **já existem e estão em
+> uso** — esta seção estava desatualizada. Ver `backend/src/docs/tasks/legado.md` para o estado
+> real de cada um (alguns têm uso parcial/inconsistente, mas existem). Lista atualizada do que
+> genuinamente falta, cruzada com o reconhecimento do concorrente IntGest
+> (`../teste/relatorio_sessao.md`) e `Fluxo_Sessao_Pauta_Votacao_REVISADO.md`:
+
+- `Ata` — crítico (ver `docs/specs/ata/SPEC-006-ata.md`) — maior gap de feature-parity, nenhuma forma existe hoje
+- `SessaoHistorico` — crítico (ver `docs/specs/auditoria/SPEC-008-sessao-historico.md`) — não existe trilha estruturada de auditoria de sessão, só `cicloVidaJson` legado
+- Extensão de `PedidoPalavra` (`tema`, `fase`, `tempoConcedidoSegundos`) — médio (ver `docs/specs/sessoes/SPEC-009-expediente-chamada-orador.md`)
+- `BlocoVotacao` (N `PautaItem` : 1 `Votacao`) — **decisão pendente, não implementar sem confirmação** (ver ADR-013)
 
 ---
 
@@ -122,19 +128,48 @@ Fluxo: `controller → use-case → domain service → prisma repo`
 
 ## Estado de implementação e ordem de execução
 
+> **Nota (2026-07):** TASK-001 a TASK-005 estão **concluídas e em produção** — os checkboxes
+> `[ ]` dentro desses arquivos `TASK-*.md` estão desatualizados (marcam tudo como pendente), não
+> refletem o código real. A implementação real também diverge da estrutura de arquivos descrita
+> nas specs (ex.: pauta/votação/presença/pedido de palavra vivem todos dentro de um único
+> `sessoes.controller.ts`, não em controllers separados por submódulo como o SPEC-002 descreve).
+> Não usar os checkboxes desses arquivos para decidir o que falta — confirmar sempre contra o
+> código antes de assumir algo como pendente.
+
 ```
-TASK-001 (3 migrations schema) → desbloqueiam todos os outros
-     ↓
-TASK-002 (sessoes)  TASK-003 (votacoes)  TASK-004 (agenda)  TASK-005 (normas)
+TASK-001..005 — concluídas (ver nota acima)
+
+TASK-008 (SessaoHistorico) — sem dependências, começar primeiro (fundação de auditoria)
+     │
+     ├──> TASK-009 (chamada dos vereadores / voto de qualidade / orador) — independente, usa TASK-008 só para logar eventos
+     │
+     └──> TASK-006 (Ata) — independente, usa TASK-008 só para logar eventos
+              │
+              └──> TASK-007 (Portal Público + geração de PDF) — resumo público e lista de
+                   presença em PDF não dependem de nada além da lib de PDF (ADR-012); só a rota
+                   de PDF da Ata depende de TASK-006 estar pronta
 ```
 
 | Task | Módulo | Spec | Status |
 |------|--------|------|--------|
-| TASK-001 | Schema / Migrations | `docs/specs/materias/SPEC-001-materias.md` | 🔴 iniciar primeiro |
-| TASK-002 | `legislativo/sessoes-plenarias/` | `docs/specs/sessoes/SPEC-002-sessoes.md` | bloqueada por TASK-001 |
-| TASK-003 | `legislativo/votacoes/` | `docs/specs/votacoes/SPEC-003-votacoes.md` | bloqueada por TASK-001 |
-| TASK-004 | `legislativo/agenda-legislativa/` | `docs/specs/agenda/SPEC-004-agenda.md` | bloqueada por TASK-001 |
-| TASK-005 | `controle-juridico/normas/` | `docs/specs/normas/SPEC-005-normas.md` | bloqueada por TASK-001 |
+| TASK-001 | Schema / Migrations | `docs/specs/materias/SPEC-001-materias.md` | ✅ concluída |
+| TASK-002 | `legislativo/sessoes-plenarias/` | `docs/specs/sessoes/SPEC-002-sessoes.md` | ✅ concluída (estrutura difere da spec) |
+| TASK-003 | `legislativo/votacoes/` | `docs/specs/votacoes/SPEC-003-votacoes.md` | ✅ concluída (rotas nested em sessões, não em `/votacoes`) |
+| TASK-004 | `legislativo/agenda-legislativa/` | `docs/specs/agenda/SPEC-004-agenda.md` | ✅ concluída (recorrência: campos existem, geração de ocorrências não) |
+| TASK-005 | `controle-juridico/normas/` | `docs/specs/normas/SPEC-005-normas.md` | ✅ concluída |
+| TASK-008 | `legislativo/sessoes-plenarias/historico/` (novo) | `docs/specs/auditoria/SPEC-008-sessao-historico.md` | 🔴 não iniciada — começar por aqui |
+| TASK-009 | `legislativo/sessoes-plenarias/` (extensão) | `docs/specs/sessoes/SPEC-009-expediente-chamada-orador.md` | 🔴 não iniciada |
+| TASK-006 | `legislativo/sessoes-plenarias/ata/` (novo) | `docs/specs/ata/SPEC-006-ata.md` | 🔴 não iniciada |
+| TASK-007 | `common/pdf/` (novo) + `relatorios/` + `sessoes-plenarias/` | `docs/specs/transparencia/SPEC-007-portal-publico.md` | 🔴 não iniciada — depende de TASK-006 para a rota `/ata/pdf` |
+
+Frontend correspondente (`frontend/src/docs/tasks/`, convenção nova estabelecida em 2026-07,
+pasta existia vazia): `TASK-F06-ata-editor.md`, `TASK-F07-portal-publico.md`,
+`TASK-F08-sessao-historico-timeline.md`, `TASK-F09-expediente-chamada-orador.md` — cada um só
+pode começar depois do backend correspondente ter os endpoints prontos (não é front-first).
+
+Decisões arquiteturais destas 4 tasks: `docs/decisions/ADR-009-013.md` (continuação de
+`ADR-001-008.md`). Origem da análise: comparação com o concorrente IntGest
+(`../teste/relatorio_sessao.md`, fora deste repo) e `Fluxo_Sessao_Pauta_Votacao_REVISADO.md`.
 
 ## Comandos úteis
 

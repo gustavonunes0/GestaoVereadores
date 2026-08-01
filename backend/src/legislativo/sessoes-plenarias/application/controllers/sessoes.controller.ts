@@ -13,10 +13,13 @@ import {
     Post,
     Query,
     Req,
+    Res,
     UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { FastifyReply } from 'fastify';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Public } from '../../../../auth/decorators/public.decorator';
 import { TenantMaintainer } from '../../../../common/decorators/tenant-maintainer.decorator';
 import { TenantRoles } from '../../../../common/decorators/tenant-roles.decorator';
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
@@ -162,9 +165,29 @@ import { ListarPedidosPalavraUseCase } from '../use-cases/listar-pedidos-palavra
 import { ResponderPedidoPalavraUseCase } from '../use-cases/responder-pedido-palavra.use-case';
 import { EncerrarPedidoPalavraUseCase } from '../use-cases/encerrar-pedido-palavra.use-case';
 import { ResponderPedidoPalavraDto } from '../dto/responder-pedido-palavra.dto';
+import { PedirPalavraDto } from '../dto/pedir-palavra.dto';
 import { GetJitsiTokenUseCase } from '../use-cases/get-jitsi-token.use-case';
 import { GetLegislaturaContextoUseCase } from '../use-cases/get-legislatura-contexto.use-case';
 import { buildVotacaoAbertaPayload } from '../../realtime/votacao-realtime.mapper';
+import { ListSessaoHistoricoUseCase } from '../../../sessao-historico/application/use-cases/list-sessao-historico.use-case';
+import { ListSessaoHistoricoQueryDto } from '../../../sessao-historico/application/dto/list-sessao-historico-query.dto';
+import { ChamarVereadoresUseCase } from '../use-cases/chamar-vereadores.use-case';
+import { ReiniciarChamadaUseCase } from '../use-cases/reiniciar-chamada.use-case';
+import { ReiniciarChamadaDto } from '../dto/reiniciar-chamada.dto';
+import { GerarRascunhoAtaUseCase } from '../../ata/application/use-cases/gerar-rascunho-ata.use-case';
+import { GetAtaBySessaoUseCase } from '../../ata/application/use-cases/get-ata-by-sessao.use-case';
+import { UpdateAtaUseCase } from '../../ata/application/use-cases/update-ata.use-case';
+import { AprovarAtaUseCase } from '../../ata/application/use-cases/aprovar-ata.use-case';
+import { UpdateAtaDto } from '../../ata/application/dto/update-ata.dto';
+import { GetResumoPublicoSessaoUseCase } from '../use-cases/get-resumo-publico-sessao.use-case';
+import { GetListaPresencaPdfUseCase } from '../use-cases/get-lista-presenca-pdf.use-case';
+import { GetAtaPdfUseCase } from '../use-cases/get-ata-pdf.use-case';
+import {
+    AtaImutavelAposAprovacaoError,
+    AtaJaExisteError,
+    AtaNaoEncontradaError,
+    AtaSessaoNaoEncerradaError,
+} from '../../ata/application/errors/ata.errors';
 
 @ApiTags('sessoes')
 @ApiBearerAuth()
@@ -217,6 +240,16 @@ export class SessoesController {
         private readonly encerrarPedidoPalavra: EncerrarPedidoPalavraUseCase,
         private readonly getJitsiToken: GetJitsiTokenUseCase,
         private readonly getLegislaturaContexto: GetLegislaturaContextoUseCase,
+        private readonly listSessaoHistorico: ListSessaoHistoricoUseCase,
+        private readonly chamarVereadores: ChamarVereadoresUseCase,
+        private readonly reiniciarChamada: ReiniciarChamadaUseCase,
+        private readonly gerarRascunhoAta: GerarRascunhoAtaUseCase,
+        private readonly getAtaBySessao: GetAtaBySessaoUseCase,
+        private readonly updateAta: UpdateAtaUseCase,
+        private readonly aprovarAta: AprovarAtaUseCase,
+        private readonly getResumoPublicoSessao: GetResumoPublicoSessaoUseCase,
+        private readonly getListaPresencaPdf: GetListaPresencaPdfUseCase,
+        private readonly getAtaPdf: GetAtaPdfUseCase,
     ) {}
 
     @Get('pauta/fases')
@@ -684,6 +717,7 @@ export class SessoesController {
                     id: string;
                     totais?: { votosSim: number; votosNao: number; abstencoes: number };
                     resultado?: { value: string } | null;
+                    votoQualidade?: boolean;
                 };
                 this.realtimeGateway.emitVotacaoEncerrada(tenantId, {
                     votacaoId: vm.id,
@@ -691,7 +725,7 @@ export class SessoesController {
                     votosSim: vm.totais?.votosSim ?? 0,
                     votosNao: vm.totais?.votosNao ?? 0,
                     abstencoes: vm.totais?.abstencoes ?? 0,
-                    votoQualidade: false,
+                    votoQualidade: vm.votoQualidade ?? false,
                 });
             }
             return result;
@@ -764,12 +798,135 @@ export class SessoesController {
         );
     }
 
+    @UseGuards(PresidentOrStaffGuard)
+    @Post(':id/chamada')
+    async chamarVereadoresHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Req() req: Request,
+    ) {
+        const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
+        const result = await this.chamarVereadores.execute(tenantId, id, responsavelId);
+        await this.emitPresencaGeralAtualizada(tenantId, id);
+        return result;
+    }
+
+    @UseGuards(PresidentOrStaffGuard)
+    @Post(':id/chamada/reiniciar')
+    async reiniciarChamadaHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: ReiniciarChamadaDto,
+        @Req() req: Request,
+    ) {
+        const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
+        const result = await this.reiniciarChamada.execute(tenantId, id, dto, responsavelId);
+        await this.emitPresencaGeralAtualizada(tenantId, id);
+        return result;
+    }
+
     @Get(':id/quorum')
     calcularQuorumHandler(
         @TenantId() tenantId: string,
         @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.calcularQuorum.execute(tenantId, id);
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Get(':id/historico')
+    listHistoricoHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Query() query: ListSessaoHistoricoQueryDto,
+    ) {
+        return this.listSessaoHistorico.execute(id, tenantId, query);
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Get(':id/ata')
+    async getAtaHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+    ) {
+        try {
+            return await this.getAtaBySessao.execute(tenantId, id);
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/ata/gerar-rascunho')
+    async gerarRascunhoAtaHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+    ) {
+        try {
+            return await this.gerarRascunhoAta.execute(tenantId, id);
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Patch(':id/ata')
+    async updateAtaHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: UpdateAtaDto,
+    ) {
+        try {
+            return await this.updateAta.execute(tenantId, id, dto);
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    @UseGuards(PresidentOrStaffGuard)
+    @Post(':id/ata/aprovar')
+    async aprovarAtaHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Req() req: Request,
+    ) {
+        try {
+            const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
+            return await this.aprovarAta.execute(tenantId, id, responsavelId);
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    /**
+     * Rotas públicas (sem JWT) — portal de transparência. Buscam só por `id` (UUID, não
+     * enumerável), sem filtro de tenant, mesmo padrão de `agenda-legislativa/public` e
+     * `normas/public`. Só sessões ENCERRADA aparecem (ver SPEC-007).
+     */
+    @Public()
+    @Get(':id/resumo-publico')
+    async resumoPublicoHandler(@Param('id', ParseUUIDPipe) id: string) {
+        return this.getResumoPublicoSessao.execute(id);
+    }
+
+    @Public()
+    @Get(':id/lista-presenca/pdf')
+    async listaPresencaPdfHandler(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Res() reply: FastifyReply,
+    ) {
+        const pdf = await this.getListaPresencaPdf.execute(id);
+        reply.type('application/pdf').send(pdf);
+    }
+
+    @Public()
+    @Get(':id/ata/pdf')
+    async ataPdfHandler(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Res() reply: FastifyReply,
+    ) {
+        const pdf = await this.getAtaPdf.execute(id);
+        reply.type('application/pdf').send(pdf);
     }
 
     @TenantRoles(...STAFF_AND_ABOVE)
@@ -863,7 +1020,7 @@ export class SessoesController {
             votosSim: result.votosSim,
             votosNao: result.votosNao,
             abstencoes: result.abstencoes,
-            votoQualidade: false,
+            votoQualidade: result.votoQualidade,
         });
         return result;
     }
@@ -874,6 +1031,7 @@ export class SessoesController {
         @Param('id', ParseUUIDPipe) sessaoId: string,
         @Req() req: Request,
         @TenantId() tenantId: string,
+        @Body() dto: PedirPalavraDto,
     ) {
         const user = req.user;
         if (!user || !isParlamentarianUser(user as any)) {
@@ -888,7 +1046,7 @@ export class SessoesController {
             parliamentarianId: parliamentarianUser.parliamentarianId,
             parliamentaryName: parliamentarianUser.parliamentaryName,
         };
-        return this.pedirPalavra.execute(sessaoId, parliamentarianPayload);
+        return this.pedirPalavra.execute(sessaoId, parliamentarianPayload, dto);
     }
 
     @UseGuards(PresidentOrStaffGuard)
@@ -907,7 +1065,12 @@ export class SessoesController {
         @Body() dto: ResponderPedidoPalavraDto,
         @TenantId() tenantId: string,
     ) {
-        return this.responderPedidoPalavra.execute(pedidoId, dto.status, tenantId);
+        return this.responderPedidoPalavra.execute(
+            pedidoId,
+            dto.status,
+            tenantId,
+            dto.tempoConcedidoSegundos,
+        );
     }
 
     @UseGuards(PresidentOrStaffGuard)
@@ -949,6 +1112,21 @@ export class SessoesController {
         });
     }
 
+    /** Broadcast genérico após operações em lote (chamada geral), sem um parlamentar específico. */
+    private async emitPresencaGeralAtualizada(tenantId: string, sessaoId: string) {
+        const quorum = await this.calcularQuorum.execute(tenantId, sessaoId);
+        this.realtimeGateway.emitPresencaAtualizada(tenantId, {
+            sessaoId,
+            parliamentarianId: '',
+            parlamentarianUserId: '',
+            presente: false,
+            origem: 'STAFF',
+            presentes: quorum.quorumPresente,
+            ausentes: Math.max(0, quorum.totalMembros - quorum.quorumPresente),
+            temQuorum: quorum.temQuorum,
+        });
+    }
+
     private handleError(error: unknown): never {
         if (
             error instanceof SessaoPlenariaNotFoundError ||
@@ -963,7 +1141,8 @@ export class SessoesController {
             error instanceof VotacaoParlamentarNotFoundError ||
             error instanceof VotacaoSessaoNotFoundError ||
             error instanceof VotoNotFoundError ||
-            error instanceof VotoParlamentarNotFoundError
+            error instanceof VotoParlamentarNotFoundError ||
+            error instanceof AtaNaoEncontradaError
         ) {
             throw new NotFoundException(
                 error instanceof Error ? error.message : 'Não encontrado',
@@ -974,7 +1153,9 @@ export class SessoesController {
             error instanceof PautaOrdemEmUsoError ||
             error instanceof PresencaDuplicadaError ||
             error instanceof VotacaoJaExisteError ||
-            error instanceof VotoDuplicadoError
+            error instanceof VotoDuplicadoError ||
+            error instanceof AtaJaExisteError ||
+            error instanceof AtaImutavelAposAprovacaoError
         ) {
             throw new ConflictException(
                 error instanceof Error ? error.message : 'Conflito',
@@ -1001,7 +1182,8 @@ export class SessoesController {
             error instanceof VotoTipoSimbolicaError ||
             error instanceof VotoVotacaoEncerradaError ||
             error instanceof VotacaoJaFinalizadaError ||
-            error instanceof ResultadoManualNaoPermitidoError
+            error instanceof ResultadoManualNaoPermitidoError ||
+            error instanceof AtaSessaoNaoEncerradaError
         ) {
             throw new BadRequestException(
                 error instanceof Error ? error.message : 'Requisição inválida',
