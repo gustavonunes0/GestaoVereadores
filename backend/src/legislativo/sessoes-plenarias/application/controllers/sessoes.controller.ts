@@ -182,6 +182,7 @@ import { UpdateAtaDto } from '../../ata/application/dto/update-ata.dto';
 import { GetResumoPublicoSessaoUseCase } from '../use-cases/get-resumo-publico-sessao.use-case';
 import { GetListaPresencaPdfUseCase } from '../use-cases/get-lista-presenca-pdf.use-case';
 import { GetAtaPdfUseCase } from '../use-cases/get-ata-pdf.use-case';
+import { NotifySessaoAbertaUseCase } from '../../../../notifications/application/use-cases/notify-sessao-aberta.use-case';
 import {
     AtaImutavelAposAprovacaoError,
     AtaJaExisteError,
@@ -250,6 +251,7 @@ export class SessoesController {
         private readonly getResumoPublicoSessao: GetResumoPublicoSessaoUseCase,
         private readonly getListaPresencaPdf: GetListaPresencaPdfUseCase,
         private readonly getAtaPdf: GetAtaPdfUseCase,
+        private readonly notifySessaoAberta: NotifySessaoAbertaUseCase,
     ) {}
 
     @Get('pauta/fases')
@@ -736,14 +738,20 @@ export class SessoesController {
 
     @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/abrir')
-    abrirSessaoHandler(
+    async abrirSessaoHandler(
         @TenantId() tenantId: string,
         @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: AbrirSessaoDto,
         @Req() req: Request,
     ) {
         const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
-        return this.abrirSessao.execute(tenantId, id, dto, responsavelId);
+        const result = await this.abrirSessao.execute(tenantId, id, dto, responsavelId);
+        this.realtimeGateway.emitSessaoAberta(tenantId, { sessaoId: id });
+        void this.notifySessaoAberta.execute(tenantId, id).catch((err: unknown) => {
+            // Não bloqueia a abertura se o push falhar
+            console.error('[push] falha ao notificar sessão aberta', err);
+        });
+        return result;
     }
 
     @TenantRoles(...STAFF_AND_ABOVE)

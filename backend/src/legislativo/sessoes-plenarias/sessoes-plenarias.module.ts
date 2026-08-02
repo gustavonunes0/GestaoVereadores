@@ -51,6 +51,8 @@ import { GetAtaPdfUseCase } from './application/use-cases/get-ata-pdf.use-case';
 import { PrismaSessaoPlenariaRepository } from './infra/prisma/prisma-sessao-plenaria.repository';
 import { ATA_REPOSITORY, SESSAO_PLENARIA_REPOSITORY } from './sessoes-plenarias.tokens';
 import { SessaoHistoricoModule } from '../sessao-historico/sessao-historico.module';
+import { NotificationsModule } from '../../notifications/notifications.module';
+import { NotifySessaoAbertaUseCase } from '../../notifications/application/use-cases/notify-sessao-aberta.use-case';
 import { ListSessaoHistoricoUseCase } from '../sessao-historico/application/use-cases/list-sessao-historico.use-case';
 import { PrismaAtaRepository } from './ata/infra/prisma/prisma-ata.repository';
 import { AtaRepository } from './ata/domain/repositories/ata.repository';
@@ -79,6 +81,7 @@ import { PEDIDO_PALAVRA_REPOSITORY } from './sessoes-plenarias.tokens';
         VotacoesModule,
         SessaoHistoricoModule,
         PdfModule,
+        NotificationsModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],

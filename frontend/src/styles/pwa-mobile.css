@@ -57,8 +57,14 @@
     bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
 }
 
-.parlamentar-app-shell.has-bottom-nav .pwa-banner--install {
-    bottom: calc(var(--mobile-nav-height) + 0.75rem + env(safe-area-inset-bottom, 0px));
+.pwa-banner--push {
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    background: #1d4f8a;
+}
+
+.pwa-banner__error {
+    color: #fecaca;
+    font-size: 0.75rem;
 }
 
 .pwa-banner--update {
@@ -241,6 +247,14 @@
         padding-bottom: calc(
             var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-page-y, 1rem)
         );
+    }
+
+    .parlamentar-app-shell.has-bottom-nav .pwa-banner--install {
+        bottom: calc(var(--mobile-nav-height) + 0.75rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .parlamentar-app-shell.has-bottom-nav .pwa-banner--push {
+        bottom: calc(var(--mobile-nav-height) + 5.25rem + env(safe-area-inset-bottom, 0px));
     }
 }
 

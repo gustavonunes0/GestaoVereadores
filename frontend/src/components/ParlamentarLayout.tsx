@@ -4,6 +4,7 @@ import { PARLAMENTAR_NAV_MENU } from '../app/navigation';
 import { AppFeedbackProvider } from '../hooks/useAppToast';
 import { MobileBottomNav } from './mobile/MobileBottomNav';
 import { ParlamentarTopbar } from './parlamentar/ParlamentarTopbar';
+import { PushPermissionBanner } from './pwa/PushPermissionBanner';
 import { SidebarNav } from './SidebarNav';
 import logoSrc from '../../assets/logo.png';
 
@@ -59,6 +60,7 @@ export function ParlamentarLayout() {
                 </div>
 
                 <MobileBottomNav onOpenMore={() => setMenuOpen(true)} />
+                <PushPermissionBanner />
             </div>
         </AppFeedbackProvider>
     );

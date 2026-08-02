@@ -16,6 +16,9 @@ export default defineConfig({
         react(),
         tailwindcss(),
         VitePWA({
+            strategies: 'injectManifest',
+            srcDir: 'src/pwa',
+            filename: 'sw.ts',
             registerType: 'prompt',
             includeAssets: [
                 'icons/favicon-16x16.png',
@@ -64,42 +67,13 @@ export default defineConfig({
                     },
                 ],
             },
-            workbox: {
-                navigateFallback: '/index.html',
-                navigateFallbackDenylist: [/^\/api\//, /^\/socket\.io/, /^\/uploads\//],
+            injectManifest: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webmanifest}'],
-                runtimeCaching: [
-                    {
-                        urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-                        handler: 'CacheFirst',
-                        options: {
-                            cacheName: 'google-fonts-stylesheets',
-                            expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                        },
-                    },
-                    {
-                        urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-                        handler: 'CacheFirst',
-                        options: {
-                            cacheName: 'google-fonts-webfonts',
-                            expiration: { maxEntries: 16, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                            cacheableResponse: { statuses: [0, 200] },
-                        },
-                    },
-                    {
-                        urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-                        handler: 'NetworkFirst',
-                        options: {
-                            cacheName: 'api-cache',
-                            networkTimeoutSeconds: 8,
-                            expiration: { maxEntries: 64, maxAgeSeconds: 60 * 5 },
-                            cacheableResponse: { statuses: [0, 200] },
-                        },
-                    },
-                ],
+                maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
             },
             devOptions: {
                 enabled: false,
+                type: 'module',
             },
         }),
     ],
