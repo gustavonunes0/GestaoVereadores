@@ -32,6 +32,7 @@ export function MinhaPresencaPanel({
                 </div>
             ) : (
                 <Button
+                    className="parl-sessao-presenca-cta"
                     label="Marcar presença"
                     icon="pi pi-user-plus"
                     loading={confirming}

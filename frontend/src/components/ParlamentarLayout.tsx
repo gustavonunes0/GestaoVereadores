@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { PARLAMENTAR_NAV_MENU } from '../app/navigation';
 import { AppFeedbackProvider } from '../hooks/useAppToast';
+import { MobileBottomNav } from './mobile/MobileBottomNav';
 import { ParlamentarTopbar } from './parlamentar/ParlamentarTopbar';
 import { SidebarNav } from './SidebarNav';
 import logoSrc from '../../assets/logo.png';
@@ -21,7 +22,9 @@ export function ParlamentarLayout() {
 
     return (
         <AppFeedbackProvider>
-            <div className={`app-shell parlamentar-app-shell${menuOpen ? ' sidebar-open' : ''}`}>
+            <div
+                className={`app-shell parlamentar-app-shell has-bottom-nav${menuOpen ? ' sidebar-open' : ''}`}
+            >
                 <button
                     type="button"
                     className="sidebar-backdrop"
@@ -54,6 +57,8 @@ export function ParlamentarLayout() {
                         <Outlet />
                     </main>
                 </div>
+
+                <MobileBottomNav onOpenMore={() => setMenuOpen(true)} />
             </div>
         </AppFeedbackProvider>
     );

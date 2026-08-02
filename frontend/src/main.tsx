@@ -10,13 +10,16 @@ import './styles/typography.css';
 import './styles/spacing-layout.css';
 import './styles/prime-overrides.css';
 import './styles/sigl-ui-patterns.css';
+import './styles/pwa-mobile.css';
 import './index.css';
 
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
+import { registerPwa } from './pwa/registerPwa';
 
 addLocale('pt', PRIME_LOCALE_PT);
 locale('pt');
+registerPwa();
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>

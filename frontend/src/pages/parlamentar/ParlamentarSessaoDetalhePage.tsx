@@ -171,7 +171,6 @@ export function ParlamentarSessaoDetalhePage() {
             ) : null}
 
             <div className="parl-sessao-detalhe-grid">
-                <ParlamentarPautaPanel sessaoId={id} />
                 <MinhaPresencaPanel
                     hasConfirmed={hasConfirmed}
                     loading={loadingPresenca}
@@ -184,6 +183,7 @@ export function ParlamentarSessaoDetalhePage() {
                     votacaoAberta={votacaoAberta}
                     statusSessao={sessao.statusSessao}
                 />
+                <ParlamentarPautaPanel sessaoId={id} />
             </div>
 
             {dialogVoto &&

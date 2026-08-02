@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { LegislaturaProvider } from '../contexts/LegislaturaContext';
 import { AppFeedbackProvider } from '../hooks/useAppToast';
 import { SidebarNav } from './SidebarNav';
+import { StaffTopbar } from './StaffTopbar';
 import logoSrc from '../../assets/logo.png';
 import { FooterBar } from './FooterBar';
 
@@ -47,6 +48,10 @@ export function Layout() {
                     </aside>
 
                     <div className="main">
+                        <StaffTopbar
+                            menuOpen={menuOpen}
+                            onMenuToggle={() => setMenuOpen((open) => !open)}
+                        />
                         <main className="content">
                             <Outlet />
                         </main>
