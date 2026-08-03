@@ -19,19 +19,34 @@ function isStandalone(): boolean {
     );
 }
 
+function isTabletViewport(): boolean {
+    if (typeof window === 'undefined') return false;
+    const w = Math.min(window.innerWidth, window.innerHeight);
+    const h = Math.max(window.innerWidth, window.innerHeight);
+    // iPad / tablet Android típicos; exclui monitores com mouse largo.
+    const coarse =
+        window.matchMedia('(pointer: coarse)').matches ||
+        (navigator.maxTouchPoints > 0 && window.matchMedia('(hover: none)').matches);
+    return coarse && w >= 600 && h >= 700;
+}
+
 /**
- * Sugere instalar o app no celular/tablet (Chrome/Edge/Android).
- * No iOS Safari o beforeinstallprompt não existe — mostra dica manual.
+ * Sugere instalar o app no celular e tablet (Chrome/Edge/Android/Samsung).
+ * No iOS/iPadOS Safari o beforeinstallprompt não existe — mostra dica manual.
  */
 export function PwaInstallBanner() {
     const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
     const [showIosHint, setShowIosHint] = useState(false);
     const [visible, setVisible] = useState(false);
+    const [isTablet, setIsTablet] = useState(false);
 
     useEffect(() => {
         if (isStandalone()) return;
         if (localStorage.getItem(DISMISS_KEY) === '1') return;
 
+        setIsTablet(isTabletViewport());
+
+        // iPadOS 13+ reporta como Macintosh + multi-touch
         const isIos =
             /iphone|ipad|ipod/i.test(navigator.userAgent) ||
             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -73,6 +88,13 @@ export function PwaInstallBanner() {
 
     if (!visible) return null;
 
+    const androidHint = isTablet
+        ? 'Acesso rápido no tablet, como um app.'
+        : 'Acesso rápido no celular ou tablet, como um app.';
+    const iosHint = isTablet
+        ? 'Toque em Compartilhar e depois em "Adicionar à Tela de Início" (iPad).'
+        : 'Toque em Compartilhar e depois em "Adicionar à Tela de Início".';
+
     return (
         <div className="pwa-banner pwa-banner--install" role="dialog" aria-label="Instalar aplicativo">
             <div className="pwa-banner__body">
@@ -81,14 +103,12 @@ export function PwaInstallBanner() {
                     {showIosHint ? (
                         <>
                             <strong>Instale o SIGL</strong>
-                            <span>
-                                Toque em Compartilhar e depois em &quot;Adicionar à Tela de Início&quot;.
-                            </span>
+                            <span>{iosHint}</span>
                         </>
                     ) : (
                         <>
                             <strong>Instale o SIGL</strong>
-                            <span>Acesso rápido no celular, como um app.</span>
+                            <span>{androidHint}</span>
                         </>
                     )}
                 </div>

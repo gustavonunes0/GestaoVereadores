@@ -9,8 +9,8 @@ type Props = {
 };
 
 /**
- * Topbar mobile do staff — hamburger + identidade + sair.
- * Visível principalmente em ≤768px (sidebar off-canvas).
+ * Topbar do staff em celular/tablet — hamburger + identidade + sair.
+ * Visível em ≤1024px (sidebar off-canvas, alinhado ao shell PWA).
  */
 export function StaffTopbar({ menuOpen, onMenuToggle }: Props) {
     const { user, logout } = useAuth();

@@ -26,20 +26,25 @@ export default defineConfig({
                 'icons/apple-touch-icon.png',
             ],
             manifest: {
+                id: '/',
                 name: 'SIGL — Gestão Vereadores',
                 short_name: 'SIGL',
                 description:
-                    'Sistema Integrado de Gestão Legislativa para câmaras municipais.',
+                    'Sistema Integrado de Gestão Legislativa para câmaras municipais — celular, tablet e desktop.',
                 lang: 'pt-BR',
                 dir: 'ltr',
                 start_url: '/',
                 scope: '/',
                 display: 'standalone',
-                display_override: ['standalone', 'minimal-ui'],
+                display_override: ['standalone', 'minimal-ui', 'browser'],
                 orientation: 'any',
                 background_color: '#f5f6f8',
                 theme_color: '#0e1e46',
                 categories: ['government', 'productivity'],
+                prefer_related_applications: false,
+                launch_handler: {
+                    client_mode: ['navigate-existing', 'auto'],
+                },
                 icons: [
                     {
                         src: 'icons/icon-192.png',

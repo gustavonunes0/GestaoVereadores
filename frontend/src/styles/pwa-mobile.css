@@ -1,11 +1,12 @@
-/* ─── PWA + mobile shell (celular e tablet) ─────────────────────────────── */
+/* ─── PWA + shell touch (celular e tablet ≤1024) ────────────────────────── */
 
 :root {
     --mobile-nav-height: 64px;
     --touch-min: 44px;
+    --pwa-banner-max: 36rem;
 }
 
-/* Staff topbar só no mobile/tablet (sidebar off-canvas). */
+/* Staff topbar só com shell off-canvas (≤1024). */
 .staff-topbar {
     display: none;
 }
@@ -51,6 +52,17 @@
     background: var(--brand-night-blue, #0e1e46);
     color: #fff;
     box-shadow: 0 8px 24px rgba(14, 30, 70, 0.28);
+}
+
+/* Tablet / tela larga: banner compacto e centralizado */
+@media (min-width: 600px) {
+    .pwa-banner {
+        left: 50%;
+        right: auto;
+        width: min(var(--pwa-banner-max), calc(100% - 1.5rem));
+        max-width: calc(100% - max(1.5rem, env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px)));
+        transform: translateX(-50%);
+    }
 }
 
 .pwa-banner--install {
@@ -127,9 +139,13 @@
     background: rgba(255, 255, 255, 0.12);
 }
 
-/* ─── ≤1024px — tablet ──────────────────────────────────────────────────── */
+/* ─── ≤1024px — tablet + phablet ────────────────────────────────────────── */
 
 @media (max-width: 1024px) {
+    .staff-topbar {
+        display: flex;
+    }
+
     .sidebar-item {
         min-height: var(--touch-min);
         padding: 10px 14px;
@@ -144,6 +160,10 @@
     .sidebar-toggle.sigl-button {
         min-width: var(--touch-min);
         min-height: var(--touch-min);
+    }
+
+    .parlamentar-app-shell .sidebar-toggle {
+        display: inline-flex;
     }
 
     .parl-sessao-card {
@@ -174,7 +194,7 @@
     }
 
     .parl-sessao-jitsi .jitsi-stage {
-        min-height: min(52vh, 360px);
+        min-height: min(52vh, 420px);
     }
 
     .parl-sessao-ativa-card {
@@ -188,9 +208,8 @@
         justify-content: center;
         min-height: 48px;
     }
-}
 
-@media (max-width: 1024px) {
+    /* Bottom nav + paddings dos banners do portal parlamentar */
     .parlamentar-app-shell.has-bottom-nav .mobile-bottom-nav {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -256,6 +275,80 @@
     .parlamentar-app-shell.has-bottom-nav .pwa-banner--push {
         bottom: calc(var(--mobile-nav-height) + 5.25rem + env(safe-area-inset-bottom, 0px));
     }
+
+    .page-header__actions .p-button,
+    .page-header__actions .sigl-button {
+        min-height: var(--touch-min);
+    }
+
+    .login-card .p-inputtext,
+    .login-card .p-password,
+    .login-card .p-inputmask {
+        min-height: 48px;
+        font-size: 16px; /* evita zoom automático no iOS (incl. iPad) */
+    }
+
+    .login-card .p-button {
+        min-height: 48px;
+    }
+}
+
+/* Tablet landscape / iPad (espaço extra sem “esmagar” como celular) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    :root {
+        --mobile-nav-height: 68px;
+    }
+
+    .parlamentar-app-shell.has-bottom-nav .mobile-bottom-nav {
+        left: max(0.75rem, env(safe-area-inset-left, 0px));
+        right: max(0.75rem, env(safe-area-inset-right, 0px));
+        bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+        height: var(--mobile-nav-height);
+        padding: 0.35rem 0.5rem;
+        border-radius: 16px;
+        border: 1px solid var(--card-border, #eef0f3);
+        box-shadow: 0 8px 28px rgba(15, 23, 42, 0.1);
+    }
+
+    .parlamentar-app-shell.has-bottom-nav .content {
+        padding-bottom: calc(
+            var(--mobile-nav-height) + 1rem + env(safe-area-inset-bottom, 0px) + 0.5rem
+        );
+    }
+
+    .parlamentar-app-shell.has-bottom-nav .pwa-banner--install {
+        bottom: calc(var(--mobile-nav-height) + 1.25rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .parlamentar-app-shell.has-bottom-nav .pwa-banner--push {
+        bottom: calc(var(--mobile-nav-height) + 5.75rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .mobile-bottom-nav__item {
+        font-size: 0.75rem;
+        gap: 0.25rem;
+    }
+
+    .mobile-bottom-nav__icon {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 1.25rem;
+    }
+
+    .parl-sessao-votacao-form .p-selectbutton {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    .parl-sessao-jitsi .jitsi-stage {
+        min-height: min(56vh, 480px);
+    }
+
+    .content {
+        padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+        padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+    }
 }
 
 /* ─── ≤960px — tablet portrait / phablet ────────────────────────────────── */
@@ -286,18 +379,9 @@
     }
 }
 
-/* ─── ≤768px — celular / tablet estreito ────────────────────────────────── */
+/* ─── ≤768px — celular / tablet estreito em portrait ────────────────────── */
 
 @media (max-width: 768px) {
-    .staff-topbar {
-        display: flex;
-    }
-
-    /* No parlamentar, hamburger fica no topbar; bottom nav cobre destinos principais. */
-    .parlamentar-app-shell .sidebar-toggle {
-        display: inline-flex;
-    }
-
     .parlamentar-topbar-user__cargo {
         display: none;
     }
@@ -391,19 +475,35 @@
     }
 }
 
-/* Standalone PWA: evita bounce e respeita notch */
-@media (display-mode: standalone) {
+/* Standalone PWA (celular e tablet instalados): evita bounce e respeita notch */
+@media (display-mode: standalone), (display-mode: minimal-ui) {
     body {
         overscroll-behavior: none;
     }
 
-    .topbar {
+    .topbar,
+    .staff-topbar {
         padding-top: max(10px, env(safe-area-inset-top, 0px));
     }
 
     .login-page {
         padding-top: max(1.5rem, env(safe-area-inset-top, 0px));
         padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+    }
+
+    .sidebar {
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+}
+
+/* iOS Safari “Adicionar à Tela de Início” (incl. iPad) */
+@supports (-webkit-touch-callout: none) {
+    @media (display-mode: standalone) {
+        .topbar,
+        .staff-topbar {
+            padding-top: max(12px, env(safe-area-inset-top, 0px));
+        }
     }
 }
 
@@ -416,16 +516,21 @@
         padding: 1.25rem 1rem;
     }
 
-    .login-card .p-inputtext,
-    .login-card .p-password,
-    .login-card .p-inputmask {
-        min-height: 48px;
-        font-size: 16px; /* evita zoom automático no iOS */
+    .login-card .p-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Login legível no tablet (retrato/paisagem) */
+@media (min-width: 481px) and (max-width: 1024px) {
+    .login-card {
+        width: min(100%, 26rem);
+        margin-inline: auto;
     }
 
     .login-card .p-button {
         width: 100%;
-        min-height: 48px;
         justify-content: center;
     }
 }

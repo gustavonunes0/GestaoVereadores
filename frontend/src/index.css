@@ -2107,7 +2107,8 @@ h2.module-title.tab-panel-title {
     }
 }
 
-@media (max-width: 768px) {
+/* Shell off-canvas — celular e tablet (alinha com bottom nav / PWA ≤1024). */
+@media (max-width: 1024px) {
     .sidebar-toggle {
         display: inline-flex;
     }
@@ -2141,7 +2142,7 @@ h2.module-title.tab-panel-title {
         left: 0;
         top: 0;
         z-index: 130;
-        width: min(288px, 88vw);
+        width: min(320px, 86vw);
         max-width: 100%;
         height: 100dvh;
         max-height: none;
@@ -2199,6 +2200,10 @@ h2.module-title.tab-panel-title {
 }
 
 @media (max-width: 480px) {
+    .sidebar {
+        width: min(288px, 88vw);
+    }
+
     .topbar-user {
         flex-direction: column;
         align-items: stretch;
