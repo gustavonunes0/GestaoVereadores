@@ -1,12 +1,10 @@
 import {
     PrismaClient,
     CodigoTipoSessao,
-    RoleUsuario,
     TenantStatus,
     TenantUserRole,
     TenantUserStatus,
 } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
 import { randomBytes, scrypt as scryptCallback } from 'crypto';
 import { promisify } from 'util';
 import { BRAZILIAN_POLITICAL_PARTIES } from './data/brazilian-political-parties';
@@ -62,21 +60,6 @@ async function main() {
     console.log(
         `Partidos políticos: ${BRAZILIAN_POLITICAL_PARTIES.length} cadastrados/atualizados`,
     );
-
-    // --- Usuário SIGL master ---
-    const passwordHash = await bcrypt.hash('admin', 10);
-    await prisma.usuario.upsert({
-        where: { username: 'admin' },
-        update: { passwordHash, role: RoleUsuario.MASTER, ativo: true },
-        create: {
-            username: 'admin',
-            passwordHash,
-            nome: 'Administrador Master',
-            role: RoleUsuario.MASTER,
-            ativo: true,
-        },
-    });
-    console.log('Usuário SIGL master: admin / admin');
 
     // --- Usuário admin da câmara ---
     const camaraPasswordHash = await hashPasswordScrypt('camara123');

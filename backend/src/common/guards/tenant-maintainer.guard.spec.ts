@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { RoleUsuario } from '@prisma/client';
+import { TenantUserRole } from '@prisma/client';
 import { TenantMaintainerGuard } from './tenant-maintainer.guard';
 
 describe('TenantMaintainerGuard', () => {
@@ -12,42 +12,39 @@ describe('TenantMaintainerGuard', () => {
             }),
         }) as never;
 
-    it('permite isTenantAdmin', () => {
+    it('permite ADMIN_STAFF', () => {
         expect(
             guard.canActivate(
-                context({ isTenantAdmin: true, isTenantStaff: false }),
+                context({
+                    authType: 'camara',
+                    sessionType: 'staff',
+                    role: TenantUserRole.ADMIN_STAFF,
+                }),
             ),
         ).toBe(true);
     });
 
-    it('permite isTenantStaff', () => {
+    it('permite STAFF', () => {
         expect(
             guard.canActivate(
-                context({ isTenantAdmin: false, isTenantStaff: true }),
+                context({
+                    authType: 'camara',
+                    sessionType: 'staff',
+                    role: TenantUserRole.STAFF,
+                }),
             ),
         ).toBe(true);
     });
 
-    it('bloqueia usuário sem admin/staff', () => {
+    it('bloqueia parlamentar', () => {
         expect(() =>
             guard.canActivate(
                 context({
-                    isTenantAdmin: false,
-                    isTenantStaff: false,
-                    isParliamentarian: true,
+                    authType: 'camara',
+                    sessionType: 'parliamentarian',
+                    parliamentarianId: 'parl-1',
                 }),
             ),
         ).toThrow(ForbiddenException);
-    });
-
-    it('permite operador SIGL', () => {
-        expect(
-            guard.canActivate(
-                context({
-                    authType: 'sigl',
-                    role: RoleUsuario.OPERADOR,
-                }),
-            ),
-        ).toBe(true);
     });
 });

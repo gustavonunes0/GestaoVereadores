@@ -1,5 +1,4 @@
 import { CamaraUserEntity } from '../entities/camara-user.entity';
-import { SiglUserEntity } from '../entities/sigl-user.entity';
 import { TenantUserAccessEntity } from '../entities/tenant-access.entity';
 
 export class InvalidCredentialsDomainError extends Error {
@@ -17,12 +16,6 @@ export class TenantMembershipRequiredDomainError extends Error {
 }
 
 export class AuthDomainService {
-    assertSiglUserCanLogin(user: SiglUserEntity | null): asserts user is SiglUserEntity {
-        if (!user || !user.isActive()) {
-            throw new InvalidCredentialsDomainError();
-        }
-    }
-
     assertCamaraUserExists(
         user: CamaraUserEntity | null,
     ): asserts user is CamaraUserEntity {

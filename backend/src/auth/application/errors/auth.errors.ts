@@ -5,20 +5,6 @@ export class InvalidCredentialsError extends Error {
     }
 }
 
-export class SiglUserNotFoundError extends Error {
-    constructor() {
-        super('Usuário não encontrado');
-        this.name = 'SiglUserNotFoundError';
-    }
-}
-
-export class SiglUsernameAlreadyInUseError extends Error {
-    constructor() {
-        super('Nome de usuário já existe');
-        this.name = 'SiglUsernameAlreadyInUseError';
-    }
-}
-
 export class InvalidCurrentPasswordError extends Error {
     constructor() {
         super('Senha atual incorreta');

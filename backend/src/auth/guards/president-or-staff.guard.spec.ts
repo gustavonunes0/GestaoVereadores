@@ -82,9 +82,9 @@ describe('PresidentOrStaffGuard', () => {
         await expect(guard.canActivate(ctx)).rejects.toThrow('Ação restrita ao Presidente da Câmara');
     });
 
-    it('Usuário sem authType camara → ForbiddenException', async () => {
-        const siglUser = { id: 'sigl-1', authType: 'sigl', role: 'MASTER' };
-        const ctx = makeContext(siglUser);
+    it('Usuário não autenticado como câmara → ForbiddenException', async () => {
+        const otherUser = { id: 'other-1', sessionType: 'unknown' };
+        const ctx = makeContext(otherUser);
         await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
         await expect(guard.canActivate(ctx)).rejects.toThrow('Acesso não autorizado');
     });

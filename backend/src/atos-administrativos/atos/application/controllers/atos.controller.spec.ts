@@ -1,7 +1,7 @@
 import 'reflect-metadata';
-import { RoleUsuario } from '@prisma/client';
-import { ROLES_KEY } from '../../../../auth/decorators/roles.decorator';
-import { AtosController } from '../controllers/atos.controller';
+import { TENANT_ROLES_KEY } from '../../../../common/decorators/tenant-roles.decorator';
+import { ADMIN_ONLY, STAFF_AND_ABOVE } from '../../../../auth/guards/guard-combos';
+import { AtosController } from './atos.controller';
 
 describe('AtosController', () => {
     it('não usa @SkipTenant() — todos os endpoints requerem isolamento de tenant', () => {
@@ -10,29 +10,21 @@ describe('AtosController', () => {
         expect(skipTenant).toBeUndefined();
     });
 
-    it('usa @ReadRoles() em consultas', () => {
-        const findAllRoles = Reflect.getMetadata(
-            ROLES_KEY,
-            AtosController.prototype.findAll,
+    it('usa @TenantRoles(STAFF_AND_ABOVE) em create', () => {
+        const roles = Reflect.getMetadata(
+            TENANT_ROLES_KEY,
+            AtosController.prototype.create,
         );
-        expect(findAllRoles).toEqual(
-            expect.arrayContaining([
-                RoleUsuario.MASTER,
-                RoleUsuario.ADMIN,
-                RoleUsuario.OPERADOR,
-            ]),
-        );
+        expect(roles).toEqual(expect.arrayContaining([...STAFF_AND_ABOVE]));
     });
 
-    it('usa @WriteRoles() em mutações', () => {
-        for (const method of ['create', 'update', 'remove'] as const) {
+    it('usa @TenantRoles(ADMIN_ONLY) em mutações admin', () => {
+        for (const method of ['update', 'remove'] as const) {
             const roles = Reflect.getMetadata(
-                ROLES_KEY,
+                TENANT_ROLES_KEY,
                 AtosController.prototype[method],
             );
-            expect(roles).toEqual(
-                expect.arrayContaining([RoleUsuario.MASTER, RoleUsuario.ADMIN]),
-            );
+            expect(roles).toEqual(expect.arrayContaining([...ADMIN_ONLY]));
         }
     });
 });

@@ -2,11 +2,8 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import {
-    AuthenticatedUser,
-} from '../../../common/types/authenticated-request';
+import { AuthenticatedUser } from '../../../common/types/authenticated-request';
 import { CamaraAuthRepository } from '../../domain/repositories/camara-auth.repository';
-import { SiglUserRepository } from '../../domain/repositories/sigl-user.repository';
 import {
     JwtPayload,
     isStaffSession,
@@ -17,7 +14,6 @@ import {
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
         config: ConfigService,
-        private readonly siglUsers: SiglUserRepository,
         private readonly camaraAuth: CamaraAuthRepository,
     ) {
         super({
@@ -28,11 +24,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
-        if ('sessionType' in payload) {
-            return this.validateCamaraUserBySession(payload);
+        if (!('sessionType' in payload)) {
+            throw new UnauthorizedException();
         }
-        // Legacy sigl path
-        return this.validateSiglUser(payload as unknown as { sub: string; authType?: string; tid?: string });
+        return this.validateCamaraUserBySession(payload);
     }
 
     private async validateCamaraUserBySession(
@@ -69,22 +64,5 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         }
 
         throw new UnauthorizedException();
-    }
-
-    private async validateSiglUser(
-        payload: { sub: string; authType?: string; tid?: string },
-    ): Promise<AuthenticatedUser> {
-        const user = await this.siglUsers.findById(payload.sub);
-        if (!user || !user.isActive()) {
-            throw new UnauthorizedException();
-        }
-        return {
-            id: user.id,
-            authType: 'sigl',
-            tenantId: payload.tid,
-            username: user.username,
-            nome: user.nome,
-            role: user.role,
-        };
     }
 }

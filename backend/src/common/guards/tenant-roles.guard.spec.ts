@@ -2,10 +2,12 @@ import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { TenantUserRole } from '@prisma/client';
 import { PARLIAMENTARIAN_SESSION } from '../../auth/guards/guard-combos';
-import { TENANT_ROLES_KEY } from '../decorators/tenant-roles.decorator';
 import { TenantRolesGuard } from './tenant-roles.guard';
 
-function makeContext(user: object | undefined, roles?: Array<TenantUserRole | typeof PARLIAMENTARIAN_SESSION>) {
+function makeContext(
+    user: object | undefined,
+    roles?: Array<TenantUserRole | typeof PARLIAMENTARIAN_SESSION>,
+) {
     const reflector = {
         getAllAndOverride: jest.fn().mockReturnValue(roles),
     } as unknown as Reflector;
@@ -26,7 +28,11 @@ function makeContext(user: object | undefined, roles?: Array<TenantUserRole | ty
 describe('TenantRolesGuard', () => {
     it('permite acesso quando não há @TenantRoles() no endpoint', () => {
         const { guard, context } = makeContext(
-            { authType: 'camara', sessionType: 'staff', role: TenantUserRole.STAFF },
+            {
+                authType: 'camara',
+                sessionType: 'staff',
+                role: TenantUserRole.STAFF,
+            },
             undefined,
         );
         expect(guard.canActivate(context)).toBe(true);
@@ -81,15 +87,9 @@ describe('TenantRolesGuard', () => {
     });
 
     it('lança ForbiddenException quando usuário não está autenticado', () => {
-        const { guard, context } = makeContext(undefined, [TenantUserRole.ADMIN_STAFF]);
+        const { guard, context } = makeContext(undefined, [
+            TenantUserRole.ADMIN_STAFF,
+        ]);
         expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-    });
-
-    it('permite usuário SIGL com role MASTER em endpoint com @TenantRoles()', () => {
-        const { guard, context } = makeContext(
-            { authType: 'sigl', role: 'MASTER' },
-            [TenantUserRole.ADMIN_STAFF],
-        );
-        expect(guard.canActivate(context)).toBe(true);
     });
 });

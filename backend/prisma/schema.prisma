@@ -517,14 +517,6 @@ model ParliamentaryFrontMember {
     @@map("parliamentary_front_members")
 }
 
-// --- Autenticação SIGL ---
-
-enum RoleUsuario {
-    MASTER
-    ADMIN
-    OPERADOR
-}
-
 enum StatusMateria {
     DRAFT
     PROTOCOLADA
@@ -637,17 +629,6 @@ enum SituacaoPresenca {
     PRESENTE
     AUSENTE
     JUSTIFICADO
-}
-
-model Usuario {
-    id           String      @id @default(uuid())
-    username     String      @unique
-    passwordHash String
-    nome         String
-    role         RoleUsuario @default(OPERADOR)
-    ativo        Boolean     @default(true)
-    createdAt    DateTime    @default(now())
-    updatedAt    DateTime    @updatedAt
 }
 
 // --- Domínios auxiliares (tabelas inferidas no drawio) ---

@@ -1,9 +1,12 @@
-import { RoleUsuario } from '@prisma/client';
+import { TenantUserRole } from '@prisma/client';
 import { Roles } from '../../auth/decorators/roles.decorator';
 
+/** Staff da câmara (leitura de recursos de plataforma. */
 export const ReadRoles = () =>
-    Roles(RoleUsuario.MASTER, RoleUsuario.ADMIN, RoleUsuario.OPERADOR);
+    Roles(TenantUserRole.ADMIN_STAFF, TenantUserRole.STAFF);
 
-export const WriteRoles = () => Roles(RoleUsuario.MASTER, RoleUsuario.ADMIN);
+/** Mutações de plataforma (antes: MASTER/ADMIN SIGL). */
+export const WriteRoles = () => Roles(TenantUserRole.ADMIN_STAFF);
 
-export const MasterOnly = () => Roles(RoleUsuario.MASTER);
+/** Administração de platform endpoints (substitui RoleUsuario.MASTER). */
+export const MasterOnly = () => Roles(TenantUserRole.ADMIN_STAFF);

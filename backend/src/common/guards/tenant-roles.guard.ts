@@ -5,7 +5,7 @@ import {
     Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RoleUsuario, TenantUserRole } from '@prisma/client';
+import { TenantUserRole } from '@prisma/client';
 import {
     PARLIAMENTARIAN_SESSION,
     TenantRoleRequirement,
@@ -17,21 +17,14 @@ import {
     isStaffUser,
 } from '../types/authenticated-request';
 
-const SIGL_WRITE_ROLES: RoleUsuario[] = [
-    RoleUsuario.MASTER,
-    RoleUsuario.ADMIN,
-    RoleUsuario.OPERADOR,
-];
-
 @Injectable()
 export class TenantRolesGuard implements CanActivate {
     constructor(private readonly reflector: Reflector) {}
 
     canActivate(context: ExecutionContext): boolean {
-        const required = this.reflector.getAllAndOverride<TenantRoleRequirement[]>(
-            TENANT_ROLES_KEY,
-            [context.getHandler(), context.getClass()],
-        );
+        const required = this.reflector.getAllAndOverride<
+            TenantRoleRequirement[]
+        >(TENANT_ROLES_KEY, [context.getHandler(), context.getClass()]);
         if (!required?.length) return true;
 
         const { user } = context
@@ -41,13 +34,6 @@ export class TenantRolesGuard implements CanActivate {
             throw new ForbiddenException('Autenticação necessária');
         }
 
-        if (user.authType === 'sigl') {
-            if (user.role && SIGL_WRITE_ROLES.includes(user.role)) {
-                return true;
-            }
-            throw new ForbiddenException('Você não tem permissão para realizar esta ação');
-        }
-
         const allowsParliamentarian = required.includes(PARLIAMENTARIAN_SESSION);
         const staffRoles = required.filter(
             (r): r is TenantUserRole => r !== PARLIAMENTARIAN_SESSION,
@@ -55,16 +41,22 @@ export class TenantRolesGuard implements CanActivate {
 
         if (isParlamentarianUser(user)) {
             if (allowsParliamentarian) return true;
-            throw new ForbiddenException('Você não tem permissão para realizar esta ação');
+            throw new ForbiddenException(
+                'Você não tem permissão para realizar esta ação',
+            );
         }
 
         if (isStaffUser(user)) {
             if (staffRoles.length && staffRoles.includes(user.role)) {
                 return true;
             }
-            throw new ForbiddenException('Você não tem permissão para realizar esta ação');
+            throw new ForbiddenException(
+                'Você não tem permissão para realizar esta ação',
+            );
         }
 
-        throw new ForbiddenException('Você não tem permissão para realizar esta ação');
+        throw new ForbiddenException(
+            'Você não tem permissão para realizar esta ação',
+        );
     }
 }

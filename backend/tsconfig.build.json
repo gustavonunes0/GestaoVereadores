@@ -1,7 +1,15 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "rootDir": "./src"
+        "rootDir": "./src",
+        "incremental": false
     },
-    "exclude": ["node_modules", "dist", "prisma/seed.ts", "src/identity"]
+    "exclude": [
+        "node_modules",
+        "dist",
+        "prisma/seed.ts",
+        "src/identity",
+        "**/*spec.ts",
+        "**/*.test.ts"
+    ]
 }

@@ -1,6 +1,6 @@
-import { RoleUsuario, TenantUserRole } from '@prisma/client';
+import { TenantUserRole } from '@prisma/client';
 
-export type AuthType = 'sigl' | 'camara';
+export type AuthType = 'camara';
 
 export type StaffAuthenticatedUser = {
     id: string;
@@ -25,29 +25,26 @@ export type ParlamentarianAuthenticatedUser = {
     nome?: string;
 };
 
-export type CamaraAuthenticatedUser = StaffAuthenticatedUser | ParlamentarianAuthenticatedUser;
+export type CamaraAuthenticatedUser =
+    | StaffAuthenticatedUser
+    | ParlamentarianAuthenticatedUser;
 
-export type SiglAuthenticatedUser = {
-    id: string;
-    authType: 'sigl';
-    tenantId?: string;
-    username?: string;
-    nome?: string;
-    role?: RoleUsuario;
-};
-
-export type AuthenticatedUser = CamaraAuthenticatedUser | SiglAuthenticatedUser;
+export type AuthenticatedUser = CamaraAuthenticatedUser;
 
 export function isStaffUser(u: AuthenticatedUser): u is StaffAuthenticatedUser {
-    return u.authType === 'camara' && (u as CamaraAuthenticatedUser).sessionType === 'staff';
+    return u.sessionType === 'staff';
 }
 
-export function isParlamentarianUser(u: AuthenticatedUser): u is ParlamentarianAuthenticatedUser {
-    return u.authType === 'camara' && (u as CamaraAuthenticatedUser).sessionType === 'parliamentarian';
+export function isParlamentarianUser(
+    u: AuthenticatedUser,
+): u is ParlamentarianAuthenticatedUser {
+    return u.sessionType === 'parliamentarian';
 }
 
 /** ID de TenantUser para FKs (ex.: responsavelAberturaId). Não usar User.id. */
-export function resolveTenantUserId(user?: AuthenticatedUser): string | undefined {
+export function resolveTenantUserId(
+    user?: AuthenticatedUser,
+): string | undefined {
     if (user && isStaffUser(user)) return user.tenantUserId;
     return undefined;
 }

@@ -5,17 +5,19 @@ import {
     Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RoleUsuario } from '@prisma/client';
+import { TenantUserRole } from '@prisma/client';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-
-type RequestUser = { role?: RoleUsuario };
+import {
+    AuthenticatedUser,
+    isStaffUser,
+} from '../../common/types/authenticated-request';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
     constructor(private readonly reflector: Reflector) {}
 
     canActivate(context: ExecutionContext): boolean {
-        const required = this.reflector.getAllAndOverride<RoleUsuario[]>(
+        const required = this.reflector.getAllAndOverride<TenantUserRole[]>(
             ROLES_KEY,
             [context.getHandler(), context.getClass()],
         );
@@ -23,8 +25,9 @@ export class RolesGuard implements CanActivate {
 
         const { user } = context
             .switchToHttp()
-            .getRequest<{ user?: RequestUser }>();
-        if (!user?.role || !required.includes(user.role)) {
+            .getRequest<{ user?: AuthenticatedUser }>();
+
+        if (!user || !isStaffUser(user) || !required.includes(user.role)) {
             throw new ForbiddenException('Sem permissão para esta operação');
         }
         return true;

@@ -1,5 +1,4 @@
 import { CamaraUserEntity } from '../../domain/entities/camara-user.entity';
-import { SiglUserEntity } from '../../domain/entities/sigl-user.entity';
 import {
     ParlamentarianUserAccessEntity,
     TenantAuthEntity,
@@ -7,24 +6,6 @@ import {
 } from '../../domain/entities/tenant-access.entity';
 
 export class AuthSessionViewModel {
-    static sigl(
-        user: SiglUserEntity,
-        tenantId: string | undefined,
-        accessToken: string,
-    ) {
-        return {
-            access_token: accessToken,
-            user: {
-                id: user.id,
-                username: user.username,
-                nome: user.nome,
-                role: user.role,
-                tenantId,
-                authType: 'sigl' as const,
-            },
-        };
-    }
-
     static camaraStaff(
         user: CamaraUserEntity,
         tenant: TenantAuthEntity,
@@ -118,16 +99,6 @@ export class AuthSessionViewModel {
             role: profile.role,
             sessionType: 'staff' as const,
         };
-    }
-
-    static siglProfile(profile: {
-        id: string;
-        username: string;
-        nome: string;
-        role: SiglUserEntity['role'];
-        ativo: boolean;
-    }) {
-        return { ...profile, authType: 'sigl' as const };
     }
 
     static camaraProfile(profile: {
