@@ -765,12 +765,13 @@ textarea {
 
 .login-card {
     width: 100%;
-    max-width: 400px;
+    max-width: 440px;
     background: var(--bg-card);
     border: 1px solid var(--bg-border);
     border-radius: var(--layout-radius-lg);
-    padding: 2rem;
+    padding: 2.25rem;
     box-shadow: var(--layout-shadow-md);
+    font-size: 1.0625rem;
 }
 
 .login-card__brand {
@@ -784,8 +785,8 @@ textarea {
 .login-card__logo {
     width: auto;
     height: auto;
-    max-width: min(280px, 100%);
-    max-height: 180px;
+    max-width: min(300px, 100%);
+    max-height: 200px;
     object-fit: contain;
     display: block;
     margin: 0 auto 1.5rem;
@@ -797,15 +798,59 @@ textarea {
 .login-card .subtitle {
     color: var(--muted);
     margin: 0 0 1.5rem;
-    font-size: 0.9rem;
+    font-size: 1.05rem;
 }
 
 .login-card h1 {
     margin: 0 0 0.25rem;
     color: var(--brand-night-blue);
-    font-size: 1.65rem;
+    font-size: 1.85rem;
     font-weight: 700;
     letter-spacing: -0.02em;
+}
+
+.login-card .field label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-heading, #1e293b);
+}
+
+.login-card .field input,
+.login-card .field .p-inputtext,
+.login-card .field .p-inputmask,
+.login-card .p-inputtext,
+.login-card .p-inputmask {
+    font-size: 1.125rem !important;
+    min-height: 3rem;
+    padding: 0.65rem 0.9rem;
+    border-radius: 10px;
+}
+
+.login-card .p-button {
+    font-size: 1.125rem !important;
+    font-weight: 600;
+    min-height: 3.15rem;
+    padding: 0.7rem 1.15rem;
+}
+
+.login-card .p-button .p-button-label {
+    font-size: 1.125rem;
+}
+
+.login-card .p-message,
+.login-card .p-message .p-message-text {
+    font-size: 1rem;
+}
+
+.login-page__footer {
+    font-size: 1rem;
+}
+
+.login-page__footer .footer-bar__version,
+.login-page__footer .footer-bar__powered {
+    font-size: 0.95rem;
 }
 
 .error-msg {
