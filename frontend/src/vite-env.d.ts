@@ -1,19 +1,11 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 interface ImportMetaEnv {
-    readonly VITE_API_URL?: string;
     readonly VITE_APP_VERSION: string;
-    readonly VITE_POWERED_BY?: string;
-    readonly VITE_POWERED_BY_URL?: string;
+    readonly VITE_API_URL?: string;
 }
 
 interface ImportMeta {
     readonly env: ImportMetaEnv;
-}
-
-interface Window {
-    JitsiMeetExternalAPI?: new (
-        domain: string,
-        options: Record<string, unknown>,
-    ) => unknown;
 }

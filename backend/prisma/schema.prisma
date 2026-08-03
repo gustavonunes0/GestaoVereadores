@@ -98,6 +98,7 @@ model User {
 
     parliamentarianUser ParlamentarianUser?
     tenantPartnerUser   TenantPartnerUser?
+    pushSubscriptions   PushSubscription[]
 }
 
 model Tenant {
@@ -149,6 +150,7 @@ model Tenant {
     atos                      Ato[]
     parliamentarianUsers      ParlamentarianUser[]
     atas                      Ata[]
+    pushSubscriptions         PushSubscription[]
 }
 
 model TenantUser {
@@ -252,11 +254,40 @@ model Parliamentarian {
     votos                          VotoParlamentar[]
     presencas                      PresencaSessao[]
     pedidosPalavra                 PedidoPalavra[]
+    pushSubscriptions              PushSubscription[]
 
     @@index([tenantId])
     @@index([tenantId, status])
     @@index([tenantId, isRemoved])
     @@map("parliamentarians")
+}
+
+/** Subscription Web Push (PWA) — um dispositivo/browser por endpoint. */
+model PushSubscription {
+    id                String  @id @default(uuid())
+    tenantId          String
+    userId            String
+    parliamentarianId String?
+
+    endpoint String
+    p256dh   String
+    auth     String
+    userAgent String?
+
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    isRemoved  Boolean   @default(false)
+    removedAt  DateTime?
+
+    tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+    user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+    parliamentarian Parliamentarian? @relation(fields: [parliamentarianId], references: [id], onDelete: SetNull)
+
+    @@unique([endpoint])
+    @@index([tenantId, userId])
+    @@index([tenantId, parliamentarianId])
+    @@index([tenantId, isRemoved])
+    @@map("push_subscriptions")
 }
 
 model ParlamentarianUser {

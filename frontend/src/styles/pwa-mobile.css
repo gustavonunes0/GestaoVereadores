@@ -1,0 +1,432 @@
+/* ─── PWA + mobile shell (celular e tablet) ─────────────────────────────── */
+
+:root {
+    --mobile-nav-height: 64px;
+    --touch-min: 44px;
+}
+
+/* Staff topbar só no mobile/tablet (sidebar off-canvas). */
+.staff-topbar {
+    display: none;
+}
+
+.staff-topbar__brand {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+}
+
+.staff-topbar__brand strong {
+    font-size: 0.95rem;
+    color: var(--text-heading);
+}
+
+.staff-topbar__user {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 12rem;
+}
+
+/* Bottom nav — oculto no desktop. */
+.mobile-bottom-nav {
+    display: none;
+}
+
+/* Banners PWA */
+.pwa-banner {
+    position: fixed;
+    left: max(0.75rem, env(safe-area-inset-left, 0px));
+    right: max(0.75rem, env(safe-area-inset-right, 0px));
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    background: var(--brand-night-blue, #0e1e46);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(14, 30, 70, 0.28);
+}
+
+.pwa-banner--install {
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+.pwa-banner--push {
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    background: #1d4f8a;
+}
+
+.pwa-banner__error {
+    color: #fecaca;
+    font-size: 0.75rem;
+}
+
+.pwa-banner--update {
+    top: calc(0.75rem + env(safe-area-inset-top, 0px));
+    bottom: auto;
+}
+
+.pwa-banner__body {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.pwa-banner__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+    font-size: 0.8125rem;
+}
+
+.pwa-banner__text strong {
+    font-size: 0.875rem;
+}
+
+.pwa-banner__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
+.pwa-banner__action {
+    border: none;
+    border-radius: 8px;
+    padding: 0.45rem 0.85rem;
+    min-height: var(--touch-min);
+    background: #fff;
+    color: var(--brand-night-blue, #0e1e46);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+
+.pwa-banner__dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--touch-min);
+    height: var(--touch-min);
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+}
+
+.pwa-banner__dismiss:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ─── ≤1024px — tablet ──────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+    .sidebar-item {
+        min-height: var(--touch-min);
+        padding: 10px 14px;
+    }
+
+    .btn-sair {
+        min-height: var(--touch-min);
+        padding: 0.5rem 0.85rem;
+    }
+
+    .sidebar-toggle.p-button,
+    .sidebar-toggle.sigl-button {
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+    }
+
+    .parl-sessao-card {
+        min-height: var(--touch-min);
+        padding: 1rem;
+    }
+
+    .parl-sessao-votacao-form .p-selectbutton .p-button {
+        min-height: 48px;
+        min-width: 4.5rem;
+        padding: 0.65rem 1rem;
+    }
+
+    .parl-sessao-votacao-form .p-button:not(.p-selectbutton .p-button) {
+        width: 100%;
+        min-height: 48px;
+        justify-content: center;
+    }
+
+    .parl-sessao-votacao-form {
+        align-items: stretch;
+    }
+
+    .parl-sessao-presenca-cta.p-button {
+        width: 100%;
+        min-height: 48px;
+        justify-content: center;
+    }
+
+    .parl-sessao-jitsi .jitsi-stage {
+        min-height: min(52vh, 360px);
+    }
+
+    .parl-sessao-ativa-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .parl-sessao-ativa-card .p-button,
+    .parl-sessao-ativa-card .sigl-button {
+        width: 100%;
+        justify-content: center;
+        min-height: 48px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .parlamentar-app-shell.has-bottom-nav .mobile-bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 90;
+        height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+        padding: 0.25rem 0.25rem env(safe-area-inset-bottom, 0px);
+        background: #fff;
+        border-top: 1px solid var(--card-border, #eef0f3);
+        box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    .mobile-bottom-nav__item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.15rem;
+        min-height: var(--mobile-nav-height);
+        padding: 0.35rem 0.15rem;
+        border: none;
+        background: transparent;
+        color: var(--text-muted, #8492a6);
+        text-decoration: none;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-bottom-nav__item.is-active {
+        color: var(--accent, #2563a8);
+    }
+
+    .mobile-bottom-nav__icon {
+        width: 22px !important;
+        height: 22px !important;
+        font-size: 1.15rem;
+        line-height: 1;
+    }
+
+    .mobile-bottom-nav__label {
+        line-height: 1.1;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .parlamentar-app-shell.has-bottom-nav .content {
+        padding-bottom: calc(
+            var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-page-y, 1rem)
+        );
+    }
+
+    .parlamentar-app-shell.has-bottom-nav .pwa-banner--install {
+        bottom: calc(var(--mobile-nav-height) + 0.75rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .parlamentar-app-shell.has-bottom-nav .pwa-banner--push {
+        bottom: calc(var(--mobile-nav-height) + 5.25rem + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* ─── ≤960px — tablet portrait / phablet ────────────────────────────────── */
+
+@media (max-width: 960px) {
+    .parl-sessao-detalhe-topbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .parl-sessao-detalhe-topbar__badges {
+        margin-left: 0;
+    }
+
+    .parl-sessao-detalhe-topbar .p-button,
+    .parl-sessao-detalhe-topbar .sigl-button {
+        align-self: flex-start;
+        min-height: var(--touch-min);
+    }
+
+    .sessao-votacao-banner {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* ─── ≤768px — celular / tablet estreito ────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .staff-topbar {
+        display: flex;
+    }
+
+    /* No parlamentar, hamburger fica no topbar; bottom nav cobre destinos principais. */
+    .parlamentar-app-shell .sidebar-toggle {
+        display: inline-flex;
+    }
+
+    .parlamentar-topbar-user__cargo {
+        display: none;
+    }
+
+    .content {
+        padding-bottom: max(
+            var(--space-page-y, 1rem),
+            env(safe-area-inset-bottom, 0px)
+        );
+    }
+
+    .parlamentar-app-shell.has-bottom-nav .content {
+        padding-bottom: calc(
+            var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 1rem
+        );
+    }
+
+    /* Diálogos full-ish no celular */
+    .p-dialog {
+        width: min(100vw - 1rem, 28rem) !important;
+        max-width: calc(100vw - 1rem) !important;
+        margin: 0.5rem;
+    }
+
+    .p-dialog .p-dialog-footer {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+    }
+
+    .p-dialog .p-dialog-footer .p-button {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+    }
+
+    .parl-sessao-presenca-ok {
+        width: 100%;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    .page-header,
+    .page-header__actions {
+        flex-wrap: wrap;
+    }
+
+    .page-header__actions {
+        width: 100%;
+    }
+
+    .page-header__actions .p-button,
+    .page-header__actions .sigl-button {
+        flex: 1 1 auto;
+        min-height: var(--touch-min);
+        justify-content: center;
+    }
+}
+
+/* ─── ≤480px — telefone estreito ────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+    .parlamentar-topbar-user__meta {
+        display: none;
+    }
+
+    .parlamentar-topbar-user .btn-sair {
+        padding: 0.5rem;
+        min-width: var(--touch-min);
+        justify-content: center;
+    }
+
+    .staff-topbar__user {
+        max-width: 8rem;
+    }
+
+    .mobile-bottom-nav__label {
+        font-size: 0.625rem;
+    }
+
+    .parl-sessao-detalhe-topbar__info h2 {
+        font-size: 1.05rem;
+    }
+
+    .parl-sessao-panel {
+        padding: 0.85rem 1rem;
+    }
+
+    .parl-sessao-jitsi .jitsi-stage {
+        min-height: min(42vh, 280px);
+    }
+}
+
+/* Standalone PWA: evita bounce e respeita notch */
+@media (display-mode: standalone) {
+    body {
+        overscroll-behavior: none;
+    }
+
+    .topbar {
+        padding-top: max(10px, env(safe-area-inset-top, 0px));
+    }
+
+    .login-page {
+        padding-top: max(1.5rem, env(safe-area-inset-top, 0px));
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+    }
+}
+
+@media (max-width: 480px) {
+    .login-card {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        border-radius: 16px;
+        padding: 1.25rem 1rem;
+    }
+
+    .login-card .p-inputtext,
+    .login-card .p-password,
+    .login-card .p-inputmask {
+        min-height: 48px;
+        font-size: 16px; /* evita zoom automático no iOS */
+    }
+
+    .login-card .p-button {
+        width: 100%;
+        min-height: 48px;
+        justify-content: center;
+    }
+}
+

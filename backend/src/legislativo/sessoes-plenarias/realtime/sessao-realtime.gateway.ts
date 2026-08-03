@@ -49,6 +49,10 @@ export type SessaoEncerradaPayload = {
     sessaoId: string;
 };
 
+export type SessaoAbertaPayload = {
+    sessaoId: string;
+};
+
 export type PresencaAtualizadaPayload = {
     sessaoId: string;
     parliamentarianId: string;
@@ -139,6 +143,10 @@ export class SessaoRealtimeGateway
 
     emitSessaoEncerrada(tenantId: string, payload: SessaoEncerradaPayload) {
         this.server.to(`tenant:${tenantId}`).emit('sessao:encerrada', payload);
+    }
+
+    emitSessaoAberta(tenantId: string, payload: SessaoAbertaPayload) {
+        this.server.to(`tenant:${tenantId}`).emit('sessao:aberta', payload);
     }
 
     emitPresencaAtualizada(tenantId: string, payload: PresencaAtualizadaPayload) {

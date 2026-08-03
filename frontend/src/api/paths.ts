@@ -128,4 +128,8 @@ export const API_PATHS = {
     // ── Público (sem auth) ────────────────────────────────────────────────
     publicAgenda:       '/public/agenda',
     publicNormas:       '/normas/public',
+
+    // ── Push notifications (PWA) ──────────────────────────────────────────
+    pushVapidPublicKey: '/notifications/push/vapid-public-key',
+    pushSubscriptions:  '/notifications/push/subscriptions',
 } as const;
