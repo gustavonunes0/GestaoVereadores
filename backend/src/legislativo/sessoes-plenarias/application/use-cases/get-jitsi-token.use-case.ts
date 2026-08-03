@@ -57,6 +57,7 @@ export class GetJitsiTokenUseCase {
         const appId = this.config.get<string>('JITSI_APP_ID')?.trim();
         const appSecret = this.config.get<string>('JITSI_APP_SECRET')?.trim();
 
+        // meet.jit.si = Jitsi Meet público (HTTPS válido, gratuito). Não usa JWT local.
         const isSelfHosted = domain !== 'meet.jit.si';
         if (isSelfHosted && (!appId || !appSecret)) {
             throw new InternalServerErrorException(
@@ -73,7 +74,8 @@ export class GetJitsiTokenUseCase {
             'Operador';
 
         let token: string | null = null;
-        if (appId && appSecret) {
+        // JWT só no self-hosted; meet.jit.si rejeita tokens da sua app_id local.
+        if (isSelfHosted && appId && appSecret) {
             token = this.jwtService.sign(
                 {
                     aud: 'jitsi',

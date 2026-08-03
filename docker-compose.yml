@@ -29,11 +29,13 @@ services:
       PORT: 3000
       JWT_SECRET: gestao-vereadores-jwt-dev-altere-em-producao
       CORS_ORIGIN: http://localhost:5173,http://localhost:8080,http://127.0.0.1:8080,http://localhost
-      # --- Jitsi (mesmos valores do bloco jitsi-* abaixo) ---
-      JITSI_DOMAIN: ${JITSI_PUBLIC_HOST:-localhost}:${JITSI_HTTPS_PORT:-8444}
+      # --- Jitsi ---
+      # Defina JITSI_DOMAIN no .env (ex.: meet.jit.si ou 187.x.x.x:8444).
+      # Se vazio, monta host:porta do Jitsi self-hosted.
+      JITSI_DOMAIN: ${JITSI_DOMAIN:-${JITSI_PUBLIC_HOST:-localhost}:${JITSI_HTTPS_PORT:-8444}}
       JITSI_APP_ID: ${JWT_APP_ID:-gestao_vereadores}
       JITSI_APP_SECRET: ${JWT_APP_SECRET:-troque-por-um-segredo-forte}
-      JITSI_SUB: '*'
+      JITSI_SUB: ${JITSI_SUB:-*}
     depends_on:
       postgres:
         condition: service_healthy
