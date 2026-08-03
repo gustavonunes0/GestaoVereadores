@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isParlamentarianUser } from '../../types/auth';
 import { SiglButton } from '../common/SiglButton';
+import { PersonAvatar } from '../common/PersonAvatar';
 import { AlterarSenhaDialog } from '../auth/AlterarSenhaDialog';
 
 type Props = {
@@ -17,7 +18,6 @@ export function ParlamentarTopbar({ menuOpen, onMenuToggle }: Props) {
     const parlUser = user && isParlamentarianUser(user) ? user : null;
     const nome = parlUser?.parliamentaryName ?? 'Parlamentar';
     const cargo = `${nome} Parlamentar`;
-    const inicial = nome.charAt(0).toUpperCase();
 
     return (
         <>
@@ -26,56 +26,53 @@ export function ParlamentarTopbar({ menuOpen, onMenuToggle }: Props) {
                 onHide={() => setSenhaDialogOpen(false)}
             />
             <header className="topbar">
-            <div className="topbar__start">
-                <SiglButton
-                    type="button"
-                    className="sidebar-toggle"
-                    icon="pi pi-bars"
-                    severity="secondary"
-                    text
-                    aria-label="Abrir menu"
-                    aria-expanded={menuOpen}
-                    aria-controls="parlamentar-sidebar"
-                    onClick={onMenuToggle}
-                />
-            </div>
-
-            <div className="topbar-user parlamentar-topbar-user">
-                <div className="parlamentar-topbar-user__meta">
-                    <strong className="parlamentar-topbar-user__nome">{nome}</strong>
-                    <span className="parlamentar-topbar-user__cargo">{cargo}</span>
+                <div className="topbar__start">
+                    <SiglButton
+                        type="button"
+                        className="sidebar-toggle"
+                        icon="pi pi-bars"
+                        severity="secondary"
+                        text
+                        aria-label="Abrir menu"
+                        aria-expanded={menuOpen}
+                        aria-controls="parlamentar-sidebar"
+                        onClick={onMenuToggle}
+                    />
                 </div>
 
-                {parlUser?.photoUrl ? (
-                    <img
-                        src={parlUser.photoUrl}
+                <div className="topbar-user parlamentar-topbar-user">
+                    <div className="parlamentar-topbar-user__meta">
+                        <strong className="parlamentar-topbar-user__nome">
+                            {nome}
+                        </strong>
+                        <span className="parlamentar-topbar-user__cargo">
+                            {cargo}
+                        </span>
+                    </div>
+
+                    <PersonAvatar
+                        photoUrl={parlUser?.photoUrl}
+                        name={nome}
+                        size="md"
                         alt={nome}
                         className="parlamentar-topbar-user__avatar"
                     />
-                ) : (
-                    <div
-                        className="parlamentar-topbar-user__avatar parlamentar-topbar-user__avatar--fallback"
-                        aria-hidden
+
+                    <button
+                        type="button"
+                        className="btn-sair"
+                        onClick={() => setSenhaDialogOpen(true)}
                     >
-                        {inicial}
-                    </div>
-                )}
+                        <LockOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
+                        Senha
+                    </button>
 
-                <button
-                    type="button"
-                    className="btn-sair"
-                    onClick={() => setSenhaDialogOpen(true)}
-                >
-                    <LockOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
-                    Senha
-                </button>
-
-                <button type="button" className="btn-sair" onClick={logout}>
-                    <LogoutOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
-                    Sair
-                </button>
-            </div>
-        </header>
+                    <button type="button" className="btn-sair" onClick={logout}>
+                        <LogoutOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
+                        Sair
+                    </button>
+                </div>
+            </header>
         </>
     );
 }

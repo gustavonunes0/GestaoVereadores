@@ -17,6 +17,7 @@ import {
     resolveMateriaCardTitulo,
     resolveMateriaTipoSigla,
 } from '../../utils/materiaCardDisplay';
+import { PersonAvatar } from '../common/PersonAvatar';
 import { MateriaStatusPill } from './MateriaStatusPill';
 
 interface Props {
@@ -26,36 +27,6 @@ interface Props {
     onVer?: () => void;
     onEditar?: () => void;
     onDeletar?: () => void;
-}
-
-function AuthorAvatar({
-    nome,
-    fotoUrl,
-    className = '',
-}: {
-    nome: string;
-    fotoUrl?: string | null;
-    className?: string;
-}) {
-    const initial = nome.charAt(0).toUpperCase();
-
-    if (fotoUrl) {
-        return (
-            <img
-                src={fotoUrl}
-                alt={nome}
-                className={`w-6 h-6 rounded-full border-2 border-white object-cover flex-shrink-0 ${className}`}
-            />
-        );
-    }
-
-    return (
-        <span
-            className={`w-6 h-6 rounded-full bg-[#2563a8] border-2 border-white text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 ${className}`}
-        >
-            {initial}
-        </span>
-    );
 }
 
 function AuthorAvatarGroup({ autores }: { autores: MateriaAutorResumo[] }) {
@@ -72,15 +43,17 @@ function AuthorAvatarGroup({ autores }: { autores: MateriaAutorResumo[] }) {
             title={autores.map((a) => a.nome).join(', ')}
         >
             {visiveis.map((autor, index) => (
-                <AuthorAvatar
+                <PersonAvatar
                     key={autor.id}
-                    nome={autor.nome}
-                    fotoUrl={autor.photoUrl}
-                    className={index > 0 ? '-ml-2' : ''}
+                    photoUrl={autor.photoUrl}
+                    name={autor.nome}
+                    size="sm"
+                    alt={autor.nome}
+                    className={`materia-card-author-avatar${index > 0 ? ' -ml-2' : ''}`}
                 />
             ))}
             {restantes > 0 ? (
-                <span className="-ml-2 w-6 h-6 rounded-full bg-[#e8edf5] border-2 border-white text-[#1c3557] text-[12px] font-bold flex items-center justify-center">
+                <span className="-ml-2 w-6 h-6 rounded-full bg-[#e8edf5] border-2 border-white text-[#1c3557] text-[10px] font-bold flex items-center justify-center">
                     +{restantes}
                 </span>
             ) : null}
@@ -100,27 +73,20 @@ function AuthorPhotoBox({ autor }: { autor: MateriaAutorResumo | null }) {
         );
     }
 
-    if (autor.photoUrl) {
-        return (
-            <img
-                src={autor.photoUrl}
-                alt={autor.nome}
-                className="w-11 h-11 rounded-[9px] object-cover bg-[#e8edf5]"
-            />
-        );
-    }
-
-    const initial = autor.nome.charAt(0).toUpperCase();
     return (
-        <div className="w-11 h-11 rounded-[9px] bg-[#e8edf5] flex items-center justify-center overflow-hidden">
-            {autor.tipo === 'tenant_partner' ? (
-                <PersonOutlined sx={{ fontSize: 22, color: '#1c3557' }} aria-hidden />
-            ) : (
-                <span className="text-[18px] font-bold text-[#1c3557] leading-none">
-                    {initial}
-                </span>
-            )}
-        </div>
+        <PersonAvatar
+            photoUrl={autor.photoUrl}
+            name={autor.nome}
+            size="md"
+            shape="rounded"
+            alt={autor.nome}
+            className="materia-card-author-photo"
+            fallback={
+                autor.tipo === 'tenant_partner' ? (
+                    <PersonOutlined sx={{ fontSize: 22, color: '#1c3557' }} />
+                ) : undefined
+            }
+        />
     );
 }
 

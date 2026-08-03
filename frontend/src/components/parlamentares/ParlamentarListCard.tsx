@@ -1,6 +1,6 @@
-import { Avatar } from 'primereact/avatar';
 import { Tag } from 'primereact/tag';
 import type { Parliamentarian } from '../../api/legislative/parlamentares.api';
+import { PersonAvatar } from '../common/PersonAvatar';
 
 const STATUS_LABEL: Record<string, string> = {
     ACTIVE: 'Ativo',
@@ -41,21 +41,20 @@ export function ParlamentarListCard({ row }: Props) {
         ? formatPartyLabel(party.acronym, party.name)
         : null;
     const mandateBadge = row.activeMandate?.status
-        ? MANDATE_STATUS_LABEL[row.activeMandate.status] ?? row.activeMandate.status
+        ? MANDATE_STATUS_LABEL[row.activeMandate.status] ??
+          row.activeMandate.status
         : row.activeMandatesCount
           ? 'Com mandato'
           : null;
-    const initial = displayName.charAt(0).toUpperCase();
 
     return (
         <div className="parlamentar-list-card">
-            <div className="parlamentar-list-card__avatar" aria-hidden>
-                {row.photoUrl ? (
-                    <Avatar image={row.photoUrl} shape="circle" />
-                ) : (
-                    <Avatar label={initial} shape="circle" />
-                )}
-            </div>
+            <PersonAvatar
+                photoUrl={row.photoUrl}
+                name={displayName}
+                size="lg"
+                aria-hidden
+            />
             <div className="parlamentar-list-card__identity">
                 <div className="parlamentar-list-card__name-row">
                     <strong className="parlamentar-list-card__name">
@@ -63,18 +62,22 @@ export function ParlamentarListCard({ row }: Props) {
                     </strong>
                     <div className="parlamentar-list-card__badges">
                         {mandateBadge ? (
-                            <Tag value={mandateBadge} severity="info" className="text-xs" />
+                            <Tag
+                                value={mandateBadge}
+                                severity="info"
+                                className="text-xs"
+                            />
                         ) : null}
                         <Tag
                             value={STATUS_LABEL[row.status] ?? row.status}
-                            severity={row.status === 'ACTIVE' ? 'success' : 'secondary'}
+                            severity={
+                                row.status === 'ACTIVE' ? 'success' : 'secondary'
+                            }
                             className="text-xs"
                         />
                     </div>
                 </div>
-                <p className="parlamentar-list-card__line">
-                    {email ?? EMPTY}
-                </p>
+                <p className="parlamentar-list-card__line">{email ?? EMPTY}</p>
                 {partyLabel ? (
                     <p className="parlamentar-list-card__line parlamentar-list-card__party">
                         {party?.flagUrl ? (
@@ -88,7 +91,8 @@ export function ParlamentarListCard({ row }: Props) {
                                 className="parlamentar-list-card__party-flag parlamentar-list-card__party-flag--placeholder"
                                 aria-hidden
                             >
-                                {party?.acronym?.slice(0, 2).toUpperCase() || '—'}
+                                {party?.acronym?.slice(0, 2).toUpperCase() ||
+                                    '—'}
                             </span>
                         )}
                         <span>{partyLabel}</span>
@@ -117,7 +121,11 @@ type LinkCellProps = {
     onVer: () => void;
 };
 
-export function ParlamentarTableLinkCell({ count, label, onVer }: LinkCellProps) {
+export function ParlamentarTableLinkCell({
+    count,
+    label,
+    onVer,
+}: LinkCellProps) {
     return (
         <div className="parlamentar-table-link">
             <span className="parlamentar-table-link__count">{count}</span>

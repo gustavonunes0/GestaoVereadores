@@ -1,5 +1,4 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Avatar } from 'primereact/avatar';
 import { Button } from 'primereact/button';
 import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
 import {
@@ -9,11 +8,11 @@ import {
 } from '../../api/legislative/mesa-diretora.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { Modal } from '../Modal';
+import { PersonAvatar } from '../common/PersonAvatar';
 import { usePermissions } from '../../hooks/usePermissions';
 import {
     compareBoardRoles,
     formatMesaPartyLabel,
-    parlamentarInitials,
 } from '../../utils/mesaMemberDisplay';
 
 type Props = {
@@ -180,7 +179,6 @@ export function MesaComposicaoTable({
                                 const partyLabel = formatMesaPartyLabel(
                                     membro.parliamentarian.politicalParty,
                                 );
-                                const initials = parlamentarInitials(nome);
                                 const photoUrl =
                                     membro.parliamentarian.photoUrl?.trim() ||
                                     null;
@@ -189,22 +187,13 @@ export function MesaComposicaoTable({
                                     <tr key={membro.id}>
                                         <td>
                                             <div className="mesa-composicao__parlamentar">
-                                                <div
-                                                    className="mesa-composicao__avatar"
+                                                <PersonAvatar
+                                                    photoUrl={photoUrl}
+                                                    name={nome}
+                                                    size="md"
                                                     aria-hidden
-                                                >
-                                                    {photoUrl ? (
-                                                        <Avatar
-                                                            image={photoUrl}
-                                                            shape="circle"
-                                                        />
-                                                    ) : (
-                                                        <Avatar
-                                                            label={initials}
-                                                            shape="circle"
-                                                        />
-                                                    )}
-                                                </div>
+                                                    className="mesa-composicao__avatar"
+                                                />
                                                 <div className="mesa-composicao__identity">
                                                     <strong>{nome}</strong>
                                                     {partyLabel ? (

@@ -1,4 +1,5 @@
 import type { ParliamentarianProfile } from '../../api/legislative/parlamentares.api';
+import { PersonAvatar } from '../common/PersonAvatar';
 
 type Props = {
     perfil: ParliamentarianProfile | null;
@@ -7,24 +8,17 @@ type Props = {
 export function ParlamentarProfileCard({ perfil }: Props) {
     const nome = perfil?.parliamentaryName ?? '—';
     const cargo = perfil?.nomeCompleto ?? `${nome} Parlamentar`;
-    const inicial = nome.charAt(0).toUpperCase();
 
     return (
         <div className="parlamentar-profile-card">
-            {perfil?.photoUrl ? (
-                <img
-                    src={perfil.photoUrl}
-                    alt={nome}
-                    className="parlamentar-profile-card__photo"
-                />
-            ) : (
-                <div
-                    className="parlamentar-profile-card__photo parlamentar-profile-card__photo--fallback"
-                    aria-hidden
-                >
-                    {inicial}
-                </div>
-            )}
+            <PersonAvatar
+                photoUrl={perfil?.photoUrl}
+                name={nome}
+                size="xl"
+                shape="rounded"
+                alt={nome}
+                className="parlamentar-profile-card__photo"
+            />
 
             <div className="parlamentar-profile-card__main">
                 <h2 className="parlamentar-profile-card__nome">{nome}</h2>

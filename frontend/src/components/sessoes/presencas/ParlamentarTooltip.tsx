@@ -1,4 +1,5 @@
 import type { PresencaParlamentar } from '../../../types/presenca';
+import { PersonAvatar } from '../../common/PersonAvatar';
 
 interface TooltipData {
     p: PresencaParlamentar;
@@ -21,19 +22,14 @@ export function ParlamentarTooltip({ data }: { data: TooltipData }) {
     return (
         <div className="parlamentar-tooltip" style={{ left, top }}>
             <div className="ptt-head">
-                {p.fotoUrl ? (
-                    <img src={p.fotoUrl} className="ptt-avatar" alt="" />
-                ) : (
-                    <div
-                        className="ptt-avatar-ph"
-                        style={{
-                            background: p.presente ? 'var(--blue-50)' : 'var(--surface-100)',
-                            color: p.presente ? 'var(--blue-800)' : 'var(--text-color-secondary)',
-                        }}
-                    >
-                        {p.abreviacao}
-                    </div>
-                )}
+                <PersonAvatar
+                    photoUrl={p.fotoUrl}
+                    name={p.parliamentaryName}
+                    size="sm"
+                    fallback={p.abreviacao}
+                    className="ptt-avatar"
+                    aria-hidden
+                />
                 <div>
                     <div className="ptt-nome">{p.parliamentaryName}</div>
                     {p.cargoMesa && <div className="ptt-cargo">{p.cargoMesa}</div>}
@@ -50,9 +46,17 @@ export function ParlamentarTooltip({ data }: { data: TooltipData }) {
             </div>
             <div
                 className="ptt-status"
-                style={{ color: p.presente ? 'var(--green-700)' : 'var(--text-color-secondary)' }}
+                style={{
+                    color: p.presente
+                        ? 'var(--green-700)'
+                        : 'var(--text-color-secondary)',
+                }}
             >
-                <i className={p.presente ? 'pi pi-check-circle' : 'pi pi-times-circle'} />
+                <i
+                    className={
+                        p.presente ? 'pi pi-check-circle' : 'pi pi-times-circle'
+                    }
+                />
                 {p.presente ? 'Presente' : 'Ausente'}
             </div>
             <div className="ptt-origem">{origemTexto}</div>

@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import type { AuthUser } from '../types/auth';
 import { isStaffUser } from '../types/auth';
 import { AlterarSenhaDialog } from './auth/AlterarSenhaDialog';
+import { PersonAvatar } from './common/PersonAvatar';
 
 function staffRoleLabel(role: 'ADMIN_STAFF' | 'STAFF') {
     return role === 'ADMIN_STAFF' ? 'Administrador' : 'Operador';
@@ -101,13 +102,14 @@ export function SidebarUserMenu() {
 
         return (
             <div className="sidebar-user-menu__header">
-                <span className="sidebar-user-menu__header-avatar" aria-hidden="true">
-                    {user.photoUrl ? (
-                        <img src={user.photoUrl} alt="" />
-                    ) : (
-                        <PersonOutlined sx={{ fontSize: 22 }} />
-                    )}
-                </span>
+                <PersonAvatar
+                    photoUrl={user.photoUrl}
+                    name={user.name}
+                    size="md"
+                    aria-hidden
+                    className="sidebar-user-menu__header-avatar"
+                    fallback={<PersonOutlined sx={{ fontSize: 22 }} />}
+                />
                 <div className="sidebar-user-menu__header-text">
                     <strong>{user.name}</strong>
                     {user.email ? <span>{user.email}</span> : null}
@@ -186,13 +188,14 @@ export function SidebarUserMenu() {
                 aria-expanded={open}
                 aria-controls="sidebar-user-menu"
             >
-                <span className="sidebar-user__avatar" aria-hidden="true">
-                    {user.photoUrl ? (
-                        <img src={user.photoUrl} alt="" className="sidebar-user__avatar-img" />
-                    ) : (
-                        <PersonOutlined sx={{ fontSize: 20 }} />
-                    )}
-                </span>
+                <PersonAvatar
+                    photoUrl={user.photoUrl}
+                    name={user.name}
+                    size="sm"
+                    aria-hidden
+                    className="sidebar-user__avatar"
+                    fallback={<PersonOutlined sx={{ fontSize: 20 }} />}
+                />
                 <span className="sidebar-user__trigger-label">{user.name}</span>
                 <ChevronRightOutlined
                     aria-hidden="true"
