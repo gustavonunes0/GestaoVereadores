@@ -784,15 +784,14 @@ textarea {
 .login-card__logo {
     width: auto;
     height: auto;
-    max-width: min(300px, 100%);
-    max-height: 96px;
+    max-width: min(280px, 100%);
+    max-height: 180px;
     object-fit: contain;
     display: block;
-    margin: 0 auto 0.75rem;
-    /* Logo Baturité tem fundo escuro: cards limpos com cantos leves */
-    border-radius: 8px;
-    background: #0a0a0a;
-    padding: 0.5rem 0.75rem;
+    margin: 0 auto 1.5rem;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
 }
 
 .login-card .subtitle {

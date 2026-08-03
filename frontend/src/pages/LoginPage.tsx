@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { FooterBar } from '../components/FooterBar';
 import { isParlamentarianUser } from '../types/auth';
-import logoSrc from '../../assets/logo.png';
+import logoSrc from '../../assets/camara-gest-logo.png';
 
 export function LoginPage() {
     const { user, login } = useAuth();
@@ -67,12 +67,11 @@ export function LoginPage() {
                 <div className="text-center login-card__brand">
                     <img
                         src={logoSrc}
-                        alt="Câmara Municipal de Baturité"
+                        alt="CâmaraGest — Gestão de Mandatos, Poder Legislativo"
                         className="login-card__logo"
-                        width={320}
-                        height={120}
+                        width={280}
+                        height={200}
                     />
-                    <p className="subtitle">CâmaraGest — Sistema de Gestão Legislativa</p>
                 </div>
 
                 <form onSubmit={(e) => void handleSubmit(e)} noValidate>
