@@ -1,0 +1,22 @@
+[
+  { "nome": "Edwin Bezerra Oliveira", "cpf": "01055308326", "senha": "01055308326" },
+  { "nome": "Fernando Cavalcante Ramos", "cpf": "74470086304", "senha": "74470086304" },
+  { "nome": "Francisco Irisvan Costa Queiroz", "cpf": "12517309817", "senha": "12517309817" },
+  { "nome": "Francisco Gilmario da Silva", "cpf": "36611468315", "senha": "36611468315" },
+  { "nome": "Francisco Lucas Germano Monte", "cpf": "06425012382", "senha": "06425012382" },
+  { "nome": "Geovane da Silva Uchôa", "cpf": "05156161332", "senha": "05156161332" },
+  { "nome": "Hermenegildo Barros Ferreira", "cpf": "90621786349", "senha": "90621786349" },
+  { "nome": "Jailson dos Santos Pereira", "cpf": "02576045375", "senha": "02576045375" },
+  { "nome": "Joana Furtado de Figueiredo Neta", "cpf": "62719289353", "senha": "62719289353" },
+  { "nome": "João Paulo Farias Lopes", "cpf": "03642576362", "senha": "03642576362" },
+  { "nome": "Jose Aílo do Carmo Filho", "cpf": "80131905368", "senha": "80131905368" },
+  { "nome": "Lindomar da Silva Soares", "cpf": "24209872334", "senha": "24209872334" },
+  { "nome": "Luciano Gomes Furtado", "cpf": "06845231320", "senha": "06845231320" },
+  { "nome": "Maria do Socorro Araujo Lima", "cpf": "55638295372", "senha": "55638295372" },
+  { "nome": "Maria Raniele Jardim Lima", "cpf": "02040291393", "senha": "02040291393" },
+  { "nome": "Maria Rosenilda Andrade de A.", "cpf": "00917203380", "senha": "00917203380" },
+  { "nome": "Maria Rosilane Damasceno", "cpf": "66365961391", "senha": "66365961391" },
+  { "nome": "Vagne Nogueira Nascimento", "cpf": "75905612315", "senha": "75905612315" },
+  { "nome": "Valdim Lopes de Oliveira", "cpf": "01114044369", "senha": "01114044369" },
+  { "nome": "William Maciel de Souza", "cpf": "02370083352", "senha": "02370083352" }
+]

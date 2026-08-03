@@ -46,7 +46,7 @@ export function JitsiMeetingEmbed({
                     showToast(
                         'warn',
                         'Certificado do Jitsi',
-                        'Abra https://localhost:8444, aceite o certificado e tente novamente.',
+                        `Abra ${jitsiOrigin}, aceite o certificado (se self-signed) e tente novamente.`,
                     );
                 }
             });
@@ -54,7 +54,7 @@ export function JitsiMeetingEmbed({
         return () => {
             cancelled = true;
         };
-    }, [jitsiData.domain, showToast]);
+    }, [jitsiData.domain, jitsiOrigin, showToast]);
 
     useEffect(() => {
         const onChange = () => setTelaCheia(document.fullscreenElement === containerRef.current);

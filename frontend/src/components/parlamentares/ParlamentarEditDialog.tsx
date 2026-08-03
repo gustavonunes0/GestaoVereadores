@@ -221,7 +221,7 @@ export function ParlamentarEditDialog({
                         </div>
                     ) : (
                         <p className="text-color-secondary m-0">
-                            Nenhum usuário vinculado. O acesso ao SIGL não está configurado.
+                            Nenhum usuário vinculado. O acesso ao CâmaraGest não está configurado.
                         </p>
                     )}
                 </div>
@@ -389,7 +389,7 @@ export function ParlamentarEditDialog({
                                     <small className="text-color-secondary">
                                         {statusAcesso === 'ACTIVE'
                                             ? 'Login com CPF e senha.'
-                                            : 'Conta mantida sem acesso ao SIGL.'}
+                                            : 'Conta mantida sem acesso ao CâmaraGest.'}
                                     </small>
                                 </div>
                             )}

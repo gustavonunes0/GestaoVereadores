@@ -6,30 +6,9 @@
     --pwa-banner-max: 36rem;
 }
 
-/* Staff topbar só com shell off-canvas (≤1024). */
-.staff-topbar {
+/* FAB do menu staff (só off-canvas ≤1024; oculto no desktop). */
+.sidebar-menu-fab {
     display: none;
-}
-
-.staff-topbar__brand {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    line-height: 1.2;
-}
-
-.staff-topbar__brand strong {
-    font-size: 0.95rem;
-    color: var(--text-heading);
-}
-
-.staff-topbar__user {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 12rem;
 }
 
 /* Bottom nav — oculto no desktop. */
@@ -142,8 +121,27 @@
 /* ─── ≤1024px — tablet + phablet ────────────────────────────────────────── */
 
 @media (max-width: 1024px) {
-    .staff-topbar {
-        display: flex;
+    .sidebar-menu-fab.sidebar-toggle,
+    .sidebar-menu-fab.p-button,
+    .sidebar-menu-fab.sigl-button {
+        display: inline-flex;
+        position: fixed;
+        top: max(0.75rem, env(safe-area-inset-top, 0px));
+        left: max(0.75rem, env(safe-area-inset-left, 0px));
+        z-index: 100;
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        width: var(--touch-min);
+        height: var(--touch-min);
+        border-radius: 12px;
+        background: #fff !important;
+        border: 1px solid var(--card-border, #eef0f3);
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+    }
+
+    /* Espaço para o FAB não cobrir o conteúdo */
+    .app-shell:not(.parlamentar-app-shell) .content {
+        padding-top: calc(var(--touch-min) + 1.25rem);
     }
 
     .sidebar-item {
@@ -454,10 +452,6 @@
         justify-content: center;
     }
 
-    .staff-topbar__user {
-        max-width: 8rem;
-    }
-
     .mobile-bottom-nav__label {
         font-size: 0.625rem;
     }
@@ -481,8 +475,7 @@
         overscroll-behavior: none;
     }
 
-    .topbar,
-    .staff-topbar {
+    .topbar {
         padding-top: max(10px, env(safe-area-inset-top, 0px));
     }
 
@@ -495,13 +488,16 @@
         padding-top: env(safe-area-inset-top, 0px);
         padding-bottom: env(safe-area-inset-bottom, 0px);
     }
+
+    .sidebar-menu-fab.sidebar-toggle {
+        top: max(0.75rem, env(safe-area-inset-top, 0px));
+    }
 }
 
 /* iOS Safari “Adicionar à Tela de Início” (incl. iPad) */
 @supports (-webkit-touch-callout: none) {
     @media (display-mode: standalone) {
-        .topbar,
-        .staff-topbar {
+        .topbar {
             padding-top: max(12px, env(safe-area-inset-top, 0px));
         }
     }

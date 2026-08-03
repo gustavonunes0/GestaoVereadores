@@ -327,7 +327,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                             <small className="text-color-secondary">
                                 {statusAcesso === 'ACTIVE'
                                     ? 'Login com CPF e senha.'
-                                    : 'Conta criada sem acesso ao SIGL.'}
+                                    : 'Conta criada sem acesso ao CâmaraGest.'}
                             </small>
                         </div>
                     </div>

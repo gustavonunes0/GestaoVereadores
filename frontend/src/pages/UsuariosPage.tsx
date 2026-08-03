@@ -91,7 +91,7 @@ export function UsuariosPage() {
             />
 
             <p className="page-context">
-                Cadastre funcionários da câmara com CPF e senha para acesso ao SIGL.
+                Cadastre funcionários da câmara com CPF e senha para acesso ao CâmaraGest.
             </p>
 
             <section aria-label="Lista de usuários" className="pt-4">

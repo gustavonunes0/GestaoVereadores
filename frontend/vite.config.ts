@@ -27,10 +27,10 @@ export default defineConfig({
             ],
             manifest: {
                 id: '/',
-                name: 'SIGL — Gestão Vereadores',
-                short_name: 'SIGL',
+                name: 'CâmaraGest — Gestão Legislativa',
+                short_name: 'CâmaraGest',
                 description:
-                    'Sistema Integrado de Gestão Legislativa para câmaras municipais — celular, tablet e desktop.',
+                    'CâmaraGest — gestão legislativa para câmaras municipais — celular, tablet e desktop.',
                 lang: 'pt-BR',
                 dir: 'ltr',
                 start_url: '/',

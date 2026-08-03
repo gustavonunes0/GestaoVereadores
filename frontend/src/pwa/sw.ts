@@ -27,7 +27,7 @@ type PushPayload = {
 
 self.addEventListener('push', (event) => {
     let payload: PushPayload = {
-        title: 'SIGL',
+        title: 'CâmaraGest',
         body: 'Nova atualização na sessão plenária',
         url: '/parlamentar/sessoes',
     };
@@ -41,7 +41,7 @@ self.addEventListener('push', (event) => {
         if (text) payload.body = text;
     }
 
-    const title = payload.title ?? 'SIGL';
+    const title = payload.title ?? 'CâmaraGest';
     const options: NotificationOptions = {
         body: payload.body,
         icon: '/icons/icon-192.png',

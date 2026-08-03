@@ -102,12 +102,12 @@ export function PwaInstallBanner() {
                 <div className="pwa-banner__text">
                     {showIosHint ? (
                         <>
-                            <strong>Instale o SIGL</strong>
+                            <strong>Instale o CâmaraGest</strong>
                             <span>{iosHint}</span>
                         </>
                     ) : (
                         <>
-                            <strong>Instale o SIGL</strong>
+                            <strong>Instale o CâmaraGest</strong>
                             <span>{androidHint}</span>
                         </>
                     )}

@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { FooterBar } from '../components/FooterBar';
 import { isParlamentarianUser } from '../types/auth';
+import logoSrc from '../../assets/logo.png';
 
 export function LoginPage() {
     const { user, login } = useAuth();
@@ -63,9 +64,15 @@ export function LoginPage() {
     return (
         <main className="login-page">
             <div className="login-card">
-                <div className="text-center">
-                    <h1>SIGL</h1>
-                    <p className="subtitle">Sistema de Gestão Legislativa</p>
+                <div className="text-center login-card__brand">
+                    <img
+                        src={logoSrc}
+                        alt="Câmara Municipal de Baturité"
+                        className="login-card__logo"
+                        width={320}
+                        height={120}
+                    />
+                    <p className="subtitle">CâmaraGest — Sistema de Gestão Legislativa</p>
                 </div>
 
                 <form onSubmit={(e) => void handleSubmit(e)} noValidate>

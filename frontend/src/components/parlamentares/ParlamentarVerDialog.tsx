@@ -155,7 +155,7 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
                                 </div>
                             ) : (
                                 <p className="text-color-secondary m-0">
-                                    Nenhum usuário vinculado — parlamentar sem acesso ao SIGL.
+                                    Nenhum usuário vinculado — parlamentar sem acesso ao CâmaraGest.
                                 </p>
                             )}
                         </div>
