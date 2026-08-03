@@ -102,7 +102,6 @@ export function ParlamentaresPage() {
             <PageHeader
                 icon={MODULE_ICONS.parlamentares}
                 title="Parlamentares"
-                subtitle="Vereadores e deputados vinculados ao tenant."
                 actions={
                     canEdit ? (
                         <Button
