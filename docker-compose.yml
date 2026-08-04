@@ -23,6 +23,9 @@ services:
     restart: unless-stopped
     ports:
       - '3000:3000'
+    volumes:
+      # PDFs / anexos persistem entre recreates da API
+      - api-uploads:/app/uploads
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/gestao_vereadores?schema=public
       DIRECT_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/gestao_vereadores?schema=public
@@ -180,6 +183,7 @@ services:
 
 volumes:
   pgdata:
+  api-uploads:
   jitsi-web-config:
   jitsi-web-crontabs:
   jitsi-transcripts:

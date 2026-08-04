@@ -7,6 +7,10 @@ uploads/
 *.tsbuildinfo
 backend/src/identity/
 
+# Scripts locais / ops (não versionar)
+backend/scripts/
+scripts/
+
 .CLAUDE.md
 .backend/docs/
 

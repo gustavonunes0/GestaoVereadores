@@ -7,11 +7,11 @@ import {
 import { MateriaRepository } from '../../domain/repositories/materia.repository';
 import { LegislativeMatterDomainService } from '../../domain/services/legislative-matter-domain.service';
 import { MATERIA_REPOSITORY } from '../../materias.tokens';
-import { MatterNotFoundError } from '../errors/matter.errors';
 import {
     MateriaPrismaPayload,
     MatterViewModel,
 } from '../view-models/matter.view-model';
+import { rethrowIfMateriaNotFound } from './rethrow-if-materia-not-found';
 
 @Injectable()
 export class GetMatterWorkflowUseCase {
@@ -28,8 +28,8 @@ export class GetMatterWorkflowUseCase {
         let materia: unknown;
         try {
             materia = await this.repository.findOne(tenantId, id);
-        } catch {
-            throw new MatterNotFoundError();
+        } catch (error) {
+            rethrowIfMateriaNotFound(error);
         }
 
         const data = materia as MateriaPrismaPayload;

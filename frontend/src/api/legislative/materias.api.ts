@@ -100,12 +100,18 @@ export interface Materia {
             ordem: number;
             type?: 'parliamentarian' | 'tenant_partner';
             label?: string;
+            photoUrl?: string | null;
             parliamentarian?: {
                 id: string;
                 parliamentaryName: string;
                 photoUrl?: string | null;
             };
-            tenantPartner?: { id: string; nome: string; tipoAutorId?: string };
+            tenantPartner?: {
+                id: string;
+                nome: string;
+                tipoAutorId?: string;
+                photoUrl?: string | null;
+            };
         }>;
     };
     statusTramitacao?: { id: string; nome: string } | null;

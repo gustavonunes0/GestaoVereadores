@@ -1,6 +1,7 @@
 import PersonOutlined from '@mui/icons-material/PersonOutlined';
 import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined';
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
+import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import type { Materia } from '../../api/legislative/materias.api';
@@ -25,6 +26,7 @@ interface Props {
     canEdit?: boolean;
     canDelete?: boolean;
     onVer?: () => void;
+    onTextoOriginal?: () => void;
     onEditar?: () => void;
     onDeletar?: () => void;
 }
@@ -95,6 +97,7 @@ export function MateriaListCard({
     canEdit = false,
     canDelete = false,
     onVer,
+    onTextoOriginal,
     onEditar,
     onDeletar,
 }: Props) {
@@ -108,6 +111,7 @@ export function MateriaListCard({
         ? formatDatePt(materia.ultimaTramitacao.data)
         : '—';
     const status = resolveMateriaStatus(materia.status);
+    const temTextoOriginal = Boolean(materia.textoOriginalUrl?.trim());
 
     return (
         <article
@@ -139,8 +143,20 @@ export function MateriaListCard({
                                 onClick={onVer}
                                 className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#f0f4fa] hover:text-[#2563a8] transition-colors"
                                 aria-label="Ver matéria"
+                                title="Ver detalhes"
                             >
                                 <VisibilityOutlined sx={{ fontSize: 17 }} aria-hidden />
+                            </button>
+                        ) : null}
+                        {temTextoOriginal && onTextoOriginal ? (
+                            <button
+                                type="button"
+                                onClick={onTextoOriginal}
+                                className="w-[30px] h-[30px] flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#f0f4fa] hover:text-[#2563a8] transition-colors"
+                                aria-label="Texto original"
+                                title="Texto original"
+                            >
+                                <DescriptionOutlined sx={{ fontSize: 17 }} aria-hidden />
                             </button>
                         ) : null}
                         {canEdit && onEditar ? (

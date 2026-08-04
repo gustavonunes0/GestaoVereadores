@@ -118,23 +118,41 @@ export function TenantPartnerEditDialog({ partner, onClose, onSaved }: Props) {
         }
     }
 
-    async function prepareFotoPerfil(): Promise<string | undefined> {
+    async function prepareFotoPerfil(
+        mode: 'create' | 'edit',
+    ): Promise<string | undefined | null> {
         if (userPhotoFile) {
             if (userPhotoFile.size > MAX_PHOTO_BYTES) {
                 showApiError(new Error('A foto deve ter no máximo 2 MB.'));
-                return undefined;
+                return null;
             }
-            return preparePhotoDataUrl(userPhotoFile);
+            try {
+                return await preparePhotoDataUrl(userPhotoFile);
+            } catch (err) {
+                showApiError(
+                    err instanceof Error ? err : new Error('Falha ao processar a foto.'),
+                );
+                return null;
+            }
         }
-        return userPhotoUrl.trim() || undefined;
+        if (mode === 'edit' && userPhotoUrl.trim()) {
+            // Sem novo arquivo — mantém a URL já salva (não reenviar data URL enorme)
+            return undefined;
+        }
+        if (mode === 'edit' && !userPhotoUrl.trim()) {
+            const hadPrevious = Boolean(detail?.usuario?.fotoPerfil);
+            // Campo limpo na edição após ter foto
+            return hadPrevious && !userPhotoFile ? '' : undefined;
+        }
+        return undefined;
     }
 
     async function handleProvisionUser() {
         if (!podeVincular) return;
         setLoadingUser(true);
         try {
-            const fotoPerfil = await prepareFotoPerfil();
-            if (userPhotoFile && !fotoPerfil) {
+            const fotoPerfil = await prepareFotoPerfil('create');
+            if (fotoPerfil === null) {
                 setLoadingUser(false);
                 return;
             }
@@ -159,8 +177,8 @@ export function TenantPartnerEditDialog({ partner, onClose, onSaved }: Props) {
         if (!podeSalvarUsuario) return;
         setLoadingUser(true);
         try {
-            const fotoPerfil = await prepareFotoPerfil();
-            if (userPhotoFile && !fotoPerfil) {
+            const fotoPerfil = await prepareFotoPerfil('edit');
+            if (fotoPerfil === null) {
                 setLoadingUser(false);
                 return;
             }
@@ -237,9 +255,14 @@ export function TenantPartnerEditDialog({ partner, onClose, onSaved }: Props) {
                         value={userPhotoFile ?? (userPhotoUrl || null)}
                         onChange={(file) => {
                             setUserPhotoFile(file);
-                            if (file) setUserPhotoUrl('');
+                            // null = remover/troca limpa a URL anterior
+                            setUserPhotoUrl('');
                         }}
                     />
+                    <small className="text-color-secondary">
+                        JPEG, PNG ou WebP · máx. 2 MB. Aparece quando o parceiro é
+                        autor ou coautor de matérias.
+                    </small>
                 </div>
                 <div className="sigl-filtro-campo sigl-col-full flex gap-2 align-items-end">
                     {mode === 'edit' ? (

@@ -32,18 +32,19 @@ export function ParlamentarMateriasPage() {
         useState<TextoOriginalPreview | null>(null);
 
     function handleVer(materia: Materia) {
-        const url = materia.textoOriginalUrl?.trim();
-        if (url) {
-            const resolved = resolveMateriaTextoOriginalUrl(url);
-            const isPdf = resolved.toLowerCase().includes('.pdf');
-            setPreviewTextoOriginal({
-                src: resolved,
-                fileName: `${resolveMateriaTitulo(materia)}${isPdf ? '.pdf' : ''}`,
-                mimeType: isPdf ? 'application/pdf' : undefined,
-            });
-            return;
-        }
         setDialogVerId(materia.id);
+    }
+
+    function handleTextoOriginal(materia: Materia) {
+        const url = materia.textoOriginalUrl?.trim();
+        if (!url) return;
+        const resolved = resolveMateriaTextoOriginalUrl(url);
+        const isPdf = resolved.toLowerCase().includes('.pdf');
+        setPreviewTextoOriginal({
+            src: resolved,
+            fileName: `${resolveMateriaTitulo(materia)}${isPdf ? '.pdf' : ''}`,
+            mimeType: isPdf ? 'application/pdf' : undefined,
+        });
     }
 
     const buscar = useCallback(async () => {
@@ -73,6 +74,7 @@ export function ParlamentarMateriasPage() {
                 <MateriaListCard
                     materia={row}
                     onVer={() => handleVer(row)}
+                    onTextoOriginal={() => handleTextoOriginal(row)}
                 />
             )}
         />

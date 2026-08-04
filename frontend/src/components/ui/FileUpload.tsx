@@ -6,10 +6,12 @@ import SwapHorizOutlined from '@mui/icons-material/SwapHorizOutlined';
 import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import {
+    acceptHintLabel,
     formatBytes,
     getFileName,
     getFileTypeLabel,
     getMimeType,
+    isImageValue,
 } from './file-utils';
 import { PreviewImg } from './PreviewImg';
 
@@ -40,8 +42,10 @@ export function FileUpload({
     const objectUrlRef = useRef<string | null>(null);
     const [dragging, setDragging] = useState(false);
     const [preview, setPreview] = useState(false);
+    const [thumbSrc, setThumbSrc] = useState<string | null>(null);
 
     const hasFile = value != null && !(typeof value === 'string' && value === '');
+    const hints = acceptHintLabel(accept);
 
     useEffect(() => {
         return () => {
@@ -51,6 +55,28 @@ export function FileUpload({
             }
         };
     }, []);
+
+    useEffect(() => {
+        if (objectUrlRef.current) {
+            URL.revokeObjectURL(objectUrlRef.current);
+            objectUrlRef.current = null;
+        }
+        if (!hasFile || !value) {
+            setThumbSrc(null);
+            return;
+        }
+        if (typeof value === 'string' && isImageValue(value, accept)) {
+            setThumbSrc(value);
+            return;
+        }
+        if (value instanceof File && value.type.startsWith('image/')) {
+            const url = URL.createObjectURL(value);
+            objectUrlRef.current = url;
+            setThumbSrc(url);
+            return;
+        }
+        setThumbSrc(null);
+    }, [value, hasFile, accept]);
 
     function handleFiles(files: FileList | null) {
         const file = files?.[0] ?? null;
@@ -74,7 +100,7 @@ export function FileUpload({
     function resolvePreviewSrc(): string {
         if (!value) return '';
         if (typeof value === 'string') return value;
-        if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+        if (objectUrlRef.current) return objectUrlRef.current;
         const url = URL.createObjectURL(value);
         objectUrlRef.current = url;
         return url;
@@ -119,11 +145,17 @@ export function FileUpload({
                     .join(' ')}
             >
                 <div
-                    className={`flex items-center justify-center w-9 h-9 rounded-[7px] flex-shrink-0 ${
+                    className={`flex items-center justify-center w-9 h-9 rounded-[7px] flex-shrink-0 overflow-hidden ${
                         hasFile ? 'bg-[#e8edf5]' : 'bg-[#f5f6f8]'
                     }`}
                 >
-                    {hasFile ? (
+                    {hasFile && thumbSrc ? (
+                        <img
+                            src={thumbSrc}
+                            alt=""
+                            className="w-full h-full object-cover"
+                        />
+                    ) : hasFile ? (
                         <InsertDriveFileOutlined
                             sx={{ fontSize: 20, color: '#2563a8' }}
                             aria-hidden="true"
@@ -162,7 +194,7 @@ export function FileUpload({
                                 )}
                             </span>
                             <span className="text-[11px] text-[#b0bac8]">
-                                PDF, DOC ou DOCX
+                                {hints.long}
                             </span>
                         </>
                     )}
@@ -203,7 +235,7 @@ export function FileUpload({
                     </div>
                 ) : (
                     <span className="text-[10px] font-medium text-[#8492a6] bg-[#f0f4fa] px-2 py-0.5 rounded-[4px] flex-shrink-0">
-                        PDF / DOC
+                        {hints.short}
                     </span>
                 )}
 

@@ -37,6 +37,19 @@ export const materiaParliamentarianSelect = {
     },
 } as const;
 
+/** Usuário vinculado ao parceiro — nome + foto de perfil nas matérias. */
+export const materiaTenantPartnerUserSelect = {
+    select: {
+        user: {
+            select: {
+                firstName: true,
+                lastName: true,
+                profilePicture: true,
+            },
+        },
+    },
+} as const;
+
 export const materiaRelationsInclude = {
     tipo: true,
     ano: true,
@@ -50,13 +63,7 @@ export const materiaRelationsInclude = {
                     nome: true,
                     cargo: true,
                     instituicao: true,
-                    tenantPartnerUser: {
-                        select: {
-                            user: {
-                                select: { firstName: true, lastName: true },
-                            },
-                        },
-                    },
+                    tenantPartnerUser: materiaTenantPartnerUserSelect,
                 },
             },
             tipoAutor: { select: { id: true, nome: true } },
@@ -82,13 +89,7 @@ export const materiaRelationsInclude = {
                     id: true,
                     nome: true,
                     tipoAutorId: true,
-                    tenantPartnerUser: {
-                        select: {
-                            user: {
-                                select: { firstName: true, lastName: true },
-                            },
-                        },
-                    },
+                    tenantPartnerUser: materiaTenantPartnerUserSelect,
                 },
             },
         },

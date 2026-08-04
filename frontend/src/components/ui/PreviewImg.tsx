@@ -13,6 +13,7 @@ export interface PreviewImgProps {
 
 export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps) {
     const [imgError, setImgError] = useState(false);
+    const [pdfError, setPdfError] = useState(false);
     const isPdf =
         mimeType === 'application/pdf' || src.toLowerCase().includes('.pdf');
 
@@ -26,7 +27,44 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
 
     useEffect(() => {
         setImgError(false);
+        setPdfError(false);
     }, [src]);
+
+    useEffect(() => {
+        if (!isPdf || !src) return;
+
+        const controller = new AbortController();
+        let cancelled = false;
+
+        void (async () => {
+            try {
+                const res = await fetch(src, {
+                    method: 'GET',
+                    signal: controller.signal,
+                    credentials: 'include',
+                });
+                if (cancelled) return;
+                if (!res.ok) {
+                    setPdfError(true);
+                    return;
+                }
+                const contentType = res.headers.get('content-type') ?? '';
+                if (
+                    contentType.includes('application/json') ||
+                    contentType.includes('text/html')
+                ) {
+                    setPdfError(true);
+                }
+            } catch {
+                if (!cancelled) setPdfError(true);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+            controller.abort();
+        };
+    }, [isPdf, src]);
 
     return (
         <div
@@ -63,25 +101,29 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
                         {fileName ?? (isPdf ? 'documento.pdf' : 'imagem')}
                     </span>
                     <div className="flex items-center gap-1">
-                        <a
-                            href={src}
-                            download={fileName}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-8 h-8 flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#f5f6f8] hover:text-[#374151] transition-colors"
-                            aria-label="Baixar arquivo"
-                        >
-                            <DownloadOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
-                        </a>
-                        <a
-                            href={src}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="w-8 h-8 flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#f5f6f8] hover:text-[#374151] transition-colors"
-                            aria-label="Abrir em nova aba"
-                        >
-                            <OpenInNewOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
-                        </a>
+                        {!pdfError && !imgError ? (
+                            <>
+                                <a
+                                    href={src}
+                                    download={fileName}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="w-8 h-8 flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#f5f6f8] hover:text-[#374151] transition-colors"
+                                    aria-label="Baixar arquivo"
+                                >
+                                    <DownloadOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
+                                </a>
+                                <a
+                                    href={src}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="w-8 h-8 flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#f5f6f8] hover:text-[#374151] transition-colors"
+                                    aria-label="Abrir em nova aba"
+                                >
+                                    <OpenInNewOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
+                                </a>
+                            </>
+                        ) : null}
                         <button
                             type="button"
                             onClick={onClose}
@@ -97,7 +139,21 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
                     className="flex items-center justify-center bg-[#f5f6f8] overflow-hidden"
                     style={{ minHeight: '400px', maxHeight: 'calc(90vh - 56px)' }}
                 >
-                    {isPdf ? (
+                    {isPdf && pdfError ? (
+                        <div className="flex flex-col items-center gap-3 py-16 px-6 text-center text-[#6b7280] max-w-md">
+                            <BrokenImageOutlined
+                                sx={{ fontSize: 48, color: '#dde2ea' }}
+                                aria-hidden="true"
+                            />
+                            <span className="text-[14px] font-medium text-[#1c2f4a]">
+                                Arquivo não encontrado
+                            </span>
+                            <span className="text-[13px]">
+                                O texto original não está disponível no servidor. Peça o
+                                reenvio do PDF ou confira o armazenamento de uploads.
+                            </span>
+                        </div>
+                    ) : isPdf ? (
                         <iframe
                             src={src}
                             title={fileName}

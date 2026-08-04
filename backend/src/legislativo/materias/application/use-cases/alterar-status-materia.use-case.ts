@@ -6,12 +6,12 @@ import { MATERIA_REPOSITORY } from '../../materias.tokens';
 import { AlterarStatusMateriaDto } from '../dto/alterar-status-materia.dto';
 import {
     MatterInvalidStatusTransitionError,
-    MatterNotFoundError,
 } from '../errors/matter.errors';
 import {
     MateriaPrismaPayload,
     MatterViewModel,
 } from '../view-models/matter.view-model';
+import { rethrowIfMateriaNotFound } from './rethrow-if-materia-not-found';
 
 @Injectable()
 export class AlterarStatusMateriaUseCase {
@@ -28,8 +28,8 @@ export class AlterarStatusMateriaUseCase {
         let current: unknown;
         try {
             current = await this.repository.findOne(tenantId, id);
-        } catch {
-            throw new MatterNotFoundError();
+        } catch (error) {
+            rethrowIfMateriaNotFound(error);
         }
 
         const materia = current as MateriaPrismaPayload;

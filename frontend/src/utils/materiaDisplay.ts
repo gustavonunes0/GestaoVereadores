@@ -58,12 +58,22 @@ export function resolveMateriaTextoOriginalUrl(url: string): string {
         return trimmed;
     }
 
+    // Paths da API: /uploads/... (com ou sem /api prefix legado)
     const path = trimmed.replace(/^\/api\/uploads\//, '/uploads/');
+    if (!path.startsWith('/uploads/')) {
+        return path;
+    }
+
     const apiBase = (import.meta.env.VITE_API_URL as string | undefined)?.replace(
         /\/$/,
         '',
     );
-    if (apiBase && path.startsWith('/uploads/')) {
+    // Docker/nginx: VITE_API_URL=/api → mesma origem; nginx faz proxy de /uploads/
+    if (!apiBase || apiBase === '/api') {
+        return path;
+    }
+    // API em outro host (ex.: https://apibaturite.../api)
+    if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
         const origin = apiBase.replace(/\/api$/, '');
         return `${origin}${path}`;
     }
@@ -172,7 +182,10 @@ export function resolveMateriaAutores(materia: Materia): MateriaAutorResumo[] {
             pushAutor({
                 id: coauthor.tenantPartner.id,
                 nome: coauthor.label ?? coauthor.tenantPartner.nome,
-                photoUrl: null,
+                photoUrl:
+                    coauthor.photoUrl ??
+                    coauthor.tenantPartner.photoUrl ??
+                    null,
                 tipo: 'tenant_partner',
                 subtitulo: coauthor.tenantPartner.nome,
             });

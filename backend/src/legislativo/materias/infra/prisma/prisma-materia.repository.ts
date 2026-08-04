@@ -579,7 +579,7 @@ export class PrismaMateriaRepository implements MateriaRepository {
         await this.findOne(tenantId, id);
         return this.prisma.materia.update({
             where: { id },
-            data: { isRemoved: true },
+            data: { isRemoved: true, removedAt: new Date() },
         });
     }
 

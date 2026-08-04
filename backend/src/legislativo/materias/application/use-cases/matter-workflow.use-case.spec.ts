@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { StatusMateria } from '@prisma/client';
 import { MatterTramitationAction } from '../../domain/enums/matter-tramitation-action.enum';
 import { CreateMateriaUseCase } from './create-materia.use-case';
@@ -94,7 +95,9 @@ describe('ExecuteMatterTramitationUseCase', () => {
 
     it('bloqueia matéria inexistente', async () => {
         const repository = buildMateriaRepositoryMock();
-        repository.findOne.mockRejectedValue(new Error('not found'));
+        repository.findOne.mockRejectedValue(
+            new NotFoundException('Matéria não encontrada'),
+        );
 
         const useCase = new ExecuteMatterTramitationUseCase(
             repository as never,
@@ -183,6 +186,7 @@ describe('MatterViewModel', () => {
 
         const http = MatterViewModel.toHttp({
             ...materiaBase,
+            autorId: 'autor-1',
             autor: { id: 'autor-1', nome: 'Executivo' },
             relator: {
                 id: 'parl-1',

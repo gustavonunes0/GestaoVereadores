@@ -2,7 +2,6 @@ import {
     BadRequestException,
     Inject,
     Injectable,
-    NotFoundException,
 } from '@nestjs/common';
 import { MatterStatus } from '../../domain/enums/matter-status.enum';
 import { MateriaRepository } from '../../domain/repositories/materia.repository';
@@ -12,6 +11,7 @@ import {
     MateriaPrismaPayload,
     MatterViewModel,
 } from '../view-models/matter.view-model';
+import { rethrowIfMateriaNotFound } from './rethrow-if-materia-not-found';
 
 const DESPACHO_OBRIGATORIO: MatterStatus[] = [
     MatterStatus.EM_TRAMITACAO,
@@ -38,8 +38,8 @@ export class TramitarMateriaUseCase {
                 tenantId,
                 materiaId,
             )) as MateriaPrismaPayload;
-        } catch {
-            throw new NotFoundException('Matéria não encontrada');
+        } catch (error) {
+            rethrowIfMateriaNotFound(error);
         }
 
         const statusAtual = materia.status as MatterStatus;

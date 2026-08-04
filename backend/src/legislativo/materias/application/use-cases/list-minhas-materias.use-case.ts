@@ -35,17 +35,69 @@ export class ListMinhasMateriasUseCase {
                 include: {
                     tipo: true,
                     ano: true,
-                    autor: true,
+                    autor: {
+                        include: {
+                            tenantPartner: {
+                                select: {
+                                    id: true,
+                                    nome: true,
+                                    cargo: true,
+                                    instituicao: true,
+                                    tenantPartnerUser: {
+                                        select: {
+                                            user: {
+                                                select: {
+                                                    firstName: true,
+                                                    lastName: true,
+                                                    profilePicture: true,
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
                     authorParliamentarian: {
-                        include: { parliamentarianUser: { include: { politicalParty: true } } },
+                        include: {
+                            parliamentarianUser: {
+                                include: { politicalParty: true },
+                            },
+                        },
                     },
                     rapporteurParliamentarian: {
-                        include: { parliamentarianUser: { include: { politicalParty: true } } },
+                        include: {
+                            parliamentarianUser: {
+                                include: { politicalParty: true },
+                            },
+                        },
                     },
                     matterCoauthors: {
                         include: {
                             parliamentarian: {
-                                include: { parliamentarianUser: { include: { politicalParty: true } } },
+                                include: {
+                                    parliamentarianUser: {
+                                        include: { politicalParty: true },
+                                    },
+                                },
+                            },
+                            tenantPartner: {
+                                select: {
+                                    id: true,
+                                    nome: true,
+                                    tipoAutorId: true,
+                                    tenantPartnerUser: {
+                                        select: {
+                                            user: {
+                                                select: {
+                                                    firstName: true,
+                                                    lastName: true,
+                                                    profilePicture: true,
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
                             },
                         },
                     },

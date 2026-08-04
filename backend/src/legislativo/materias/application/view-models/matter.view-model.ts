@@ -80,15 +80,28 @@ function buildIdentificacao(data: MateriaPrismaPayload): string {
     return tipoLabel;
 }
 
+type PartnerLinkedUser = {
+    firstName?: string | null;
+    lastName?: string | null;
+    profilePicture?: string | null;
+};
+
 type TenantPartnerAutorResumo = {
     id: string;
     nome: string;
     cargo?: string | null;
     instituicao?: string | null;
     tenantPartnerUser?: {
-        user?: { firstName?: string | null; lastName?: string | null } | null;
+        user?: PartnerLinkedUser | null;
     } | null;
 };
+
+function partnerUserPhotoUrl(
+    user?: PartnerLinkedUser | null,
+): string | null {
+    const url = user?.profilePicture?.trim();
+    return url || null;
+}
 
 function mapTenantPartnerAutor(partner: TenantPartnerAutorResumo) {
     const subtitulo = [partner.cargo, partner.instituicao]
@@ -101,7 +114,7 @@ function mapTenantPartnerAutor(partner: TenantPartnerAutorResumo) {
         tenantPartnerId: partner.id,
         nome: formatLinkedUserName(linkedUser) ?? partner.nome,
         instituicaoNome: partner.nome,
-        photoUrl: null,
+        photoUrl: partnerUserPhotoUrl(linkedUser),
         subtitulo: subtitulo || partner.nome || null,
     };
 }
@@ -198,7 +211,7 @@ export type MateriaPrismaPayload = {
             nome: string;
             tipoAutorId?: string;
             tenantPartnerUser?: {
-                user?: { firstName?: string | null; lastName?: string | null } | null;
+                user?: PartnerLinkedUser | null;
             } | null;
         } | null;
     }>;
@@ -242,7 +255,7 @@ export class MatterViewModel {
             ementa: data.ementa,
             status: {
                 value: status,
-                label: MATTER_STATUS_LABELS[status],
+                label: MATTER_STATUS_LABELS[status] ?? String(status),
             },
             emTramitacao: data.emTramitacao,
             dataProtocolo: data.dataProtocolo ?? null,
@@ -295,6 +308,7 @@ export class MatterViewModel {
                     }
                     const partner = item.tenantPartner;
                     if (partner) {
+                        const linkedUser = partner.tenantPartnerUser?.user;
                         return {
                             id: item.id,
                             ordem: item.ordem,
@@ -302,11 +316,12 @@ export class MatterViewModel {
                             tenantPartner: {
                                 id: partner.id,
                                 nome: partner.nome,
+                                photoUrl: partnerUserPhotoUrl(linkedUser),
                             },
+                            photoUrl: partnerUserPhotoUrl(linkedUser),
                             label:
-                                formatLinkedUserName(
-                                    partner.tenantPartnerUser?.user,
-                                ) ?? partner.nome,
+                                formatLinkedUserName(linkedUser) ??
+                                partner.nome,
                         };
                     }
                     return {

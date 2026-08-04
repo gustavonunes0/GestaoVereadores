@@ -4,14 +4,12 @@ import { MateriaRepository } from '../../domain/repositories/materia.repository'
 import { MatterTramitationDomainService } from '../../domain/services/matter-tramitation-domain.service';
 import { MATERIA_REPOSITORY } from '../../materias.tokens';
 import { ExecutarTramitacaoMateriaDto } from '../dto/matter-tramitation.dto';
-import {
-    MatterNotFoundError,
-    MatterTramitationActionNotAllowedError,
-} from '../errors/matter.errors';
+import { MatterTramitationActionNotAllowedError } from '../errors/matter.errors';
 import {
     MateriaPrismaPayload,
     MatterViewModel,
 } from '../view-models/matter.view-model';
+import { rethrowIfMateriaNotFound } from './rethrow-if-materia-not-found';
 
 @Injectable()
 export class ExecuteMatterTramitationUseCase {
@@ -33,8 +31,8 @@ export class ExecuteMatterTramitationUseCase {
                 tenantId,
                 matterId,
             )) as MateriaPrismaPayload;
-        } catch {
-            throw new MatterNotFoundError();
+        } catch (error) {
+            rethrowIfMateriaNotFound(error);
         }
 
         const status = current.status as MatterStatus;
