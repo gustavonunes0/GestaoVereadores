@@ -7,9 +7,13 @@ uploads/
 *.tsbuildinfo
 backend/src/identity/
 
-# Scripts locais / ops (não versionar)
-backend/scripts/
-scripts/
+# Ops / diagnóstico em backend/scripts — sem versionar
+# (exceto wrappers Prisma usados em npm run build / Vercel)
+backend/scripts/**
+!backend/scripts/prisma-generate.cjs
+!backend/scripts/prisma-migrate-deploy.cjs
+!backend/scripts/prisma-deploy-prod.cjs
+!backend/scripts/resolve-vercel-env.cjs
 
 .CLAUDE.md
 .backend/docs/
