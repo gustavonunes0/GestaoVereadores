@@ -39,6 +39,10 @@ services:
       JITSI_APP_ID: ${JWT_APP_ID:-gestao_vereadores}
       JITSI_APP_SECRET: ${JWT_APP_SECRET:-troque-por-um-segredo-forte}
       JITSI_SUB: ${JITSI_SUB:-*}
+      # --- Web Push (PWA) — defina no .env da raiz / VPS ---
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:contato@sigl.app}
     depends_on:
       postgres:
         condition: service_healthy
