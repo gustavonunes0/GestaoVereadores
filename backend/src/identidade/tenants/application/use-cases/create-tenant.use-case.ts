@@ -26,6 +26,19 @@ export class CreateTenantUseCase {
             logo: dto.logo,
             status: dto.status,
             settings: dto.settings,
+            tradeName: dto.tradeName,
+            city: dto.city,
+            state: dto.state,
+            contactName: dto.contactName,
+            contactEmail: dto.contactEmail,
+            contactPhone: dto.contactPhone,
+            plan: dto.plan,
+            contractStartAt: dto.contractStartAt ?? null,
+            contractEndAt: dto.contractEndAt ?? null,
+            monthlyFeeCents: dto.monthlyFeeCents,
+            billingDay: dto.billingDay,
+            maxParliamentarians: dto.maxParliamentarians,
+            notes: dto.notes,
         });
 
         const createdTenant = await this.tenantRepository.create(tenant);

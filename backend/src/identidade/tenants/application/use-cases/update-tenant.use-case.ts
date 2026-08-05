@@ -35,6 +35,19 @@ export class UpdateTenantUseCase {
             logo: dto.logo,
             status: dto.status,
             settings: dto.settings,
+            tradeName: dto.tradeName,
+            city: dto.city,
+            state: dto.state,
+            contactName: dto.contactName,
+            contactEmail: dto.contactEmail,
+            contactPhone: dto.contactPhone,
+            plan: dto.plan,
+            contractStartAt: dto.contractStartAt,
+            contractEndAt: dto.contractEndAt,
+            monthlyFeeCents: dto.monthlyFeeCents,
+            billingDay: dto.billingDay,
+            maxParliamentarians: dto.maxParliamentarians,
+            notes: dto.notes,
         });
 
         const updatedTenant = await this.tenantRepository.update(tenant);

@@ -132,4 +132,12 @@ export const API_PATHS = {
     // ── Push notifications (PWA) ──────────────────────────────────────────
     pushVapidPublicKey: '/notifications/push/vapid-public-key',
     pushSubscriptions:  '/notifications/push/subscriptions',
+
+    // ── Super Admin (plataforma) ──────────────────────────────────────────
+    tenants:            '/tenants',
+    tenantsProvision:   '/tenants/provision',
+    tenantById:         (id: string) => `/tenants/${id}`,
+    tenantPayments:     (id: string) => `/tenants/${id}/payments`,
+    tenantPaymentById:  (id: string, paymentId: string) =>
+        `/tenants/${id}/payments/${paymentId}`,
 } as const;

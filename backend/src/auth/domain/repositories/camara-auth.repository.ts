@@ -10,6 +10,7 @@ export type CamaraUserProfile = {
     firstName: string;
     lastName: string;
     cpf: string | null;
+    isPlatformAdmin: boolean;
 };
 
 export abstract class CamaraAuthRepository {

@@ -7,7 +7,7 @@ import { ROUTES } from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { FooterBar } from '../components/FooterBar';
-import { isParlamentarianUser } from '../types/auth';
+import { isParlamentarianUser, isPlatformUser } from '../types/auth';
 import logoSrc from '../../assets/camara-gest-logo.png';
 
 export function LoginPage() {
@@ -20,6 +20,9 @@ export function LoginPage() {
     const [loading, setLoading] = useState(false);
 
     if (user) {
+        if (isPlatformUser(user)) {
+            return <Navigate to={ROUTES.platform.tenants} replace />;
+        }
         return (
             <Navigate
                 to={isParlamentarianUser(user) ? ROUTES.parlamentar.perfil : ROUTES.dashboard}
@@ -48,7 +51,9 @@ export function LoginPage() {
             const stored = localStorage.getItem('user');
             if (stored) {
                 const parsed = JSON.parse(stored) as { sessionType?: string };
-                if (parsed.sessionType === 'parliamentarian') {
+                if (parsed.sessionType === 'platform') {
+                    navigate(ROUTES.platform.tenants, { replace: true });
+                } else if (parsed.sessionType === 'parliamentarian') {
                     navigate(ROUTES.parlamentar.perfil, { replace: true });
                 } else {
                     navigate(ROUTES.dashboard, { replace: true });

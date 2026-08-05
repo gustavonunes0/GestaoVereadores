@@ -16,6 +16,7 @@ import {
 } from '../../domain/services/tenant-resolution.service';
 import {
     ParlamentarianJwtPayload,
+    PlatformJwtPayload,
     StaffJwtPayload,
 } from '../../domain/types/jwt-payload.type';
 import { LoginCamaraDto } from '../dto/login-camara.dto';
@@ -81,6 +82,22 @@ export class LoginCamaraUseCase {
                 throw new InvalidCredentialsError();
             }
             throw error;
+        }
+
+        // Super admin da plataforma — sem vínculo de câmara obrigatório
+        if (
+            user.isPlatformAdmin &&
+            !dto.tenantId &&
+            !dto.tenantCnpj
+        ) {
+            const payload: PlatformJwtPayload = {
+                sessionType: 'platform',
+                sub: user.id,
+            };
+            return AuthSessionViewModel.platformAdmin(
+                user,
+                this.tokenIssuer.sign(payload),
+            );
         }
 
         let tenant;
@@ -188,6 +205,16 @@ export class LoginCamaraUseCase {
                 await this.camaraAuth.findFirstActiveTenantUser(user.id);
 
             if (!tenantUser) {
+                if (user.isPlatformAdmin) {
+                    const payload: PlatformJwtPayload = {
+                        sessionType: 'platform',
+                        sub: user.id,
+                    };
+                    return AuthSessionViewModel.platformAdmin(
+                        user,
+                        this.tokenIssuer.sign(payload),
+                    );
+                }
                 throw new TenantMembershipRequiredError();
             }
 

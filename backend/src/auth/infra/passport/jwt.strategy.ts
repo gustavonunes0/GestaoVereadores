@@ -8,6 +8,7 @@ import {
     JwtPayload,
     isStaffSession,
     isParlamentarianSession,
+    isPlatformSession,
 } from '../../domain/types/jwt-payload.type';
 
 @Injectable()
@@ -35,6 +36,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     ): Promise<AuthenticatedUser> {
         const user = await this.camaraAuth.findProfileById(payload.sub);
         if (!user) throw new UnauthorizedException();
+
+        if (isPlatformSession(payload)) {
+            if (!user.isPlatformAdmin) {
+                throw new UnauthorizedException();
+            }
+            return {
+                id: user.id,
+                authType: 'platform',
+                sessionType: 'platform',
+                email: user.email,
+                nome: `${user.firstName} ${user.lastName}`.trim(),
+            };
+        }
 
         if (isStaffSession(payload)) {
             return {

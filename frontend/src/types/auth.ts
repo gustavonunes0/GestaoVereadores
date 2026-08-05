@@ -1,4 +1,4 @@
-export type SessionType = 'staff' | 'parliamentarian';
+export type SessionType = 'staff' | 'parliamentarian' | 'platform';
 
 export interface StaffUser {
     sessionType: 'staff';
@@ -10,6 +10,8 @@ export interface StaffUser {
     email?: string;
     role: 'ADMIN_STAFF' | 'STAFF';
     tenantName?: string;
+    /** Logo da câmara (data URL ou path). */
+    tenantLogo?: string | null;
     photoUrl?: string;
 }
 
@@ -24,10 +26,21 @@ export interface ParlamentarianUser {
     cpf: string;
     email?: string;
     tenantName?: string;
+    /** Logo da câmara (data URL ou path). */
+    tenantLogo?: string | null;
     photoUrl?: string;
 }
 
-export type AuthUser = StaffUser | ParlamentarianUser;
+export interface PlatformUser {
+    sessionType: 'platform';
+    id: string;
+    name: string;
+    cpf: string | null;
+    email?: string;
+    isPlatformAdmin: true;
+}
+
+export type AuthUser = StaffUser | ParlamentarianUser | PlatformUser;
 
 export function isStaffUser(u: AuthUser): u is StaffUser {
     return u.sessionType === 'staff';
@@ -35,6 +48,10 @@ export function isStaffUser(u: AuthUser): u is StaffUser {
 
 export function isParlamentarianUser(u: AuthUser): u is ParlamentarianUser {
     return u.sessionType === 'parliamentarian';
+}
+
+export function isPlatformUser(u: AuthUser): u is PlatformUser {
+    return u.sessionType === 'platform';
 }
 
 export interface LoginRequest {

@@ -2,6 +2,8 @@
 
 Sistema de gestão da atividade legislativa da Câmara (SIGL).
 
+> Arquitetura completa do sistema: ver [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+
 ## Estrutura do repositório
 
 | Pasta | Descrição |
@@ -9,6 +11,7 @@ Sistema de gestão da atividade legislativa da Câmara (SIGL).
 | `backend/` | API **NestJS** + **Prisma** (módulo Atividade Legislativa) |
 | `frontend/` | SPA **React** + **Vite** (login, cadastros legislativos, relatórios) |
 | `docs/` | Engenharia reversa, ERD e fluxos de trabalho |
+| `ARCHITECTURE.md` | Mapa de arquitetura (stack, módulos, fluxos, deploy) |
 
 ## Pré-requisitos
 

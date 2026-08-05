@@ -7,6 +7,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { TenantGuard } from './common/guards/tenant.guard';
 import { TenantRolesGuard } from './common/guards/tenant-roles.guard';
+import { PlatformAdminGuard } from './common/guards/platform-admin.guard';
 import { CommonModule } from './common/common.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -24,6 +25,7 @@ import { NotificationsModule } from './notifications/notifications.module';
         { provide: APP_GUARD, useClass: TenantGuard },
         { provide: APP_GUARD, useClass: RolesGuard },
         { provide: APP_GUARD, useClass: TenantRolesGuard },
+        { provide: APP_GUARD, useClass: PlatformAdminGuard },
         { provide: APP_GUARD, useClass: ThrottlerGuard },
     ],
     imports: [

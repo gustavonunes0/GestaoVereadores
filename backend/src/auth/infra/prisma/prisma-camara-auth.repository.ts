@@ -30,6 +30,7 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
             lastName: row.lastName,
             passwordHash: row.passwordHash,
             cpf: row.cpf,
+            isPlatformAdmin: row.isPlatformAdmin,
         });
     }
 
@@ -46,6 +47,7 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
             lastName: row.lastName,
             passwordHash: row.passwordHash,
             cpf: row.cpf,
+            isPlatformAdmin: row.isPlatformAdmin,
         });
     }
 
@@ -58,6 +60,7 @@ export class PrismaCamaraAuthRepository extends CamaraAuthRepository {
                 firstName: true,
                 lastName: true,
                 cpf: true,
+                isPlatformAdmin: true,
             },
         });
     }

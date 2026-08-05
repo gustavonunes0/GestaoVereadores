@@ -40,7 +40,12 @@ export class TenantGuard implements CanActivate {
             throw new ForbiddenException('Autenticação necessária');
         }
 
-        const tenantId = user.tenantId;
+        if (user.authType === 'platform') {
+            return true;
+        }
+
+        const tenantId =
+            'tenantId' in user ? user.tenantId : undefined;
         if (!tenantId) {
             throw new ForbiddenException(
                 'Selecione uma câmara (tenant) no login para acessar este recurso',

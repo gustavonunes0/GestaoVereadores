@@ -30,6 +30,7 @@ function makeTenant() {
         name: 'Câmara Demo',
         cnpj: '00000000000191',
         status: 'ACTIVE',
+        logo: null,
     });
 }
 

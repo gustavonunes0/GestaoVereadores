@@ -75,6 +75,26 @@ async function main() {
         },
     });
 
+    // --- Super admin da plataforma SaaS ---
+    const platformPasswordHash = await hashPasswordScrypt('platform123');
+    await prisma.user.upsert({
+        where: { email: 'superadmin@sigl.app' },
+        update: {
+            passwordHash: platformPasswordHash,
+            isPlatformAdmin: true,
+            isRemoved: false,
+        },
+        create: {
+            firstName: 'Super',
+            lastName: 'Admin',
+            cpf: '00000000000',
+            email: 'superadmin@sigl.app',
+            passwordHash: platformPasswordHash,
+            isPlatformAdmin: true,
+        },
+    });
+    console.log('Super admin plataforma: superadmin@sigl.app / platform123 (CPF 000.000.000-00)');
+
     await prisma.tenantUser.upsert({
         where: {
             tenantId_userId: {

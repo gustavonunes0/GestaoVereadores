@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { authApi } from '../api/client';
 import type { AuthUser } from '../types/auth';
-import { isParlamentarianUser, isStaffUser } from '../types/auth';
+import { isParlamentarianUser, isPlatformUser, isStaffUser } from '../types/auth';
 
 interface AuthContextValue {
     user: AuthUser | null;
@@ -20,12 +20,27 @@ interface AuthContextValue {
     isAdminStaff: boolean;
     isStaff: boolean;
     isParliamentarian: boolean;
+    isPlatformAdmin: boolean;
     canEdit: boolean;
     canWrite: boolean;
     canVotar: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+/** Evita estourar localStorage com data URLs grandes (logo da câmara). */
+function persistUser(user: AuthUser) {
+    if (
+        'tenantLogo' in user &&
+        typeof user.tenantLogo === 'string' &&
+        user.tenantLogo.startsWith('data:')
+    ) {
+        const { tenantLogo: _logo, ...rest } = user;
+        localStorage.setItem('user', JSON.stringify(rest));
+        return;
+    }
+    localStorage.setItem('user', JSON.stringify(user));
+}
 
 function loadStoredUser(): AuthUser | null {
     const raw = localStorage.getItem('user');
@@ -55,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .me()
             .then((u) => {
                 setUser(u);
-                localStorage.setItem('user', JSON.stringify(u));
+                persistUser(u);
             })
             .catch(() => {
                 localStorage.removeItem('access_token');
@@ -68,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = useCallback(async (cpf: string, password: string) => {
         const res = await authApi.login({ cpf, password });
         localStorage.setItem('access_token', res.access_token);
-        localStorage.setItem('user', JSON.stringify(res.user));
+        persistUser(res.user);
         setUser(res.user);
     }, []);
 
@@ -83,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             !!user && isStaffUser(user) && user.role === 'ADMIN_STAFF';
         const isStaff = !!user && isStaffUser(user) && user.role === 'STAFF';
         const isParliamentarian = !!user && isParlamentarianUser(user);
+        const isPlatformAdmin = !!user && isPlatformUser(user);
 
         return {
             user,
@@ -93,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isAdminStaff,
             isStaff,
             isParliamentarian,
+            isPlatformAdmin,
             canEdit: isAdminStaff,
             canWrite: isAdminStaff || isStaff,
             canVotar: isParliamentarian,

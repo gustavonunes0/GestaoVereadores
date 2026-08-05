@@ -41,12 +41,14 @@ export class PrismaTenantAuthRepository extends TenantAuthRepository {
         name: string;
         cnpj: string;
         status: TenantStatus;
+        logo: string | null;
     }): TenantAuthEntity {
         return new TenantAuthEntity({
             id: row.id,
             name: row.name,
             cnpj: row.cnpj,
             status: row.status,
+            logo: row.logo,
         });
     }
 }

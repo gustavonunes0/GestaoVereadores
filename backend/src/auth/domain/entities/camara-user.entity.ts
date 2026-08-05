@@ -5,6 +5,7 @@ export type CamaraUserProps = {
     lastName: string;
     passwordHash: string;
     cpf: string | null;
+    isPlatformAdmin?: boolean;
 };
 
 export class CamaraUserEntity {
@@ -14,6 +15,7 @@ export class CamaraUserEntity {
     readonly lastName: string;
     readonly passwordHash: string;
     readonly cpf: string | null;
+    readonly isPlatformAdmin: boolean;
 
     constructor(props: CamaraUserProps) {
         this.id = props.id;
@@ -22,6 +24,7 @@ export class CamaraUserEntity {
         this.lastName = props.lastName;
         this.passwordHash = props.passwordHash;
         this.cpf = props.cpf;
+        this.isPlatformAdmin = props.isPlatformAdmin ?? false;
     }
 
     fullName(): string {

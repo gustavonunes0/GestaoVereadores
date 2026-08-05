@@ -5,6 +5,7 @@ export type TenantAuthProps = {
     name: string;
     cnpj: string;
     status: TenantStatus;
+    logo: string | null;
 };
 
 export class TenantAuthEntity {
@@ -12,12 +13,14 @@ export class TenantAuthEntity {
     readonly name: string;
     readonly cnpj: string;
     readonly status: TenantStatus;
+    readonly logo: string | null;
 
     constructor(props: TenantAuthProps) {
         this.id = props.id;
         this.name = props.name;
         this.cnpj = props.cnpj;
         this.status = props.status;
+        this.logo = props.logo;
     }
 }
 

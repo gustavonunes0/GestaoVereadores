@@ -44,6 +44,11 @@ export const ROUTES = {
         portal: '/camara/portal',
     },
     usuarios: '/usuarios',
+    platform: {
+        root: '/super-admin',
+        tenants: '/super-admin/tenants',
+        tenantById: (id: string) => `/super-admin/tenants/${id}`,
+    },
     parlamentar: {
         root: '/parlamentar',
         perfil: '/parlamentar/perfil',

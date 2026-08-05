@@ -18,6 +18,7 @@ function staffRoleLabel(role: 'ADMIN_STAFF' | 'STAFF') {
 function userRoleLabel(user: AuthUser): string {
     if (isStaffUser(user)) return staffRoleLabel(user.role);
     if (user.sessionType === 'parliamentarian') return 'Parlamentar';
+    if (user.sessionType === 'platform') return 'Super Admin';
     return '—';
 }
 
@@ -99,11 +100,13 @@ export function SidebarUserMenu() {
 
     const profileHeader = useMemo(() => {
         if (!user) return null;
+        const photoUrl = 'photoUrl' in user ? user.photoUrl : undefined;
+        const tenantName = 'tenantName' in user ? user.tenantName : undefined;
 
         return (
             <div className="sidebar-user-menu__header">
                 <PersonAvatar
-                    photoUrl={user.photoUrl}
+                    photoUrl={photoUrl}
                     name={user.name}
                     size="md"
                     aria-hidden
@@ -114,7 +117,7 @@ export function SidebarUserMenu() {
                     <strong>{user.name}</strong>
                     {user.email ? <span>{user.email}</span> : null}
                     <span>{userRoleLabel(user)}</span>
-                    {user.tenantName ? <span>{user.tenantName}</span> : null}
+                    {tenantName ? <span>{tenantName}</span> : null}
                 </div>
             </div>
         );
@@ -189,7 +192,7 @@ export function SidebarUserMenu() {
                 aria-controls="sidebar-user-menu"
             >
                 <PersonAvatar
-                    photoUrl={user.photoUrl}
+                    photoUrl={'photoUrl' in user ? user.photoUrl : undefined}
                     name={user.name}
                     size="sm"
                     aria-hidden

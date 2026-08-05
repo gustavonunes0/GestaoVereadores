@@ -1,15 +1,28 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { LegislaturaProvider } from '../contexts/LegislaturaContext';
+import { useAuth } from '../contexts/AuthContext';
 import { AppFeedbackProvider } from '../hooks/useAppToast';
+import { isStaffUser } from '../types/auth';
+import { resolveTenantLogoUrl } from '../utils/tenantLogo';
 import { SidebarNav } from './SidebarNav';
 import { SiglButton } from './common/SiglButton';
-import logoSrc from '../../assets/logo.png';
+import fallbackLogoSrc from '../../assets/logo.png';
 import { FooterBar } from './FooterBar';
 
 export function Layout() {
     const { pathname } = useLocation();
+    const { user } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
+    const tenantLogo =
+        user && isStaffUser(user)
+            ? resolveTenantLogoUrl(user.tenantLogo)
+            : null;
+    const logoSrc = tenantLogo ?? fallbackLogoSrc;
+    const logoAlt =
+        user && isStaffUser(user) && user.tenantName
+            ? user.tenantName
+            : 'Câmara Municipal';
 
     useEffect(() => {
         setMenuOpen(false);
@@ -37,7 +50,7 @@ export function Layout() {
                             <h1 className="sidebar-logo-area__heading">
                                 <img
                                     src={logoSrc}
-                                    alt="Câmara Municipal de Baturité"
+                                    alt={logoAlt}
                                     className="sidebar-brand__logo"
                                 />
                             </h1>

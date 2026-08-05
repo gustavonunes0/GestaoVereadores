@@ -1,16 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { PARLAMENTAR_NAV_MENU } from '../app/navigation';
+import { useAuth } from '../contexts/AuthContext';
 import { AppFeedbackProvider } from '../hooks/useAppToast';
+import { isParlamentarianUser } from '../types/auth';
+import { resolveTenantLogoUrl } from '../utils/tenantLogo';
 import { MobileBottomNav } from './mobile/MobileBottomNav';
 import { ParlamentarTopbar } from './parlamentar/ParlamentarTopbar';
 import { PushPermissionBanner } from './pwa/PushPermissionBanner';
 import { SidebarNav } from './SidebarNav';
-import logoSrc from '../../assets/logo.png';
+import fallbackLogoSrc from '../../assets/logo.png';
 
 export function ParlamentarLayout() {
     const { pathname } = useLocation();
+    const { user } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
+    const tenantLogo =
+        user && isParlamentarianUser(user)
+            ? resolveTenantLogoUrl(user.tenantLogo)
+            : null;
+    const logoSrc = tenantLogo ?? fallbackLogoSrc;
+    const logoAlt =
+        user && isParlamentarianUser(user) && user.tenantName
+            ? user.tenantName
+            : 'Câmara Municipal — Portal do Parlamentar';
 
     useEffect(() => {
         setMenuOpen(false);
@@ -39,7 +52,7 @@ export function ParlamentarLayout() {
                         <h1 className="sidebar-logo-area__heading">
                             <img
                                 src={logoSrc}
-                                alt="Câmara Municipal — Portal do Parlamentar"
+                                alt={logoAlt}
                                 className="sidebar-brand__logo"
                             />
                         </h1>

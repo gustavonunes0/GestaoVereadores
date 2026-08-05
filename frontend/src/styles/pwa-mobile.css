@@ -531,3 +531,216 @@
     }
 }
 
+
+/* ─── Super Admin / plataforma ──────────────────────────────────────────── */
+
+.platform-sidebar__logo {
+    max-height: 48px;
+    width: auto;
+    object-fit: contain;
+}
+
+.platform-tenant-logo-thumb {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid var(--surface-border, #e5e7eb);
+    padding: 2px;
+}
+
+.platform-tenant-logo-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.platform-tenant-logo-cell img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid var(--surface-border, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.platform-tenant-logo-cell span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.platform-tenant-logo-field {
+    margin-bottom: 0.75rem;
+}
+
+.platform-sidebar__badge {
+    display: inline-block;
+    margin: 0 1rem 0.75rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(37, 99, 168, 0.12);
+    color: var(--accent, #2563a8);
+}
+
+.platform-sidebar__footer {
+    margin-top: auto;
+    padding: 1rem;
+    border-top: 1px solid var(--sidebar-border, #eef0f3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.platform-sidebar__user {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.8125rem;
+}
+
+.platform-sidebar__user span {
+    color: var(--text-muted, #8492a6);
+}
+
+.platform-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.platform-stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.9rem 1rem;
+    border-radius: 10px;
+    background: var(--surface-0, #fff);
+    border: 1px solid var(--surface-border, #eef0f3);
+}
+
+.platform-stat-card span {
+    font-size: 0.75rem;
+    color: var(--text-muted, #8492a6);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.platform-stat-card strong {
+    font-size: 1.35rem;
+    color: var(--text-heading, #1c2f4a);
+}
+
+.platform-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    color: var(--text-muted, #8492a6);
+    font-size: 0.875rem;
+}
+
+.platform-staff-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.platform-staff-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--surface-border, #eef0f3);
+}
+
+.platform-staff-list li:first-child {
+    border-top: none;
+    padding-top: 0;
+}
+
+.platform-staff-list li div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.platform-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.platform-tenant-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-width: 920px;
+}
+
+.platform-tenant-form .sigl-dialog-secao {
+    margin: 0;
+}
+
+.platform-tenant-form .sigl-filtro-campo .p-inputnumber,
+.platform-tenant-form .sigl-filtro-campo .p-calendar,
+.platform-tenant-form .sigl-filtro-campo .p-dropdown,
+.platform-tenant-form .sigl-filtro-campo .p-inputtext,
+.platform-tenant-form .sigl-filtro-campo .p-inputtextarea {
+    width: 100%;
+}
+
+.platform-tenant-form__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.platform-payments-table-wrap {
+    overflow-x: auto;
+}
+
+.platform-payments-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.platform-payments-table th,
+.platform-payments-table td {
+    padding: 0.65rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--surface-border, #e5e7eb);
+    white-space: nowrap;
+}
+
+.platform-payments-table th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-color-secondary, #6b7280);
+}
+
+.platform-payments-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.15rem;
+}
+
+.platform-staff-list li span {
+    font-size: 0.8125rem;
+    color: var(--text-muted, #8492a6);
+}

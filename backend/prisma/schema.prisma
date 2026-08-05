@@ -21,6 +21,29 @@ enum TenantStatus {
     SUSPENDED
 }
 
+enum TenantPlan {
+    BASIC
+    STANDARD
+    PREMIUM
+    CUSTOM
+}
+
+enum TenantPaymentStatus {
+    PENDING
+    PAID
+    OVERDUE
+    CANCELLED
+    WAIVED
+}
+
+enum TenantPaymentMethod {
+    PIX
+    BOLETO
+    TRANSFER
+    CARD
+    OTHER
+}
+
 enum TenantUserStatus {
     ACTIVE
     INVITED
@@ -89,6 +112,8 @@ model User {
     email          String       @unique
     passwordHash   String
     profilePicture String?
+    /** Super admin da plataforma SaaS (gestão de tenants). Sem vínculo de câmara. */
+    isPlatformAdmin Boolean     @default(false)
     createdAt      DateTime     @default(now())
     createdBy      String?
     modifiedAt     DateTime     @updatedAt
@@ -108,12 +133,31 @@ model Tenant {
     logo        String?
     status      TenantStatus @default(ACTIVE)
     settings    Json?
+
+    /** Nome fantasia / identificação comercial */
+    tradeName           String?
+    city                String?
+    state               String?
+    contactName         String?
+    contactEmail        String?
+    contactPhone        String?
+
+    /** Contrato e cobrança (gestão SaaS) */
+    plan                TenantPlan @default(STANDARD)
+    contractStartAt     DateTime?
+    contractEndAt       DateTime?
+    monthlyFeeCents     Int        @default(0)
+    billingDay          Int        @default(10)
+    maxParliamentarians Int?
+    notes               String?
+
     createdAt   DateTime     @default(now())
     createdBy   String?
     modifiedAt  DateTime     @updatedAt
     modifiedBy  String?
     isRemoved   Boolean      @default(false)
     tenantUsers TenantUser[]
+    payments    TenantPayment[]
 
     parlamentares       Parlamentar[]
     legislaturas        Legislatura[]
@@ -151,6 +195,32 @@ model Tenant {
     parliamentarianUsers      ParlamentarianUser[]
     atas                      Ata[]
     pushSubscriptions         PushSubscription[]
+}
+
+/** Mensalidade / cobrança registrada pelo super admin. */
+model TenantPayment {
+    id              String              @id @default(uuid())
+    tenantId        String
+    /** Competência (primeiro dia do mês). */
+    competenceMonth DateTime
+    amountCents     Int
+    dueDate         DateTime
+    paidAt          DateTime?
+    status          TenantPaymentStatus @default(PENDING)
+    method          TenantPaymentMethod?
+    notes           String?
+
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    isRemoved  Boolean   @default(false)
+    removedAt  DateTime?
+
+    tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+    @@unique([tenantId, competenceMonth])
+    @@index([tenantId, status])
+    @@index([tenantId, isRemoved])
+    @@map("tenant_payments")
 }
 
 model TenantUser {

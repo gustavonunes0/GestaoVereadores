@@ -17,7 +17,16 @@ export interface ParlamentarianJwtPayload {
     parliamentaryName: string;
 }
 
-export type JwtPayload = StaffJwtPayload | ParlamentarianJwtPayload;
+/** Super admin da plataforma SaaS — sem tenantId. */
+export interface PlatformJwtPayload {
+    sessionType: 'platform';
+    sub: string;
+}
+
+export type JwtPayload =
+    | StaffJwtPayload
+    | ParlamentarianJwtPayload
+    | PlatformJwtPayload;
 
 export function isStaffSession(p: JwtPayload): p is StaffJwtPayload {
     return p.sessionType === 'staff';
@@ -25,4 +34,8 @@ export function isStaffSession(p: JwtPayload): p is StaffJwtPayload {
 
 export function isParlamentarianSession(p: JwtPayload): p is ParlamentarianJwtPayload {
     return p.sessionType === 'parliamentarian';
+}
+
+export function isPlatformSession(p: JwtPayload): p is PlatformJwtPayload {
+    return p.sessionType === 'platform';
 }

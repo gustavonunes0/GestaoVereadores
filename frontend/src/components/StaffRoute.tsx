@@ -2,7 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { ROUTES } from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
-import { isParlamentarianUser } from '../types/auth';
+import { isParlamentarianUser, isPlatformUser } from '../types/auth';
 
 export function StaffRoute() {
     const { user, isLoading } = useAuth();
@@ -16,6 +16,7 @@ export function StaffRoute() {
     }
 
     if (!user) return <Navigate to={ROUTES.login} replace />;
+    if (isPlatformUser(user)) return <Navigate to={ROUTES.platform.tenants} replace />;
     if (isParlamentarianUser(user)) return <Navigate to={ROUTES.parlamentar.perfil} replace />;
     return <Outlet />;
 }

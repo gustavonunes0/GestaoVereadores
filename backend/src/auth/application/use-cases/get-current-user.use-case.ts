@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
     AuthenticatedUser,
     isParlamentarianUser,
+    isPlatformUser,
     isStaffUser,
 } from '../../../common/types/authenticated-request';
 import { CamaraAuthRepository } from '../../domain/repositories/camara-auth.repository';
@@ -22,6 +23,18 @@ export class GetCurrentUserUseCase {
             throw new InvalidCredentialsError();
         }
 
+        if (isPlatformUser(user)) {
+            if (!record.isPlatformAdmin) {
+                throw new InvalidCredentialsError();
+            }
+            return AuthSessionViewModel.platformAdminMe({
+                id: user.id,
+                name: `${record.firstName} ${record.lastName}`.trim(),
+                cpf: record.cpf,
+                email: record.email,
+            });
+        }
+
         if (isStaffUser(user)) {
             const tenant = await this.tenants.findActiveById(user.tenantId);
             return AuthSessionViewModel.camaraStaffMe({
@@ -31,6 +44,7 @@ export class GetCurrentUserUseCase {
                 email: record.email,
                 tenantId: user.tenantId,
                 tenantName: tenant?.name,
+                tenantLogo: tenant?.logo,
                 tenantUserId: user.tenantUserId,
                 role: user.role,
             });
@@ -45,6 +59,7 @@ export class GetCurrentUserUseCase {
                 email: record.email,
                 tenantId: user.tenantId,
                 tenantName: tenant?.name,
+                tenantLogo: tenant?.logo,
                 parliamentarianUserId: user.parliamentarianUserId,
                 parliamentarianId: user.parliamentarianId,
                 parliamentaryName: user.parliamentaryName,
