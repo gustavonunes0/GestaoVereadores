@@ -15,7 +15,7 @@ interface AuthContextValue {
     user: AuthUser | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login(cpf: string, password: string): Promise<void>;
+    login(identifier: string, password: string): Promise<void>;
     logout(): void;
     isAdminStaff: boolean;
     isStaff: boolean;
@@ -80,8 +80,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .finally(() => setIsLoading(false));
     }, []);
 
-    const login = useCallback(async (cpf: string, password: string) => {
-        const res = await authApi.login({ cpf, password });
+    const login = useCallback(async (identifier: string, password: string) => {
+        const trimmed = identifier.trim();
+        const looksLikeEmail = trimmed.includes('@');
+        const res = await authApi.login(
+            looksLikeEmail
+                ? { email: trimmed.toLowerCase(), password }
+                : { cpf: trimmed, password },
+        );
         localStorage.setItem('access_token', res.access_token);
         persistUser(res.user);
         setUser(res.user);

@@ -55,7 +55,8 @@ export function isPlatformUser(u: AuthUser): u is PlatformUser {
 }
 
 export interface LoginRequest {
-    cpf: string;
+    cpf?: string;
+    email?: string;
     password: string;
 }
 

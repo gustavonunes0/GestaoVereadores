@@ -114,16 +114,22 @@ export class LoginCamaraUseCase {
         // Domínio de câmara: injeta tenantId a partir do host quando não informado.
         let tenantId = dto.tenantId;
         let tenantCnpj = dto.tenantCnpj;
+        let resolvedFromTenantHost = false;
         if (host && !tenantId && !tenantCnpj) {
             const byHost = await this.tenants.findActiveByHost(host);
             if (byHost) {
                 tenantId = byHost.id;
+                resolvedFromTenantHost = true;
             }
         }
 
-        // Super admin da plataforma — sem vínculo de câmara obrigatório
-        // (apenas quando NÃO há host de tenant resolvido).
-        if (user.isPlatformAdmin && !tenantId && !tenantCnpj) {
+        // Em host de câmara (ex.: baturite) nunca emitir sessão de plataforma.
+        if (
+            user.isPlatformAdmin &&
+            !tenantId &&
+            !tenantCnpj &&
+            !resolvedFromTenantHost
+        ) {
             const payload: PlatformJwtPayload = {
                 sessionType: 'platform',
                 sub: user.id,
@@ -132,6 +138,22 @@ export class LoginCamaraUseCase {
                 user,
                 this.tokenIssuer.sign(payload),
             );
+        }
+
+        if (user.isPlatformAdmin && resolvedFromTenantHost && !dto.tenantId && !dto.tenantCnpj) {
+            // Só segue se tiver vínculo na câmara; senão manda para o domínio da plataforma.
+            const parlProbe = await this.camaraAuth.findActiveParlamentarianUser(
+                user.id,
+                tenantId!,
+            );
+            const staffProbe = parlProbe
+                ? null
+                : await this.camaraAuth.findActiveTenantUser(user.id, tenantId!);
+            if (!parlProbe && !staffProbe) {
+                throw new WrongHostLoginError(
+                    'Painel da plataforma: use camaragest.stellarsolucoes.com.br',
+                );
+            }
         }
 
         let tenant;
@@ -186,6 +208,11 @@ export class LoginCamaraUseCase {
                 this.domainService.assertActiveTenantMembership(tenantUser);
             } catch (error) {
                 if (error instanceof TenantMembershipRequiredDomainError) {
+                    if (user.isPlatformAdmin) {
+                        throw new WrongHostLoginError(
+                            'Painel da plataforma: use camaragest.stellarsolucoes.com.br',
+                        );
+                    }
                     throw new TenantMembershipRequiredError();
                 }
                 throw error;
@@ -261,6 +288,11 @@ export class LoginCamaraUseCase {
                 this.domainService.assertActiveTenantMembership(tenantUser);
             } catch (error) {
                 if (error instanceof TenantMembershipRequiredDomainError) {
+                    if (user.isPlatformAdmin) {
+                        throw new WrongHostLoginError(
+                            'Painel da plataforma: use camaragest.stellarsolucoes.com.br',
+                        );
+                    }
                     throw new TenantMembershipRequiredError();
                 }
                 throw error;

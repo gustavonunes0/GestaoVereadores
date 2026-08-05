@@ -8,14 +8,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { FooterBar } from '../components/FooterBar';
 import { isParlamentarianUser, isPlatformUser } from '../types/auth';
-import { isPlatformHostname } from '../utils/tenantHost';
+import { isPlatformHostname, currentHostname } from '../utils/tenantHost';
 import logoSrc from '../../assets/camara-gest-logo.png';
 
 export function LoginPage() {
     const { user, login } = useAuth();
     const navigate = useNavigate();
+    const platformHost = isPlatformHostname();
+    const host = currentHostname();
+    /** Em camaragest (ou localhost p/ teste) o super admin entra com e-mail. */
+    const useEmailLogin =
+        platformHost || host === 'localhost' || host === '127.0.0.1';
 
     const [cpf, setCpf] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -36,19 +42,31 @@ export function LoginPage() {
         e.preventDefault();
         setError('');
 
-        const cpfLimpo = cpf.replace(/\D/g, '');
-        if (cpfLimpo.length !== 11) {
-            setError('CPF inválido. Informe os 11 dígitos.');
-            return;
-        }
         if (!password) {
             setError('Informe a senha.');
             return;
         }
 
+        let identifier: string;
+        if (useEmailLogin) {
+            const eTrim = email.trim();
+            if (!eTrim.includes('@')) {
+                setError('Informe um e-mail válido.');
+                return;
+            }
+            identifier = eTrim;
+        } else {
+            const cpfLimpo = cpf.replace(/\D/g, '');
+            if (cpfLimpo.length !== 11) {
+                setError('CPF inválido. Informe os 11 dígitos.');
+                return;
+            }
+            identifier = cpf;
+        }
+
         setLoading(true);
         try {
-            await login(cpf, password);
+            await login(identifier, password);
             const stored = localStorage.getItem('user');
             if (stored) {
                 const parsed = JSON.parse(stored) as { sessionType?: string };
@@ -61,7 +79,12 @@ export function LoginPage() {
                 }
             }
         } catch (err) {
-            setError(getApiErrorMessage(err) || 'CPF ou senha incorretos.');
+            setError(
+                getApiErrorMessage(err) ||
+                    (useEmailLogin
+                        ? 'E-mail ou senha incorretos.'
+                        : 'CPF ou senha incorretos.'),
+            );
         } finally {
             setLoading(false);
         }
@@ -74,7 +97,7 @@ export function LoginPage() {
                     <img
                         src={logoSrc}
                         alt={
-                            isPlatformHostname()
+                            platformHost
                                 ? 'CâmaraGest — painel da plataforma'
                                 : 'CâmaraGest — Gestão de Mandatos, Poder Legislativo'
                         }
@@ -85,28 +108,45 @@ export function LoginPage() {
                 </div>
 
                 <form onSubmit={(e) => void handleSubmit(e)} noValidate>
-                    <div className="field">
-                        <label htmlFor="cpf">CPF</label>
-                        <InputMask
-                            id="cpf"
-                            mask="999.999.999-99"
-                            value={cpf}
-                            onChange={(e) => setCpf(e.value ?? '')}
-                            placeholder="000.000.000-00"
-                            autoFocus
-                            className="w-full"
-                        />
-                    </div>
-                    <div className="field mt-3" >
+                    {useEmailLogin ? (
+                        <div className="field">
+                            <label htmlFor="email">E-mail</label>
+                            <input
+                                id="email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="seu@email.com"
+                                autoFocus
+                                autoComplete="username"
+                                className="w-full"
+                            />
+                        </div>
+                    ) : (
+                        <div className="field">
+                            <label htmlFor="cpf">CPF</label>
+                            <InputMask
+                                id="cpf"
+                                mask="999.999.999-99"
+                                value={cpf}
+                                onChange={(e) => setCpf(e.value ?? '')}
+                                placeholder="000.000.000-00"
+                                autoFocus
+                                className="w-full"
+                            />
+                        </div>
+                    )}
+                    <div className="field mt-3">
                         <label htmlFor="senha">Senha</label>
                         <input
+                            id="senha"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full"
                             autoComplete="current-password"
                             placeholder="••••••••"
-                        /> 
+                        />
                     </div>
 
                     {error && (

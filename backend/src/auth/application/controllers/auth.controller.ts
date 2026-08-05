@@ -51,6 +51,7 @@ export class AuthController {
             return await this.loginCamara.execute(
                 {
                     cpf: dto.cpf,
+                    email: dto.email,
                     password: dto.password,
                     tenantId: dto.tenantId,
                 },

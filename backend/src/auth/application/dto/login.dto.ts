@@ -1,15 +1,22 @@
 import {
+    IsEmail,
     IsOptional,
     IsString,
     IsUUID,
     Matches,
     MinLength,
+    ValidateIf,
 } from 'class-validator';
 
 export class LoginDto {
+    @ValidateIf((o: LoginDto) => !o.email)
     @IsString()
     @Matches(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)
-    cpf: string;
+    cpf?: string;
+
+    @ValidateIf((o: LoginDto) => !o.cpf)
+    @IsEmail()
+    email?: string;
 
     @IsString()
     @MinLength(1)

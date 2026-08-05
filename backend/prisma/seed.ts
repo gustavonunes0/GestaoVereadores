@@ -75,28 +75,45 @@ async function main() {
         },
     });
 
-    // --- Super admin da plataforma SaaS ---
-    const platformPasswordHash = await hashPasswordScrypt('platform123');
-    await prisma.user.upsert({
+    // --- Super admin da plataforma SaaS (CâmaraGest) ---
+    const platformEmail = (
+        process.env.PLATFORM_ADMIN_EMAIL ?? 'gustavonoroes@outlook.com'
+    )
+        .trim()
+        .toLowerCase();
+    const platformPassword =
+        process.env.PLATFORM_ADMIN_PASSWORD ?? 'Gnb.02062003';
+    const platformPasswordHash = await hashPasswordScrypt(platformPassword);
+
+    // Desativa o seed antigo, se existir
+    await prisma.user.updateMany({
         where: { email: 'superadmin@sigl.app' },
+        data: { isPlatformAdmin: false, isRemoved: true },
+    });
+
+    await prisma.user.upsert({
+        where: { email: platformEmail },
         update: {
+            firstName: 'Gustavo',
+            lastName: 'Noroes',
             passwordHash: platformPasswordHash,
             isPlatformAdmin: true,
             isRemoved: false,
         },
         create: {
-            firstName: 'Super',
-            lastName: 'Admin',
-            cpf: '00000000000',
-            email: 'superadmin@sigl.app',
+            firstName: 'Gustavo',
+            lastName: 'Noroes',
+            email: platformEmail,
             passwordHash: platformPasswordHash,
             isPlatformAdmin: true,
         },
     });
-    console.log('Super admin plataforma: superadmin@sigl.app / platform123 (CPF 000.000.000-00)');
+    console.log(
+        `Super admin plataforma: ${platformEmail} (somente em PLATFORM_SEED_HOSTS / camaragest)`,
+    );
 
     // Domínios do tenant demo (TENANT_SEED_HOSTS) — padrão Hostinger / SistemaSindicatos
-    const seedHosts = (process.env.TENANT_SEED_HOSTS ?? 'localhost,baturite.stellarsolucoes.com.br')
+    const seedHosts = (process.env.TENANT_SEED_HOSTS ?? 'baturite.stellarsolucoes.com.br')
         .split(',')
         .map((h) => h.trim().toLowerCase())
         .filter(Boolean);

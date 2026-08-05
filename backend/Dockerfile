@@ -19,4 +19,4 @@ RUN mkdir -p /app/uploads
 EXPOSE 3000
 
 # migrate + seed em runtime (tem DATABASE_URL e postgres sobe primeiro)
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && (npx prisma db seed || true) && (node prisma/ensure-platform-admin.cjs || true) && node dist/main.js"]
