@@ -11,6 +11,7 @@
         "prisma:generate": "node scripts/prisma-generate.cjs",
         "prisma:migrate": "prisma migrate dev",
         "prisma:seed": "prisma db seed",
+        "prisma:ensure-platform-admin": "node prisma/ensure-platform-admin.cjs",
         "prisma:studio": "prisma studio",
         "prisma:migrate:deploy": "prisma migrate deploy",
         "prisma:deploy": "node scripts/prisma-deploy-prod.cjs",

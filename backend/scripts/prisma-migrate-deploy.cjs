@@ -51,8 +51,27 @@ const result = spawnSync('npx', ['prisma', 'migrate', 'deploy'], {
 if (result.stdout) process.stdout.write(result.stdout);
 if (result.stderr) process.stderr.write(result.stderr);
 
-if ((result.status ?? 1) === 0) {
-    console.log('[prisma-migrate-deploy] Migrations aplicadas com sucesso.');
+if ((result.status ?? 1) !== 0) {
+    process.exit(result.status ?? 1);
 }
 
-process.exit(result.status ?? 1);
+console.log('[prisma-migrate-deploy] Migrations aplicadas com sucesso.');
+
+// Vercel não executa o seed completo — garante só o super admin da plataforma.
+const ensure = spawnSync(
+    'node',
+    [path.join('prisma', 'ensure-platform-admin.cjs')],
+    {
+        cwd: root,
+        shell: true,
+        encoding: 'utf8',
+        env: process.env,
+    },
+);
+if (ensure.stdout) process.stdout.write(ensure.stdout);
+if (ensure.stderr) process.stderr.write(ensure.stderr);
+if ((ensure.status ?? 1) !== 0) {
+    process.exit(ensure.status ?? 1);
+}
+
+process.exit(0);

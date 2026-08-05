@@ -76,11 +76,13 @@ async function main() {
     });
 
     // --- Super admin da plataforma SaaS ---
+    // Em produção (Vercel) o script prisma/ensure-platform-admin.cjs também garante este usuário.
     const platformPasswordHash = await hashPasswordScrypt('platform123');
     await prisma.user.upsert({
         where: { email: 'superadmin@sigl.app' },
         update: {
             passwordHash: platformPasswordHash,
+            cpf: '00000000000',
             isPlatformAdmin: true,
             isRemoved: false,
         },
@@ -93,7 +95,9 @@ async function main() {
             isPlatformAdmin: true,
         },
     });
-    console.log('Super admin plataforma: superadmin@sigl.app / platform123 (CPF 000.000.000-00)');
+    console.log(
+        'Super admin plataforma: superadmin@sigl.app / platform123 (CPF 000.000.000-00)',
+    );
 
     await prisma.tenantUser.upsert({
         where: {

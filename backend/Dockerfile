@@ -18,5 +18,5 @@ ENV NODE_ENV=production
 RUN mkdir -p /app/uploads
 EXPOSE 3000
 
-# migrate + seed em runtime (tem DATABASE_URL e postgres sobe primeiro)
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && node dist/main.js"]
+# migrate + super admin + seed em runtime (tem DATABASE_URL e postgres sobe primeiro)
+CMD ["sh", "-c", "npx prisma migrate deploy && node prisma/ensure-platform-admin.cjs && npx prisma db seed && node dist/main.js"]
