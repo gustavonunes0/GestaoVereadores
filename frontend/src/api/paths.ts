@@ -135,6 +135,7 @@ export const API_PATHS = {
 
     // ── Super Admin (plataforma) ──────────────────────────────────────────
     tenants:            '/tenants',
+    tenantsCurrent:     '/tenants/current',
     tenantsProvision:   '/tenants/provision',
     tenantById:         (id: string) => `/tenants/${id}`,
     tenantPayments:     (id: string) => `/tenants/${id}/payments`,

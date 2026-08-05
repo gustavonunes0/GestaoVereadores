@@ -13,13 +13,15 @@ import { ListTenantsWithStatsUseCase } from './application/use-cases/list-tenant
 import { ProvisionTenantUseCase } from './application/use-cases/provision-tenant.use-case';
 import { UpdateTenantPaymentUseCase } from './application/use-cases/update-tenant-payment.use-case';
 import { UpdateTenantUseCase } from './application/use-cases/update-tenant.use-case';
+import { ResolveTenantByHostUseCase } from './application/use-cases/resolve-tenant-by-host.use-case';
 import { PrismaTenantRepository } from './infra/database/prisma-tenant.repository';
 import { TenantsController } from './infra/controllers/tenants.controller';
+import { TenantHostController } from './infra/controllers/tenant-host.controller';
 import { TENANT_REPOSITORY } from './tenants.tokens';
 
 @Module({
     imports: [PrismaModule, UsersModule],
-    controllers: [TenantsController],
+    controllers: [TenantHostController, TenantsController],
     providers: [
         CreateTenantUseCase,
         ProvisionTenantUseCase,
@@ -33,12 +35,13 @@ import { TENANT_REPOSITORY } from './tenants.tokens';
         CreateTenantPaymentUseCase,
         UpdateTenantPaymentUseCase,
         DeleteTenantPaymentUseCase,
+        ResolveTenantByHostUseCase,
         PrismaTenantRepository,
         {
             provide: TENANT_REPOSITORY,
             useExisting: PrismaTenantRepository,
         },
     ],
-    exports: [TENANT_REPOSITORY],
+    exports: [TENANT_REPOSITORY, ResolveTenantByHostUseCase],
 })
 export class TenantsModule {}

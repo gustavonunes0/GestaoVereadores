@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { FooterBar } from '../components/FooterBar';
 import { isParlamentarianUser, isPlatformUser } from '../types/auth';
+import { isPlatformHostname } from '../utils/tenantHost';
 import logoSrc from '../../assets/camara-gest-logo.png';
 
 export function LoginPage() {
@@ -72,7 +73,11 @@ export function LoginPage() {
                 <div className="text-center login-card__brand">
                     <img
                         src={logoSrc}
-                        alt="CâmaraGest — Gestão de Mandatos, Poder Legislativo"
+                        alt={
+                            isPlatformHostname()
+                                ? 'CâmaraGest — painel da plataforma'
+                                : 'CâmaraGest — Gestão de Mandatos, Poder Legislativo'
+                        }
                         className="login-card__logo"
                         width={280}
                         height={200}

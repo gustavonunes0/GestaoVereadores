@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PasswordHasher } from '../../../identidade/users/application/contracts/password-hasher';
 import { PASSWORD_HASHER } from '../../../identidade/users/users.tokens';
+import { isPlatformHost, normalizeHost } from '../../../common/tenant-host';
 import { TokenIssuer } from '../../domain/contracts/token-issuer';
 import { CamaraAuthRepository } from '../../domain/repositories/camara-auth.repository';
 import { TenantAuthRepository } from '../../domain/repositories/tenant-auth.repository';
@@ -25,8 +26,14 @@ import {
     InvalidTenantError,
     TenantMembershipRequiredError,
     TenantResolutionRequiredError,
+    WrongHostLoginError,
 } from '../errors/auth.errors';
 import { AuthSessionViewModel } from '../view-models/auth-session.view-model';
+
+export type LoginCamaraOptions = {
+    /** Hostname do front (X-Tenant-Host / Origin). */
+    host?: string;
+};
 
 @Injectable()
 export class LoginCamaraUseCase {
@@ -47,7 +54,7 @@ export class LoginCamaraUseCase {
         return value.replace(/\D/g, '');
     }
 
-    async execute(dto: LoginCamaraDto) {
+    async execute(dto: LoginCamaraDto, options: LoginCamaraOptions = {}) {
         const email = dto.email?.trim().toLowerCase();
         const cpf = dto.cpf ? this.normalizeCpf(dto.cpf) : undefined;
         const user = email
@@ -84,12 +91,39 @@ export class LoginCamaraUseCase {
             throw error;
         }
 
+        const host = options.host ? normalizeHost(options.host) : undefined;
+        const onPlatformHost = host ? isPlatformHost(host) : false;
+
+        // Domínio da plataforma (camaragest…): somente super admin.
+        if (onPlatformHost) {
+            if (!user.isPlatformAdmin) {
+                throw new WrongHostLoginError(
+                    'Acesse pelo domínio da sua câmara (ex.: baturite.stellarsolucoes.com.br)',
+                );
+            }
+            const payload: PlatformJwtPayload = {
+                sessionType: 'platform',
+                sub: user.id,
+            };
+            return AuthSessionViewModel.platformAdmin(
+                user,
+                this.tokenIssuer.sign(payload),
+            );
+        }
+
+        // Domínio de câmara: injeta tenantId a partir do host quando não informado.
+        let tenantId = dto.tenantId;
+        let tenantCnpj = dto.tenantCnpj;
+        if (host && !tenantId && !tenantCnpj) {
+            const byHost = await this.tenants.findActiveByHost(host);
+            if (byHost) {
+                tenantId = byHost.id;
+            }
+        }
+
         // Super admin da plataforma — sem vínculo de câmara obrigatório
-        if (
-            user.isPlatformAdmin &&
-            !dto.tenantId &&
-            !dto.tenantCnpj
-        ) {
+        // (apenas quando NÃO há host de tenant resolvido).
+        if (user.isPlatformAdmin && !tenantId && !tenantCnpj) {
             const payload: PlatformJwtPayload = {
                 sessionType: 'platform',
                 sub: user.id,
@@ -102,11 +136,11 @@ export class LoginCamaraUseCase {
 
         let tenant;
 
-        if (dto.tenantId || dto.tenantCnpj) {
+        if (tenantId || tenantCnpj) {
             try {
                 tenant = await this.tenantResolution.resolveCamaraTenant(
-                    dto.tenantId,
-                    dto.tenantCnpj,
+                    tenantId,
+                    tenantCnpj,
                     this.tenants,
                 );
             } catch (error) {

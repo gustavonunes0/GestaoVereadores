@@ -26,7 +26,12 @@ export function buildCorsOptions(): CorsOptions {
         origin: collectAllowedOrigins(),
         credentials: true,
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+        allowedHeaders: [
+            'Content-Type',
+            'Authorization',
+            'Accept',
+            'X-Tenant-Host',
+        ],
         optionsSuccessStatus: 204,
     };
 }

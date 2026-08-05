@@ -68,8 +68,10 @@ GestaoVereadores/
 │   ├── public/icons/
 │   ├── Dockerfile
 │   └── vercel.json
-└── deploy/
-    └── jitsi-vps.env.example   # modelo de env para VPS Hostinger
+├── deploy/
+│   └── jitsi-vps.env.example   # modelo de env para VPS Hostinger
+└── docs/
+    └── deploy-vps.md           # DNS + NPM + hosts multi-tenant (Hostinger)
 ```
 
 
@@ -78,6 +80,7 @@ GestaoVereadores/
 | `backend/`           | Domínio, auth, Prisma, WebSocket, push, Swagger `/api/docs` |
 | `frontend/`          | SPA staff + PWA parlamentar + telas públicas                |
 | `deploy/`            | Exemplos de configuração VPS / Jitsi                        |
+| `docs/`              | Deploy Hostinger / runbooks                                 |
 | `docker-compose.yml` | Orquestra stack local / servidor                            |
 
 
@@ -131,11 +134,16 @@ Controller → UseCase → Domain Service → Prisma Repository → ViewModel
 
 ### 3.3 Multi-tenant
 
-- JWT carrega `tenantId` + `sessionType: 'staff' | 'parliamentarian'`
+- JWT carrega `tenantId` + `sessionType: 'staff' | 'parliamentarian' | 'platform'`
 - `TenantGuard` valida tenant ativo e preenche `request.tenantId`
 - Decorator real: `@TenantId()` (não `@CurrentTenant()`)
-- `tenantId` **nunca** vem do body/query/params
+- `tenantId` **nunca** vem do body/query/params (exceto login com CNPJ/id explícito)
 - Rotas `@Public()` / `@SkipTenant()` para login, health, VAPID, resumo público
+- **Resolução por domínio** (padrão SistemaSindicatos / Hostinger):
+  - `camaragest.stellarsolucoes.com.br` → plataforma (`PLATFORM_SEED_HOSTS`)
+  - `baturite.stellarsolucoes.com.br` → tenant da câmara (`tenant_domains`)
+  - Front envia `X-Tenant-Host`; API resolve em login e em `GET /api/tenants/current`
+  - Guia: `docs/deploy-vps.md`
 
 Combos de papel (`auth/guards/guard-combos.ts`):
 
@@ -390,9 +398,17 @@ Variáveis VAPID / Jitsi na **raiz** (`.env` do Compose) são injetadas no servi
 
 
 
-### VPS Hostinger (Jitsi + opcional stack Docker)
+### VPS Hostinger (stack Docker + Jitsi)
 
-Modelo de env: `deploy/jitsi-vps.env.example`  
+Guia completo (DNS, NPM, CORS, hosts): **`docs/deploy-vps.md`**
+
+| Host | Papel | Porta |
+|------|--------|-------|
+| `camaragest.stellarsolucoes.com.br` | Plataforma (super admin) | web `8080` |
+| `baturite.stellarsolucoes.com.br` | Câmara (tenant) | web `8080` |
+| `apibaturite.stellarsolucoes.com.br` | API | `3000` |
+
+Modelo de env Jitsi: `deploy/jitsi-vps.env.example`  
 Inclui IP/DNS públicos, JWT do Jitsi alinhado à API, CORS e VAPID.
 
 ### Variáveis críticas
@@ -402,10 +418,12 @@ Inclui IP/DNS públicos, JWT do Jitsi alinhado à API, CORS e VAPID.
 | ------------------------------------------------------------------ | ----------------------------- |
 | `DATABASE_URL` / `DIRECT_DATABASE_URL`                             | Prisma (runtime + migrations) |
 | `JWT_SECRET`                                                       | Tokens da API                 |
-| `CORS_ORIGIN`                                                      | Origens permitidas            |
+| `CORS_ORIGIN`                                                      | Origens permitidas (plataforma + câmaras) |
+| `PLATFORM_SEED_HOSTS`                                              | Hosts do painel CâmaraGest    |
+| `TENANT_SEED_HOSTS`                                                | Hosts seed em `tenant_domains` |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`         | Web Push                      |
 | `JITSI_DOMAIN` / `JITSI_APP_ID` / `JITSI_APP_SECRET` / `JITSI_SUB` | Token de sala                 |
-| `VITE_API_URL` / `VITE_SOCKET_URL`                                 | Frontend                      |
+| `VITE_API_URL` / `VITE_SOCKET_URL` / `VITE_PLATFORM_HOSTS`         | Frontend                      |
 
 
 ---

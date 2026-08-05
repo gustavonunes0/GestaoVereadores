@@ -32,3 +32,10 @@ export class TenantResolutionRequiredError extends Error {
         this.name = 'TenantResolutionRequiredError';
     }
 }
+
+export class WrongHostLoginError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'WrongHostLoginError';
+    }
+}

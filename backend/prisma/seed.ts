@@ -95,6 +95,26 @@ async function main() {
     });
     console.log('Super admin plataforma: superadmin@sigl.app / platform123 (CPF 000.000.000-00)');
 
+    // Domínios do tenant demo (TENANT_SEED_HOSTS) — padrão Hostinger / SistemaSindicatos
+    const seedHosts = (process.env.TENANT_SEED_HOSTS ?? 'localhost,baturite.stellarsolucoes.com.br')
+        .split(',')
+        .map((h) => h.trim().toLowerCase())
+        .filter(Boolean);
+    for (const host of seedHosts) {
+        await prisma.tenantDomain.upsert({
+            where: { host },
+            update: { tenantId: DEMO_TENANT_ID, primario: host === seedHosts[0] },
+            create: {
+                tenantId: DEMO_TENANT_ID,
+                host,
+                primario: host === seedHosts[0],
+            },
+        });
+    }
+    if (seedHosts.length) {
+        console.log(`Domínios do tenant demo: ${seedHosts.join(', ')}`);
+    }
+
     await prisma.tenantUser.upsert({
         where: {
             tenantId_userId: {

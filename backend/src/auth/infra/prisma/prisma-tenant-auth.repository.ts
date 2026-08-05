@@ -28,6 +28,20 @@ export class PrismaTenantAuthRepository extends TenantAuthRepository {
         return row ? this.toEntity(row) : null;
     }
 
+    async findActiveByHost(host: string): Promise<TenantAuthEntity | null> {
+        const domain = await this.prisma.tenantDomain.findUnique({
+            where: { host },
+            include: {
+                tenant: true,
+            },
+        });
+        const row = domain?.tenant;
+        if (!row || row.isRemoved || row.status !== TenantStatus.ACTIVE) {
+            return null;
+        }
+        return this.toEntity(row);
+    }
+
     async findFirstActive(): Promise<TenantAuthEntity | null> {
         const row = await this.prisma.tenant.findFirst({
             where: { isRemoved: false, status: TenantStatus.ACTIVE },

@@ -158,6 +158,7 @@ model Tenant {
     isRemoved   Boolean      @default(false)
     tenantUsers TenantUser[]
     payments    TenantPayment[]
+    domains     TenantDomain[]
 
     parlamentares       Parlamentar[]
     legislaturas        Legislatura[]
@@ -195,6 +196,21 @@ model Tenant {
     parliamentarianUsers      ParlamentarianUser[]
     atas                      Ata[]
     pushSubscriptions         PushSubscription[]
+}
+
+/** Hostname do tenant (ex.: baturite.stellarsolucoes.com.br). Resolução via Host / X-Tenant-Host. */
+model TenantDomain {
+    id        String   @id @default(uuid())
+    tenantId  String
+    /** Hostname sem porta, lowercase. */
+    host      String   @unique
+    primario  Boolean  @default(false)
+    createdAt DateTime @default(now())
+
+    tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+    @@index([tenantId])
+    @@map("tenant_domains")
 }
 
 /** Mensalidade / cobrança registrada pelo super admin. */

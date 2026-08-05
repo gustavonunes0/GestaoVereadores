@@ -5,5 +5,7 @@ export abstract class TenantAuthRepository {
 
     abstract findActiveByCnpj(cnpj: string): Promise<TenantAuthEntity | null>;
 
+    abstract findActiveByHost(host: string): Promise<TenantAuthEntity | null>;
+
     abstract findFirstActive(): Promise<TenantAuthEntity | null>;
 }

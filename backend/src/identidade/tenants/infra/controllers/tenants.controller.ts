@@ -7,6 +7,7 @@ import {
     Get,
     NotFoundException,
     Param,
+    ParseUUIDPipe,
     Patch,
     Post,
 } from '@nestjs/common';
@@ -76,7 +77,7 @@ export class TenantsController {
     }
 
     @Get(':id')
-    async findById(@Param('id') id: string) {
+    async findById(@Param('id', ParseUUIDPipe) id: string) {
         try {
             return await this.getTenantDetailUseCase.execute(id);
         } catch (error) {

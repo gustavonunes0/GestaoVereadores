@@ -51,6 +51,7 @@ describe('LoginCamaraUseCase — bloqueio de TenantPartner', () => {
     const tenants = {
         findActiveById: jest.fn(),
         findActiveByCnpj: jest.fn(),
+        findActiveByHost: jest.fn(),
         findFirstActive: jest.fn(),
     } as unknown as jest.Mocked<TenantAuthRepository>;
 

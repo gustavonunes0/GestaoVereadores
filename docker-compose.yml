@@ -31,7 +31,10 @@ services:
       DIRECT_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/gestao_vereadores?schema=public
       PORT: 3000
       JWT_SECRET: gestao-vereadores-jwt-dev-altere-em-producao
-      CORS_ORIGIN: http://localhost:5173,http://localhost:8080,http://127.0.0.1:8080,http://localhost
+      CORS_ORIGIN: https://camaragest.stellarsolucoes.com.br,https://baturite.stellarsolucoes.com.br,http://localhost:5173,http://localhost:8080,http://127.0.0.1:8080,http://localhost
+      # Multi-tenant por host (espelha SistemaSindicatos)
+      PLATFORM_SEED_HOSTS: ${PLATFORM_SEED_HOSTS:-camaragest.stellarsolucoes.com.br}
+      TENANT_SEED_HOSTS: ${TENANT_SEED_HOSTS:-baturite.stellarsolucoes.com.br,localhost}
       # --- Jitsi ---
       # Defina JITSI_DOMAIN no .env (ex.: meet.jit.si ou 187.x.x.x:8444).
       # Se vazio, monta host:porta do Jitsi self-hosted.

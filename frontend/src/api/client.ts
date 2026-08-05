@@ -1,4 +1,5 @@
 import type { AuthUser, LoginRequest, LoginResponse } from '../types/auth';
+import { tenantHostHeader } from '../utils/tenantHost';
 import { API_PATHS } from './paths';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
@@ -28,13 +29,20 @@ export type PaginatedResponse<T> = {
     meta: PaginatedMeta;
 };
 
+function withTenantHost(headers: Record<string, string>): Record<string, string> {
+    return {
+        ...headers,
+        'X-Tenant-Host': tenantHostHeader(),
+    };
+}
+
 export async function api<T>(
     path: string,
     options: RequestInit = {},
 ): Promise<T> {
-    const headers: Record<string, string> = {
+    const headers: Record<string, string> = withTenantHost({
         ...(options.headers as Record<string, string>),
-    };
+    });
     const hasBody =
         options.body !== undefined && options.body !== null && options.body !== '';
     if (hasBody && !headers['Content-Type'] && !headers['content-type']) {
@@ -99,7 +107,7 @@ export async function apiFormData<T>(
     method: 'POST' | 'PATCH' = 'POST',
 ): Promise<T> {
     const token = getToken();
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = withTenantHost({});
     if (token) headers.Authorization = `Bearer ${token}`;
 
     const res = await fetch(`${API_BASE}${path}`, { method, headers, body: formData });
