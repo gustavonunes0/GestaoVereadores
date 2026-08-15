@@ -38,8 +38,8 @@ services:
       PLATFORM_ADMIN_EMAIL: ${PLATFORM_ADMIN_EMAIL:-gustavonoroes@outlook.com}
       PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-Gnb.02062003}
       # --- Jitsi ---
-      # Defina JITSI_DOMAIN no .env (ex.: meet.jit.si ou 187.x.x.x:8444).
-      # Se vazio, monta host:porta do Jitsi self-hosted.
+      # Produção: JITSI_DOMAIN=meet.stashsoftware.com.br (sem porta; TLS no NPM).
+      # Local: localhost:8444 ou IP_LAN:8444. Nunca meet.jit.si em produção.
       JITSI_DOMAIN: ${JITSI_DOMAIN:-${JITSI_PUBLIC_HOST:-localhost}:${JITSI_HTTPS_PORT:-8444}}
       JITSI_APP_ID: ${JWT_APP_ID:-gestao_vereadores}
       JITSI_APP_SECRET: ${JWT_APP_SECRET:-troque-por-um-segredo-forte}
@@ -102,7 +102,9 @@ services:
       JWT_APP_ID: ${JWT_APP_ID:-gestao_vereadores}
       JWT_APP_SECRET: ${JWT_APP_SECRET:-troque-por-um-segredo-forte}
       JWT_ACCEPT_TIME_LEEWAY: 60
-      PUBLIC_URL: https://${JITSI_PUBLIC_HOST:-localhost}:${JITSI_HTTPS_PORT:-8444}
+      # Produção (NPM :443): defina JITSI_PUBLIC_URL=https://meet.stashsoftware.com.br
+      # Local: cai no host:porta (ex. https://localhost:8444)
+      PUBLIC_URL: ${JITSI_PUBLIC_URL:-https://${JITSI_PUBLIC_HOST:-localhost}:${JITSI_HTTPS_PORT:-8444}}
       TZ: ${TZ:-America/Sao_Paulo}
       XMPP_DOMAIN: meet.jitsi
       XMPP_AUTH_DOMAIN: auth.meet.jitsi
