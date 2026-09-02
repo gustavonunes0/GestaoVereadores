@@ -94,6 +94,7 @@ export function SessaoDetalhePage() {
         if (!votacaoAberta) {
             ultimaVotacaoNotificada.current = null;
             setDialogVoto(false);
+            setDialogFecharVotacao(false);
         }
     }, [votacaoAberta]);
 
@@ -134,53 +135,59 @@ export function SessaoDetalhePage() {
         canManageSessao && !!votacaoAberta && sessao.statusSessao === 'ABERTA';
 
     return (
-        <div className="sessao-detalhe-page">
-            <div className="sessao-topbar">
-                <Button
-                    label="Sessões"
-                    icon="pi pi-arrow-left"
-                    size="small"
-                    outlined
-                    severity="secondary"
-                    className="sessao-topbar-back"
-                    aria-label="Voltar para sessões"
-                    onClick={() => navigate('/sessoes')}
-                />
-
-                <div className="sessao-topbar-info">
-                    <div className="sessao-topbar-title">{nomeLabel}</div>
-                    <div className="sessao-topbar-sub">{subtitulo}</div>
-                </div>
-
-                <div className="sessao-topbar-badges">
-                    {statusCfg && (
-                        <span className={`badge ${statusCfg.className}`}>
-                            <i className={statusCfg.icon} aria-hidden />
-                            {statusCfg.label}
-                        </span>
-                    )}
-                    {faseCfg && (
-                        <span className={`badge ${faseCfg.className}`}>
-                            <i className={faseCfg.icon} aria-hidden />
-                            {faseCfg.label}
-                        </span>
-                    )}
-                    {wsConectado && (
-                        <span className="ws-pill">
-                            <i className="pi pi-wifi" aria-hidden />
-                            Ao vivo
-                        </span>
-                    )}
-                </div>
-
-                <div className="sessao-topbar-actions">
-                    <SessaoAcoesMenu
-                        sessaoId={sessao.id}
-                        status={sessao.statusSessao}
-                        onUpdated={() => void buscar()}
+        <div className="sessao-detalhe-page sessao-detalhe-page--lex">
+            <header className="lex-sessao-header">
+                <div className="lex-sessao-header__top">
+                    <Button
+                        icon="pi pi-arrow-left"
+                        text
+                        rounded
+                        severity="secondary"
+                        className="lex-sessao-back"
+                        aria-label="Voltar para sessões"
+                        onClick={() => navigate('/sessoes')}
                     />
+
+                    <div className="lex-sessao-header__info">
+                        <h1 className="lex-sessao-header__title">{nomeLabel}</h1>
+                        <p className="lex-sessao-header__sub">{subtitulo}</p>
+                    </div>
+
+                    <div className="lex-sessao-header__status">
+                        {statusCfg && sessao.statusSessao === 'ABERTA' ? (
+                            <span className="lex-sessao-pill lex-sessao-pill--success">
+                                <span className="lex-sessao-pill__dot" aria-hidden />
+                                {statusCfg.label}
+                            </span>
+                        ) : statusCfg ? (
+                            <span className={`badge ${statusCfg.className}`}>
+                                <i className={statusCfg.icon} aria-hidden />
+                                {statusCfg.label}
+                            </span>
+                        ) : null}
+                        {faseCfg && (
+                            <span className="lex-sessao-pill lex-sessao-pill--fase">
+                                <i className="pi pi-clock" aria-hidden />
+                                {faseCfg.label}
+                            </span>
+                        )}
+                        {wsConectado && (
+                            <span className="ws-pill">
+                                <i className="pi pi-wifi" aria-hidden />
+                                Ao vivo
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="lex-sessao-header__actions">
+                        <SessaoAcoesMenu
+                            sessaoId={sessao.id}
+                            status={sessao.statusSessao}
+                            onUpdated={() => void buscar()}
+                        />
+                    </div>
                 </div>
-            </div>
+            </header>
 
             {votacaoAberta && (
                 <div className="sessao-votacao-banner">

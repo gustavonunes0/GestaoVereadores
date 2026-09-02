@@ -1,13 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type MouseEvent } from 'react';
 import type { PresencaParlamentar, PresencaSessao } from '../../../types/presenca';
-import {
-    MESA_LAYOUT,
-    PLENARIO_VIEWBOX,
-    calcularPosicoes,
-    calcularPosicoesMesa,
-} from '../../../utils/plenarioLayout';
+import { calcularParesFileiras, preencherMesa } from '../../../utils/plenarioLayout';
 import { CadeiraParlamentar } from './CadeiraParlamentar';
+import { CadeiraVazia } from './CadeiraVazia';
+import { FileiraCurva } from './FileiraCurva';
 import { ParlamentarTooltip } from './ParlamentarTooltip';
+import { PresencaLegenda } from './PresencaLegenda';
 import { QuorumBar } from './QuorumBar';
 
 interface PlenarioMapaProps {
@@ -16,8 +14,14 @@ interface PlenarioMapaProps {
     onToggle: (parlUserId: string) => void;
 }
 
-const { w: VB_W, h: VB_H } = PLENARIO_VIEWBOX;
-const { x: MESA_X, y: MESA_Y, w: MESA_W, h: MESA_H } = MESA_LAYOUT;
+function vereadoresNoPlenario(presenca: PresencaSessao): PresencaParlamentar[] {
+    const idsMesa = new Set(
+        presenca.mesaMembros.flatMap((m) => [m.parliamentarianId, m.parlamentarianUserId]),
+    );
+    return presenca.vereadores.filter(
+        (v) => !idsMesa.has(v.parliamentarianId) && !idsMesa.has(v.parlamentarianUserId),
+    );
+}
 
 export function PlenarioMapa({ presenca, podeRegistrar, onToggle }: PlenarioMapaProps) {
     const [tooltip, setTooltip] = useState<{
@@ -26,17 +30,11 @@ export function PlenarioMapa({ presenca, podeRegistrar, onToggle }: PlenarioMapa
         y: number;
     } | null>(null);
 
-    const posicoesMesa = useMemo(
-        () => calcularPosicoesMesa(presenca.mesaMembros.length),
-        [presenca.mesaMembros.length],
-    );
+    const vereadores = useMemo(() => vereadoresNoPlenario(presenca), [presenca]);
+    const paresFileiras = useMemo(() => calcularParesFileiras(vereadores), [vereadores]);
+    const assentosMesa = useMemo(() => preencherMesa(presenca.mesaMembros), [presenca.mesaMembros]);
 
-    const posicoesVereadores = useMemo(
-        () => calcularPosicoes(presenca.vereadores.length),
-        [presenca.vereadores.length],
-    );
-
-    const handleHover = (p: PresencaParlamentar | null, e?: React.MouseEvent) => {
+    const handleHover = (p: PresencaParlamentar | null, e?: MouseEvent) => {
         if (!p || !e) {
             setTooltip(null);
             return;
@@ -45,65 +43,71 @@ export function PlenarioMapa({ presenca, podeRegistrar, onToggle }: PlenarioMapa
     };
 
     return (
-        <div className="plenario-card">
-            <svg
-                viewBox={`0 0 ${VB_W} ${VB_H}`}
-                className="plenario-svg"
-                role="img"
-                aria-label="Mapa de presenças do plenário"
-            >
-                {/* Mesa diretora */}
-                <rect
-                    x={MESA_X}
-                    y={MESA_Y}
-                    width={MESA_W}
-                    height={MESA_H}
-                    rx={10}
-                    fill="#B98F38"
-                    stroke="#8A6A22"
-                    strokeWidth={1.5}
-                />
-                <rect
-                    x={MESA_X + 8}
-                    y={MESA_Y + 8}
-                    width={MESA_W - 16}
-                    height={MESA_H - 16}
-                    rx={6}
-                    fill="#CDA94E"
-                />
+        <div className="plenario-card lex-presenca-map">
+            <div className="plenario-card__canvas">
+                <div className="presenca-plenario" role="img" aria-label="Mapa de presenças do plenário">
+                    <div className="presenca-plenario__hemicycle" aria-hidden />
 
-                {/* Cadeiras da mesa diretora */}
-                {presenca.mesaMembros.map((p, i) =>
-                    posicoesMesa[i] ? (
-                        <CadeiraParlamentar
-                            key={p.parliamentarianId}
-                            parlamentar={p}
-                            posicao={posicoesMesa[i]}
-                            podeRegistrar={podeRegistrar}
-                            onToggle={onToggle}
-                            onHover={handleHover}
-                            size="md"
-                        />
-                    ) : null,
-                )}
+                    <div className="presenca-mesa">
+                        <div className="presenca-mesa__chairs">
+                            {assentosMesa.map((assento, i) =>
+                                assento ? (
+                                    <CadeiraParlamentar
+                                        key={assento.parliamentarianId}
+                                        parlamentar={assento}
+                                        podeRegistrar={podeRegistrar}
+                                        onToggle={onToggle}
+                                        onHover={handleHover}
+                                        size="md"
+                                    />
+                                ) : (
+                                    <CadeiraVazia key={`mesa-vazia-${i}`} size="md" />
+                                ),
+                            )}
+                        </div>
+                        <div className="presenca-mesa__bar">Mesa Diretora</div>
+                        <div className="presenca-mesa__side presenca-mesa__side--left" aria-hidden />
+                        <div className="presenca-mesa__side presenca-mesa__side--right" aria-hidden />
+                    </div>
 
-                {/* Semicírculo — vereadores (fora da mesa) */}
-                {presenca.vereadores.map((p, i) =>
-                    posicoesVereadores[i] ? (
-                        <CadeiraParlamentar
-                            key={p.parliamentarianId}
-                            parlamentar={p}
-                            posicao={posicoesVereadores[i]}
-                            podeRegistrar={podeRegistrar}
-                            onToggle={onToggle}
-                            onHover={handleHover}
-                            size="md"
-                        />
-                    ) : null,
-                )}
-            </svg>
+                    <div className="presenca-fileiras">
+                        {paresFileiras.map((par) => (
+                            <div
+                                key={par.indice}
+                                className="presenca-fileira-par"
+                                style={{
+                                    paddingLeft: par.paddingPx,
+                                    paddingRight: par.paddingPx,
+                                }}
+                            >
+                                <FileiraCurva
+                                    assentos={par.esquerda}
+                                    rowKey={`f${par.indice}-e`}
+                                    rotacaoGraus={par.rotacaoEsq}
+                                    deskRotacaoGraus={par.deskRotEsq}
+                                    deskWidth={par.deskWidth}
+                                    podeRegistrar={podeRegistrar}
+                                    onToggle={onToggle}
+                                    onHover={handleHover}
+                                />
+                                <FileiraCurva
+                                    assentos={par.direita}
+                                    rowKey={`f${par.indice}-d`}
+                                    rotacaoGraus={par.rotacaoDir}
+                                    deskRotacaoGraus={par.deskRotDir}
+                                    deskWidth={par.deskWidth}
+                                    podeRegistrar={podeRegistrar}
+                                    onToggle={onToggle}
+                                    onHover={handleHover}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
 
             <QuorumBar presenca={presenca} />
+            <PresencaLegenda />
 
             {tooltip && <ParlamentarTooltip data={tooltip} />}
         </div>

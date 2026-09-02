@@ -31,7 +31,7 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
     }, [src]);
 
     useEffect(() => {
-        if (!isPdf || !src) return;
+        if (!isPdf || !src || src.startsWith('blob:')) return;
 
         const controller = new AbortController();
         let cancelled = false;
@@ -68,16 +68,7 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
 
     return (
         <div
-            style={{
-                position: 'fixed',
-                inset: 0,
-                zIndex: 9999,
-                background: 'rgba(0,0,0,0.6)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '16px',
-            }}
+            className="sigl-file-preview"
             role="dialog"
             aria-modal="true"
             aria-label={fileName ?? 'Visualizar arquivo'}
@@ -85,22 +76,21 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
                 if (event.target === event.currentTarget) onClose();
             }}
         >
-            <div
-                className="relative flex flex-col w-full max-w-4xl bg-white rounded-[12px] overflow-hidden"
-                style={{ maxHeight: '90vh' }}
-            >
-                <div className="flex items-center gap-3 px-5 py-3 border-b border-[#eef0f3]">
+            <div className="sigl-file-preview__panel">
+                <div className="sigl-file-preview__header">
                     <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-[4px] flex-shrink-0 ${
-                            isPdf ? 'bg-red-100 text-red-700' : 'bg-[#e8edf5] text-[#2563a8]'
+                        className={`sigl-file-preview__type ${
+                            isPdf
+                                ? 'sigl-file-preview__type--pdf'
+                                : 'sigl-file-preview__type--img'
                         }`}
                     >
                         {isPdf ? 'PDF' : 'IMG'}
                     </span>
-                    <span className="flex-1 text-[13px] font-medium text-[#1c2f4a] truncate">
+                    <span className="sigl-file-preview__title">
                         {fileName ?? (isPdf ? 'documento.pdf' : 'imagem')}
                     </span>
-                    <div className="flex items-center gap-1">
+                    <div className="sigl-file-preview__toolbar">
                         {!pdfError && !imgError ? (
                             <>
                                 <a
@@ -108,7 +98,7 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
                                     download={fileName}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="w-8 h-8 flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#f5f6f8] hover:text-[#374151] transition-colors"
+                                    className="sigl-file-upload__action"
                                     aria-label="Baixar arquivo"
                                 >
                                     <DownloadOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
@@ -117,7 +107,7 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
                                     href={src}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="w-8 h-8 flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#f5f6f8] hover:text-[#374151] transition-colors"
+                                    className="sigl-file-upload__action"
                                     aria-label="Abrir em nova aba"
                                 >
                                     <OpenInNewOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
@@ -127,7 +117,7 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
                         <button
                             type="button"
                             onClick={onClose}
-                            className="w-8 h-8 flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#f5f6f8] hover:text-[#374151] transition-colors"
+                            className="sigl-file-upload__action"
                             aria-label="Fechar"
                         >
                             <CloseOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
@@ -135,45 +125,41 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
                     </div>
                 </div>
 
-                <div
-                    className="flex items-center justify-center bg-[#f5f6f8] overflow-hidden"
-                    style={{ minHeight: '400px', maxHeight: 'calc(90vh - 56px)' }}
-                >
+                <div className="sigl-file-preview__body">
                     {isPdf && pdfError ? (
-                        <div className="flex flex-col items-center gap-3 py-16 px-6 text-center text-[#6b7280] max-w-md">
+                        <div className="sigl-file-preview__empty">
                             <BrokenImageOutlined
-                                sx={{ fontSize: 48, color: '#dde2ea' }}
+                                sx={{ fontSize: 48, color: 'var(--input-border)' }}
                                 aria-hidden="true"
                             />
-                            <span className="text-[14px] font-medium text-[#1c2f4a]">
+                            <span className="sigl-file-preview__empty-title">
                                 Arquivo não encontrado
                             </span>
-                            <span className="text-[13px]">
+                            <p className="sigl-file-preview__empty-text">
                                 O texto original não está disponível no servidor. Peça o
                                 reenvio do PDF ou confira o armazenamento de uploads.
-                            </span>
+                            </p>
                         </div>
                     ) : isPdf ? (
                         <iframe
                             src={src}
                             title={fileName}
-                            className="w-full border-0"
-                            style={{ height: 'calc(90vh - 56px)' }}
+                            className="sigl-file-preview__iframe"
                         />
                     ) : imgError ? (
-                        <div className="flex flex-col items-center gap-3 py-16 text-[#b0bac8]">
+                        <div className="sigl-file-preview__empty">
                             <BrokenImageOutlined
-                                sx={{ fontSize: 48, color: '#dde2ea' }}
+                                sx={{ fontSize: 48, color: 'var(--input-border)' }}
                                 aria-hidden="true"
                             />
-                            <span className="text-[13px]">
+                            <span className="sigl-file-preview__empty-text">
                                 Não foi possível carregar a imagem.
                             </span>
                             <a
                                 href={src}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-[13px] text-[#2563a8] hover:underline"
+                                className="sigl-file-preview__link"
                             >
                                 Abrir em nova aba
                             </a>
@@ -182,8 +168,7 @@ export function PreviewImg({ src, fileName, mimeType, onClose }: PreviewImgProps
                         <img
                             src={src}
                             alt={fileName ?? 'imagem'}
-                            className="max-w-full object-contain p-4"
-                            style={{ maxHeight: 'calc(90vh - 56px)' }}
+                            className="sigl-file-preview__image"
                             onError={() => setImgError(true)}
                         />
                     )}

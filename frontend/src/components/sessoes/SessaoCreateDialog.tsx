@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/dialog';
+import { LexDialog } from '../ui/LexDialog';
+import { LexDialogFooter } from '../ui/LexDialogFooter';
 import { sessoesApi } from '../../api/legislative/sessoes.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
@@ -56,28 +56,23 @@ export function SessaoCreateDialog({
     }
 
     const footer = (
-        <div className="flex justify-content-end gap-2">
-            <Button
-                label="Cancelar"
-                severity="secondary"
-                onClick={onClose}
-                disabled={saving}
-            />
-            <Button
-                label="Salvar"
-                icon="pi pi-check"
-                loading={saving}
-                onClick={() => void submit()}
-            />
-        </div>
+        <LexDialogFooter
+            onCancel={onClose}
+            onConfirm={() => void submit()}
+            confirmLabel="Salvar"
+            loading={saving}
+            cancelDisabled={saving}
+            confirmDisabled={!dataInicio || !tipoSessaoId}
+        />
     );
 
     return (
-        <Dialog
+        <LexDialog
             header="Nova sessão plenária"
             visible
+            variant="default"
             onHide={onClose}
-            style={{ width: 'min(90vw, 640px)' }}
+            style={{ width: 'min(90vw, 40rem)' }}
             footer={footer}
             modal
         >
@@ -93,6 +88,6 @@ export function SessaoCreateDialog({
                 mensagem={mensagem}
                 onMensagemChange={setMensagem}
             />
-        </Dialog>
+        </LexDialog>
     );
 }

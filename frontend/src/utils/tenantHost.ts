@@ -5,6 +5,8 @@
  */
 
 const DEFAULT_PLATFORM_HOSTS = ['camaragest.stellarsolucoes.com.br'];
+const DEFAULT_TENANT_HOST = 'baturite.stellarsolucoes.com.br';
+const LOCAL_DEV_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 function parseHostList(raw: string | undefined): string[] {
     if (!raw?.trim()) return [];
@@ -27,7 +29,12 @@ export function currentHostname(): string {
 
 /** Header enviado à API para resolver o tenant (mesmo padrão do SindiGest). */
 export function tenantHostHeader(): string {
-    return currentHostname();
+    const host = currentHostname();
+    if (LOCAL_DEV_HOSTS.has(host)) {
+        const fromEnv = (import.meta.env.VITE_TENANT_HOST as string | undefined)?.trim().toLowerCase();
+        return fromEnv || DEFAULT_TENANT_HOST;
+    }
+    return host;
 }
 
 export function isPlatformHostname(host = currentHostname()): boolean {

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Editar — PLO Prot. nº 2</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#c2c7cf",
+                        "outline": "#747781",
+                        "secondary-fixed": "#dee3eb",
+                        "surface-dim": "#cbdbf5",
+                        "tertiary-container": "#474f59",
+                        "primary-fixed": "#d9e2ff",
+                        "background": "#f8f9ff",
+                        "tertiary-fixed": "#dbe3f0",
+                        "on-secondary-fixed-variant": "#42474e",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#5f656c",
+                        "on-surface": "#0b1c30",
+                        "on-tertiary-container": "#b8c0cd",
+                        "tertiary": "#303842",
+                        "on-primary-fixed-variant": "#234584",
+                        "primary-container": "#2b4c8c",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#dee3eb",
+                        "on-background": "#0b1c30",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container-high": "#dce9ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#e5eeff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c4c6d2",
+                        "on-primary-fixed": "#001943",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#3d5d9e",
+                        "on-primary-container": "#a4bfff",
+                        "primary": "#0c3474",
+                        "on-tertiary-fixed-variant": "#3f4752",
+                        "on-secondary-fixed": "#171c22",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#afc6ff",
+                        "secondary": "#595f66",
+                        "inverse-surface": "#213145",
+                        "surface-variant": "#d3e4fe",
+                        "on-surface-variant": "#434750",
+                        "inverse-primary": "#afc6ff",
+                        "on-tertiary-fixed": "#141c25",
+                        "tertiary-fixed-dim": "#bfc7d4",
+                        "on-secondary": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface": "#f8f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "unit": "4px",
+                        "gutter": "24px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "container-margin": "40px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Public Sans"],
+                        "label-caps": ["Public Sans"],
+                        "headline-md": ["Public Sans"],
+                        "title-lg": ["Public Sans"],
+                        "headline-sm": ["Public Sans"],
+                        "body-sm": ["Public Sans"],
+                        "label-md": ["Public Sans"],
+                        "headline-md-mobile": ["Public Sans"],
+                        "display-lg": ["Public Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "title-lg": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["13px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-md-mobile": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "display-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex items-center justify-center p-md sm:p-lg">
+<!-- Modal Container -->
+<div class="bg-surface-container-lowest w-full max-w-4xl rounded-xl border border-outline-variant shadow-[0_12px_24px_-4px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col max-h-[90vh]">
+<!-- Header -->
+<header class="flex justify-between items-center px-lg py-md border-b border-outline-variant bg-surface-container-lowest sticky top-0 z-10">
+<div class="flex items-center gap-sm">
+<span aria-hidden="true" class="material-symbols-outlined text-primary" data-icon="edit">edit</span>
+<h1 class="font-headline-sm text-headline-sm text-primary">Editar — PLO Prot. nº 2</h1>
+</div>
+<button aria-label="Fechar" class="text-secondary hover:text-on-surface hover:bg-surface-container rounded-full p-sm transition-colors">
+<span aria-hidden="true" class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</header>
+<!-- Navigation Tabs -->
+<nav aria-label="Navegação do formulário" class="flex px-lg border-b border-outline-variant bg-surface-container-lowest sticky top-[73px] z-10 overflow-x-auto">
+<button aria-current="page" class="font-label-md text-label-md text-primary border-b-2 border-primary px-md py-sm mr-sm">Identificação</button>
+<button class="font-label-md text-label-md text-secondary hover:text-on-surface hover:bg-surface-container rounded-t-lg px-md py-sm mr-sm transition-colors">Autoria</button>
+<button class="font-label-md text-label-md text-secondary hover:text-on-surface hover:bg-surface-container rounded-t-lg px-md py-sm transition-colors">Conteúdo</button>
+</nav>
+<!-- Main Content (Scrollable) -->
+<main class="flex-1 overflow-y-auto p-lg bg-surface flex flex-col gap-lg">
+<!-- Context Image (Hidden visually, but present per requirements) -->
+<img alt="Reference for previous design" class="sr-only" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJuGMtlx2s4ZKiEChUGEa0j9oiLAnTYamZVMm3eLUGSytUrOW0ObgyOaT7whTH6Mfh-7GiJyD6nwRKO82oar61y78jeiWD44Y2IPGWDLGHTn0CioqwNVDZCbMZ-ZJujZlklBhzz-rY_MlcsLUbasMkMqQ9tj8CouO-It7i70wAfRdDwT3YYtVaDgORLbu0icNm0nbcrMh56WWrI1pzDu-QSutsJsqeELH1kxQz8NYZ0gyVGkUYd49OlEyqJKbvPfx8G8w"/>
+<!-- Identificação Section -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col gap-lg">
+<h2 class="font-title-lg text-title-lg text-on-surface border-b border-outline-variant pb-sm">Identificação</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Tipo de Matéria (Static) -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Tipo de Matéria</label>
+<div class="font-body-md text-body-md text-on-surface bg-surface-container px-md py-sm rounded-lg border border-transparent">
+                            Projeto de Lei Ordinária
+                        </div>
+</div>
+<!-- Identificação (Static) -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant">Identificação</label>
+<div class="font-body-md text-body-md text-on-surface bg-surface-container px-md py-sm rounded-lg border border-transparent">
+                            PLO
+                        </div>
+</div>
+<!-- Número / Ano (Input) -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant" for="numero-ano">Número / Ano</label>
+<input class="font-body-md text-body-md bg-surface-container-lowest border border-outline rounded-lg px-md py-sm text-on-surface placeholder:text-outline-variant focus:ring-2 focus:ring-primary-container focus:ring-opacity-20 focus:border-primary-container transition-all" id="numero-ano" placeholder="Ex: 85/2026" type="text"/>
+<p class="font-body-sm text-body-sm text-secondary mt-xs">Informe número e ano separados por barra.</p>
+</div>
+<!-- Data de protocolo (Date Picker) -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant" for="data-protocolo">Data de protocolo</label>
+<div class="relative">
+<input class="w-full font-body-md text-body-md bg-surface-container-lowest border border-outline rounded-lg pl-md pr-[40px] py-sm text-on-surface focus:ring-2 focus:ring-primary-container focus:ring-opacity-20 focus:border-primary-container transition-all" id="data-protocolo" type="text" value="09/08/2022"/>
+<span aria-hidden="true" class="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 text-secondary pointer-events-none" data-icon="calendar_today">calendar_today</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Status da Matéria Section -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg flex flex-col gap-lg">
+<h2 class="font-title-lg text-title-lg text-on-surface border-b border-outline-variant pb-sm">Status da Matéria</h2>
+<div class="flex flex-col gap-lg max-w-md">
+<!-- Status Dropdown -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-on-surface-variant" for="status-materia">Status</label>
+<div class="relative">
+<select class="w-full font-body-md text-body-md bg-surface-container-lowest border border-outline rounded-lg pl-md pr-xl py-sm text-on-surface appearance-none focus:ring-2 focus:ring-primary-container focus:ring-opacity-20 focus:border-primary-container transition-all" id="status-materia">
+<option selected="" value="rascunho">Rascunho</option>
+<option value="em-analise">Em Análise</option>
+<option value="aprovado">Aprovado</option>
+</select>
+<span aria-hidden="true" class="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 text-secondary pointer-events-none" data-icon="arrow_drop_down">arrow_drop_down</span>
+</div>
+</div>
+<!-- Informational Alert -->
+<div class="flex items-start gap-sm bg-surface-container-low p-md rounded-lg border border-outline-variant">
+<span aria-hidden="true" class="material-symbols-outlined text-primary shrink-0" data-icon="info">info</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                            O status só pode avançar. Não é possível retornar a um status anterior.
+                        </p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Actions -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant p-lg flex justify-end items-center gap-md sticky bottom-0 z-10">
+<button class="font-label-md text-label-md text-secondary hover:text-on-surface hover:bg-surface-container px-lg py-md rounded-lg transition-colors border border-transparent focus:ring-2 focus:ring-outline">
+                Cancelar
+            </button>
+<button class="font-label-md text-label-md bg-primary-container text-on-primary font-bold px-lg py-md rounded-lg hover:bg-[#203a6c] transition-colors flex items-center gap-sm focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span aria-hidden="true" class="material-symbols-outlined" data-icon="check" style="font-size: 18px;">check</span>
+                Salvar
+            </button>
+</footer>
+</div>
+</body></html>

@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 import { sessoesApi } from '../api/legislative/sessoes.api';
 import type { VotacaoAbertaEvent, VotacaoEncerradaEvent, VotacaoPlacarEvent } from '../types/legislative';
 import type { FaseSessao, PautaItemDetalhe } from '../types/sessoes';
-import { pautaItemRotulo } from '../types/sessoes';
+import { pautaItemRotulo, votacaoJaEncerradaNoItem } from '../types/sessoes';
 import { resolveSocketBaseUrl } from '../utils/socketUrl';
 
 export interface PresencaUpdate {
@@ -46,7 +46,7 @@ export function mapPautaItemVotacaoAberta(
     item: PautaItemDetalhe,
 ): VotacaoAbertaEvent | null {
     const votacao = item.votacao;
-    if (!votacao || votacao.finalizada || votacao.resultado) return null;
+    if (!votacao || votacaoJaEncerradaNoItem(item)) return null;
 
     return {
         sessaoId,
@@ -75,7 +75,7 @@ export function useSessaoRealtime(sessaoId: string) {
         try {
             const itens = await sessoesApi.getPauta(sessaoId);
             const itemAberto = (itens ?? []).find(
-                (item) => item.votacao && !item.votacao.finalizada && !item.votacao.resultado,
+                (item) => item.votacao && !votacaoJaEncerradaNoItem(item),
             );
             if (itemAberto) {
                 setVotacaoAberta(mapPautaItemVotacaoAberta(sessaoId, itemAberto));

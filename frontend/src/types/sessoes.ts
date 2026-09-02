@@ -200,6 +200,21 @@ export function pautaMateriaRotulo(materia: NonNullable<PautaItemDetalhe['materi
     return sigla;
 }
 
+/** Rótulo com nome completo do tipo (painel de detalhe da pauta). */
+export function pautaMateriaRotuloCompleto(
+    materia: NonNullable<PautaItemDetalhe['materia']>,
+): string {
+    const tipo = materia.tipo ?? materia.tipoMateria;
+    const nome = tipo?.nome ?? tipo?.sigla ?? 'Matéria';
+    const anoVal =
+        typeof materia.ano === 'number' ? materia.ano : materia.ano?.valor;
+    const numero = materia.numero;
+    if (numero != null && numero !== '') {
+        return `${nome} nº ${numero}/${anoVal ?? '?'}`;
+    }
+    return nome;
+}
+
 function referenciaRotulo(
     ref: PautaItemReferencia | null | undefined,
     fallback: string,
@@ -230,6 +245,28 @@ export function pautaItemRotulo(item: PautaItemDetalhe): string {
         case 'MATERIA':
         default:
             return item.materia ? pautaMateriaRotulo(item.materia) : 'Matéria';
+    }
+}
+
+/** Rótulo completo para o painel de detalhe (nome do tipo por extenso). */
+export function pautaItemRotuloCompleto(item: PautaItemDetalhe): string {
+    switch (resolvePautaCategoria(item)) {
+        case 'ATO':
+            return referenciaRotulo(item.ato, 'Ato administrativo');
+        case 'NORMA':
+            return referenciaRotulo(item.norma, 'Norma jurídica');
+        case 'AVISO':
+            return item.aviso?.titulo ?? referenciaRotulo(item.aviso, 'Aviso');
+        case 'COMISSAO': {
+            const com = item.comissao?.tipo?.nome ?? item.comissao?.titulo ?? 'Comissão';
+            const mat = item.materia
+                ? pautaMateriaRotuloCompleto(item.materia)
+                : 'matéria';
+            return `Parecer ${com} — ${mat}`;
+        }
+        case 'MATERIA':
+        default:
+            return item.materia ? pautaMateriaRotuloCompleto(item.materia) : 'Matéria';
     }
 }
 
@@ -265,6 +302,15 @@ export function podeAbrirVotacaoNoItem(
     return true;
 }
 
+export function votacaoJaEncerradaNoItem(
+    item: Pick<PautaItemDetalhe, 'votacao' | 'resultado'>,
+): boolean {
+    if (item.resultado) return true;
+    const votacao = item.votacao;
+    if (!votacao) return false;
+    return Boolean(votacao.finalizada || votacao.resultado);
+}
+
 /** Votação aberta no item — apenas matéria ou parecer de comissão. */
 export function podeFecharVotacaoNoItem(
     item: PautaItemDetalhe,
@@ -274,7 +320,7 @@ export function podeFecharVotacaoNoItem(
     const cat = resolvePautaCategoria(item);
     if (cat !== 'MATERIA' && cat !== 'COMISSAO') return false;
     if (!item.votacao) return false;
-    if (item.votacao.finalizada || item.votacao.resultado) return false;
+    if (votacaoJaEncerradaNoItem(item)) return false;
     return true;
 }
 

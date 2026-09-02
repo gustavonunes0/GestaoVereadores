@@ -1,0 +1,18 @@
+---
+description: >-
+  Jitsi self-host rules for plenary video — no meet.jit.si in prod, JWT sync,
+  UDP/JVB advertise, follow SPEC-010 / TASK-010.
+globs: docker-compose.yml,deploy/jitsi*,**/get-jitsi-token*,**/Jitsi*,**/jitsi*
+alwaysApply: false
+---
+
+# Jitsi Self-Host
+
+When editing Jitsi-related compose, env, or token issuance:
+
+1. Follow `backend/src/docs/specs/infra/SPEC-010-jitsi-self-host.md` and `TASK-010-jitsi-self-host.md`.
+2. Production must not default `JITSI_DOMAIN` to `meet.jit.si` (5-minute free limit).
+3. Keep API `JITSI_APP_ID`/`JITSI_APP_SECRET` identical to Prosody `JWT_APP_ID`/`JWT_APP_SECRET`.
+4. Ensure JVB public IP (`DOCKER_HOST_ADDRESS` / `JVB_ADVERTISE_IPS`) and UDP `10000` are documented with any network change.
+5. Prefer Nginx Proxy Manager + Let’s Encrypt over exposing self-signed `:8444` long-term.
+6. Do not remove JWT auth without an explicit product decision; plenary rooms are opened via API-issued tokens.

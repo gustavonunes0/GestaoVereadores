@@ -1,0 +1,425 @@
+/* ── Presença em plenário — fiel ao code.html / referência visual ── */
+
+:root {
+    --presenca-desk-brown: #b58b4c;
+    --presenca-seat-institucional: #4c73e0;
+    --presenca-seat-presente: #10b981;
+    --presenca-seat-ausente: #ef4444;
+    --presenca-seat-justificado: #f59e0b;
+    --presenca-seat-pendente: #9ca3af;
+    /* Densidade do plenário */
+    --presenca-gap-fileira: 34px;
+    --presenca-gap-assento: 5px;
+    --presenca-seat-w: 36px;
+    --presenca-seat-h: 28px;
+    --presenca-seat-mesa-w: 42px;
+    --presenca-seat-mesa-h: 34px;
+    --presenca-seat-pres-w: 46px;
+    --presenca-seat-pres-h: 38px;
+}
+
+/* Painel */
+.lex-presenca-panel.presenca-panel {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    gap: 16px;
+}
+
+.presenca-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Métricas */
+.lex-presenca-metrics.presenca-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.lex-presenca-metrics .presenca-metric {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 16px;
+}
+
+.lex-presenca-metrics .presenca-metric-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.lex-presenca-metrics .presenca-metric-val {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.presenca-metric--presente .presenca-metric-val { color: #059669; }
+.presenca-metric--ausente .presenca-metric-val { color: #dc2626; }
+.presenca-metric--total .presenca-metric-val { color: var(--accent, #2b4c8c); }
+
+/* Container do mapa */
+.lex-presenca-map.plenario-card {
+    background: transparent;
+    border: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+}
+
+.plenario-card__canvas {
+    width: 100%;
+    background: radial-gradient(circle at top center, #ffffff 0%, #e5e7eb 100%);
+    border-radius: 0;
+    border: none;
+    padding: 20px 12px 24px;
+    overflow: visible;
+}
+
+/* ── Estrutura principal ── */
+.presenca-plenario {
+    position: relative;
+    width: 100%;
+    max-width: 52rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 8px;
+    color: #1e293b;
+}
+
+/* Hemiciclo de fundo */
+.presenca-plenario__hemicycle {
+    position: absolute;
+    top: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 720px;
+    max-width: 100%;
+    height: 340px;
+    background: rgba(226, 232, 240, 0.5);
+    border-radius: 360px 360px 0 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Mesa Diretora ── */
+.presenca-mesa {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.presenca-mesa__chairs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.presenca-mesa__bar {
+    background: var(--presenca-desk-brown);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 48px;
+    border-radius: 2px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-align: center;
+    white-space: nowrap;
+    min-width: 260px;
+}
+
+.presenca-mesa__side {
+    position: absolute;
+    top: 24px;
+    width: 56px;
+    height: 84px;
+    background: var(--presenca-desk-brown);
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+.presenca-mesa__side--left {
+    left: -112px;
+    transform: rotate(12deg);
+}
+
+.presenca-mesa__side--right {
+    right: -112px;
+    transform: rotate(-12deg);
+}
+
+/* ── Fileiras do plenário ── */
+.presenca-fileiras {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--presenca-gap-fileira);
+    width: 100%;
+    margin-top: 8px;
+    position: relative;
+    z-index: 10;
+}
+
+.presenca-fileira-par {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.presenca-curved-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--presenca-gap-assento);
+    position: relative;
+    width: 41.666667%;
+}
+
+.presenca-desk-curve {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    height: 16px;
+    background-color: var(--presenca-desk-brown);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    z-index: 0;
+    transform-origin: center bottom;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+/* ── Assentos (.seat do design) ── */
+.presenca-seat {
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+    width: var(--presenca-seat-w);
+    height: var(--presenca-seat-h);
+    border: none;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    font-family: inherit;
+    line-height: 1;
+    box-shadow:
+        0 4px 0 rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    transition: transform 0.1s, box-shadow 0.1s, opacity 0.1s;
+    cursor: pointer;
+    padding: 0;
+    background: var(--presenca-seat-institucional);
+}
+
+.presenca-seat::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 10%;
+    right: 10%;
+    height: 3px;
+    background: inherit;
+    filter: brightness(1.2);
+    border-radius: 2px 2px 0 0;
+    pointer-events: none;
+}
+
+.presenca-seat:hover:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow:
+        0 2px 0 rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+}
+
+.presenca-seat:disabled {
+    cursor: default;
+}
+
+.presenca-seat:focus-visible {
+    outline: 2px solid var(--accent, #2b4c8c);
+    outline-offset: 2px;
+}
+
+.presenca-seat--mesa {
+    width: var(--presenca-seat-mesa-w);
+    height: var(--presenca-seat-mesa-h);
+}
+
+/* Presidente — centro da mesa, leve destaque */
+.presenca-seat--presidente {
+    width: var(--presenca-seat-pres-w);
+    height: var(--presenca-seat-pres-h);
+    font-size: 0.75rem;
+    z-index: 12;
+    box-shadow:
+        0 5px 0 rgba(0, 0, 0, 0.32),
+        inset 0 2px 5px rgba(255, 255, 255, 0.4),
+        0 0 0 2px rgba(255, 255, 255, 0.65),
+        0 0 0 3.5px rgba(43, 76, 140, 0.45);
+}
+
+.presenca-seat--presidente:hover:not(:disabled) {
+    box-shadow:
+        0 3px 0 rgba(0, 0, 0, 0.32),
+        inset 0 2px 5px rgba(255, 255, 255, 0.4),
+        0 0 0 2px rgba(255, 255, 255, 0.65),
+        0 0 0 3.5px rgba(43, 76, 140, 0.45);
+}
+
+.presenca-seat--institucional { background: var(--presenca-seat-institucional); }
+.presenca-seat--presente { background: var(--presenca-seat-presente); }
+.presenca-seat--ausente { background: var(--presenca-seat-ausente); }
+.presenca-seat--justificado { background: var(--presenca-seat-justificado); }
+
+/* Pendente: azul esmaecido como no design (opacity-50) */
+.presenca-seat--pendente {
+    background: var(--presenca-seat-institucional);
+    opacity: 0.5;
+}
+
+/* Cadeira vazia — slot sem parlamentar (completa o layout fixo) */
+.presenca-seat--vazia {
+    background: var(--presenca-seat-institucional);
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: default;
+}
+
+.presenca-seat--vazia::after {
+    opacity: 0.6;
+}
+
+/* ── Legenda ── */
+.presenca-legenda {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 16px 20px;
+    width: 100%;
+    max-width: 56rem;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(4px);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    font-size: 14px;
+    font-weight: 500;
+    color: #334155;
+}
+
+.presenca-legenda__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.presenca-legenda__swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.presenca-legenda__swatch--presente { background: var(--presenca-seat-presente); }
+.presenca-legenda__swatch--ausente { background: var(--presenca-seat-ausente); }
+.presenca-legenda__swatch--justificado { background: var(--presenca-seat-justificado); }
+.presenca-legenda__swatch--pendente { background: var(--presenca-seat-pendente); }
+.presenca-legenda__swatch--institucional { background: var(--presenca-seat-institucional); }
+
+.ptt-status--presente { color: #059669; }
+.ptt-status--ausente { color: #dc2626; }
+.ptt-status--justificado { color: #d97706; }
+.ptt-status--pendente { color: #6b7280; }
+
+.lex-presenca-map .quorum-wrap {
+    width: 100%;
+    max-width: 56rem;
+    margin: 0;
+    padding: 0 4px;
+}
+
+@media (max-width: 900px) {
+    .presenca-mesa__side--left { left: -64px; }
+    .presenca-mesa__side--right { right: -64px; }
+}
+
+@media (max-width: 768px) {
+    .lex-presenca-metrics.presenca-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .plenario-card__canvas {
+        padding: 16px 8px 24px;
+    }
+
+    .presenca-seat {
+        width: 32px;
+        height: 26px;
+        font-size: 0.625rem;
+    }
+
+    .presenca-seat--mesa {
+        width: 40px;
+        height: 34px;
+    }
+
+    .presenca-curved-row {
+        gap: 4px;
+    }
+
+    .presenca-fileiras {
+        gap: 26px;
+    }
+
+    .presenca-mesa__bar {
+        min-width: 0;
+        padding: 10px 24px;
+        font-size: 12px;
+    }
+
+    .presenca-mesa__side {
+        display: none;
+    }
+
+    .presenca-legenda {
+        gap: 12px 16px;
+        padding: 12px 16px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .presenca-seat {
+        width: 26px;
+        height: 22px;
+        font-size: 0.5rem;
+    }
+
+    .presenca-curved-row {
+        width: 48%;
+        gap: 3px;
+    }
+}

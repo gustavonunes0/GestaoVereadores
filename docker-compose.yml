@@ -70,6 +70,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: /api
+        VITE_TENANT_HOST: ${TENANT_SEED_HOSTS:-baturite.stellarsolucoes.com.br}
     restart: unless-stopped
     ports:
       - '8080:80'

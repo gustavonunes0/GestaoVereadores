@@ -1,0 +1,905 @@
+/**
+ * Lex Institucional — dialogs
+ * Ref. .cursor/Dialog Design/code.html + DESIGN.md
+ */
+
+:root {
+    /* Alinhado à paleta institucional (prime-theme-tokens.css) */
+    --lex-surface: var(--bg-subtle, #f8f9fb);
+    --lex-surface-container-lowest: var(--card-bg, #ffffff);
+    --lex-surface-container-low: var(--pagination-btn-bg, #f0f4fa);
+    --lex-surface-container: var(--sidebar-item-active-bg, #e8edf5);
+    --lex-surface-container-high: var(--pagination-btn-hover, #dde8f5);
+    --lex-on-surface: var(--text-heading, #1c2f4a);
+    --lex-on-surface-variant: var(--text-body, #374151);
+    --lex-outline: var(--text-500, #868b96);
+    --lex-outline-variant: var(--input-border, #dde2ea);
+    --lex-primary: var(--accent, #2563a8);
+    --lex-primary-container: var(--accent-hover, #1d4f8a);
+    --lex-primary-container-hover: var(--brand-night-blue, #0e1e46);
+    --lex-primary-fixed: var(--pagination-btn-hover, #dde8f5);
+    --lex-on-primary: var(--text-inverse, #ffffff);
+    --lex-secondary: var(--text-muted, #8492a6);
+    --lex-error: var(--danger, #d94a42);
+    --lex-on-error: var(--text-inverse, #ffffff);
+    --lex-on-error-container: var(--danger, #d94a42);
+    --lex-error-container: var(--danger-bg, rgba(217, 74, 66, 0.1));
+    --lex-dialog-radius: 10px;
+    --lex-dialog-radius-sm: 6px;
+    --lex-dialog-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.04);
+    --lex-dialog-font: 'Public Sans', var(--font-family-sans);
+    /* Dense — compacto (padrão dos dialogs) */
+    --lex-gap-xs: 2px;
+    --lex-gap-sm: 6px;
+    --lex-gap-md: 10px;
+    --lex-gap-lg: 14px;
+    --lex-dialog-header-px: 14px;
+    --lex-dialog-header-py: 10px;
+    --lex-dialog-body-px: 14px;
+    --lex-dialog-body-py: 10px;
+    --lex-dialog-footer-px: 14px;
+    --lex-dialog-footer-py: 10px;
+}
+
+/* Tipografia Lex dense (escopo dialog) */
+.lex-dialog,
+.lex-dialog-form-card,
+.p-dialog {
+    --lex-text-headline-sm: 600 17px/22px var(--lex-dialog-font);
+    --lex-text-title-lg: 600 15px/20px var(--lex-dialog-font);
+    --lex-text-body-md: 400 13px/18px var(--lex-dialog-font);
+    --lex-text-body-sm: 400 12px/16px var(--lex-dialog-font);
+    --lex-text-label-md: 500 11px/14px var(--lex-dialog-font);
+}
+
+/* ——— Shell PrimeReact ——— */
+.p-dialog {
+    font-family: var(--lex-dialog-font);
+    border-radius: var(--lex-dialog-radius);
+    border: 1px solid var(--lex-outline-variant);
+    box-shadow: var(--lex-dialog-shadow);
+    background: var(--lex-surface-container-lowest);
+    overflow: hidden;
+    max-height: 90vh;
+}
+
+.p-dialog .p-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: var(--lex-gap-sm);
+    padding: var(--lex-dialog-header-py) var(--lex-dialog-header-px);
+    background: var(--lex-surface-container-lowest);
+    border-bottom: 1px solid var(--lex-outline-variant);
+    font: var(--lex-text-headline-sm);
+    color: var(--lex-primary);
+}
+
+.p-dialog .p-dialog-header .p-dialog-title {
+    color: var(--lex-primary);
+    font: inherit;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-icon {
+    color: var(--lex-secondary);
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-icon:hover {
+    color: var(--lex-on-surface);
+    background: var(--lex-surface-container);
+}
+
+.p-dialog .p-dialog-content {
+    padding: var(--lex-dialog-body-py) var(--lex-dialog-body-px);
+    background: var(--lex-surface);
+    color: var(--lex-on-surface);
+    font: var(--lex-text-body-md);
+}
+
+.p-dialog .p-dialog-footer {
+    padding: var(--lex-dialog-footer-py) var(--lex-dialog-footer-px);
+    background: var(--lex-surface-container-lowest);
+    border-top: 1px solid var(--lex-outline-variant);
+}
+
+/* ——— Botões Lex (ref. footer code.html) ——— */
+.lex-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--lex-gap-sm);
+    padding: 6px 14px;
+    border-radius: var(--lex-dialog-radius-sm);
+    border: 1px solid transparent;
+    font: var(--lex-text-label-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    font-family: var(--lex-dialog-font);
+}
+
+.lex-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.lex-btn--ghost {
+    color: var(--lex-secondary);
+    background: transparent;
+}
+
+.lex-btn--ghost:hover:not(:disabled) {
+    color: var(--lex-on-surface);
+    background: var(--lex-surface-container);
+}
+
+.lex-btn--primary {
+    color: var(--lex-on-primary);
+    background: var(--lex-primary-container);
+    font-weight: 700;
+}
+
+.lex-btn--primary:hover:not(:disabled) {
+    background: var(--lex-primary-container-hover);
+}
+
+.lex-btn--primary .pi {
+    font-size: 1.125rem;
+}
+
+.lex-btn--danger {
+    color: var(--lex-on-error);
+    background: var(--lex-error);
+    font-weight: 700;
+}
+
+.lex-btn--danger:hover:not(:disabled) {
+    background: var(--lex-on-error-container);
+}
+
+.lex-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--lex-gap-md);
+    width: 100%;
+}
+
+/* Prime buttons estilizados como Lex no footer */
+.p-dialog .p-dialog-footer .lex-btn-prime.p-button {
+    font-family: var(--lex-dialog-font);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: var(--lex-dialog-radius-sm);
+}
+
+.p-dialog .p-dialog-footer .lex-btn-prime--ghost.p-button {
+    color: var(--lex-secondary);
+    background: transparent;
+    border-color: transparent;
+}
+
+.p-dialog .p-dialog-footer .lex-btn-prime--ghost.p-button:hover {
+    color: var(--lex-on-surface);
+    background: var(--lex-surface-container);
+}
+
+.p-dialog .p-dialog-footer .lex-btn-prime--primary.p-button {
+    background: var(--lex-primary-container);
+    border-color: var(--lex-primary-container);
+    color: var(--lex-on-primary);
+    font-weight: 700;
+}
+
+.p-dialog .p-dialog-footer .lex-btn-prime--primary.p-button:hover {
+    background: var(--lex-primary-container-hover);
+    border-color: var(--lex-primary-container-hover);
+}
+
+.p-dialog .p-dialog-footer .lex-btn-prime--danger.p-button {
+    background: var(--lex-error);
+    border-color: var(--lex-error);
+}
+
+/* Fallback: botões Prime sem classe lex no footer */
+.p-dialog .p-dialog-footer .p-button.p-button-secondary,
+.p-dialog .p-dialog-footer .p-button.p-button-text {
+    color: var(--lex-secondary);
+    background: transparent;
+    border-color: transparent;
+    font: var(--lex-text-label-md);
+    padding: 6px 14px;
+    border-radius: var(--lex-dialog-radius-sm);
+}
+
+.p-dialog .p-dialog-footer .p-button.p-button-secondary:hover,
+.p-dialog .p-dialog-footer .p-button.p-button-text:hover {
+    color: var(--lex-on-surface);
+    background: var(--lex-surface-container);
+}
+
+.p-dialog .p-dialog-footer .p-button:not(.p-button-danger):not(.p-button-secondary):not(.p-button-text) {
+    background: var(--lex-primary-container);
+    border-color: var(--lex-primary-container);
+    color: var(--lex-on-primary);
+    font-weight: 700;
+    font: var(--lex-text-label-md);
+    padding: 6px 14px;
+    border-radius: var(--lex-dialog-radius-sm);
+}
+
+.p-dialog .p-dialog-footer .p-button:not(.p-button-danger):not(.p-button-secondary):not(.p-button-text):hover {
+    background: var(--lex-primary-container-hover);
+    border-color: var(--lex-primary-container-hover);
+}
+
+.p-dialog .p-dialog-footer .p-button.p-button-danger {
+    background: var(--lex-error);
+    border-color: var(--lex-error);
+    color: var(--lex-on-error);
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: var(--lex-dialog-radius-sm);
+}
+
+/* ——— Campos de formulário (todos os dialogs) ——— */
+.p-dialog label,
+.p-dialog .lex-dialog-field > label,
+.p-dialog .materia-form-field > label,
+.p-dialog .sigl-filtro-campo > label,
+.p-dialog .field > label {
+    display: block;
+    font: var(--lex-text-label-md);
+    color: var(--lex-on-surface-variant);
+    margin-bottom: var(--lex-gap-xs);
+}
+
+.p-dialog .p-inputtext,
+.p-dialog .p-inputtextarea,
+.p-dialog .p-password input,
+.p-dialog input[type='text'],
+.p-dialog input[type='email'],
+.p-dialog input[type='password'],
+.p-dialog input[type='datetime-local'],
+.p-dialog input[type='date'],
+.p-dialog textarea,
+.p-dialog .p-dropdown,
+.p-dialog .p-dropdown-label,
+.p-dialog .p-multiselect {
+    width: 100%;
+    font: var(--lex-text-body-md) !important;
+    color: var(--lex-on-surface) !important;
+    background: var(--lex-surface-container-lowest) !important;
+    border: 1px solid var(--lex-outline) !important;
+    border-radius: var(--lex-dialog-radius-sm) !important;
+    padding: 5px 9px !important;
+    min-height: 2rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.p-dialog .p-inputtext::placeholder {
+    color: var(--lex-outline-variant);
+}
+
+.p-dialog .p-inputtext:enabled:focus,
+.p-dialog .p-inputtextarea:enabled:focus,
+.p-dialog .p-password input:enabled:focus,
+.p-dialog input:focus,
+.p-dialog textarea:focus,
+.p-dialog .p-dropdown.p-focus,
+.p-dialog .p-dropdown:not(.p-disabled):hover {
+    border-color: var(--lex-primary-container) !important;
+    box-shadow: 0 0 0 2px rgba(43, 76, 140, 0.2) !important;
+    outline: none;
+}
+
+.p-dialog .p-inputtext:disabled,
+.p-dialog .p-inputtext[readonly],
+.p-dialog input:disabled,
+.p-dialog input[readonly] {
+    background: var(--lex-surface-container) !important;
+    border-color: transparent !important;
+    color: var(--lex-on-surface) !important;
+    opacity: 1;
+}
+
+.p-dialog .lex-dialog-readonly,
+.p-dialog .materia-form-readonly-value {
+    font: var(--lex-text-body-md);
+    color: var(--lex-on-surface);
+    background: var(--lex-surface-container);
+    border: 1px solid transparent;
+    border-radius: var(--lex-dialog-radius-sm);
+    padding: 5px 9px;
+    margin: 0;
+    min-height: 2rem;
+    display: flex;
+    align-items: center;
+}
+
+.p-dialog .lex-dialog-hint,
+.p-dialog .materia-form-hint,
+.p-dialog .text-color-secondary.text-sm {
+    font: var(--lex-text-body-sm);
+    color: var(--lex-secondary);
+    margin: var(--lex-gap-xs) 0 0;
+}
+
+.p-dialog .lex-dialog-hint--error {
+    color: var(--lex-error);
+}
+
+.p-dialog .lex-dialog-field,
+.p-dialog .materia-form-field,
+.p-dialog .sigl-filtro-campo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lex-gap-xs);
+}
+
+.p-dialog .lex-dialog-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--lex-gap-sm);
+    padding: var(--lex-gap-sm) var(--lex-gap-md);
+    background: var(--lex-surface-container-low);
+    border: 1px solid var(--lex-outline-variant);
+    border-radius: var(--lex-dialog-radius-sm);
+}
+
+.p-dialog .lex-dialog-alert .pi {
+    color: var(--lex-primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.p-dialog .lex-dialog-alert p {
+    margin: 0;
+    font: var(--lex-text-body-sm);
+    color: var(--lex-on-surface-variant);
+}
+
+/* Grid de campos — 12 colunas (padrão em todos os dialogs) */
+.p-dialog .lex-dialog-grid,
+.p-dialog .sigl-grid-12,
+.p-dialog .sigl-dialog-body.sigl-grid-12 {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--lex-gap-md);
+    align-items: start;
+    width: 100%;
+}
+
+.p-dialog .lex-dialog-grid-2,
+.p-dialog .materia-form-grid-2,
+.p-dialog .sigl-dialog-grid.sigl-dialog-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--lex-gap-md);
+    align-items: start;
+    width: 100%;
+}
+
+.p-dialog .lex-dialog-grid-3,
+.p-dialog .materia-form-grid-3,
+.p-dialog .sigl-dialog-grid.sigl-dialog-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--lex-gap-md);
+    align-items: start;
+    width: 100%;
+}
+
+.p-dialog .lex-dialog-grid > *,
+.p-dialog .sigl-grid-12 > *,
+.p-dialog .lex-dialog-grid-2 > *,
+.p-dialog .lex-dialog-grid-3 > *,
+.p-dialog .materia-form-grid-2 > *,
+.p-dialog .materia-form-grid-3 > *,
+.p-dialog .sigl-dialog-grid > * {
+    min-width: 0;
+}
+
+.p-dialog .lex-dialog-grid > .lex-col-full,
+.p-dialog .lex-dialog-grid > .sigl-col-full,
+.p-dialog .sigl-grid-12 > .sigl-col-full,
+.p-dialog .sigl-dialog-grid > .sigl-col-full {
+    grid-column: 1 / -1;
+}
+
+.p-dialog .lex-dialog-grid > .lex-col-12,
+.p-dialog .lex-dialog-grid > .sigl-col-12,
+.p-dialog .sigl-grid-12 > .sigl-col-12 {
+    grid-column: span 12;
+}
+
+.p-dialog .lex-dialog-grid > .lex-col-6,
+.p-dialog .lex-dialog-grid > .sigl-col-6,
+.p-dialog .sigl-grid-12 > .sigl-col-6 {
+    grid-column: span 6;
+}
+
+.p-dialog .lex-dialog-grid > .lex-col-4,
+.p-dialog .lex-dialog-grid > .sigl-col-4,
+.p-dialog .sigl-grid-12 > .sigl-col-4 {
+    grid-column: span 4;
+}
+
+.p-dialog .lex-dialog-grid > .lex-col-3,
+.p-dialog .lex-dialog-grid > .sigl-col-3,
+.p-dialog .sigl-grid-12 > .sigl-col-3 {
+    grid-column: span 3;
+}
+
+.p-dialog .lex-dialog-grid > .lex-col-8,
+.p-dialog .sigl-grid-12 > .lex-col-8 {
+    grid-column: span 8;
+}
+
+.p-dialog .lex-dialog-grid .p-inputtext,
+.p-dialog .lex-dialog-grid .p-inputtextarea,
+.p-dialog .lex-dialog-grid .p-dropdown,
+.p-dialog .lex-dialog-grid .p-password,
+.p-dialog .lex-dialog-grid .sigl-ui-dropdown,
+.p-dialog .sigl-grid-12 .p-inputtext,
+.p-dialog .sigl-grid-12 .p-dropdown,
+.p-dialog .sigl-grid-12 .sigl-ui-dropdown,
+.p-dialog .sigl-grid-12 textarea {
+    width: 100%;
+}
+
+.p-dialog .lex-dialog-grid > .sigl-filtro-campo > label,
+.p-dialog .sigl-grid-12 > .sigl-filtro-campo > label {
+    min-height: 14px;
+    line-height: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    .p-dialog .lex-dialog-grid-2,
+    .p-dialog .lex-dialog-grid-3,
+    .p-dialog .materia-form-grid-2,
+    .p-dialog .materia-form-grid-3,
+    .p-dialog .sigl-dialog-grid.sigl-dialog-grid-2,
+    .p-dialog .sigl-dialog-grid.sigl-dialog-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .p-dialog .lex-dialog-grid > .lex-col-6,
+    .p-dialog .lex-dialog-grid > .sigl-col-6,
+    .p-dialog .sigl-grid-12 > .sigl-col-6,
+    .p-dialog .lex-dialog-grid > .lex-col-4,
+    .p-dialog .lex-dialog-grid > .lex-col-3,
+    .p-dialog .lex-dialog-grid > .lex-col-8 {
+        grid-column: span 12;
+    }
+}
+
+/* sigl-dialog-body em dialogs padrão */
+.p-dialog .p-dialog-content:has(.sigl-dialog-body) {
+    padding: 0;
+    background: var(--lex-surface);
+}
+
+.p-dialog .sigl-dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lex-gap-md);
+    padding: var(--lex-dialog-body-py) var(--lex-dialog-body-px);
+    background: var(--lex-surface);
+}
+
+/* Seções e cards internos usam grid de 12 colunas */
+.p-dialog .sigl-dialog-secao,
+.p-dialog .lex-dialog-section {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--lex-gap-md);
+    align-items: start;
+}
+
+.p-dialog .sigl-dialog-secao > .sigl-dialog-secao-titulo,
+.p-dialog .lex-dialog-section > .lex-dialog-section-title {
+    grid-column: 1 / -1;
+}
+
+.p-dialog .sigl-dialog-secao > .sigl-dialog-grid,
+.p-dialog .sigl-dialog-secao > .lex-dialog-grid,
+.p-dialog .sigl-dialog-secao > .lex-dialog-grid-2,
+.p-dialog .sigl-dialog-secao > .lex-dialog-grid-3,
+.p-dialog .lex-dialog-section > .lex-dialog-grid,
+.p-dialog .lex-dialog-section > .lex-dialog-grid-2,
+.p-dialog .lex-dialog-section > .lex-dialog-grid-3,
+.p-dialog .lex-dialog-section > .materia-form-grid-2,
+.p-dialog .lex-dialog-section > .materia-form-grid-3 {
+    grid-column: 1 / -1;
+}
+
+.p-dialog .sigl-dialog-secao > .sigl-filtro-campo,
+.p-dialog .sigl-dialog-secao > .lex-dialog-field,
+.p-dialog .lex-dialog-section > .lex-dialog-field {
+    grid-column: span 12;
+    min-width: 0;
+}
+
+/* ——— Variantes ——— */
+.lex-dialog--view .p-dialog-header,
+.lex-dialog--view .p-dialog-header .p-dialog-title {
+    color: var(--lex-on-surface);
+}
+
+.lex-dialog--danger .p-dialog-header,
+.lex-dialog--danger .p-dialog-header .p-dialog-title {
+    color: var(--lex-error);
+}
+
+.lex-dialog--danger .p-dialog-content {
+    font: var(--lex-text-body-sm);
+    color: var(--lex-on-surface-variant);
+}
+
+.lex-dialog--confirm .p-dialog-header .p-dialog-title {
+    color: var(--lex-primary);
+}
+
+/* ConfirmDialog */
+.p-confirm-dialog .p-dialog-content {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--lex-gap-md);
+    font: var(--lex-text-body-sm);
+    color: var(--lex-on-surface-variant);
+}
+
+.p-confirm-dialog .p-confirm-dialog-icon {
+    font-size: 1.35rem;
+    color: var(--lex-error);
+}
+
+.p-confirm-dialog.lex-dialog--confirm .p-confirm-dialog-icon {
+    color: var(--lex-primary-container);
+}
+
+.p-confirm-dialog .p-confirm-dialog-message {
+    font: var(--lex-text-body-sm);
+    color: var(--lex-on-surface-variant);
+    line-height: 20px;
+}
+
+/* ——— Form shell (header + tabs + body + footer) ——— */
+.lex-dialog.lex-dialog--form .p-dialog-content,
+.materia-form-dialog .p-dialog-content {
+    padding: 0 !important;
+    background: var(--lex-surface);
+    overflow: visible;
+}
+
+.lex-dialog-form-card {
+    display: flex;
+    flex-direction: column;
+    max-height: min(90vh, 56rem);
+    background: var(--lex-surface-container-lowest);
+    border-radius: var(--lex-dialog-radius);
+    overflow: hidden;
+    font-family: var(--lex-dialog-font);
+}
+
+.lex-dialog-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--lex-gap-sm);
+    padding: var(--lex-dialog-header-py) var(--lex-dialog-header-px);
+    border-bottom: 1px solid var(--lex-outline-variant);
+    background: var(--lex-surface-container-lowest);
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.lex-dialog-form-title {
+    display: flex;
+    align-items: center;
+    gap: var(--lex-gap-sm);
+    font: var(--lex-text-headline-sm);
+    color: var(--lex-primary);
+    margin: 0;
+}
+
+.lex-dialog-form-title .pi {
+    font-size: 1rem;
+    color: var(--lex-primary);
+}
+
+.lex-dialog-form-close.p-button {
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    color: var(--lex-secondary);
+    border-radius: 9999px;
+}
+
+.lex-dialog-form-close.p-button:hover {
+    color: var(--lex-on-surface);
+    background: var(--lex-surface-container) !important;
+}
+
+.lex-dialog-form-tabs {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    padding: 0 var(--lex-dialog-header-px);
+    border-bottom: 1px solid var(--lex-outline-variant);
+    background: var(--lex-surface-container-lowest);
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-shrink: 0;
+    scrollbar-width: thin;
+}
+
+.lex-dialog-form-tab {
+    padding: 5px 10px;
+    margin-right: var(--lex-gap-sm);
+    margin-bottom: 0;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    font: var(--lex-text-label-md);
+    color: var(--lex-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 14px;
+    box-sizing: border-box;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+    font-family: var(--lex-dialog-font);
+}
+
+.lex-dialog-form-tab:hover:not(.active) {
+    color: var(--lex-on-surface);
+    background: var(--lex-surface-container);
+    border-radius: var(--lex-dialog-radius-sm) var(--lex-dialog-radius-sm) 0 0;
+}
+
+.lex-dialog-form-tab.active {
+    color: var(--lex-primary);
+    border-bottom-color: var(--lex-primary);
+    font-weight: 600;
+    margin-bottom: -1px;
+    position: relative;
+    z-index: 1;
+}
+
+.lex-dialog-form-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--lex-dialog-body-py) var(--lex-dialog-body-px);
+    background: var(--lex-surface);
+    min-height: 140px;
+}
+
+.lex-dialog-form-body--stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lex-gap-md);
+}
+
+.lex-dialog-form-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--lex-gap-md);
+    padding: var(--lex-dialog-footer-py) var(--lex-dialog-footer-px);
+    border-top: 1px solid var(--lex-outline-variant);
+    background: var(--lex-surface-container-lowest);
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+}
+
+/* Seções em form shell Lex — grid 12 colunas */
+.lex-dialog-section,
+.lex-dialog-form-body .materia-form-secao {
+    background: var(--lex-surface-container-lowest);
+    border: 1px solid var(--lex-outline-variant);
+    border-radius: var(--lex-dialog-radius);
+    padding: var(--lex-gap-md);
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--lex-gap-md);
+    align-items: start;
+    margin-bottom: 0;
+}
+
+.lex-dialog-section-title,
+.lex-dialog-form-body .materia-form-secao-titulo {
+    font: var(--lex-text-title-lg);
+    color: var(--lex-on-surface);
+    text-transform: none;
+    letter-spacing: normal;
+    border-bottom: 1px solid var(--lex-outline-variant);
+    padding-bottom: var(--lex-gap-sm);
+    margin: 0;
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: var(--lex-gap-sm);
+}
+
+.lex-dialog-section-title .pi,
+.lex-dialog-form-body .materia-form-secao-titulo .pi {
+    font-size: 0.875rem;
+    color: var(--lex-primary);
+}
+
+.lex-dialog-section > .lex-dialog-grid,
+.lex-dialog-section > .lex-dialog-grid-2,
+.lex-dialog-section > .lex-dialog-grid-3,
+.lex-dialog-section > .materia-form-grid-2,
+.lex-dialog-section > .materia-form-grid-3,
+.lex-dialog-form-body .materia-form-secao > .materia-form-grid-2,
+.lex-dialog-form-body .materia-form-secao > .materia-form-grid-3 {
+    grid-column: 1 / -1;
+}
+
+.lex-dialog-section > .lex-dialog-field,
+.lex-dialog-form-body .materia-form-secao > .materia-form-field,
+.lex-dialog-form-body .materia-form-secao > *:not(.materia-form-secao-titulo) {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
+.lex-dialog-form-body .materia-form-secao > .materia-form-grid-2,
+.lex-dialog-form-body .materia-form-secao > .materia-form-grid-3 {
+    display: grid;
+}
+
+.materia-form-status-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lex-gap-md);
+    margin-top: var(--lex-gap-sm);
+    padding-top: var(--lex-gap-md);
+    border-top: 1px solid var(--lex-outline-variant);
+    width: 100%;
+}
+
+.materia-form-status-block .materia-form-secao-titulo {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin: 0;
+}
+
+.materia-form-status-block .materia-form-status-hint {
+    margin: 0;
+}
+
+.materia-form-field--file {
+    width: 100%;
+}
+
+/* Agrupamento legado materia-form = lex */
+.materia-form-card,
+.lex-dialog-form-card {
+    display: flex;
+    flex-direction: column;
+    max-height: min(90vh, 56rem);
+    background: var(--lex-surface-container-lowest);
+    border-radius: var(--lex-dialog-radius);
+    overflow: hidden;
+}
+
+.materia-form-card-header,
+.lex-dialog-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--lex-dialog-header-py) var(--lex-dialog-header-px);
+    border-bottom: 1px solid var(--lex-outline-variant);
+    background: var(--lex-surface-container-lowest);
+}
+
+.materia-form-card-title,
+.lex-dialog-form-title {
+    display: flex;
+    align-items: center;
+    gap: var(--lex-gap-sm);
+    font: var(--lex-text-headline-sm);
+    color: var(--lex-primary);
+}
+
+.materia-form-card-title .pi,
+.lex-dialog-form-title .pi {
+    color: var(--lex-primary);
+}
+
+.materia-form-tabs,
+.lex-dialog-form-tabs {
+    display: flex;
+    align-items: stretch;
+    padding: 0 var(--lex-dialog-header-px);
+    border-bottom: 1px solid var(--lex-outline-variant);
+    background: var(--lex-surface-container-lowest);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+.materia-form-tab,
+.lex-dialog-form-tab {
+    padding: 5px 10px;
+    font: var(--lex-text-label-md);
+    color: var(--lex-secondary);
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    line-height: 14px;
+    box-sizing: border-box;
+}
+
+.materia-form-tab.active,
+.lex-dialog-form-tab.active {
+    color: var(--lex-primary);
+    border-bottom-color: var(--lex-primary);
+    font-weight: 600;
+    margin-bottom: -1px;
+    position: relative;
+    z-index: 1;
+}
+
+.materia-form-card-body,
+.lex-dialog-form-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--lex-dialog-body-py) var(--lex-dialog-body-px);
+    background: var(--lex-surface);
+    display: flex;
+    flex-direction: column;
+    gap: var(--lex-gap-md);
+    min-height: 140px;
+}
+
+.materia-form-footer,
+.lex-dialog-form-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--lex-gap-md);
+    padding: var(--lex-dialog-footer-py) var(--lex-dialog-footer-px);
+    border-top: 1px solid var(--lex-outline-variant);
+    background: var(--lex-surface-container-lowest);
+}
+
+/* Dialogs Prime sem LexDialog — mesmo dense */
+.p-dialog:not(.lex-dialog) {
+    --lex-dialog-header-px: 14px;
+    --lex-dialog-header-py: 10px;
+    --lex-dialog-body-px: 14px;
+    --lex-dialog-body-py: 10px;
+    --lex-dialog-footer-px: 14px;
+    --lex-dialog-footer-py: 10px;
+}
+
+@media (max-width: 640px) {
+    :root {
+        --lex-dialog-header-px: 12px;
+        --lex-dialog-body-px: 12px;
+        --lex-dialog-footer-px: 12px;
+    }
+
+    .lex-dialog-form-title,
+    .materia-form-card-title {
+        font-size: 16px;
+        line-height: 20px;
+    }
+}

@@ -39,10 +39,12 @@ export class UploadMatterTextoOriginalUseCase {
         }
 
         const extension = extname(file.filename).toLowerCase();
-        if (
-            !ALLOWED_EXTENSIONS.has(extension) ||
-            !ALLOWED_MIME_TYPES.has(file.mimetype)
-        ) {
+        const mimeOk =
+            ALLOWED_MIME_TYPES.has(file.mimetype) ||
+            (file.mimetype === 'application/octet-stream' &&
+                ALLOWED_EXTENSIONS.has(extension));
+
+        if (!ALLOWED_EXTENSIONS.has(extension) || !mimeOk) {
             throw new BadRequestException(
                 'Formato inválido. Envie PDF, DOC ou DOCX.',
             );

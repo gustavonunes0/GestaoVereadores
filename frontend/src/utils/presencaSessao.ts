@@ -1,6 +1,6 @@
 import type { Parliamentarian } from '../api/legislative/parlamentares.api';
 import type { BoardMember } from '../api/legislative/mesa-diretora.api';
-import type { PresencaParlamentar, PresencaSessao } from '../types/presenca';
+import type { PresencaParlamentar, PresencaSessao, SituacaoPresencaValor } from '../types/presenca';
 import { abreviarNome, ordenarCargosMesa } from './plenarioLayout';
 
 export interface PresencaRegistroApi {
@@ -28,6 +28,15 @@ function origemFromRegistro(registro: PresencaRegistroApi | undefined): Presenca
     return registro.autoRegistrado ? 'APP' : 'STAFF';
 }
 
+function resolveSituacao(
+    registro: PresencaRegistroApi | undefined,
+): SituacaoPresencaValor | undefined {
+    if (!registro) return undefined;
+    const v = registro.situacao.value;
+    if (v === 'PRESENTE' || v === 'AUSENTE' || v === 'JUSTIFICADO') return v;
+    return undefined;
+}
+
 function mapParlamentar(
     p: Parliamentarian,
     registro: PresencaRegistroApi | undefined,
@@ -48,6 +57,7 @@ function mapParlamentar(
         cargoMesa,
         fotoUrl: p.photoUrl,
         presente: estaPresente(registro),
+        situacao: resolveSituacao(registro),
         origem: origemFromRegistro(registro),
         registradoEm: registro?.registradoEm ?? registro?.createdAt,
     };
@@ -71,6 +81,7 @@ function mapFromBoardMember(
         cargoMesa: membro.boardRole.name,
         fotoUrl: p.photoUrl ?? undefined,
         presente: estaPresente(registro),
+        situacao: resolveSituacao(registro),
         origem: origemFromRegistro(registro),
         registradoEm: registro?.registradoEm ?? registro?.createdAt,
     };
@@ -115,7 +126,15 @@ export function buildPresencaSessao(params: {
 
     const vereadores = params.parlamentares
         .filter((p) => !mesaIds.has(p.id))
-        .map((p) => mapParlamentar(p, porParl.get(p.id)));
+        .map((p) => mapParlamentar(p, porParl.get(p.id)))
+        .filter(
+            (v) =>
+                !mesaMembros.some(
+                    (m) =>
+                        m.parliamentarianId === v.parliamentarianId ||
+                        m.parliamentarianId === v.parlamentarianUserId,
+                ),
+        );
 
     const parlamentares = [...mesaMembros, ...vereadores];
     const presentes = parlamentares.filter((p) => p.presente).length;

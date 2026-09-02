@@ -11,7 +11,7 @@ import {
 export class LoginDto {
     @ValidateIf((o: LoginDto) => !o.email)
     @IsString()
-    @Matches(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)
+    @Matches(/^\d{11}$|^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/)
     cpf?: string;
 
     @ValidateIf((o: LoginDto) => !o.cpf)

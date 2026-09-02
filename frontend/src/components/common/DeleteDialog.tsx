@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/dialog';
+import { LexDialog } from '../ui/LexDialog';
+import { LexDialogFooter } from '../ui/LexDialogFooter';
 import { useAppToast } from '../../hooks/useAppToast';
 
 interface DeleteDialogProps {
@@ -29,28 +29,25 @@ export function DeleteDialog({ visible, title, message, onConfirm, onClose }: De
     };
 
     return (
-        <Dialog
+        <LexDialog
             header={title}
             visible={visible}
+            variant="danger"
             onHide={onClose}
-            style={{ width: '400px' }}
-        >
-            <p>{message}</p>
-            <div className="flex justify-content-end gap-2 mt-3">
-                <Button
-                    label="Cancelar"
-                    severity="secondary"
-                    onClick={onClose}
-                    disabled={loading}
-                />
-                <Button
-                    label="Excluir"
-                    severity="danger"
-                    icon="pi pi-trash"
-                    onClick={handleConfirm}
+            style={{ width: 'min(96vw, 28rem)' }}
+            footer={
+                <LexDialogFooter
+                    onCancel={onClose}
+                    onConfirm={() => void handleConfirm()}
+                    confirmLabel="Excluir"
+                    confirmIcon="pi pi-trash"
+                    confirmSeverity="danger"
                     loading={loading}
+                    cancelDisabled={loading}
                 />
-            </div>
-        </Dialog>
+            }
+        >
+            <p className="m-0">{message}</p>
+        </LexDialog>
     );
 }

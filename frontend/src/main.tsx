@@ -9,9 +9,13 @@ import './styles/prime-theme-tokens.css';
 import './styles/typography.css';
 import './styles/spacing-layout.css';
 import './styles/prime-overrides.css';
+import './styles/lex-dialog.css';
+import './styles/sigl-form-controls.css';
 import './styles/sigl-ui-patterns.css';
 import './styles/pwa-mobile.css';
 import './index.css';
+import './styles/lex-sessao.css';
+import './styles/lex-presenca.css';
 
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';

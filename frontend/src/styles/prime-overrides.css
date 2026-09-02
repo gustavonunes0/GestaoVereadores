@@ -154,24 +154,15 @@
 }
 
 .p-dialog {
-    border-radius: var(--layout-radius-lg);
+    border-radius: var(--lex-dialog-radius, var(--layout-radius-lg));
 }
 
 .p-dialog .p-dialog-header {
-    color: var(--text-heading);
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
-    border-bottom: 1px solid var(--card-border);
-    padding: var(--layout-gap-lg) var(--layout-gap-lg) var(--layout-gap-md);
+    color: var(--lex-primary, var(--text-heading));
 }
 
 .p-dialog .p-dialog-content {
-    color: var(--text-body);
-    padding: var(--layout-gap-md) var(--layout-gap-lg);
-}
-
-.p-dialog .p-dialog-footer {
-    padding: var(--layout-gap-md) var(--layout-gap-lg) var(--layout-gap-lg);
+    color: var(--lex-on-surface, var(--text-body));
 }
 
 /*

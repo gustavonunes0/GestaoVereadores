@@ -10,7 +10,8 @@ Referência do que já ocupa a VPS (`187.127.42.128`):
 | `baturite.stellarsolucoes.com.br` | frontend gestao | **8080** |
 | `apibaturite.stellarsolucoes.com.br` | api gestao | **3000** |
 | `sindprf` / `sindigest` / `apisindigest` | SistemaSindicatos | **8081** / **3001** |
-| Jitsi / meet | … | 443, 8000, 8444, 10000 |
+| `meet.stashsoftware.com.br` | jitsi-web (self-host) | **80** interno / NPM **443** |
+| Jitsi mídia (JVB) | UDP direto na VPS | **10000/udp** (não passa no NPM) |
 
 ---
 
@@ -44,9 +45,15 @@ No DNS de `stellarsolucoes.com.br` (A ou CNAME → IP da VPS `187.127.42.128`):
 - `apibaturite` (já deve existir)
 - `camaragest` (**criar**)
 
+No DNS de `stashsoftware.com.br` (**Registro.br**, nameservers `*.sec.dns.br` — não Hostinger):
+
+- `A` `meet` → `187.127.42.128` (Jitsi self-host)
+
 ---
 
 ## 2. `.env` na VPS (API / Compose)
+
+Caminho real: `/opt/gestao-vereadores/GestaoVereadores`.
 
 ```env
 # Portas já usadas pela gestão (não colidir com sindicatos 8081/3001)
@@ -58,8 +65,21 @@ CORS_ORIGIN=https://camaragest.stellarsolucoes.com.br,https://baturite.stellarso
 TENANT_SEED_HOSTS=baturite.stellarsolucoes.com.br
 PLATFORM_SEED_HOSTS=camaragest.stellarsolucoes.com.br
 
+# Jitsi self-host (NÃO use meet.jit.si em produção)
+JITSI_DOMAIN=meet.stashsoftware.com.br
+JITSI_PUBLIC_HOST=meet.stashsoftware.com.br
+JITSI_PUBLIC_URL=https://meet.stashsoftware.com.br
+DOCKER_HOST_ADDRESS=187.127.42.128
+JWT_APP_ID=gestao_vereadores
+JWT_APP_SECRET=<mesmo-segredo-do-prosody>
+
 JWT_SECRET=<openssl rand -hex 32>
 ```
+
+Modelo completo: `deploy/jitsi-vps.env.example`.
+
+**Importante:** a VPS usa `docker-compose.override.yml` (não versionado) para forçar `JITSI_DOMAIN` / `PUBLIC_URL`.  
+**Não** recoloque `meet.jit.si` nem `JITSI_APP_ID: ""` nesse override — isso reativa o limite de ~5 min.
 
 No build do frontend (se a API for host separado):
 
@@ -76,13 +96,19 @@ Com proxy nginx do front apontando `/api` para a API, `VITE_API_URL=/api` contin
 ## 3. Subir / atualizar na VPS
 
 ```bash
-cd /opt/GestaoVereadores   # ou caminho do repo
+cd /opt/gestao-vereadores/GestaoVereadores
+# Backup do override (Jitsi) antes do pull
+cp docker-compose.override.yml docker-compose.override.yml.bak-$(date +%Y%m%d) 2>/dev/null || true
 git pull
-# confira .env (PLATFORM_SEED_HOSTS, TENANT_SEED_HOSTS, CORS_ORIGIN)
+# Confira .env + override: JITSI_DOMAIN=meet.stashsoftware.com.br (sem meet.jit.si)
 
 docker compose up --build -d
 docker compose exec api npx prisma migrate deploy
-docker compose exec api npx prisma db seed
+# seed só se necessário (idempotente, mas evita rodar em toda atualização)
+# docker compose exec api npx prisma db seed
+
+# NPM precisa estar na rede do Jitsi (senão Meet → 502)
+docker network connect gestaovereadores_meet.jitsi nginx-proxy-manager-nginx-proxy-manager-1 2>/dev/null || true
 ```
 
 Validar mapeamento no banco:
@@ -155,6 +181,20 @@ Mesmo padrão já usado no Baturité (`http://187.127.42.128:PORTA`).
 | Forward Port | `3000` |
 | SSL | Let’s Encrypt + Force SSL |
 
+### D) Jitsi Meet (self-host) — **já em produção**
+
+| Campo | Valor |
+|-------|--------|
+| Domain Names | `meet.stashsoftware.com.br` |
+| Scheme | `http` |
+| Forward Hostname / IP | IP do `jitsi-web` na rede Docker (ex. `172.19.0.2`) **ou** `gestaovereadores-jitsi-web-1` |
+| Forward Port | `80` |
+| Websockets Support | **ligado** |
+| SSL | Let’s Encrypt + Force SSL + HTTP/2 |
+
+O container NPM deve estar na rede `gestaovereadores_meet.jitsi`.  
+Se o IP do `jitsi-web` mudar após recreate, atualize o Forward Hostname no NPM (ou use o nome do container se a resolução DNS Docker funcionar).
+
 **Advanced** (API), se o NPM não repassar headers:
 
 ```nginx
@@ -172,10 +212,13 @@ proxy_set_header X-Tenant-Host $http_x_tenant_host;
 1. `https://apibaturite.stellarsolucoes.com.br/api/health` → ok
 2. `https://baturite.stellarsolucoes.com.br/` → login da câmara
 3. `https://camaragest.stellarsolucoes.com.br/` → login da **plataforma** (super admin)
-4. Network: `GET …/api/tenants/current` com `X-Tenant-Host: camaragest.stellarsolucoes.com.br` → `"kind":"platform"`
-5. `GET …/api/tenants/current` com `X-Tenant-Host: baturite.stellarsolucoes.com.br` → `"kind":"tenant"`
-6. Login plataforma: `superadmin@sigl.app` / senha seed (só em `camaragest…`)
-7. Login câmara: usuário staff/parlamentar em `baturite…`
+4. `https://meet.stashsoftware.com.br/` → Jitsi Meet (cadeado válido, sem “Congratulations”)
+5. `docker compose exec api printenv JITSI_DOMAIN` → `meet.stashsoftware.com.br` (≠ `meet.jit.si`)
+6. Network: `GET …/api/tenants/current` com `X-Tenant-Host: camaragest.stellarsolucoes.com.br` → `"kind":"platform"`
+7. `GET …/api/tenants/current` com `X-Tenant-Host: baturite.stellarsolucoes.com.br` → `"kind":"tenant"`
+8. Login plataforma: `superadmin@sigl.app` / senha seed (só em `camaragest…`)
+9. Login câmara: usuário staff/parlamentar em `baturite…`
+10. Sessão com vídeo ≥15 min sem corte de free tier
 
 ---
 

@@ -1,11 +1,12 @@
+import type { ReactNode } from 'react';
 import { Button } from 'primereact/button';
-import { Dialog } from 'primereact/dialog';
+import { LexDialog } from '../ui/LexDialog';
 
 interface VerDialogProps {
     visible: boolean;
     title: string;
     onClose: () => void;
-    children: React.ReactNode;
+    children: ReactNode;
     width?: string;
     contentClassName?: string;
 }
@@ -18,22 +19,27 @@ export function VerDialog({
     width = 'min(90vw, 700px)',
     contentClassName,
 }: VerDialogProps) {
-    const footer = (
-        <div className="flex justify-content-end">
-            <Button label="Fechar" icon="pi pi-times" severity="secondary" onClick={onClose} />
-        </div>
-    );
-
     return (
-        <Dialog
+        <LexDialog
             header={title}
             visible={visible}
+            variant="view"
             onHide={onClose}
             style={{ width }}
             className={contentClassName}
-            footer={footer}
+            footer={
+                <div className="lex-dialog-actions">
+                    <Button
+                        label="Fechar"
+                        icon="pi pi-times"
+                        severity="secondary"
+                        text
+                        onClick={onClose}
+                    />
+                </div>
+            }
         >
             {children}
-        </Dialog>
+        </LexDialog>
     );
 }

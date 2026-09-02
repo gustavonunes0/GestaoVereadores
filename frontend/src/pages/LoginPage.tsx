@@ -8,17 +8,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { FooterBar } from '../components/FooterBar';
 import { isParlamentarianUser, isPlatformUser } from '../types/auth';
-import { isPlatformHostname, currentHostname } from '../utils/tenantHost';
+import { isPlatformHostname } from '../utils/tenantHost';
 import logoSrc from '../../assets/camara-gest-logo.png';
 
 export function LoginPage() {
     const { user, login } = useAuth();
     const navigate = useNavigate();
     const platformHost = isPlatformHostname();
-    const host = currentHostname();
-    /** Em camaragest (ou localhost p/ teste) o super admin entra com e-mail. */
-    const useEmailLogin =
-        platformHost || host === 'localhost' || host === '127.0.0.1';
+    // Login por e-mail (plataforma) — desativado por enquanto; usar CPF em todos os hosts.
+    // const host = currentHostname();
+    // const useEmailLogin =
+    //     platformHost || host === 'localhost' || host === '127.0.0.1';
+    const useEmailLogin = false;
 
     const [cpf, setCpf] = useState('');
     const [email, setEmail] = useState('');
@@ -50,10 +51,11 @@ export function LoginPage() {
         let identifier: string;
         if (useEmailLogin) {
             const eTrim = email.trim();
-            if (!eTrim.includes('@')) {
-                setError('Informe um e-mail válido.');
-                return;
-            }
+            // Validação por e-mail desativada temporariamente
+            // if (!eTrim.includes('@')) {
+            //     setError('Informe um e-mail válido.');
+            //     return;
+            // }
             identifier = eTrim;
         } else {
             const cpfLimpo = cpf.replace(/\D/g, '');

@@ -53,13 +53,25 @@ export async function api<T>(
 
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
+    const isAuthLogin =
+        path === API_PATHS.authLogin || path.endsWith('/auth/login');
+
     if (res.status === 401) {
+        const body = await res.json().catch(() => ({}));
+        const msg =
+            (body as { message?: string | string[] }).message ?? 'Não autorizado';
+        const message = Array.isArray(msg) ? msg.join(', ') : String(msg);
+
+        if (isAuthLogin) {
+            throw new ApiError(message, 401);
+        }
+
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
         if (!window.location.pathname.startsWith('/login')) {
             window.location.href = '/login';
         }
-        throw new ApiError('Não autorizado', 401);
+        throw new ApiError(message, 401);
     }
 
     if (!res.ok) {

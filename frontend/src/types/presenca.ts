@@ -1,3 +1,5 @@
+export type SituacaoPresencaValor = 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO' | 'PENDENTE';
+
 export type OrigemPresenca = 'APP' | 'STAFF' | null;
 
 export interface PresencaParlamentar {
@@ -13,6 +15,7 @@ export interface PresencaParlamentar {
     cargoMesa?: string;
     fotoUrl?: string;
     presente: boolean;
+    situacao?: SituacaoPresencaValor;
     origem: OrigemPresenca;
     registradoEm?: string;
 }
@@ -24,11 +27,8 @@ export interface PresencaSessao {
     ausentes: number;
     quorumMinimo: number;
     temQuorum: boolean;
-    /** Todos os membros (quórum e toggle). */
     parlamentares: PresencaParlamentar[];
-    /** Membros da mesa diretora — não repetidos no semicírculo. */
     mesaMembros: PresencaParlamentar[];
-    /** Vereadores no semicírculo (exclui mesa). */
     vereadores: PresencaParlamentar[];
 }
 

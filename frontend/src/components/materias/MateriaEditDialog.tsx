@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { materiasApi } from '../../api/legislative/materias.api';
 import type { Materia, MatterAuthorship } from '../../api/legislative/materias.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { DatePicker, FileUpload } from '../../components/ui';
+import { DatePicker, FileUpload, LexDialogFooter } from '../../components/ui';
 import {
     resolveMateriaIdentificacao,
     resolveMateriaNumeroAno,
     resolveMateriaAno,
     resolveMateriaStatus,
+    resolveMateriaTextoOriginalUrl,
 } from '../../utils/materiaDisplay';
 import type { MateriaStatus } from '../../types/legislative';
 import type {
@@ -73,7 +73,10 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     const [statusMateria, setStatusMateria] = useState<MateriaStatus>(resolvedStatus);
     const [autorPrincipal, setAutorPrincipal] = useState<AutorSelecionado | null>(null);
     const [coautores, setCoautores] = useState<CoautorFormItem[]>([]);
-    const [textoOriginal, setTextoOriginal] = useState<File | null>(null);
+    const [textoOriginal, setTextoOriginal] = useState<File | string | null>(() => {
+        const url = materia.textoOriginalUrl?.trim();
+        return url ? resolveMateriaTextoOriginalUrl(url) : null;
+    });
 
     const coautoresIniciaisRef = useRef<
         Array<{ id: string; identityKey: string }>
@@ -241,7 +244,7 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
 
             await syncCoautores();
 
-            if (textoOriginal) {
+            if (textoOriginal instanceof File) {
                 await materiasApi.uploadTextoOriginal(materia.id, textoOriginal);
             }
 
@@ -262,15 +265,13 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     }
 
     const footer = (
-        <>
-            <Button label="Cancelar" severity="secondary" outlined onClick={onClose} disabled={saving} />
-            <Button
-                label="Salvar"
-                icon="pi pi-check"
-                loading={saving}
-                onClick={() => void handleSubmit()}
-            />
-        </>
+        <LexDialogFooter
+            onCancel={onClose}
+            onConfirm={() => void handleSubmit()}
+            confirmLabel="Salvar"
+            loading={saving}
+            cancelDisabled={saving}
+        />
     );
 
     return (
@@ -290,7 +291,7 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                         <i className="pi pi-id-card" aria-hidden />
                         Identificação
                     </div>
-                    <div className="materia-form-grid-2">
+                    <div className="materia-form-grid-3">
                         <div className="materia-form-field">
                             <label>Tipo de Matéria</label>
                             <p className="materia-form-readonly-value">{materia.tipo.nome}</p>
@@ -414,15 +415,27 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                             className="w-full"
                         />
                     </div>
-                    {canEditConteudo && (
-                        <FileUpload
-                            id="edit-texto-original"
-                            label="Texto Original"
-                            value={textoOriginal}
-                            onChange={setTextoOriginal}
-                            accept=".pdf,.doc,.docx"
-                        />
-                    )}
+                    {canEditConteudo ? (
+                        <div className="materia-form-field materia-form-field--file">
+                            <FileUpload
+                                id="edit-texto-original"
+                                label="Texto Original"
+                                value={textoOriginal}
+                                onChange={setTextoOriginal}
+                                accept=".pdf,.doc,.docx"
+                            />
+                        </div>
+                    ) : textoOriginal ? (
+                        <div className="materia-form-field materia-form-field--file">
+                            <FileUpload
+                                id="edit-texto-original-readonly"
+                                label="Texto Original"
+                                value={textoOriginal}
+                                onChange={() => undefined}
+                                disabled
+                            />
+                        </div>
+                    ) : null}
                 </div>
             )}
 

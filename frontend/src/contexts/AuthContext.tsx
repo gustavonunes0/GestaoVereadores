@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = await authApi.login(
             looksLikeEmail
                 ? { email: trimmed.toLowerCase(), password }
-                : { cpf: trimmed, password },
+                : { cpf: trimmed.replace(/\D/g, ''), password },
         );
         localStorage.setItem('access_token', res.access_token);
         persistUser(res.user);

@@ -94,6 +94,7 @@ export function ParlamentarVotacaoPanel({
             icon: 'pi pi-question-circle',
             acceptLabel: 'Confirmar',
             rejectLabel: 'Cancelar',
+            className: 'lex-dialog lex-dialog--dense lex-dialog--confirm',
             accept: () => void submitVote(),
         });
     }
@@ -117,7 +118,7 @@ export function ParlamentarVotacaoPanel({
 
     return (
         <section className="parl-sessao-panel">
-            <ConfirmDialog />
+            <ConfirmDialog className="lex-dialog lex-dialog--dense lex-dialog--confirm" />
             <h3 className="parl-sessao-panel__title">Votação</h3>
 
             {!votacaoAberta ? (

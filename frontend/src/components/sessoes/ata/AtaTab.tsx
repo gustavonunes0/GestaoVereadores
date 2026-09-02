@@ -101,6 +101,7 @@ export function AtaTab({
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: 'Aprovar',
             rejectLabel: 'Cancelar',
+            className: 'lex-dialog lex-dialog--dense lex-dialog--confirm',
             accept: () => void aprovar(),
         });
     }

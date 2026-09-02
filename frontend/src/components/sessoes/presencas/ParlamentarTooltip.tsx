@@ -1,4 +1,5 @@
 import type { PresencaParlamentar } from '../../../types/presenca';
+import { LABELS_SITUACAO, resolveSituacaoCadeira } from '../../../utils/presencaCadeira';
 import { PersonAvatar } from '../../common/PersonAvatar';
 
 interface TooltipData {
@@ -18,6 +19,9 @@ export function ParlamentarTooltip({ data }: { data: TooltipData }) {
             : p.origem === 'STAFF'
               ? 'Registrado pela secretaria'
               : 'Aguardando registro';
+
+    const situacao = resolveSituacaoCadeira(p);
+    const situacaoLabel = LABELS_SITUACAO[situacao];
 
     return (
         <div className="parlamentar-tooltip" style={{ left, top }}>
@@ -45,19 +49,20 @@ export function ParlamentarTooltip({ data }: { data: TooltipData }) {
                 )}
             </div>
             <div
-                className="ptt-status"
-                style={{
-                    color: p.presente
-                        ? 'var(--green-700)'
-                        : 'var(--text-color-secondary)',
-                }}
+                className={`ptt-status ptt-status--${situacao.toLowerCase()}`}
             >
                 <i
                     className={
-                        p.presente ? 'pi pi-check-circle' : 'pi pi-times-circle'
+                        situacao === 'PRESENTE'
+                            ? 'pi pi-check-circle'
+                            : situacao === 'JUSTIFICADO'
+                              ? 'pi pi-info-circle'
+                              : situacao === 'PENDENTE'
+                                ? 'pi pi-clock'
+                                : 'pi pi-times-circle'
                     }
                 />
-                {p.presente ? 'Presente' : 'Ausente'}
+                {situacaoLabel}
             </div>
             <div className="ptt-origem">{origemTexto}</div>
         </div>

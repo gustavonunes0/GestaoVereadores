@@ -215,6 +215,7 @@ export function PresencaPanel({
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: 'Confirmar',
             rejectLabel: 'Cancelar',
+            className: 'lex-dialog lex-dialog--dense lex-dialog--confirm',
             accept: () => void chamarVereadores(),
         });
     }
@@ -256,9 +257,9 @@ export function PresencaPanel({
     }
 
     return (
-        <div className="presenca-panel">
+        <div className="presenca-panel lex-presenca-panel">
             {podeChamar && (
-                <div className="flex gap-2 mb-3">
+                <div className="presenca-toolbar">
                     <Button
                         label="Realizar chamada"
                         icon="pi pi-verified"

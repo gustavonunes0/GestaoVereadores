@@ -3,14 +3,9 @@ import { Button } from 'primereact/button';
 import { sessoesApi } from '../../../api/legislative/sessoes.api';
 import { useAppToast } from '../../../hooks/useAppToast';
 import { usePermissions } from '../../../hooks/usePermissions';
-import type {
-    PautaItemCategoria,
-    PautaItemDetalhe,
-    SessaoPlenariaDetalhe,
-} from '../../../types/sessoes';
-import { resolvePautaCategoria } from '../../../types/sessoes';
-import { PautaItemRow } from './PautaItemRow';
-import { CategoriaPautaBadge } from './PautaBadges';
+import type { PautaItemDetalhe, SessaoPlenariaDetalhe } from '../../../types/sessoes';
+import { PautaItemCard } from './PautaItemCard';
+import { PautaListaDetalhe } from './PautaListaDetalhe';
 import { AddPautaItemDialog } from './AddPautaItemDialog';
 import { PublicarPautaDialog } from './PublicarPautaDialog';
 import { AbrirVotacaoDialog } from './AbrirVotacaoDialog';
@@ -18,12 +13,27 @@ import { FecharVotacaoDialog } from './FecharVotacaoDialog';
 import { enviarItemParaPainel, painelUrl } from '../../../utils/sessaoPainelChannel';
 import { SIGL_TOOLTIP_BOTTOM } from '../../../utils/primeTooltip';
 
-const CATEGORIA_ORDEM: PautaItemCategoria[] = ['MATERIA', 'COMISSAO', 'ATO', 'NORMA', 'AVISO'];
-
 interface Props {
     sessao: SessaoPlenariaDetalhe;
     votacaoSyncKey?: string | null;
     onVotacaoFechada?: () => void;
+}
+
+function itemEmVotacao(item: PautaItemDetalhe): boolean {
+    return (
+        item.materia?.status === 'EM_VOTACAO' ||
+        (!!item.votacao && !item.votacao.finalizada && !item.votacao.resultado)
+    );
+}
+
+function resolverSelecaoInicial(
+    itens: PautaItemDetalhe[],
+    atual: string | null,
+): string | null {
+    if (itens.length === 0) return null;
+    if (atual && itens.some((i) => i.id === atual)) return atual;
+    const emVotacao = itens.find(itemEmVotacao);
+    return emVotacao?.id ?? itens[0].id;
 }
 
 export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props) {
@@ -32,6 +42,7 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
 
     const [itens, setItens] = useState<PautaItemDetalhe[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
     const [dialogAdicionar, setDialogAdicionar] = useState(false);
     const [dialogPublicar, setDialogPublicar] = useState(false);
     const [abrirVotacaoItem, setAbrirVotacaoItem] = useState<PautaItemDetalhe | null>(null);
@@ -42,23 +53,17 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
     const podePublicar = sessao.statusSessao === 'AGENDADA';
     const podeDeliberar = canManageSessao && sessao.statusSessao === 'ABERTA';
 
-    const contagemPorCategoria = itens.reduce<Record<PautaItemCategoria, number>>(
-        (acc, item) => {
-            const cat = resolvePautaCategoria(item);
-            acc[cat] = (acc[cat] ?? 0) + 1;
-            return acc;
-        },
-        { MATERIA: 0, COMISSAO: 0, ATO: 0, NORMA: 0, AVISO: 0 },
-    );
-    const categoriasPresentes = CATEGORIA_ORDEM.filter(
-        (cat) => contagemPorCategoria[cat] > 0,
-    );
+    const selecionarItem = useCallback((itemId: string) => {
+        setSelectedId(itemId);
+    }, []);
 
     const buscarPauta = useCallback(async () => {
         setLoading(true);
         try {
             const data = await sessoesApi.getPauta(sessao.id);
-            setItens(data ?? []);
+            const lista = data ?? [];
+            setItens(lista);
+            setSelectedId((atual) => resolverSelecaoInicial(lista, atual));
         } catch (err) {
             showApiError(err);
         } finally {
@@ -66,7 +71,9 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
         }
     }, [sessao.id, showApiError]);
 
-    useEffect(() => { void buscarPauta(); }, [buscarPauta]);
+    useEffect(() => {
+        void buscarPauta();
+    }, [buscarPauta]);
 
     useEffect(() => {
         if (votacaoSyncKey) void buscarPauta();
@@ -74,6 +81,7 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
 
     async function handleRemover(itemId: string) {
         await sessoesApi.removePautaItem(sessao.id, itemId);
+        setSelectedId((atual) => (atual === itemId ? null : atual));
         await buscarPauta();
     }
 
@@ -103,82 +111,53 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
     }
 
     return (
-        <div className="sessao-tab-stack">
-            <div className="sigl-panel">
-                <div className="sigl-panel-header">
-                    <span className="sigl-panel-title">
+        <div className="pauta-split">
+            <section className="pauta-split__lista" aria-label="Lista da pauta">
+                <header className="pauta-split__lista-header">
+                    <h2 className="pauta-split__lista-title">
                         <i className="pi pi-list" aria-hidden />
                         Pauta da sessão
-                    </span>
-                    {(pautaPublicada || (canWrite && !somenteLeitura)) && (
-                        <div className="sigl-panel-header-actions">
-                            {podeDeliberar && (
-                                <Button
-                                    label="Abrir telão"
-                                    icon="pi pi-desktop"
-                                    size="small"
-                                    severity="secondary"
-                                    outlined
-                                    onClick={abrirPainel}
-                                    tooltip="Abre o monitor do plenário em nova janela"
-                                    tooltipOptions={SIGL_TOOLTIP_BOTTOM}
-                                />
-                            )}
-                            {pautaPublicada && (
-                                <span className="badge badge--success">Publicada</span>
-                            )}
-                            {canWrite && !somenteLeitura && (
-                                <Button
-                                    label="Adicionar matéria"
-                                    icon="pi pi-plus"
-                                    size="small"
-                                    className="align-self-start"
-                                    onClick={() => setDialogAdicionar(true)}
-                                />
-                            )}
-                            {canWrite && !somenteLeitura && (
-                                pautaPublicada ? (
-                                    <Button
-                                        label="Publicada"
-                                        icon="pi pi-send"
-                                        size="small"
-                                        disabled
-                                    />
-                                ) : podePublicar ? (
-                                    <Button
-                                        label="Publicar pauta"
-                                        icon="pi pi-send"
-                                        size="small"
-                                        severity="secondary"
-                                        outlined
-                                        disabled={itens.length === 0}
-                                        onClick={() => setDialogPublicar(true)}
-                                    />
-                                ) : (
-                                    <Button
-                                        label="Publicar pauta"
-                                        icon="pi pi-send"
-                                        size="small"
-                                        severity="secondary"
-                                        outlined
-                                        disabled
-                                        tooltip="A pauta só pode ser publicada enquanto a sessão está agendada."
-                                        tooltipOptions={SIGL_TOOLTIP_BOTTOM}
-                                    />
-                                )
-                            )}
-                        </div>
-                    )}
+                    </h2>
+                    <div className="pauta-split__lista-actions">
+                        {pautaPublicada && (
+                            <span className="badge badge--success">Publicada</span>
+                        )}
+                        {podeDeliberar && (
+                            <Button
+                                icon="pi pi-desktop"
+                                size="small"
+                                severity="secondary"
+                                outlined
+                                aria-label="Abrir telão"
+                                tooltip="Abre o monitor do plenário em nova janela"
+                                tooltipOptions={SIGL_TOOLTIP_BOTTOM}
+                                onClick={abrirPainel}
+                            />
+                        )}
+                        {canWrite && !somenteLeitura && (
+                            <Button
+                                label="Adicionar matéria"
+                                icon="pi pi-plus"
+                                size="small"
+                                onClick={() => setDialogAdicionar(true)}
+                            />
+                        )}
+                    </div>
+                </header>
+
+                <div className="pauta-split__col-head" aria-hidden>
+                    <span className="pauta-split__col-head-ord">#</span>
+                    <span className="pauta-split__col-head-item">Item</span>
                 </div>
 
-                <div className="sigl-panel-body sigl-panel-body--flush">
+                <div className="pauta-split__lista-scroll">
                     {loading ? (
-                        <div className="sessao-empty-state">
+                        <div className="sessao-empty-state sessao-empty-state--compact">
                             <i className="pi pi-spin pi-spinner" aria-hidden />
                             <span>Carregando pauta…</span>
                         </div>
                     ) : itens.length === 0 ? (
-                        <div className="sessao-empty-state">
+                        <div className="sessao-empty-state sessao-empty-state--compact">
                             <i className="pi pi-clipboard" aria-hidden />
                             <span>Nenhuma matéria na pauta</span>
                             <span className="sessao-empty-state__hint">
@@ -186,56 +165,71 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
                             </span>
                         </div>
                     ) : (
-                        <>
-                        {categoriasPresentes.length > 1 && (
-                            <div className="pauta-cat-legend" aria-label="Resumo por categoria">
-                                {categoriasPresentes.map((cat) => (
-                                    <span key={cat} className="pauta-cat-legend-item">
-                                        <CategoriaPautaBadge categoria={cat} />
-                                        <span className="pauta-cat-legend-count">
-                                            {contagemPorCategoria[cat]}
-                                        </span>
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                        <table className="pauta-table" aria-label="Itens da pauta">
-                            <thead>
-                                <tr>
-                                    <th className="col-ord">#</th>
-                                    <th className="col-mat">Item</th>
-                                    <th className="col-cat">Categoria</th>
-                                    <th className="col-fase">Fase</th>
-                                    <th className="col-tipo">Tipo</th>
-                                    <th className="col-act" />
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {itens.map((item, idx) => (
-                                    <PautaItemRow
-                                        key={item.id}
-                                        sessaoId={sessao.id}
-                                        statusSessao={sessao.statusSessao}
-                                        item={item}
-                                        index={idx}
-                                        somenteLeitura={somenteLeitura}
-                                        podeDeliberar={podeDeliberar}
-                                        isFirst={idx === 0}
-                                        isLast={idx === itens.length - 1}
-                                        onMoverCima={() => void handleMover(idx, -1)}
-                                        onMoverBaixo={() => void handleMover(idx, 1)}
-                                        onRemover={() => handleRemover(item.id)}
-                                        onAbrirVotacao={() => setAbrirVotacaoItem(item)}
-                                        onFecharVotacao={() => setFecharVotacaoItem(item)}
-                                        onExibirNoPainel={() => exibirItemNoPainel(item.id)}
-                                    />
-                                ))}
-                            </tbody>
-                        </table>
-                        </>
+                        itens.map((item, idx) => (
+                            <PautaItemCard
+                                key={item.id}
+                                item={item}
+                                index={idx}
+                                selected={item.id === selectedId}
+                                somenteLeitura={somenteLeitura}
+                                isFirst={idx === 0}
+                                isLast={idx === itens.length - 1}
+                                onSelect={() => selecionarItem(item.id)}
+                                onMoverCima={() => void handleMover(idx, -1)}
+                                onMoverBaixo={() => void handleMover(idx, 1)}
+                            />
+                        ))
                     )}
                 </div>
-            </div>
+
+                {canWrite && !somenteLeitura && (
+                    <footer className="pauta-split__lista-footer">
+                        {pautaPublicada ? (
+                            <Button
+                                label="Publicada"
+                                icon="pi pi-send"
+                                size="small"
+                                text
+                                disabled
+                            />
+                        ) : podePublicar ? (
+                            <Button
+                                label="Publicar pauta"
+                                icon="pi pi-send"
+                                size="small"
+                                text
+                                disabled={itens.length === 0}
+                                onClick={() => setDialogPublicar(true)}
+                            />
+                        ) : (
+                            <Button
+                                label="Publicar pauta"
+                                icon="pi pi-send"
+                                size="small"
+                                text
+                                disabled
+                                tooltip="A pauta só pode ser publicada enquanto a sessão está agendada."
+                                tooltipOptions={SIGL_TOOLTIP_BOTTOM}
+                            />
+                        )}
+                    </footer>
+                )}
+            </section>
+
+            <PautaListaDetalhe
+                sessaoId={sessao.id}
+                statusSessao={sessao.statusSessao}
+                itens={itens}
+                selectedId={selectedId}
+                somenteLeitura={somenteLeitura}
+                podeDeliberar={podeDeliberar}
+                onActiveChange={selecionarItem}
+                onRemover={handleRemover}
+                onAbrirVotacao={setAbrirVotacaoItem}
+                onFecharVotacao={setFecharVotacaoItem}
+                onExibirNoPainel={exibirItemNoPainel}
+            />
+
             {dialogAdicionar && (
                 <AddPautaItemDialog
                     sessaoId={sessao.id}

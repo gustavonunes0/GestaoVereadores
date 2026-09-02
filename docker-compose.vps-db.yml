@@ -1,0 +1,19 @@
+# Override LOCAL: API aponta para Postgres da VPS via túnel no host (:5433).
+# Requer: npm run db:tunnel (na pasta backend) com o túnel aberto.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.vps-db.yml up -d api frontend
+#
+# NÃO use este arquivo na VPS de produção.
+
+services:
+  # Evita subir/usar o Postgres local neste fluxo
+  postgres:
+    profiles: ['local-db-disabled']
+
+  api:
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@host.docker.internal:5433/gestao_vereadores?schema=public
+      DIRECT_DATABASE_URL: postgresql://postgres:postgres@host.docker.internal:5433/gestao_vereadores?schema=public
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    depends_on: {}

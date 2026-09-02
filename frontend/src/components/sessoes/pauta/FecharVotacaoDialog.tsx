@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
@@ -8,7 +8,8 @@ import { sessoesApi } from '../../../api/legislative/sessoes.api';
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { VotacaoPlacarEvent } from '../../../types/legislative';
 import type { PautaItemDetalhe } from '../../../types/sessoes';
-import { pautaItemRotulo } from '../../../types/sessoes';
+import { pautaItemRotulo, votacaoJaEncerradaNoItem } from '../../../types/sessoes';
+import { isVotacaoJaEncerradaError } from '../../../utils/votacaoErrors';
 
 const RESULTADO_LABEL: Record<string, string> = {
     APROVADO: 'Aprovado',
@@ -23,7 +24,7 @@ interface Props {
     placar?: VotacaoPlacarEvent | null;
     titulo?: string;
     onClose: () => void;
-    onFechada: () => void;
+    onFechada: () => void | Promise<void>;
 }
 
 export function FecharVotacaoDialog({
@@ -34,12 +35,13 @@ export function FecharVotacaoDialog({
     onClose,
     onFechada,
 }: Props) {
-    const { showSuccess, showApiError } = useAppToast();
+    const { showSuccess, showApiError, showToast } = useAppToast();
     const [detalhe, setDetalhe] = useState<PautaItemDetalhe | null>(
         'fase' in item ? item : null,
     );
     const [loading, setLoading] = useState(!('fase' in item));
     const [saving, setSaving] = useState(false);
+    const sincronizandoFechamento = useRef(false);
 
     const [votosSim, setVotosSim] = useState(0);
     const [votosNao, setVotosNao] = useState(0);
@@ -53,6 +55,23 @@ export function FecharVotacaoDialog({
     const simAtual = placar?.votosSim ?? detalhe?.votacao?.votosSim ?? 0;
     const naoAtual = placar?.votosNao ?? detalhe?.votacao?.votosNao ?? 0;
     const abstAtual = placar?.abstencoes ?? detalhe?.votacao?.abstencoes ?? 0;
+
+    const sincronizarFechamento = useCallback(
+        async (mensagem?: string) => {
+            if (sincronizandoFechamento.current) return;
+            sincronizandoFechamento.current = true;
+            try {
+                if (mensagem) {
+                    showToast('info', 'Votação encerrada', mensagem);
+                }
+                await Promise.resolve(onFechada());
+                onClose();
+            } finally {
+                sincronizandoFechamento.current = false;
+            }
+        },
+        [onClose, onFechada, showToast],
+    );
 
     useEffect(() => {
         let ativo = true;
@@ -89,8 +108,18 @@ export function FecharVotacaoDialog({
         }
     }, [entradaManual, simAtual, naoAtual, abstAtual]);
 
+    useEffect(() => {
+        if (!detalhe || loading || sincronizandoFechamento.current) return;
+        if (!votacaoJaEncerradaNoItem(detalhe)) return;
+        void sincronizarFechamento('O placar desta votação já havia sido registrado.');
+    }, [detalhe, loading, sincronizarFechamento]);
+
     async function confirmar() {
-        if (!detalhe?.votacao) return;
+        if (!detalhe?.votacao || saving) return;
+        if (votacaoJaEncerradaNoItem(detalhe)) {
+            await sincronizarFechamento('Esta votação já havia sido encerrada.');
+            return;
+        }
         setSaving(true);
         try {
             if (entradaManual) {
@@ -110,9 +139,12 @@ export function FecharVotacaoDialog({
                     `Votação encerrada — ${label} (Sim ${res.votosSim} · Não ${res.votosNao} · Abstenção ${res.abstencoes})${sufixoQualidade}`,
                 );
             }
-            onFechada();
-            onClose();
+            await sincronizarFechamento();
         } catch (err) {
+            if (isVotacaoJaEncerradaError(err)) {
+                await sincronizarFechamento('Esta votação já havia sido encerrada.');
+                return;
+            }
             showApiError(err);
         } finally {
             setSaving(false);

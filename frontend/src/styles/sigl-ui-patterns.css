@@ -1168,7 +1168,7 @@ textarea:not(:disabled):focus {
 
 .materia-form-card-title .pi {
     font-size: 15px;
-    color: #185fa5;
+    color: var(--accent);
 }
 
 .materia-form-close.p-button {
@@ -1179,9 +1179,13 @@ textarea:not(:disabled):focus {
 
 .materia-form-tabs {
     display: flex;
+    align-items: stretch;
     gap: 0;
     border-bottom: 0.5px solid var(--card-border, var(--color-border-tertiary, #e5e7eb));
     padding: 0 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
 }
 
 .materia-form-tab {
@@ -1197,8 +1201,8 @@ textarea:not(:disabled):focus {
 }
 
 .materia-form-tab.active {
-    color: #185fa5;
-    border-bottom-color: #185fa5;
+    color: var(--accent);
+    border-bottom-color: var(--accent);
     font-weight: 500;
 }
 
@@ -4279,43 +4283,50 @@ body.transmissao-fs-active {
     display: block;
     width: 100%;
     height: auto;
-    max-height: 420px;
+    max-height: 520px;
+    min-height: 280px;
 }
 
-.quorum-wrap { max-width: 100%; margin: 6px auto 0; }
+.quorum-wrap { max-width: 100%; margin: 8px auto 0; }
 .quorum-labels {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
     font-size: 11px;
     color: var(--text-color-secondary);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
-.quorum-status { font-weight: 500; }
+.quorum-labels > span:first-child { flex-shrink: 0; }
+.quorum-status { font-weight: 500; text-align: right; white-space: nowrap; }
 .quorum-track  {
     height: 7px;
     border-radius: 4px;
     background: var(--surface-0);
     position: relative;
     border: 1px solid var(--surface-border);
+    margin-bottom: 16px;
 }
 .quorum-fill   { height: 100%; border-radius: 4px; transition: width .35s, background .35s; }
 .quorum-marker {
     position: absolute;
-    top: -4px;
+    top: -3px;
     width: 2px;
-    height: 15px;
+    height: 13px;
     background: var(--amber-700);
     border-radius: 1px;
+    transform: translateX(-50%);
 }
 .quorum-marker-label {
     position: absolute;
-    top: -20px;
+    top: 14px;
+    left: 50%;
     transform: translateX(-50%);
-    font-size: 12px;
+    font-size: 10px;
     color: var(--amber-700);
     white-space: nowrap;
 }
-.quorum-hint { font-size: 10px; color: var(--text-color-secondary); margin-top: 5px; }
+.quorum-hint { font-size: 10px; color: var(--text-color-secondary); margin-top: 2px; }
 
 .parlamentar-tooltip {
     position: fixed;
@@ -4976,4 +4987,40 @@ body.sessao-painel-body {
 
 .parl-sessao-jitsi .jitsi-stage {
     min-height: 420px;
+}
+
+/* ——— Dialog grid (enforcement — carrega após lex-dialog.css) ——— */
+.p-dialog .sigl-dialog-secao {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--lex-gap-md, 10px);
+    align-items: start;
+}
+
+.p-dialog .sigl-dialog-secao > .sigl-dialog-secao-titulo {
+    grid-column: 1 / -1;
+}
+
+.p-dialog .sigl-dialog-secao > .sigl-dialog-grid,
+.p-dialog .sigl-dialog-secao > .lex-dialog-grid,
+.p-dialog .sigl-dialog-secao > .lex-dialog-grid-2,
+.p-dialog .sigl-dialog-secao > .lex-dialog-grid-3 {
+    grid-column: 1 / -1;
+}
+
+.p-dialog .sigl-dialog-secao > .sigl-filtro-campo {
+    grid-column: span 12;
+    min-width: 0;
+}
+
+.p-dialog .sigl-dialog-body > .sigl-grid-12,
+.p-dialog .sigl-dialog-body > .lex-dialog-grid {
+    width: 100%;
+}
+
+.p-dialog .sigl-grid-12 {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--lex-gap-md, 10px);
+    align-items: start;
 }

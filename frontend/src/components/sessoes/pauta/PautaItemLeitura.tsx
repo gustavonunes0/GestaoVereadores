@@ -1,31 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from 'primereact/button';
-import { sessoesApi } from '../../../api/legislative/sessoes.api';
-import { materiasApi, type Materia } from '../../../api/legislative/materias.api';
 import { PreviewImg } from '../../ui';
-import { useAppToast } from '../../../hooks/useAppToast';
 import type { PautaItemDetalhe } from '../../../types/sessoes';
 import {
     PAUTA_CATEGORIA_LABELS,
-    pautaItemDescricao,
     pautaItemRotulo,
     resolvePautaCategoria,
     resolvePautaFase,
     resolvePautaTipo,
 } from '../../../types/sessoes';
 import { CategoriaPautaBadge, FasePautaBadge, TipoPautaBadge } from './PautaBadges';
-import {
-    resolveMateriaAutorPrincipal,
-    resolveMateriaTextoOriginalUrl,
-    resolveMateriaTitulo,
-} from '../../../utils/materiaDisplay';
-import { STATUS_MATERIA_LABELS } from '../../../types/materias';
-import type { MateriaStatus } from '../../../types/legislative';
+import { resolveMateriaTitulo } from '../../../utils/materiaDisplay';
+import { usePautaItemConteudo, type PautaItemConteudo } from './usePautaItemConteudo';
 
 interface Props {
     sessaoId: string;
     item: PautaItemDetalhe;
-    onFechar: () => void;
+    onFechar?: () => void;
+    modo?: 'inline' | 'painel' | 'lista';
+    /** Quando fornecido (painel), evita fetch duplicado no filho. */
+    conteudo?: PautaItemConteudo;
 }
 
 type ArquivoPreview = {
@@ -44,27 +38,24 @@ function MetaLinha({ label, valor }: { label: string; valor?: string | null }) {
     );
 }
 
-function resolveStatusMateria(status: Materia['status']): string {
-    const val = typeof status === 'string' ? status : status.value;
-    return STATUS_MATERIA_LABELS[val as MateriaStatus] ?? val;
-}
-
-export function PautaItemLeitura({ sessaoId, item, onFechar }: Props) {
-    const { showApiError } = useAppToast();
-    const [carregando, setCarregando] = useState(true);
-    const [detalhe, setDetalhe] = useState<PautaItemDetalhe>(item);
-    const [materia, setMateria] = useState<Materia | null>(null);
+export function PautaItemLeitura({
+    sessaoId,
+    item,
+    onFechar,
+    modo = 'inline',
+    conteudo: conteudoProp,
+}: Props) {
+    const conteudoHook = usePautaItemConteudo(sessaoId, conteudoProp ? null : item);
+    const conteudo = conteudoProp ?? conteudoHook;
     const [previewArquivo, setPreviewArquivo] = useState<ArquivoPreview | null>(null);
 
+    const detalhe = conteudo.detalhe ?? item;
     const categoria = resolvePautaCategoria(detalhe);
     const fase = resolvePautaFase(detalhe.fase);
     const tipo = resolvePautaTipo(detalhe.tipoPautaItem);
     const rotulo = pautaItemRotulo(detalhe);
-    const textoPrincipal = materia?.ementa ?? pautaItemDescricao(detalhe);
-    const textoUrl = materia?.textoOriginalUrl
-        ? resolveMateriaTextoOriginalUrl(materia.textoOriginalUrl)
-        : null;
-    const autor = materia ? resolveMateriaAutorPrincipal(materia)?.nome : null;
+    const { carregando, textoPrincipal, textoUrl, materia, autorPrincipal, statusMateria, votacaoResumo, comissaoNome } =
+        conteudo;
 
     function abrirTextoIntegral() {
         if (!textoUrl) return;
@@ -79,36 +70,66 @@ export function PautaItemLeitura({ sessaoId, item, onFechar }: Props) {
         });
     }
 
-    useEffect(() => {
-        let ativo = true;
-        setCarregando(true);
+    const isPainel = modo === 'painel';
+    const isLista = modo === 'lista';
+    const isPdf = textoUrl?.toLowerCase().includes('.pdf');
 
-        async function carregar() {
-            try {
-                const itemApi = await sessoesApi.getPautaItem(sessaoId, item.id);
-                if (!ativo) return;
-                setDetalhe(itemApi);
+    if (isPainel || isLista) {
+        const fill = isPainel;
+        return (
+            <div
+                className={`pauta-leitura pauta-leitura--painel${isLista ? ' pauta-leitura--lista' : ''}`}
+                role="region"
+                aria-label={`Conteúdo: ${rotulo}`}
+            >
+                {carregando ? (
+                    <div
+                        className={`pauta-leitura-loading${fill ? ' pauta-leitura-loading--fill' : ''}`}
+                    >
+                        <i className="pi pi-spin pi-spinner" aria-hidden />
+                        <span>Carregando conteúdo…</span>
+                    </div>
+                ) : (
+                    <div className={`pauta-doc-card${fill ? ' pauta-doc-card--fill' : ''}`}>
+                        {textoUrl && isPdf ? (
+                            <iframe
+                                className={`pauta-doc-iframe${fill ? '' : ' pauta-doc-iframe--compact'}`}
+                                src={textoUrl}
+                                title={`Texto integral — ${rotulo}`}
+                            />
+                        ) : (
+                            <div
+                                className={`pauta-doc-card__inner${fill ? ' pauta-doc-card__inner--fill' : ''}`}
+                            >
+                                <p className="pauta-doc-card__ementa">
+                                    {textoPrincipal || 'Sem texto disponível.'}
+                                </p>
+                                {textoUrl && (
+                                    <button
+                                        type="button"
+                                        className="pauta-leitura-link"
+                                        onClick={abrirTextoIntegral}
+                                    >
+                                        <i className="pi pi-eye" aria-hidden />
+                                        Ver texto integral
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
 
-                if (
-                    (resolvePautaCategoria(itemApi) === 'MATERIA' ||
-                        resolvePautaCategoria(itemApi) === 'COMISSAO') &&
-                    itemApi.materia?.id
-                ) {
-                    const mat = await materiasApi.getById(itemApi.materia.id);
-                    if (ativo) setMateria(mat);
-                }
-            } catch (err) {
-                if (ativo) showApiError(err);
-            } finally {
-                if (ativo) setCarregando(false);
-            }
-        }
-
-        void carregar();
-        return () => {
-            ativo = false;
-        };
-    }, [sessaoId, item.id, showApiError]);
+                {previewArquivo && (
+                    <PreviewImg
+                        src={previewArquivo.src}
+                        fileName={previewArquivo.fileName}
+                        mimeType={previewArquivo.mimeType}
+                        onClose={() => setPreviewArquivo(null)}
+                    />
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className="pauta-leitura" role="region" aria-label={`Leitura: ${rotulo}`}>
@@ -127,14 +148,16 @@ export function PautaItemLeitura({ sessaoId, item, onFechar }: Props) {
                         )}
                     </div>
                 </div>
-                <Button
-                    icon="pi pi-times"
-                    text
-                    rounded
-                    size="small"
-                    aria-label="Fechar leitura"
-                    onClick={onFechar}
-                />
+                {onFechar ? (
+                    <Button
+                        icon="pi pi-times"
+                        text
+                        rounded
+                        size="small"
+                        aria-label="Fechar leitura"
+                        onClick={onFechar}
+                    />
+                ) : null}
             </div>
 
             {carregando ? (
@@ -146,29 +169,17 @@ export function PautaItemLeitura({ sessaoId, item, onFechar }: Props) {
                 <div className="pauta-leitura-body">
                     <div className="pauta-leitura-grid">
                         <MetaLinha label="Categoria" valor={PAUTA_CATEGORIA_LABELS[categoria]} />
-                        {categoria === 'COMISSAO' && detalhe.comissao && (
-                            <MetaLinha
-                                label="Comissão"
-                                valor={
-                                    detalhe.comissao.tipo?.nome ??
-                                    detalhe.comissao.titulo ??
-                                    undefined
-                                }
-                            />
+                        {categoria === 'COMISSAO' && (
+                            <MetaLinha label="Comissão" valor={comissaoNome} />
                         )}
-                        {materia && (
-                            <MetaLinha label="Status da matéria" valor={resolveStatusMateria(materia.status)} />
+                        {statusMateria && (
+                            <MetaLinha label="Status da matéria" valor={statusMateria} />
                         )}
-                        {autor && <MetaLinha label="Autor" valor={autor} />}
-                        {detalhe.votacao && (
-                            <MetaLinha
-                                label="Votação"
-                                valor={
-                                    detalhe.votacao.finalizada
-                                        ? `Encerrada — Sim ${detalhe.votacao.votosSim ?? 0} · Não ${detalhe.votacao.votosNao ?? 0} · Abstenção ${detalhe.votacao.abstencoes ?? 0}`
-                                        : 'Em andamento'
-                                }
-                            />
+                        {autorPrincipal && (
+                            <MetaLinha label="Autor" valor={autorPrincipal.nome} />
+                        )}
+                        {votacaoResumo && (
+                            <MetaLinha label="Votação" valor={votacaoResumo} />
                         )}
                     </div>
 
@@ -178,7 +189,9 @@ export function PautaItemLeitura({ sessaoId, item, onFechar }: Props) {
                                 ? 'Ementa'
                                 : 'Conteúdo'}
                         </h4>
-                        <p className="pauta-leitura-ementa">{textoPrincipal || 'Sem texto disponível.'}</p>
+                        <p className="pauta-leitura-ementa">
+                            {textoPrincipal || 'Sem texto disponível.'}
+                        </p>
                     </div>
 
                     {textoUrl && (

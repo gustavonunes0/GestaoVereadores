@@ -65,10 +65,19 @@ export function getMimeType(value: File | string): string | undefined {
             return match?.[1];
         }
         if (value.endsWith('.pdf')) return 'application/pdf';
+        if (value.endsWith('.doc')) return 'application/msword';
+        if (value.endsWith('.docx')) {
+            return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        }
         if (/\.jpe?g(\?|$)/i.test(value)) return 'image/jpeg';
         if (/\.png(\?|$)/i.test(value)) return 'image/png';
         if (/\.webp(\?|$)/i.test(value)) return 'image/webp';
         return undefined;
+    }
+    if (value.name.toLowerCase().endsWith('.pdf')) return 'application/pdf';
+    if (value.name.toLowerCase().endsWith('.doc')) return 'application/msword';
+    if (value.name.toLowerCase().endsWith('.docx')) {
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     }
     return value.type || undefined;
 }

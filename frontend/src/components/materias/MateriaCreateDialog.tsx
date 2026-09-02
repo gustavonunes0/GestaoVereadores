@@ -1,17 +1,14 @@
-import { useState } from 'react';
-import { Button } from 'primereact/button';
-import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea';
+import { useMemo, useState } from 'react';
 import { materiasApi } from '../../api/legislative/materias.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { DatePicker, Dropdown, FileUpload } from '../../components/ui';
+import { DatePicker, Dropdown, FileUpload, LexDialogFooter } from '../../components/ui';
+import type { MateriaStatus } from '../../types/legislative';
 import type {
     AutorSelecionado,
     CoautorFormItem,
-    StatusMateria,
 } from '../../types/materias';
-import {
+import { gerarOpcoesStatus } from '../../types/materias';import {
     buildCreateMateriaApiBody,
     resolveAnoIdFromNumeroAno,
     validateAutorSelecionado,
@@ -21,8 +18,11 @@ import { parseNumeroAnoMateria } from '../../utils/materiaIdentificacao';
 import { AutorField } from './AutorField';
 import { CoautorList } from './CoautorList';
 import { MateriaFormShell, type MateriaFormTab } from './MateriaFormShell';
+import { MateriaStatusField } from './MateriaStatusField';
+import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
 
-const CREATE_TABS: MateriaFormTab[] = ['identificacao', 'autoria'];
+const CREATE_TABS: MateriaFormTab[] = ['identificacao', 'autoria', 'conteudo'];
 
 interface Props {
     onClose: () => void;
@@ -43,6 +43,9 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
     const [ementa, setEmenta] = useState('');
     const [justificativa, setJustificativa] = useState('');
     const [textoOriginal, setTextoOriginal] = useState<File | null>(null);
+    const [statusMateria, setStatusMateria] = useState<MateriaStatus>('DRAFT');
+
+    const statusOptions = useMemo(() => gerarOpcoesStatus('DRAFT'), []);
 
     const tipoSelecionado = tiposMateria.find((t) => t.id === tipoId);
     const sigla =
@@ -59,7 +62,7 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
     const numeroAnoHint =
         numeroAno.trim() && !numeroAnoParsed.ok ? numeroAnoParsed.message : null;
 
-    async function submit(statusFinal: StatusMateria) {
+    async function submit() {
         if (!tipoId) {
             showApiError(new Error('Selecione o tipo de matéria.'));
             setActiveTab('identificacao');
@@ -100,7 +103,7 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
             dataProtocolo: dataProtocolo?.toISOString(),
             ementa: ementa.trim(),
             justificativa: justificativa.trim() || undefined,
-            status: statusFinal,
+            status: statusMateria,
             autor: autorPrincipal!,
             coautores,
         });
@@ -114,7 +117,7 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
 
             const idStr = previewId ?? tipoSelecionado?.nome ?? 'Matéria';
             const msg =
-                statusFinal === 'PROTOCOLADA'
+                statusMateria === 'PROTOCOLADA'
                     ? `${idStr} protocolada com sucesso.`
                     : `${idStr} salva como rascunho.`;
             showSuccess(msg);
@@ -128,23 +131,13 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
     }
 
     const footer = (
-        <>
-            <Button label="Cancelar" severity="secondary" outlined onClick={onClose} disabled={saving} />
-            <Button
-                label="Salvar rascunho"
-                severity="secondary"
-                outlined
-                icon="pi pi-save"
-                loading={saving}
-                onClick={() => void submit('DRAFT')}
-            />
-            <Button
-                label="Protocolar"
-                icon="pi pi-send"
-                loading={saving}
-                onClick={() => void submit('PROTOCOLADA')}
-            />
-        </>
+        <LexDialogFooter
+            onCancel={onClose}
+            onConfirm={() => void submit()}
+            confirmLabel="Salvar"
+            loading={saving}
+            cancelDisabled={saving}
+        />
     );
 
     return (
@@ -211,35 +204,47 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
                             />
                         </div>
                     </div>
-                    <div className="materia-form-secao">
-                        <div className="materia-form-secao-titulo">
-                            <i className="pi pi-align-left" aria-hidden />
-                            Conteúdo
-                        </div>
-                        <div className="materia-form-field" style={{ marginBottom: 10 }}>
-                            <label htmlFor="mc-ementa">Ementa *</label>
-                            <InputTextarea
-                                id="mc-ementa"
-                                value={ementa}
-                                onChange={(e) => setEmenta(e.target.value)}
-                                rows={3}
-                                autoResize
-                                placeholder="Descreva o objetivo da matéria…"
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="materia-form-field" style={{ marginBottom: 10 }}>
-                            <label htmlFor="mc-justificativa">Justificativa</label>
-                            <InputTextarea
-                                id="mc-justificativa"
-                                value={justificativa}
-                                onChange={(e) => setJustificativa(e.target.value)}
-                                rows={4}
-                                autoResize
-                                placeholder="Fundamentos e motivações (opcional)…"
-                                className="w-full"
-                            />
-                        </div>
+
+                    <MateriaStatusField
+                        id="mc-status"
+                        value={statusMateria}
+                        options={statusOptions}
+                        onChange={setStatusMateria}
+                    />
+                </div>
+            )}
+
+            {activeTab === 'conteudo' && (
+                <div className="materia-form-secao">
+                    <div className="materia-form-secao-titulo">
+                        <i className="pi pi-align-left" aria-hidden />
+                        Conteúdo
+                    </div>
+                    <div className="materia-form-field">
+                        <label htmlFor="mc-ementa">Ementa *</label>
+                        <InputTextarea
+                            id="mc-ementa"
+                            value={ementa}
+                            onChange={(e) => setEmenta(e.target.value)}
+                            rows={3}
+                            autoResize
+                            placeholder="Descreva o objetivo da matéria…"
+                            className="w-full"
+                        />
+                    </div>
+                    <div className="materia-form-field">
+                        <label htmlFor="mc-justificativa">Justificativa</label>
+                        <InputTextarea
+                            id="mc-justificativa"
+                            value={justificativa}
+                            onChange={(e) => setJustificativa(e.target.value)}
+                            rows={4}
+                            autoResize
+                            placeholder="Fundamentos e motivações (opcional)…"
+                            className="w-full"
+                        />
+                    </div>
+                    <div className="materia-form-field materia-form-field--file">
                         <FileUpload
                             id="mc-texto-original"
                             label="Texto Original"
@@ -249,7 +254,6 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
                         />
                     </div>
                 </div>
-                
             )}
 
             {activeTab === 'autoria' && (

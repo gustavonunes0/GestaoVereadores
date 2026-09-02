@@ -76,6 +76,7 @@ export function AppFeedbackProvider({ children }: { children: ReactNode }) {
                 acceptClassName: 'p-button-danger',
                 acceptLabel: 'Confirmar',
                 rejectLabel: 'Cancelar',
+                className: 'lex-dialog lex-dialog--dense lex-dialog--danger',
                 accept: () => void onAccept(),
             });
         },
@@ -93,7 +94,7 @@ export function AppFeedbackProvider({ children }: { children: ReactNode }) {
     return (
         <AppToastContext.Provider value={value}>
             <Toast ref={toastRef} position="top-right" />
-            <ConfirmDialog />
+            <ConfirmDialog className="lex-dialog lex-dialog--dense lex-dialog--danger" />
             {children}
         </AppToastContext.Provider>
     );

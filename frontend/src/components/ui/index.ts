@@ -38,3 +38,22 @@ export {
     getMimeType,
     getPreviewSrc,
 } from './file-utils';
+
+export { LexDialog, lexDialogClass, LEX_CONFIRM_DIALOG_CLASS, LEX_DANGER_DIALOG_CLASS } from './LexDialog';
+export type { LexDialogProps, LexDialogVariant } from './LexDialog';
+
+export { LexDialogFooter } from './LexDialogFooter';
+export type { LexDialogFooterProps } from './LexDialogFooter';
+
+export { LexFormDialogShell } from './LexFormDialogShell';
+export type { LexFormDialogTab } from './LexFormDialogShell';
+
+export {
+    LexDialogSection,
+    LexDialogField,
+    LexDialogReadonly,
+    LexDialogAlert,
+} from './LexDialogSection';
+
+export { LexDialogGrid, LexDialogCol, LEX_DIALOG_GRID_CLASS } from './LexDialogGrid';
+export type { LexDialogColSpan, LexDialogGridProps, LexDialogColProps } from './LexDialogGrid';

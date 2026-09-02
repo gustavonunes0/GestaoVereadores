@@ -24,6 +24,7 @@ export interface FileUploadProps {
     onChange: (file: File | null) => void;
     error?: string;
     className?: string;
+    disabled?: boolean;
 }
 
 export function FileUpload({
@@ -35,6 +36,7 @@ export function FileUpload({
     onChange,
     error,
     className = '',
+    disabled = false,
 }: FileUploadProps) {
     const generatedId = useId();
     const fieldId = id ?? generatedId;
@@ -79,6 +81,7 @@ export function FileUpload({
     }, [value, hasFile, accept]);
 
     function handleFiles(files: FileList | null) {
+        if (disabled) return;
         const file = files?.[0] ?? null;
         if (!file) return;
         onChange(file);
@@ -108,92 +111,84 @@ export function FileUpload({
 
     const fileName = value ? getFileName(value) : '';
     const fileTypeLabel = value ? getFileTypeLabel(value) : '';
-    const fileSize =
-        value instanceof File ? formatBytes(value.size) : undefined;
+    const fileSize = value instanceof File ? formatBytes(value.size) : undefined;
+
+    const zoneClass = [
+        'sigl-file-upload__zone',
+        hasFile ? 'sigl-file-upload__zone--filled' : 'sigl-file-upload__zone--empty',
+        !hasFile && !disabled ? 'sigl-file-upload__zone--clickable' : '',
+        dragging ? 'sigl-file-upload__zone--drag' : '',
+        error ? 'sigl-file-upload__zone--error' : '',
+        disabled ? 'sigl-file-upload__zone--disabled' : '',
+    ]
+        .filter(Boolean)
+        .join(' ');
 
     return (
-        <div className={`flex flex-col gap-1.5 ${className}`.trim()}>
+        <div className={['sigl-file-upload', className].filter(Boolean).join(' ')}>
             {label ? (
-                <label htmlFor={fieldId} className="text-[13px] font-medium text-[#374151]">
+                <label htmlFor={fieldId} className="sigl-file-upload__label">
                     {label}
-                    {required ? <span className="text-red-500 ml-0.5">*</span> : null}
+                    {required ? <span className="sigl-file-upload__required">*</span> : null}
                 </label>
             ) : null}
 
             <div
                 onDragOver={(event) => {
                     event.preventDefault();
-                    setDragging(true);
+                    if (!disabled) setDragging(true);
                 }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={handleDrop}
                 onClick={() => {
-                    if (!hasFile) inputRef.current?.click();
+                    if (!hasFile && !disabled) inputRef.current?.click();
                 }}
-                className={[
-                    'flex items-center gap-3 px-4 py-3 rounded-[8px] border transition-colors',
-                    !hasFile && 'cursor-pointer',
-                    dragging && 'border-[#2563a8] bg-[#f0f4fa]',
-                    hasFile && !dragging && 'border-[#dde2ea] bg-[#fafbfc]',
-                    !hasFile &&
-                        !dragging &&
-                        !error &&
-                        'border-dashed border-[#dde2ea] bg-white hover:border-[#2563a8] hover:bg-[#f0f4fa]',
-                    error && 'border-red-400 bg-red-50',
-                ]
-                    .filter(Boolean)
-                    .join(' ')}
+                className={zoneClass}
             >
                 <div
-                    className={`flex items-center justify-center w-9 h-9 rounded-[7px] flex-shrink-0 overflow-hidden ${
-                        hasFile ? 'bg-[#e8edf5]' : 'bg-[#f5f6f8]'
-                    }`}
+                    className={`sigl-file-upload__thumb${hasFile ? ' sigl-file-upload__thumb--filled' : ''}`}
                 >
                     {hasFile && thumbSrc ? (
-                        <img
-                            src={thumbSrc}
-                            alt=""
-                            className="w-full h-full object-cover"
-                        />
+                        <img src={thumbSrc} alt="" />
                     ) : hasFile ? (
                         <InsertDriveFileOutlined
-                            sx={{ fontSize: 20, color: '#2563a8' }}
+                            className="sigl-file-upload__icon"
+                            sx={{ fontSize: 20 }}
                             aria-hidden="true"
                         />
                     ) : (
                         <UploadFileOutlined
-                            sx={{ fontSize: 20, color: '#8492a6' }}
+                            className="sigl-file-upload__icon--muted"
+                            sx={{ fontSize: 20 }}
                             aria-hidden="true"
                         />
                     )}
                 </div>
 
-                <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                <div className="sigl-file-upload__body">
                     {hasFile ? (
                         <>
-                            <span className="text-[13px] font-medium text-[#374151] truncate">
-                                {fileName}
-                            </span>
-                            <span className="text-[11px] text-[#8492a6]">
+                            <span className="sigl-file-upload__name">{fileName}</span>
+                            <span className="sigl-file-upload__meta">
                                 {fileTypeLabel}
                                 {fileSize ? ` · ${fileSize}` : ''}
                             </span>
                         </>
                     ) : (
                         <>
-                            <span className="text-[13px] text-[#374151]">
+                            <span className="sigl-file-upload__prompt">
                                 {dragging ? (
                                     'Solte para enviar'
                                 ) : (
                                     <>
                                         Arraste ou{' '}
-                                        <span className="text-[#2563a8] font-medium">
+                                        <span className="sigl-file-upload__prompt-link">
                                             clique para selecionar
                                         </span>
                                     </>
                                 )}
                             </span>
-                            <span className="text-[11px] text-[#b0bac8]">
+                            <span className="sigl-file-upload__hint sigl-file-upload__hint--placeholder">
                                 {hints.long}
                             </span>
                         </>
@@ -201,42 +196,44 @@ export function FileUpload({
                 </div>
 
                 {hasFile ? (
-                    <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="sigl-file-upload__actions">
                         <button
                             type="button"
                             onClick={(event) => {
                                 event.stopPropagation();
                                 setPreview(true);
                             }}
-                            className="w-8 h-8 flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#e8edf5] hover:text-[#2563a8] transition-colors"
+                            className="sigl-file-upload__action sigl-file-upload__action--primary"
                             aria-label="Visualizar arquivo"
                         >
                             <VisibilityOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
                         </button>
-                        <button
-                            type="button"
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                inputRef.current?.click();
-                            }}
-                            className="w-8 h-8 flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-[#f5f6f8] hover:text-[#374151] transition-colors"
-                            aria-label="Trocar arquivo"
-                        >
-                            <SwapHorizOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleRemove}
-                            className="w-8 h-8 flex items-center justify-center rounded-[6px] text-[#8492a6] hover:bg-red-50 hover:text-red-500 transition-colors"
-                            aria-label="Remover arquivo"
-                        >
-                            <DeleteOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
-                        </button>
+                        {!disabled ? (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        inputRef.current?.click();
+                                    }}
+                                    className="sigl-file-upload__action"
+                                    aria-label="Trocar arquivo"
+                                >
+                                    <SwapHorizOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleRemove}
+                                    className="sigl-file-upload__action sigl-file-upload__action--danger"
+                                    aria-label="Remover arquivo"
+                                >
+                                    <DeleteOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
+                                </button>
+                            </>
+                        ) : null}
                     </div>
                 ) : (
-                    <span className="text-[10px] font-medium text-[#8492a6] bg-[#f0f4fa] px-2 py-0.5 rounded-[4px] flex-shrink-0">
-                        {hints.short}
-                    </span>
+                    <span className="sigl-file-upload__badge">{hints.short}</span>
                 )}
 
                 <input
@@ -245,12 +242,13 @@ export function FileUpload({
                     type="file"
                     accept={accept}
                     className="sr-only"
+                    disabled={disabled}
                     onChange={(event) => handleFiles(event.target.files)}
                 />
             </div>
 
             {error ? (
-                <p className="text-[11px] text-red-500 flex items-center gap-1">
+                <p className="sigl-file-upload__error">
                     <ErrorOutlineOutlined sx={{ fontSize: 13 }} aria-hidden="true" />
                     {error}
                 </p>

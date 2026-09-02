@@ -128,6 +128,18 @@ async function main() {
             },
         });
     }
+    // Dev local (docker :8080 / vite :5173)
+    for (const host of ['localhost', '127.0.0.1']) {
+        await prisma.tenantDomain.upsert({
+            where: { host },
+            update: { tenantId: DEMO_TENANT_ID, primario: false },
+            create: {
+                tenantId: DEMO_TENANT_ID,
+                host,
+                primario: false,
+            },
+        });
+    }
     if (seedHosts.length) {
         console.log(`Domínios do tenant demo: ${seedHosts.join(', ')}`);
     }

@@ -1,0 +1,311 @@
+/**
+ * Controles de formulário SIGL — cores via tokens institucionais (prime-theme-tokens.css)
+ */
+
+.sigl-file-upload {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.sigl-file-upload__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-body);
+}
+
+.sigl-file-upload__required {
+    color: var(--danger);
+    margin-left: 0.125rem;
+}
+
+.sigl-file-upload__zone {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--layout-radius-sm, 7px);
+    border: 1px solid var(--input-border);
+    background: var(--card-bg);
+    transition:
+        border-color var(--transition-fast),
+        background var(--transition-fast);
+}
+
+.sigl-file-upload__zone--clickable {
+    cursor: pointer;
+}
+
+.sigl-file-upload__zone--drag {
+    border-color: var(--accent);
+    background: var(--pagination-btn-bg);
+}
+
+.sigl-file-upload__zone--filled {
+    border-style: solid;
+    background: var(--input-bg);
+}
+
+.sigl-file-upload__zone--empty {
+    border-style: dashed;
+}
+
+.sigl-file-upload__zone--empty:hover:not(.sigl-file-upload__zone--disabled) {
+    border-color: var(--accent);
+    background: var(--pagination-btn-bg);
+}
+
+.sigl-file-upload__zone--error {
+    border-color: var(--danger);
+    background: var(--danger-bg);
+}
+
+.sigl-file-upload__zone--disabled {
+    opacity: 0.9;
+}
+
+.sigl-file-upload__thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 7px;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: var(--page-bg);
+}
+
+.sigl-file-upload__thumb--filled {
+    background: var(--sidebar-item-active-bg);
+}
+
+.sigl-file-upload__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sigl-file-upload__icon {
+    color: var(--accent);
+}
+
+.sigl-file-upload__icon--muted {
+    color: var(--text-muted);
+}
+
+.sigl-file-upload__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.sigl-file-upload__name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-body);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sigl-file-upload__meta,
+.sigl-file-upload__hint {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.sigl-file-upload__hint--placeholder {
+    color: var(--text-placeholder);
+}
+
+.sigl-file-upload__prompt {
+    font-size: 13px;
+    color: var(--text-body);
+}
+
+.sigl-file-upload__prompt-link {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.sigl-file-upload__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.sigl-file-upload__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: var(--layout-radius-sm, 6px);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast);
+}
+
+.sigl-file-upload__action:hover {
+    background: var(--sidebar-item-hover-bg);
+    color: var(--text-body);
+}
+
+.sigl-file-upload__action--primary:hover {
+    background: var(--sidebar-item-active-bg);
+    color: var(--accent);
+}
+
+.sigl-file-upload__action--danger:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.sigl-file-upload__badge {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--pagination-btn-bg);
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.sigl-file-upload__error {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 11px;
+    color: var(--danger);
+    margin: 0;
+}
+
+/* Preview modal */
+.sigl-file-preview {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.sigl-file-preview__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 56rem;
+    max-height: 90vh;
+    background: var(--card-bg);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+}
+
+.sigl-file-preview__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.sigl-file-preview__type {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.sigl-file-preview__type--pdf {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.sigl-file-preview__type--img {
+    background: var(--sidebar-item-active-bg);
+    color: var(--accent);
+}
+
+.sigl-file-preview__title {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-heading);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sigl-file-preview__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.sigl-file-preview__body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--page-bg);
+    overflow: hidden;
+    min-height: 25rem;
+    max-height: calc(90vh - 3.5rem);
+}
+
+.sigl-file-preview__iframe {
+    width: 100%;
+    height: calc(90vh - 3.5rem);
+    border: none;
+}
+
+.sigl-file-preview__image {
+    max-width: 100%;
+    max-height: calc(90vh - 3.5rem);
+    object-fit: contain;
+    padding: 1rem;
+}
+
+.sigl-file-preview__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 4rem 1.5rem;
+    text-align: center;
+    color: var(--text-muted);
+    max-width: 28rem;
+}
+
+.sigl-file-preview__empty-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-heading);
+}
+
+.sigl-file-preview__empty-text {
+    font-size: 13px;
+    margin: 0;
+}
+
+.sigl-file-preview__link {
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.sigl-file-preview__link:hover {
+    text-decoration: underline;
+}

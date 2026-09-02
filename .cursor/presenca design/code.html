@@ -1,0 +1,294 @@
+<!DOCTYPE html><html lang="pt-BR" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Mapa de Votação Nominal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Public Sans"', 'sans-serif'],
+          },
+          colors: {
+            primary: '#2b4c8c',
+            surface: '#f8f9ff',
+            'desk-brown': '#b58b4c',
+            'seat-blue': '#4c73e0',
+            'seat-green': '#10b981',
+            'seat-red': '#ef4444',
+            'seat-yellow': '#f59e0b',
+            'seat-gray': '#9ca3af',
+          },
+          boxShadow: {
+            'seat': '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-utilities">
+    .curved-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative;
+    }
+    
+    .desk-curve {
+      position: absolute;
+      bottom: -10px;
+      height: 20px;
+      background-color: theme('colors.desk-brown');
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+      z-index: 0;
+      transform-origin: center bottom;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .seat {
+      position: relative;
+      z-index: 10;
+      width: 40px;
+      height: 32px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 600;
+      box-shadow: 0 4px 0px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3);
+      transition: transform 0.1s;
+      cursor: pointer;
+    }
+    
+    .seat:hover {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.3);
+    }
+    
+    .seat::after {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 10%;
+      right: 10%;
+      height: 4px;
+      background: inherit;
+      filter: brightness(1.2);
+      border-radius: 2px 2px 0 0;
+    }
+    
+    .bg-gradient-plenary {
+      background: radial-gradient(circle at top center, #ffffff 0%, #e5e7eb 100%);
+    }
+  </style>
+</head>
+<body class="bg-gradient-plenary min-h-screen text-slate-800 font-sans p-8 flex flex-col items-center">
+<!-- BEGIN: Header -->
+
+<!-- END: Header -->
+<!-- BEGIN: Plenary Map -->
+<main class="relative w-full max-w-4xl flex flex-col items-center gap-6 pb-20">
+<!-- Background structural elements (light gray areas in reference) -->
+<div class="absolute top-12 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-slate-200/50 rounded-t-full -z-10 pointer-events-none"></div>
+<!-- BEGIN: Mesa Diretora -->
+<div class="flex flex-col items-center mb-8 relative z-20">
+<div class="flex gap-2 mb-2">
+<!-- 5 Executive Chairs -->
+<div class="seat bg-seat-blue !w-12 !h-10"></div>
+<div class="seat bg-seat-blue !w-12 !h-10"></div>
+<div class="seat bg-seat-blue !w-12 !h-10"></div>
+<div class="seat bg-seat-blue !w-12 !h-10"></div>
+<div class="seat bg-seat-blue !w-12 !h-10"></div>
+</div>
+<div class="bg-desk-brown text-white/90 text-sm font-bold px-16 py-3 rounded-sm shadow-md uppercase tracking-widest text-center whitespace-nowrap min-w-[300px]">
+        Mesa Diretora
+      </div>
+<!-- Side desks -->
+<div class="absolute -left-32 top-8 bg-desk-brown w-16 h-24 rotate-12 rounded-sm shadow-sm"></div>
+<div class="absolute -right-32 top-8 bg-desk-brown w-16 h-24 -rotate-12 rounded-sm shadow-sm"></div>
+</div>
+<!-- END: Mesa Diretora -->
+<!-- BEGIN: Plenary Rows -->
+<div class="flex flex-col items-center gap-12 w-full mt-4">
+<!-- Row 1 (Top) -->
+<div class="flex w-full justify-between px-16">
+<div class="curved-row w-5/12 rotate-[8deg]">
+<div class="desk-curve w-[110%] -rotate-[4deg]"></div>
+<div class="seat bg-seat-blue">AC</div>
+<div class="seat bg-seat-blue">AC</div>
+<div class="seat bg-seat-blue">AC</div>
+<div class="seat bg-seat-blue">AL</div>
+<div class="seat bg-seat-blue">AL</div>
+<div class="seat bg-seat-blue">AL</div>
+<div class="seat bg-seat-blue">AP</div>
+</div>
+<div class="curved-row w-5/12 -rotate-[8deg]">
+<div class="desk-curve w-[110%] rotate-[4deg]"></div>
+<div class="seat bg-seat-blue">AP</div>
+<div class="seat bg-seat-blue">AP</div>
+<div class="seat bg-seat-blue">AM</div>
+<div class="seat bg-seat-blue">AM</div>
+<div class="seat bg-seat-blue">AM</div>
+<div class="seat bg-seat-blue">BA</div>
+<div class="seat bg-seat-blue">BA</div>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="flex w-full justify-between px-12">
+<div class="curved-row w-5/12 rotate-[6deg]">
+<div class="desk-curve w-[105%] -rotate-[3deg]"></div>
+<div class="seat bg-seat-blue">MA</div>
+<div class="seat bg-seat-blue">GO</div>
+<div class="seat bg-seat-blue">GO</div>
+<div class="seat bg-seat-blue">GO</div>
+<div class="seat bg-seat-blue">ES</div>
+<div class="seat bg-seat-blue">ES</div>
+<div class="seat bg-seat-blue">ES</div>
+</div>
+<div class="curved-row w-5/12 -rotate-[6deg]">
+<div class="desk-curve w-[105%] rotate-[3deg]"></div>
+<div class="seat bg-seat-blue">DF</div>
+<div class="seat bg-seat-blue">DF</div>
+<div class="seat bg-seat-blue">DF</div>
+<div class="seat bg-seat-blue">CE</div>
+<div class="seat bg-seat-blue">CE</div>
+<div class="seat bg-seat-blue">CE</div>
+<div class="seat bg-seat-blue">BA</div>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="flex w-full justify-between px-8">
+<div class="curved-row w-5/12 rotate-[4deg]">
+<div class="desk-curve w-[105%] -rotate-[2deg]"></div>
+<div class="seat bg-seat-blue">MA</div>
+<div class="seat bg-seat-blue">MA</div>
+<div class="seat bg-seat-blue">MT</div>
+<div class="seat bg-seat-blue">MT</div>
+<div class="seat bg-seat-blue">MT</div>
+<div class="seat bg-seat-blue">MS</div>
+<div class="seat bg-seat-blue">MS</div>
+</div>
+<div class="curved-row w-5/12 -rotate-[4deg]">
+<div class="desk-curve w-[105%] rotate-[2deg]"></div>
+<div class="seat bg-seat-blue">MS</div>
+<div class="seat bg-seat-blue">MG</div>
+<div class="seat bg-seat-blue">MG</div>
+<div class="seat bg-seat-blue">MG</div>
+<div class="seat bg-seat-blue">PA</div>
+<div class="seat bg-seat-blue">PA</div>
+<div class="seat bg-seat-blue">PA</div>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="flex w-full justify-between px-4">
+<div class="curved-row w-5/12 rotate-[2deg]">
+<div class="desk-curve w-[105%] -rotate-[1deg]"></div>
+<div class="seat bg-seat-blue">RJ</div>
+<div class="seat bg-seat-blue">RJ</div>
+<div class="seat bg-seat-blue">PI</div>
+<div class="seat bg-seat-blue">PI</div>
+<div class="seat bg-seat-blue">PI</div>
+<div class="seat bg-seat-blue">PE</div>
+<div class="seat bg-seat-blue">PE</div>
+</div>
+<div class="curved-row w-5/12 -rotate-[2deg]">
+<div class="desk-curve w-[105%] rotate-[1deg]"></div>
+<div class="seat bg-seat-blue">PE</div>
+<div class="seat bg-seat-blue">PR</div>
+<div class="seat bg-seat-blue">PR</div>
+<div class="seat bg-seat-blue">PR</div>
+<div class="seat bg-seat-blue">PB</div>
+<div class="seat bg-seat-blue">PB</div>
+<div class="seat bg-seat-blue">PB</div>
+</div>
+</div>
+<!-- Row 5 -->
+<div class="flex w-full justify-between px-0">
+<div class="curved-row w-5/12">
+<div class="desk-curve w-[105%]"></div>
+<div class="seat bg-seat-blue">RJ</div>
+<div class="seat bg-seat-blue">RN</div>
+<div class="seat bg-seat-blue">RN</div>
+<div class="seat bg-seat-blue">RN</div>
+<div class="seat bg-seat-blue">RS</div>
+<div class="seat bg-seat-blue">RS</div>
+<div class="seat bg-seat-blue">RS</div>
+</div>
+<div class="curved-row w-5/12">
+<div class="desk-curve w-[105%]"></div>
+<div class="seat bg-seat-blue">RO</div>
+<div class="seat bg-seat-blue">RO</div>
+<div class="seat bg-seat-blue">RO</div>
+<div class="seat bg-seat-blue">RR</div>
+<div class="seat bg-seat-blue">RR</div>
+<div class="seat bg-seat-blue">RR</div>
+<div class="seat bg-seat-blue">SC</div>
+</div>
+</div>
+<!-- Row 6 (Bottom) -->
+<div class="flex w-full justify-between px-0">
+<div class="curved-row w-5/12">
+<div class="desk-curve w-[105%]"></div>
+<div class="seat bg-seat-blue opacity-50"></div>
+<div class="seat bg-seat-blue opacity-50"></div>
+<div class="seat bg-seat-blue opacity-50"></div>
+<div class="seat bg-seat-blue">TO</div>
+<div class="seat bg-seat-blue">TO</div>
+<div class="seat bg-seat-blue">TO</div>
+<div class="seat bg-seat-blue">SE</div>
+</div>
+<div class="curved-row w-5/12">
+<div class="desk-curve w-[105%]"></div>
+<div class="seat bg-seat-blue">SE</div>
+<div class="seat bg-seat-blue">SE</div>
+<div class="seat bg-seat-blue">SP</div>
+<div class="seat bg-seat-blue">SP</div>
+<div class="seat bg-seat-blue">SP</div>
+<div class="seat bg-seat-blue">SC</div>
+<div class="seat bg-seat-blue">SC</div>
+</div>
+</div>
+</div>
+<!-- END: Plenary Rows -->
+</main>
+<!-- END: Plenary Map -->
+<!-- BEGIN: Legend -->
+<footer class="mt-8 bg-white/80 backdrop-blur px-8 py-4 rounded-xl shadow-sm border border-slate-200">
+<div class="flex items-center gap-6 text-sm font-medium text-slate-700">
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-sm bg-seat-green shadow-[0_2px_0_rgba(0,0,0,0.2)]"></div>
+<span class="">Presente</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-sm bg-seat-red shadow-[0_2px_0_rgba(0,0,0,0.2)]"></div>
+<span class="">Faltoso</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-sm bg-seat-yellow shadow-[0_2px_0_rgba(0,0,0,0.2)]"></div>
+<span class="">Justificado</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-sm bg-seat-gray shadow-[0_2px_0_rgba(0,0,0,0.2)]"></div>
+<span class="">Pendente</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-4 h-4 rounded-sm bg-seat-blue shadow-[0_2px_0_rgba(0,0,0,0.2)]"></div>
+<span class="">Estado/Cadeira</span>
+</div>
+</div>
+</footer>
+<!-- END: Legend -->
+
+
+
+
+
+
+</body></html>
