@@ -25,11 +25,13 @@ import './styles/lex-presenca.css';
 
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
+import { listenForInstallPrompt } from './pwa/installPrompt';
 import { registerPwa } from './pwa/registerPwa';
 
 addLocale('pt', PRIME_LOCALE_PT);
 locale('pt');
 registerPwa();
+listenForInstallPrompt();
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
