@@ -4334,17 +4334,20 @@ body.transmissao-fs-active {
     background: var(--surface-0);
     border: 1px solid var(--surface-border);
     border-radius: var(--border-radius-md);
-    padding: 10px 12px;
+    padding: 12px 14px;
     font-size: 12px;
     pointer-events: none;
-    min-width: 160px;
+    min-width: 220px;
+    max-width: 280px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
-.ptt-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ptt-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
 .ptt-avatar.sigl-avatar {
-    --sigl-avatar-size: 30px;
-    font-size: 11px;
+    --sigl-avatar-size: 80px;
+    font-size: 22px;
+    flex-shrink: 0;
 }
-.ptt-nome  { font-weight: 500; font-size: 13px; }
+.ptt-nome  { font-weight: 600; font-size: 14px; line-height: 1.25; }
 .ptt-cargo { font-size: 10px; color: var(--text-color-secondary); }
 .ptt-sub   {
     color: var(--text-color-secondary);

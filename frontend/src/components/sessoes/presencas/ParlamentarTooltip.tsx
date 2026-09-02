@@ -10,7 +10,7 @@ interface TooltipData {
 
 export function ParlamentarTooltip({ data }: { data: TooltipData }) {
     const { p, x, y } = data;
-    const left = x + 175 > window.innerWidth ? x - 180 : x + 14;
+    const left = x + 260 > window.innerWidth ? x - 240 : x + 14;
     const top = Math.max(10, y - 10);
 
     const origemTexto =
@@ -29,7 +29,7 @@ export function ParlamentarTooltip({ data }: { data: TooltipData }) {
                 <PersonAvatar
                     photoUrl={p.fotoUrl}
                     name={p.parliamentaryName}
-                    size="sm"
+                    size="xl"
                     fallback={p.abreviacao}
                     className="ptt-avatar"
                     aria-hidden
