@@ -4,6 +4,7 @@ import {
     ConflictException,
     Controller,
     Delete,
+    ForbiddenException,
     Get,
     NotFoundException,
     Param,
@@ -110,12 +111,21 @@ export class ParliamentariansController {
         return this.listActiveParliamentarianUsersUseCase.execute(tenantId);
     }
 
-    @TenantRoles(...STAFF_AND_ABOVE)
+    @TenantRoles(...ALL_AUTHENTICATED)
     @Get(':id')
     async getById(
         @TenantId() tenantId: string,
         @Param('id', ParseUUIDPipe) id: string,
+        @CurrentUser() user: AuthenticatedUser,
     ) {
+        if (
+            isParlamentarianUser(user) &&
+            user.parliamentarianId !== id
+        ) {
+            throw new ForbiddenException(
+                'Você não tem permissão para realizar esta ação',
+            );
+        }
         try {
             return await this.getParliamentarianByIdUseCase.execute(
                 tenantId,
