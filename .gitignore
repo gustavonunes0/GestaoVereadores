@@ -7,6 +7,10 @@ uploads/
 *.tsbuildinfo
 backend/src/identity/
 
+# Override local/VPS (Jitsi + portas) — modelo em deploy/
+docker-compose.override.yml
+docker-compose.override.yml.bak*
+
 # Ops / diagnóstico em backend/scripts — sem versionar
 # (exceto wrappers Prisma usados em npm run build / Vercel)
 backend/scripts/**

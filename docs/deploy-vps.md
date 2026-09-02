@@ -95,21 +95,54 @@ Com proxy nginx do front apontando `/api` para a API, `VITE_API_URL=/api` contin
 
 ## 3. Subir / atualizar na VPS
 
+**Causa do Meet quebrado no último update:** alguém sobrescreveu `docker-compose.override.yml`
+só com Postgres (`5433`), apagando `PUBLIC_URL` do Jitsi. Sem isso o compose cai em `:8444`
+e o Meet falha atrás do NPM.
+
+### Forma recomendada (protege o Jitsi)
+
 ```bash
 cd /opt/gestao-vereadores/GestaoVereadores
-# Backup do override (Jitsi) antes do pull
-cp docker-compose.override.yml docker-compose.override.yml.bak-$(date +%Y%m%d) 2>/dev/null || true
+bash deploy/vps-update.sh
+```
+
+O script: faz backup do override → garante `JITSI_PUBLIC_URL` no `.env` → `git pull` →
+recria override se estiver incompleto → build → valida `PUBLIC_URL` / `JITSI_DOMAIN`.
+
+### Forma manual (se não usar o script)
+
+```bash
+cd /opt/gestao-vereadores/GestaoVereadores
+
+# 1) Backup OBRIGATÓRIO do override completo (Postgres + Jitsi)
+cp docker-compose.override.yml docker-compose.override.yml.bak-$(date +%Y%m%d-%H%M)
+
+# 2) .env deve ter (sem :8444):
+grep -E '^JITSI_(PUBLIC_URL|DOMAIN|PUBLIC_HOST)=' .env
+# esperado:
+# JITSI_PUBLIC_URL=https://meet.stashsoftware.com.br
+# JITSI_DOMAIN=meet.stashsoftware.com.br
+# JITSI_PUBLIC_HOST=meet.stashsoftware.com.br
+
 git pull
-# Confira .env + override: JITSI_DOMAIN=meet.stashsoftware.com.br (sem meet.jit.si)
+
+# 3) NUNCA substitua o override só pelo bloco postgres.
+#    O arquivo precisa ter jitsi-web.PUBLIC_URL (ver deploy/docker-compose.override.jitsi.example.yml)
+grep PUBLIC_URL docker-compose.override.yml
+# esperado: https://meet.stashsoftware.com.br  (SEM :8444)
 
 docker compose up --build -d
 docker compose exec api npx prisma migrate deploy
-# seed só se necessário (idempotente, mas evita rodar em toda atualização)
-# docker compose exec api npx prisma db seed
-
-# NPM precisa estar na rede do Jitsi (senão Meet → 502)
 docker network connect gestaovereadores_meet.jitsi nginx-proxy-manager-nginx-proxy-manager-1 2>/dev/null || true
+
+# 4) Validar ANTES de liberar para usuários
+docker exec gestaovereadores-jitsi-web-1 printenv PUBLIC_URL
+# → https://meet.stashsoftware.com.br
+docker exec gestaovereadores-api-1 printenv JITSI_DOMAIN
+# → meet.stashsoftware.com.br
 ```
+
+Se `PUBLIC_URL` vier com `:8444` ou vazio: restaure o `.bak` e rode `docker compose up -d api jitsi-web`.
 
 Validar mapeamento no banco:
 

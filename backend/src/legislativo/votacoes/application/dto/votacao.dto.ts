@@ -7,7 +7,6 @@ import {
     IsOptional,
     IsUUID,
     Min,
-    ValidateIf,
 } from 'class-validator';
 
 export class AbrirVotacaoDto {
@@ -21,13 +20,17 @@ export class AbrirVotacaoDto {
 }
 
 export class RegistrarVotoDto {
-    /** Modelo legado (Parlamentar). */
-    @ValidateIf((o: RegistrarVotoDto) => !o.parliamentarianId)
+    /**
+     * Modelo legado (Parlamentar).
+     * Opcional no body: o controller injeta o ID do JWT para usuário parlamentar.
+     * O repositório exige ao menos um entre parlamentarId e parliamentarianId.
+     */
+    @IsOptional()
     @IsUUID()
     parlamentarId?: string;
 
     /** Modelo novo (Parliamentarian) — app parlamentar. */
-    @ValidateIf((o: RegistrarVotoDto) => !o.parlamentarId)
+    @IsOptional()
     @IsUUID()
     parliamentarianId?: string;
 

@@ -1,8 +1,17 @@
-# Exemplo de override VPS — NÃO commit com secrets reais.
+# Exemplo de override VPS — NÃO commit secrets reais.
 # Copiar na VPS como: docker-compose.override.yml
-# Garante self-host (desliga meet.jit.si / JWT vazio).
+#
+# ATENÇÃO: este arquivo deve ter Postgres + API Jitsi + jitsi-web juntos.
+# Nunca substitua o override só com o bloco postgres — isso remove PUBLIC_URL
+# e o Meet volta com :8444 (quebra atrás do Nginx Proxy Manager).
+#
+# Update seguro: bash deploy/vps-update.sh
 
 services:
+  postgres:
+    ports:
+      - "0.0.0.0:5433:5432"
+
   api:
     environment:
       JITSI_DOMAIN: meet.stashsoftware.com.br
@@ -10,6 +19,8 @@ services:
       JITSI_APP_SECRET: troque-por-um-segredo-forte
       JITSI_SUB: '*'
       CORS_ORIGIN: https://camaragest.stellarsolucoes.com.br,https://baturite.stellarsolucoes.com.br,http://localhost:5173
+
   jitsi-web:
     environment:
+      # SEM porta :8444 — TLS termina no NPM (:443)
       PUBLIC_URL: https://meet.stashsoftware.com.br
