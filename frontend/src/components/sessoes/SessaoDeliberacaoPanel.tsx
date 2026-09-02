@@ -159,7 +159,7 @@ export function SessaoDeliberacaoPanel({
         setBusy(true);
         try {
             await sessoesApi.registrarPresenca(sessaoId, {
-                parlamentarId: parlamentarPresencaId,
+                parliamentarianId: parlamentarPresencaId,
                 presente,
                 situacao: presente ? 'PRESENTE' : 'AUSENTE',
             });
@@ -194,7 +194,7 @@ export function SessaoDeliberacaoPanel({
         setBusy(true);
         try {
             await sessoesApi.registrarVoto(sessaoId, pautaItemId, {
-                parlamentarId: votoParlamentarId,
+                parliamentarianId: votoParlamentarId,
                 voto: votoValor,
             });
             showSuccess('Voto registrado.');

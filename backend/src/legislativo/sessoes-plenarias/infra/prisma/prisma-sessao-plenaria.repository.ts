@@ -876,10 +876,29 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         const sessao = await this.findOne(tenantId, sessaoId);
         assertSessaoNaoEncerrada(sessao.situacao, sessao.statusSessao as StatusSessao);
 
-        if (dto.parliamentarianId) {
+        let actor = dto;
+        if (!actor.parliamentarianId && actor.parlamentarId) {
+            const asParliamentarian = await this.prisma.parliamentarian.findFirst({
+                where: {
+                    id: actor.parlamentarId,
+                    tenantId,
+                    isRemoved: false,
+                },
+                select: { id: true },
+            });
+            if (asParliamentarian) {
+                actor = {
+                    ...actor,
+                    parliamentarianId: actor.parlamentarId,
+                    parlamentarId: undefined,
+                };
+            }
+        }
+
+        if (actor.parliamentarianId) {
             const parliamentarian = await this.prisma.parliamentarian.findFirst({
                 where: {
-                    id: dto.parliamentarianId,
+                    id: actor.parliamentarianId,
                     tenantId,
                     isRemoved: false,
                 },
@@ -888,38 +907,38 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 throw new NotFoundException('Parlamentar não encontrado');
             }
 
-            await this.assertMandateIfProvided(tenantId, dto);
+            await this.assertMandateIfProvided(tenantId, actor);
 
             const existing = await this.prisma.presencaSessao.findUnique({
                 where: {
                     sessaoId_parliamentarianId: {
                         sessaoId,
-                        parliamentarianId: dto.parliamentarianId,
+                        parliamentarianId: actor.parliamentarianId,
                     },
                 },
             });
             assertPresencaNaoDuplicada(!!existing);
 
-            const campos = resolveCamposPresenca(dto);
+            const campos = resolveCamposPresenca(actor);
 
             return this.prisma.presencaSessao.create({
                 data: {
                     sessaoId,
-                    parliamentarianId: dto.parliamentarianId,
+                    parliamentarianId: actor.parliamentarianId,
                     ...campos,
                 },
                 include: presencaInclude,
             });
         }
 
-        if (!dto.parlamentarId) {
+        if (!actor.parlamentarId) {
             throw new BadRequestException(
                 'Informe parlamentarId ou parliamentarianId',
             );
         }
 
         const parlamentar = await this.prisma.parlamentar.findFirst({
-            where: { id: dto.parlamentarId, ...tenantWhere(tenantId) },
+            where: { id: actor.parlamentarId, ...tenantWhere(tenantId) },
         });
         if (!parlamentar) {
             throw new NotFoundException('Parlamentar não encontrado');
@@ -927,27 +946,27 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
 
         const legislaturaId = sessao.sessaoLegislativa?.legislaturaId ?? null;
         await this.assertParlamentarMandatoAtivo(
-            dto.parlamentarId,
+            actor.parlamentarId,
             legislaturaId,
         );
-        await this.assertMandateIfProvided(tenantId, dto);
+        await this.assertMandateIfProvided(tenantId, actor);
 
         const existing = await this.prisma.presencaSessao.findUnique({
             where: {
                 sessaoId_parlamentarId: {
                     sessaoId,
-                    parlamentarId: dto.parlamentarId,
+                    parlamentarId: actor.parlamentarId,
                 },
             },
         });
         assertPresencaNaoDuplicada(!!existing);
 
-        const campos = resolveCamposPresenca(dto);
+        const campos = resolveCamposPresenca(actor);
 
         return this.prisma.presencaSessao.create({
             data: {
                 sessaoId,
-                parlamentarId: dto.parlamentarId,
+                parlamentarId: actor.parlamentarId,
                 ...campos,
             },
             include: presencaInclude,

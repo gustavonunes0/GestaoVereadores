@@ -29,7 +29,8 @@ export function RegistrarVotoDialog({ sessaoId, pautaItemId, parlamentarId, titu
         setLoading(true);
         try {
             await sessoesApi.registrarVoto(sessaoId, pautaItemId, {
-                parlamentarId,
+                // IDs vêm do modelo Parliamentarian (app/staff), não do legado Parlamentar
+                parliamentarianId: parlamentarId,
                 voto,
             });
             showSuccess('Voto registrado com sucesso.');
