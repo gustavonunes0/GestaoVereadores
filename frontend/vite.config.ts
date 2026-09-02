@@ -46,21 +46,21 @@ export default defineConfig({
                     client_mode: ['navigate-existing', 'auto'],
                 },
                 icons: [
-                    {
-                        src: 'icons/icon-192.png',
-                        sizes: '192x192',
-                        type: 'image/png',
-                        purpose: 'any',
-                    },
-                    {
-                        src: 'icons/icon-512.png',
-                        sizes: '512x512',
-                        type: 'image/png',
-                        purpose: 'any',
-                    },
+                    { src: 'icons/icon-96.png', sizes: '96x96', type: 'image/png', purpose: 'any' },
+                    { src: 'icons/icon-144.png', sizes: '144x144', type: 'image/png', purpose: 'any' },
+                    { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+                    { src: 'icons/icon-256.png', sizes: '256x256', type: 'image/png', purpose: 'any' },
+                    { src: 'icons/icon-384.png', sizes: '384x384', type: 'image/png', purpose: 'any' },
+                    { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
                     {
                         src: 'icons/maskable-192.png',
                         sizes: '192x192',
+                        type: 'image/png',
+                        purpose: 'maskable',
+                    },
+                    {
+                        src: 'icons/maskable-384.png',
+                        sizes: '384x384',
                         type: 'image/png',
                         purpose: 'maskable',
                     },
@@ -71,14 +71,46 @@ export default defineConfig({
                         purpose: 'maskable',
                     },
                 ],
+                // Atalhos do ícone instalado — voltados ao uso no celular (vereador).
+                shortcuts: [
+                    {
+                        name: 'Sessões plenárias',
+                        short_name: 'Sessões',
+                        description: 'Abrir a lista de sessões plenárias',
+                        url: '/parlamentar/sessoes',
+                        icons: [{ src: 'icons/icon-96.png', sizes: '96x96', type: 'image/png' }],
+                    },
+                    {
+                        name: 'Minhas matérias',
+                        short_name: 'Matérias',
+                        description: 'Abrir as matérias de minha autoria',
+                        url: '/parlamentar/materias',
+                        icons: [{ src: 'icons/icon-96.png', sizes: '96x96', type: 'image/png' }],
+                    },
+                    {
+                        name: 'Agenda',
+                        short_name: 'Agenda',
+                        description: 'Abrir o painel do parlamentar',
+                        url: '/parlamentar/dashboard',
+                        icons: [{ src: 'icons/icon-96.png', sizes: '96x96', type: 'image/png' }],
+                    },
+                ],
             },
             injectManifest: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webmanifest}'],
+                globIgnores: [
+                    // Inter vem do tema PrimeReact, mas a interface usa Lato (~726 KB).
+                    '**/InterVariable*.woff2',
+                    // Fallback do primeicons para navegadores legados (~343 KB).
+                    '**/primeicons-*.svg',
+                ],
                 maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
             },
             devOptions: {
-                enabled: false,
+                // Habilite com `npm run dev:pwa` — o SW em dev atrapalha o HMR.
+                enabled: process.env.VITE_DEV_PWA === 'true',
                 type: 'module',
+                navigateFallback: 'index.html',
             },
         }),
     ],

@@ -3,6 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { addLocale, locale, PrimeReactProvider } from 'primereact/api';
 import { PRIME_LOCALE_PT } from './config/prime-locale-pt';
 
+// Lato self-hosted: entra no precache do service worker (offline) e remove
+// duas conexões externas do caminho crítico de render.
+import '@fontsource/lato/400.css';
+import '@fontsource/lato/400-italic.css';
+import '@fontsource/lato/700.css';
+
 import 'primereact/resources/themes/lara-light-blue/theme.css';
 import 'primeicons/primeicons.css';
 import './styles/prime-theme-tokens.css';

@@ -6,6 +6,7 @@ import {
     enablePushNotifications,
     getExistingPushSubscription,
     isPushSupported,
+    syncPushSubscription,
     wasPushDismissed,
 } from '../../pwa/pushNotifications';
 
@@ -22,13 +23,33 @@ export function PushPermissionBanner({ enabled = true }: Props) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    /**
+     * Reconcilia a subscription com o backend — roda mesmo com o banner
+     * dispensado, pois o navegador pode tê-la rotacionado com o app fechado.
+     */
     useEffect(() => {
-        if (!enabled || !isPushSupported() || wasPushDismissed()) {
-            setVisible(false);
-            return;
-        }
+        if (!enabled || !isPushSupported()) return;
 
-        if (Notification.permission === 'denied') {
+        const sync = () => {
+            void syncPushSubscription().catch(() => undefined);
+        };
+        const onSwMessage = (event: MessageEvent) => {
+            const type = (event.data as { type?: string } | undefined)?.type;
+            if (type === 'PUSH_SUBSCRIPTION_CHANGED') sync();
+        };
+
+        sync();
+        navigator.serviceWorker.addEventListener('message', onSwMessage);
+        return () => navigator.serviceWorker.removeEventListener('message', onSwMessage);
+    }, [enabled]);
+
+    useEffect(() => {
+        if (
+            !enabled ||
+            !isPushSupported() ||
+            wasPushDismissed() ||
+            Notification.permission === 'denied'
+        ) {
             setVisible(false);
             return;
         }

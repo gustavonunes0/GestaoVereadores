@@ -63,6 +63,31 @@
     bottom: auto;
 }
 
+.pwa-banner--offline,
+.pwa-banner--reconnected {
+    top: calc(0.75rem + env(safe-area-inset-top, 0px));
+    bottom: auto;
+    z-index: 201;
+}
+
+.pwa-banner--offline {
+    background: #92400e;
+}
+
+.pwa-banner--reconnected {
+    background: #166534;
+}
+
+.pwa-banner--reconnected .pwa-banner__action {
+    color: #166534;
+}
+
+/* Ambos ficam no topo — empilha o de atualização abaixo do aviso de rede. */
+.pwa-banner--offline ~ .pwa-banner--update,
+.pwa-banner--reconnected ~ .pwa-banner--update {
+    top: calc(5.5rem + env(safe-area-inset-top, 0px));
+}
+
 .pwa-banner__body {
     display: flex;
     align-items: flex-start;

@@ -1,32 +1,13 @@
 import { pushApi } from '../api/notifications/push.api';
+import {
+    clearPendingSubscription,
+    readPendingSubscription,
+    saveVapidPublicKey,
+    toStoredSubscription,
+    vapidKeyToBytes,
+} from './pushStorage';
 
 const DISMISS_KEY = 'sigl.push.dismissed';
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const raw = atob(base64);
-    const output = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i += 1) {
-        output[i] = raw.charCodeAt(i);
-    }
-    return output;
-}
-
-function subscriptionToPayload(sub: PushSubscription) {
-    const json = sub.toJSON();
-    if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
-        throw new Error('Subscription push incompleta');
-    }
-    return {
-        endpoint: json.endpoint,
-        keys: {
-            p256dh: json.keys.p256dh,
-            auth: json.keys.auth,
-        },
-        userAgent: navigator.userAgent,
-    };
-}
 
 export function isPushSupported(): boolean {
     return (
@@ -65,17 +46,21 @@ export async function enablePushNotifications(): Promise<boolean> {
     }
 
     const { publicKey } = await pushApi.getVapidPublicKey();
+    // O service worker precisa da chave para reinscrever em pushsubscriptionchange.
+    await saveVapidPublicKey(publicKey);
+
     const registration = await navigator.serviceWorker.ready;
 
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
         subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
+            applicationServerKey: vapidKeyToBytes(publicKey) as BufferSource,
         });
     }
 
-    await pushApi.subscribe(subscriptionToPayload(subscription));
+    await pushApi.subscribe(toStoredSubscription(subscription, navigator.userAgent));
+    await clearPendingSubscription();
     localStorage.removeItem(DISMISS_KEY);
     return true;
 }
@@ -87,6 +72,21 @@ export async function disablePushNotifications(): Promise<void> {
     try {
         await pushApi.unsubscribe(subscription.endpoint);
     } finally {
+        await clearPendingSubscription();
         await subscription.unsubscribe();
     }
+}
+
+/**
+ * Reenvia ao backend a subscription renovada pelo navegador enquanto o app
+ * estava fechado. Chamar no boot da sessão autenticada.
+ */
+export async function syncPushSubscription(): Promise<void> {
+    if (!isPushSupported()) return;
+
+    const pending = await readPendingSubscription();
+    if (!pending) return;
+
+    await pushApi.subscribe(pending);
+    await clearPendingSubscription();
 }

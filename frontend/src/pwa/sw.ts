@@ -2,10 +2,25 @@
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { clientsClaim } from 'workbox-core';
+import {
+    readVapidPublicKey,
+    savePendingSubscription,
+    toStoredSubscription,
+    vapidKeyToBytes,
+} from './pushStorage';
 
 declare let self: ServiceWorkerGlobalScope;
 
-self.skipWaiting();
+/**
+ * `registerType: 'prompt'` — o SW novo fica em `waiting` até o usuário aceitar.
+ * Ativar sem esperar derrubaria os chunks lazy da build em uso na aba aberta.
+ */
+self.addEventListener('message', (event) => {
+    if ((event.data as { type?: string } | undefined)?.type === 'SKIP_WAITING') {
+        void self.skipWaiting();
+    }
+});
+
 clientsClaim();
 
 cleanupOutdatedCaches();
@@ -79,6 +94,44 @@ self.addEventListener('notificationclick', (event) => {
             }
 
             await self.clients.openWindow(targetUrl);
+        })(),
+    );
+});
+
+/**
+ * O navegador pode rotacionar a subscription sem aviso. Sem reinscrever aqui o
+ * vereador para de receber alertas silenciosamente. O SW não tem o JWT, então
+ * guarda a subscription nova para a janela enviar ao backend no próximo boot.
+ */
+self.addEventListener('pushsubscriptionchange', (event) => {
+    const changeEvent = event as ExtendableEvent & {
+        oldSubscription?: PushSubscription | null;
+        newSubscription?: PushSubscription | null;
+    };
+
+    changeEvent.waitUntil(
+        (async () => {
+            let subscription = changeEvent.newSubscription ?? null;
+
+            if (!subscription) {
+                const publicKey = await readVapidPublicKey();
+                if (!publicKey) return;
+
+                subscription = await self.registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: vapidKeyToBytes(publicKey) as BufferSource,
+                });
+            }
+
+            await savePendingSubscription(toStoredSubscription(subscription));
+
+            const clients = await self.clients.matchAll({
+                type: 'window',
+                includeUncontrolled: true,
+            });
+            for (const client of clients) {
+                client.postMessage({ type: 'PUSH_SUBSCRIPTION_CHANGED' });
+            }
         })(),
     );
 });
