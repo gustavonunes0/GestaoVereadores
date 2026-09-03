@@ -2151,10 +2151,21 @@ h2.module-title.tab-panel-title {
         padding-top: max(var(--layout-gap-md), env(safe-area-inset-top, 0px));
     }
 
+    .topbar.parlamentar-topbar {
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+
     .topbar-user {
         justify-content: space-between;
         width: 100%;
         flex-wrap: wrap;
+    }
+
+    .topbar-user.parlamentar-topbar-user {
+        width: auto;
+        flex-wrap: nowrap;
+        justify-content: flex-end;
     }
 
     .topbar-user-info {
@@ -2273,16 +2284,22 @@ h2.module-title.tab-panel-title {
         width: min(288px, 88vw);
     }
 
-    .topbar-user {
+    .topbar-user:not(.parlamentar-topbar-user) {
         flex-direction: column;
         align-items: stretch;
         gap: var(--layout-gap-sm);
     }
 
-    .topbar-user .p-button,
-    .topbar-user .sigl-button {
+    .topbar-user:not(.parlamentar-topbar-user) .p-button,
+    .topbar-user:not(.parlamentar-topbar-user) .sigl-button {
         width: 100%;
         justify-content: center;
+    }
+
+    .topbar-user.parlamentar-topbar-user {
+        flex-direction: row;
+        align-items: center;
+        width: auto;
     }
 
     .toolbar__actions .btn,

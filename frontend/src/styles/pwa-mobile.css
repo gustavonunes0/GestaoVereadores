@@ -392,13 +392,37 @@
         min-height: var(--touch-min);
     }
 
+    /* Em fluxo normal — sticky cobria o Jitsi / conteúdo ao rolar */
     .sessao-votacao-banner {
-        position: sticky;
-        top: 0;
-        z-index: 20;
+        position: static;
+        z-index: auto;
         border-radius: 10px;
+        border: 1px solid var(--warning-border, #f5d78e);
         padding: 0.75rem 1rem;
         font-size: 0.875rem;
+        line-height: 1.35;
+        flex-wrap: wrap;
+        word-break: break-word;
+    }
+
+    .parlamentar-topbar {
+        flex-wrap: nowrap;
+        align-items: center;
+        padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+        padding-bottom: 0.5rem;
+    }
+
+    .parlamentar-topbar .topbar__start {
+        flex: 0 0 auto;
+    }
+
+    .parlamentar-topbar-user {
+        width: auto;
+        flex-wrap: nowrap;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem;
     }
 }
 
@@ -471,10 +495,10 @@
         display: none;
     }
 
-    .parlamentar-topbar-user .btn-sair {
-        padding: 0.5rem;
+    .parlamentar-topbar-user__trigger {
+        min-height: var(--touch-min);
         min-width: var(--touch-min);
-        justify-content: center;
+        padding: 0.25rem;
     }
 
     .mobile-bottom-nav__label {

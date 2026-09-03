@@ -1,6 +1,7 @@
-import LogoutOutlined from '@mui/icons-material/LogoutOutlined';
-import LockOutlined from '@mui/icons-material/LockOutlined';
-import { useState } from 'react';
+import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
+import { useMemo, useRef, useState, type MouseEvent } from 'react';
+import { Menu } from 'primereact/menu';
+import type { MenuItem } from 'primereact/menuitem';
 import { useAuth } from '../../contexts/AuthContext';
 import { isParlamentarianUser } from '../../types/auth';
 import { SiglButton } from '../common/SiglButton';
@@ -14,10 +15,31 @@ type Props = {
 
 export function ParlamentarTopbar({ menuOpen, onMenuToggle }: Props) {
     const { user, logout } = useAuth();
+    const menuRef = useRef<Menu>(null);
+    const [accountOpen, setAccountOpen] = useState(false);
     const [senhaDialogOpen, setSenhaDialogOpen] = useState(false);
     const parlUser = user && isParlamentarianUser(user) ? user : null;
     const nome = parlUser?.parliamentaryName ?? 'Parlamentar';
-    const cargo = `${nome} Parlamentar`;
+
+    const menuModel = useMemo<MenuItem[]>(
+        () => [
+            {
+                label: 'Alterar senha',
+                icon: 'pi pi-lock',
+                command: () => setSenhaDialogOpen(true),
+            },
+            {
+                label: 'Sair',
+                icon: 'pi pi-sign-out',
+                command: () => logout(),
+            },
+        ],
+        [logout],
+    );
+
+    function handleUserMenu(e: MouseEvent<HTMLButtonElement>) {
+        menuRef.current?.toggle(e);
+    }
 
     return (
         <>
@@ -25,7 +47,18 @@ export function ParlamentarTopbar({ menuOpen, onMenuToggle }: Props) {
                 visible={senhaDialogOpen}
                 onHide={() => setSenhaDialogOpen(false)}
             />
-            <header className="topbar">
+            <Menu
+                ref={menuRef}
+                id="parlamentar-topbar-menu"
+                model={menuModel}
+                popup
+                popupAlignment="right"
+                baseZIndex={1400}
+                className="parlamentar-topbar-menu"
+                onShow={() => setAccountOpen(true)}
+                onHide={() => setAccountOpen(false)}
+            />
+            <header className="topbar parlamentar-topbar">
                 <div className="topbar__start">
                     <SiglButton
                         type="button"
@@ -42,34 +75,31 @@ export function ParlamentarTopbar({ menuOpen, onMenuToggle }: Props) {
 
                 <div className="topbar-user parlamentar-topbar-user">
                     <div className="parlamentar-topbar-user__meta">
-                        <strong className="parlamentar-topbar-user__nome">
-                            {nome}
-                        </strong>
-                        <span className="parlamentar-topbar-user__cargo">
-                            {cargo}
-                        </span>
+                        <strong className="parlamentar-topbar-user__nome">{nome}</strong>
+                        <span className="parlamentar-topbar-user__cargo">Parlamentar</span>
                     </div>
-
-                    <PersonAvatar
-                        photoUrl={parlUser?.photoUrl}
-                        name={nome}
-                        size="md"
-                        alt={nome}
-                        className="parlamentar-topbar-user__avatar"
-                    />
 
                     <button
                         type="button"
-                        className="btn-sair"
-                        onClick={() => setSenhaDialogOpen(true)}
+                        className={`parlamentar-topbar-user__trigger${accountOpen ? ' is-open' : ''}`}
+                        onClick={handleUserMenu}
+                        aria-haspopup="menu"
+                        aria-expanded={accountOpen}
+                        aria-controls="parlamentar-topbar-menu"
+                        aria-label={`Conta de ${nome}`}
                     >
-                        <LockOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
-                        Senha
-                    </button>
-
-                    <button type="button" className="btn-sair" onClick={logout}>
-                        <LogoutOutlined sx={{ fontSize: 16 }} aria-hidden="true" />
-                        Sair
+                        <PersonAvatar
+                            photoUrl={parlUser?.photoUrl}
+                            name={nome}
+                            size="md"
+                            alt=""
+                            className="parlamentar-topbar-user__avatar"
+                        />
+                        <ExpandMoreOutlined
+                            sx={{ fontSize: 18 }}
+                            aria-hidden
+                            className="parlamentar-topbar-user__chevron"
+                        />
                     </button>
                 </div>
             </header>
