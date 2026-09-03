@@ -187,7 +187,7 @@ export function DatePicker({
                     <div
                         role="dialog"
                         aria-label="Selecionar data"
-                        className="absolute z-50 top-full left-0 mt-1 bg-white border border-[#eef0f3] rounded-[10px] shadow-[0_4px_24px_rgba(0,0,0,0.10)] p-4"
+                        className="absolute z-[1100] top-full left-0 mt-1 bg-white border border-[#eef0f3] rounded-[10px] shadow-[0_4px_24px_rgba(0,0,0,0.10)] p-4"
                     >
                         <CalendarGrid
                             month={currentMonth}

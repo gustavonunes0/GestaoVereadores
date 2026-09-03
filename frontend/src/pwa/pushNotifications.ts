@@ -6,6 +6,7 @@ import {
     toStoredSubscription,
     vapidKeyToBytes,
 } from './pushStorage';
+import { DEFAULT_VAPID_PUBLIC_KEY } from './vapid';
 
 const DISMISS_KEY = 'sigl.push.dismissed';
 
@@ -45,7 +46,7 @@ export async function enablePushNotifications(): Promise<boolean> {
         return false;
     }
 
-    const { publicKey } = await pushApi.getVapidPublicKey();
+    const publicKey = await loadVapidPublicKey();
     // O service worker precisa da chave para reinscrever em pushsubscriptionchange.
     await saveVapidPublicKey(publicKey);
 
@@ -81,6 +82,16 @@ export async function disablePushNotifications(): Promise<void> {
  * Reenvia ao backend a subscription renovada pelo navegador enquanto o app
  * estava fechado. Chamar no boot da sessão autenticada.
  */
+async function loadVapidPublicKey(): Promise<string> {
+    const fromEnv = import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim();
+    try {
+        const { publicKey } = await pushApi.getVapidPublicKey();
+        return publicKey?.trim() || fromEnv || DEFAULT_VAPID_PUBLIC_KEY;
+    } catch {
+        return fromEnv || DEFAULT_VAPID_PUBLIC_KEY;
+    }
+}
+
 export async function syncPushSubscription(): Promise<void> {
     if (!isPushSupported()) return;
 

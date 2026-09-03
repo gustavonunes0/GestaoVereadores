@@ -2,6 +2,7 @@
  * Estado do Web Push em Cache Storage — única API de persistência acessível
  * tanto na janela quanto no service worker (que não tem localStorage).
  */
+import { DEFAULT_VAPID_PUBLIC_KEY } from './vapid';
 
 const CACHE_NAME = 'sigl-push-state';
 const VAPID_KEY_URL = '/__sigl/push/vapid-key';
@@ -35,7 +36,7 @@ export async function saveVapidPublicKey(publicKey: string): Promise<void> {
 
 export async function readVapidPublicKey(): Promise<string | null> {
     const stored = await read<{ publicKey: string }>(VAPID_KEY_URL);
-    return stored?.publicKey ?? null;
+    return stored?.publicKey ?? DEFAULT_VAPID_PUBLIC_KEY;
 }
 
 /**

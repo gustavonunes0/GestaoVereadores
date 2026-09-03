@@ -59,8 +59,8 @@
     border: 1px solid var(--lex-outline-variant);
     box-shadow: var(--lex-dialog-shadow);
     background: var(--lex-surface-container-lowest);
-    overflow: hidden;
-    max-height: 90vh;
+    overflow: visible;
+    max-height: 94vh;
 }
 
 .p-dialog .p-dialog-header {
@@ -577,16 +577,16 @@
 .materia-form-dialog .p-dialog-content {
     padding: 0 !important;
     background: var(--lex-surface);
-    overflow: visible;
+    overflow: visible !important;
 }
 
 .lex-dialog-form-card {
     display: flex;
     flex-direction: column;
-    max-height: min(90vh, 56rem);
+    max-height: min(94vh, 62rem);
     background: var(--lex-surface-container-lowest);
     border-radius: var(--lex-dialog-radius);
-    overflow: hidden;
+    overflow: visible;
     font-family: var(--lex-dialog-font);
 }
 
@@ -680,15 +680,22 @@
 .lex-dialog-form-body {
     flex: 1;
     overflow-y: auto;
+    overflow-x: visible;
     padding: var(--lex-dialog-body-py) var(--lex-dialog-body-px);
     background: var(--lex-surface);
-    min-height: 140px;
+    min-height: 180px;
 }
 
 .lex-dialog-form-body--stack {
     display: flex;
     flex-direction: column;
     gap: var(--lex-gap-md);
+}
+
+/* DatePicker / Calendar não deve ser cortado pelo overflow do body */
+.lex-dialog-form-body .p-datepicker-panel,
+.lex-dialog-form-body .p-calendar-panel {
+    z-index: 1100;
 }
 
 .lex-dialog-form-footer {
@@ -791,10 +798,10 @@
 .lex-dialog-form-card {
     display: flex;
     flex-direction: column;
-    max-height: min(90vh, 56rem);
+    max-height: min(94vh, 62rem);
     background: var(--lex-surface-container-lowest);
     border-radius: var(--lex-dialog-radius);
-    overflow: hidden;
+    overflow: visible;
 }
 
 .materia-form-card-header,
@@ -862,12 +869,13 @@
 .lex-dialog-form-body {
     flex: 1;
     overflow-y: auto;
+    overflow-x: visible;
     padding: var(--lex-dialog-body-py) var(--lex-dialog-body-px);
     background: var(--lex-surface);
     display: flex;
     flex-direction: column;
     gap: var(--lex-gap-md);
-    min-height: 140px;
+    min-height: 180px;
 }
 
 .materia-form-footer,
@@ -888,6 +896,17 @@
     --lex-dialog-body-py: 10px;
     --lex-dialog-footer-px: 14px;
     --lex-dialog-footer-py: 10px;
+}
+
+/* Garantir que calendários dentro de dialogs não sejam cortados */
+.p-dialog .lex-dialog-form-body,
+.p-dialog .materia-form-card-body {
+    overflow: visible;
+}
+
+/* Quando o body precisa rolar (conteúdo longo), manter clip só no eixo Y */
+.lex-dialog-form-card:has(.lex-dialog-form-body) {
+    overflow: clip visible;
 }
 
 @media (max-width: 640px) {

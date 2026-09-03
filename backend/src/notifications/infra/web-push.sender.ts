@@ -5,6 +5,11 @@ import {
     PushSubscriptionRecord,
     PushSubscriptionRepository,
 } from '../domain/repositories/push-subscription.repository';
+import {
+    DEFAULT_VAPID_PRIVATE_KEY,
+    DEFAULT_VAPID_PUBLIC_KEY,
+    DEFAULT_VAPID_SUBJECT,
+} from './vapid.defaults';
 
 export type WebPushPayload = {
     title: string;
@@ -25,21 +30,14 @@ export class WebPushSender implements OnModuleInit {
     ) {}
 
     onModuleInit() {
-        const publicKey = this.config.get<string>('VAPID_PUBLIC_KEY')?.trim();
-        const privateKey = this.config.get<string>('VAPID_PRIVATE_KEY')?.trim();
+        const publicKey = this.resolvePublicKey();
+        const privateKey = this.resolvePrivateKey();
         const subject =
-            this.config.get<string>('VAPID_SUBJECT')?.trim() ||
-            'mailto:contato@sigl.app';
-
-        if (!publicKey || !privateKey) {
-            this.logger.warn(
-                'VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY ausentes — push notifications desabilitadas',
-            );
-            return;
-        }
+            this.config.get<string>('VAPID_SUBJECT')?.trim() || DEFAULT_VAPID_SUBJECT;
 
         webpush.setVapidDetails(subject, publicKey, privateKey);
         this.configured = true;
+        this.logger.log('Web Push (VAPID) configurado');
     }
 
     isConfigured(): boolean {
@@ -47,7 +45,20 @@ export class WebPushSender implements OnModuleInit {
     }
 
     getPublicKey(): string | null {
-        return this.config.get<string>('VAPID_PUBLIC_KEY')?.trim() || null;
+        return this.resolvePublicKey();
+    }
+
+    private resolvePublicKey(): string {
+        return (
+            this.config.get<string>('VAPID_PUBLIC_KEY')?.trim() || DEFAULT_VAPID_PUBLIC_KEY
+        );
+    }
+
+    private resolvePrivateKey(): string {
+        return (
+            this.config.get<string>('VAPID_PRIVATE_KEY')?.trim() ||
+            DEFAULT_VAPID_PRIVATE_KEY
+        );
     }
 
     async sendToMany(
