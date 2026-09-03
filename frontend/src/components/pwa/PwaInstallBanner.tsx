@@ -92,11 +92,12 @@ export function PwaInstallBanner() {
     const mode: Mode = (() => {
         if (dismissed || installed || isStandalone()) return 'hidden';
         if (canPrompt && !forceManual) return 'native';
-        // A instrução manual só ajuda em celular e tablet.
-        if (!isTouchDevice()) return 'hidden';
-        // Sem prompt nativo (Safari, Firefox) a instalação é sempre manual.
+        // Sem prompt nativo: no celular/tablet instrui; no desktop o Chrome usa a barra.
+        if (!isTouchDevice()) {
+            if (forceManual || graceElapsed) return 'manual-menu';
+            return 'hidden';
+        }
         if (!supportsNativePrompt()) return isIos() ? 'manual-ios' : 'manual-generic';
-        // Chromium que não ofereceu o prompt: instrui pelo menu do navegador.
         if (forceManual || graceElapsed) return 'manual-menu';
         return 'hidden';
     })();
@@ -130,8 +131,9 @@ export function PwaInstallBanner() {
         'manual-ios': isTablet
             ? 'Toque em Compartilhar e depois em "Adicionar à Tela de Início" (iPad).'
             : 'Toque em Compartilhar e depois em "Adicionar à Tela de Início".',
-        'manual-menu':
-            'Abra o menu do navegador (⋮) e toque em "Instalar aplicativo" ou "Adicionar à tela inicial".',
+        'manual-menu': isTouchDevice()
+            ? 'Abra o menu do navegador (⋮) e toque em "Instalar aplicativo" ou "Adicionar à tela inicial".'
+            : 'No Chrome, use o ícone de instalar na barra de endereço ou o menu ⋮ → “Instalar CâmaraGest”.',
         'manual-generic':
             'Use o menu do navegador para adicionar o CâmaraGest à tela inicial.',
     }[mode];

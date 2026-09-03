@@ -58,8 +58,8 @@ export async function clearPendingSubscription(): Promise<void> {
     await cache.delete(PENDING_SUB_URL);
 }
 
-/** Converte a chave VAPID (base64url) para o formato aceito por `pushManager.subscribe`. */
-export function vapidKeyToBytes(base64Url: string): Uint8Array {
+/** Converte a chave VAPID (base64url) para ArrayBuffer — o Chrome rejeita Uint8Array. */
+export function vapidKeyToBytes(base64Url: string): ArrayBuffer {
     const padding = '='.repeat((4 - (base64Url.length % 4)) % 4);
     const base64 = (base64Url + padding).replace(/-/g, '+').replace(/_/g, '/');
     const raw = atob(base64);
@@ -67,7 +67,7 @@ export function vapidKeyToBytes(base64Url: string): Uint8Array {
     for (let i = 0; i < raw.length; i += 1) {
         bytes[i] = raw.charCodeAt(i);
     }
-    return bytes;
+    return bytes.buffer;
 }
 
 export function toStoredSubscription(

@@ -47,18 +47,18 @@ export async function enablePushNotifications(): Promise<boolean> {
     }
 
     const publicKey = await loadVapidPublicKey();
-    // O service worker precisa da chave para reinscrever em pushsubscriptionchange.
     await saveVapidPublicKey(publicKey);
 
     const registration = await navigator.serviceWorker.ready;
-
-    let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: vapidKeyToBytes(publicKey) as BufferSource,
-        });
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) {
+        await existing.unsubscribe();
     }
+
+    const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: vapidKeyToBytes(publicKey),
+    });
 
     await pushApi.subscribe(toStoredSubscription(subscription, navigator.userAgent));
     await clearPendingSubscription();
@@ -96,8 +96,13 @@ export async function syncPushSubscription(): Promise<void> {
     if (!isPushSupported()) return;
 
     const pending = await readPendingSubscription();
-    if (!pending) return;
+    if (pending) {
+        await pushApi.subscribe(pending);
+        await clearPendingSubscription();
+        return;
+    }
 
-    await pushApi.subscribe(pending);
-    await clearPendingSubscription();
+    const existing = await getExistingPushSubscription();
+    if (!existing) return;
+    await pushApi.subscribe(toStoredSubscription(existing, navigator.userAgent));
 }

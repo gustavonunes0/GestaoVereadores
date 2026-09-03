@@ -12,9 +12,13 @@ import {
 declare let self: ServiceWorkerGlobalScope;
 
 /**
- * `registerType: 'prompt'` — o SW novo fica em `waiting` até o usuário aceitar.
- * Ativar sem esperar derrubaria os chunks lazy da build em uso na aba aberta.
+ * Ativa o SW novo na hora. Sem skipWaiting ele fica em `waiting` e o Chrome
+ * não considera o app instalável / não entrega push para este worker.
  */
+self.addEventListener('install', (event) => {
+    event.waitUntil(self.skipWaiting());
+});
+
 self.addEventListener('message', (event) => {
     if ((event.data as { type?: string } | undefined)?.type === 'SKIP_WAITING') {
         void self.skipWaiting();
@@ -119,7 +123,7 @@ self.addEventListener('pushsubscriptionchange', (event) => {
 
                 subscription = await self.registration.pushManager.subscribe({
                     userVisibleOnly: true,
-                    applicationServerKey: vapidKeyToBytes(publicKey) as BufferSource,
+                    applicationServerKey: vapidKeyToBytes(publicKey),
                 });
             }
 

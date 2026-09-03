@@ -49,16 +49,22 @@ export class WebPushSender implements OnModuleInit {
     }
 
     private resolvePublicKey(): string {
-        return (
-            this.config.get<string>('VAPID_PUBLIC_KEY')?.trim() || DEFAULT_VAPID_PUBLIC_KEY
+        return this.cleanKey(
+            this.config.get<string>('VAPID_PUBLIC_KEY'),
+            DEFAULT_VAPID_PUBLIC_KEY,
         );
     }
 
     private resolvePrivateKey(): string {
-        return (
-            this.config.get<string>('VAPID_PRIVATE_KEY')?.trim() ||
-            DEFAULT_VAPID_PRIVATE_KEY
+        return this.cleanKey(
+            this.config.get<string>('VAPID_PRIVATE_KEY'),
+            DEFAULT_VAPID_PRIVATE_KEY,
         );
+    }
+
+    private cleanKey(value: string | undefined, fallback: string): string {
+        const cleaned = value?.trim().replace(/^["']|["']$/g, '') ?? '';
+        return cleaned || fallback;
     }
 
     async sendToMany(
