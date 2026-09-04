@@ -6,25 +6,16 @@ import {
     promptInstall,
     subscribeToInstallPrompt,
 } from '../../pwa/installPrompt';
+import { isIosDevice, isStandaloneDisplay } from '../../pwa/device';
+import { IosInstallSheet } from './IosInstallGuide';
 
 const DISMISS_KEY = 'sigl.pwa.install.dismissed';
-
-/** Janela de espera pelo `beforeinstallprompt` antes de cair na dica manual. */
+const DISMISS_AT_KEY = 'sigl.pwa.install.dismissedAt';
+const IOS_REDISMISS_MS = 3 * 24 * 60 * 60 * 1000;
 const NATIVE_PROMPT_GRACE_MS = 2500;
 
 type Mode = 'hidden' | 'native' | 'manual-ios' | 'manual-menu' | 'manual-generic';
 
-function isStandalone(): boolean {
-    if (typeof window === 'undefined') return false;
-    return (
-        window.matchMedia('(display-mode: standalone)').matches ||
-        // iOS Safari
-        ('standalone' in navigator &&
-            Boolean((navigator as Navigator & { standalone?: boolean }).standalone))
-    );
-}
-
-/** Celular ou tablet — exclui monitores com mouse. */
 function isTouchDevice(): boolean {
     if (typeof window === 'undefined') return false;
     return (
@@ -33,39 +24,27 @@ function isTouchDevice(): boolean {
     );
 }
 
-function isTabletViewport(): boolean {
-    if (typeof window === 'undefined') return false;
-    const w = Math.min(window.innerWidth, window.innerHeight);
-    const h = Math.max(window.innerWidth, window.innerHeight);
-    // iPad / tablet Android típicos.
-    return isTouchDevice() && w >= 600 && h >= 700;
-}
-
-/**
- * Só os navegadores baseados em Chromium expõem o prompt nativo. Checar a
- * capacidade em vez do user-agent evita escolher o ramo errado — era o que
- * fazia o Android cair na dica do iOS, que não tem botão.
- */
 function supportsNativePrompt(): boolean {
     return 'onbeforeinstallprompt' in window;
 }
 
-/** iOS/iPadOS: usado só para escolher o texto, nunca para decidir o fluxo. */
-function isIos(): boolean {
-    return (
-        /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-        // iPadOS 13+ se apresenta como desktop macOS, mas tem multi-touch.
-        (/macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
-    );
+function wasDismissedRecently(): boolean {
+    if (localStorage.getItem(DISMISS_KEY) !== '1') return false;
+    if (!isIosDevice()) return true;
+    const at = Number(localStorage.getItem(DISMISS_AT_KEY) || 0);
+    if (!at) return true;
+    return Date.now() - at < IOS_REDISMISS_MS;
+}
+
+function isLoginPath(): boolean {
+    if (typeof window === 'undefined') return false;
+    const path = window.location.pathname;
+    return path === '/login' || path.startsWith('/login');
 }
 
 /**
- * Sugere instalar o app no celular e no tablet.
- *
- * O prompt nativo (`beforeinstallprompt`) é capturado no boot por
- * `installPrompt.ts`. Quando ele não está disponível — iOS Safari, ou Android em
- * que o navegador não ofereceu o prompt — o banner mostra a instrução manual em
- * vez de um botão que não faz nada.
+ * Android: botão Instalar nativo.
+ * iPhone: “Ver como” abre o guia de 3 passos (única forma viável na Apple).
  */
 export function PwaInstallBanner() {
     const { canPrompt, installed } = useSyncExternalStore(
@@ -73,15 +52,13 @@ export function PwaInstallBanner() {
         getInstallPromptState,
     );
 
-    const [dismissed, setDismissed] = useState(
-        () => localStorage.getItem(DISMISS_KEY) === '1',
-    );
+    const [dismissed, setDismissed] = useState(() => wasDismissedRecently());
     const [graceElapsed, setGraceElapsed] = useState(false);
     const [forceManual, setForceManual] = useState(false);
-    const [isTablet, setIsTablet] = useState(false);
+    const [iosSheetOpen, setIosSheetOpen] = useState(false);
+    const [onLogin, setOnLogin] = useState(() => isLoginPath());
 
     useEffect(() => {
-        setIsTablet(isTabletViewport());
         const timeout = window.setTimeout(
             () => setGraceElapsed(true),
             NATIVE_PROMPT_GRACE_MS,
@@ -89,21 +66,45 @@ export function PwaInstallBanner() {
         return () => window.clearTimeout(timeout);
     }, []);
 
+    useEffect(() => {
+        const syncPath = () => setOnLogin(isLoginPath());
+        syncPath();
+        window.addEventListener('popstate', syncPath);
+        const origPush = history.pushState.bind(history);
+        const origReplace = history.replaceState.bind(history);
+        history.pushState = (...args: Parameters<History['pushState']>) => {
+            origPush(...args);
+            syncPath();
+        };
+        history.replaceState = (...args: Parameters<History['replaceState']>) => {
+            origReplace(...args);
+            syncPath();
+        };
+        return () => {
+            window.removeEventListener('popstate', syncPath);
+            history.pushState = origPush;
+            history.replaceState = origReplace;
+        };
+    }, []);
+
     const mode: Mode = (() => {
-        if (dismissed || installed || isStandalone()) return 'hidden';
+        // Login iOS já tem o guia embutido — evita dois avisos na mesma tela.
+        if (onLogin && isIosDevice()) return 'hidden';
+        if (dismissed || installed || isStandaloneDisplay()) return 'hidden';
         if (canPrompt && !forceManual) return 'native';
-        // Sem prompt nativo: no celular/tablet instrui; no desktop o Chrome usa a barra.
+        if (isIosDevice()) return 'manual-ios';
         if (!isTouchDevice()) {
             if (forceManual || graceElapsed) return 'manual-menu';
             return 'hidden';
         }
-        if (!supportsNativePrompt()) return isIos() ? 'manual-ios' : 'manual-generic';
+        if (!supportsNativePrompt()) return 'manual-generic';
         if (forceManual || graceElapsed) return 'manual-menu';
         return 'hidden';
     })();
 
     function dismiss() {
         localStorage.setItem(DISMISS_KEY, '1');
+        localStorage.setItem(DISMISS_AT_KEY, String(Date.now()));
         setDismissed(true);
     }
 
@@ -113,63 +114,82 @@ export function PwaInstallBanner() {
             dismiss();
             return;
         }
-        // O navegador recusou o prompt (evento obsoleto ou já consumido): em vez
-        // de não dar retorno nenhum, explica como instalar pelo menu.
-        if (outcome === 'unavailable') {
-            setForceManual(true);
-        } else {
-            setDismissed(true);
-        }
+        if (outcome === 'unavailable') setForceManual(true);
+        else setDismissed(true);
     }
 
-    if (mode === 'hidden') return null;
-
-    const hint = {
-        native: isTablet
-            ? 'Acesso rápido no tablet, como um app.'
-            : 'Acesso rápido no celular, como um app.',
-        'manual-ios': isTablet
-            ? 'Toque em Compartilhar e depois em "Adicionar à Tela de Início" (iPad).'
-            : 'Toque em Compartilhar e depois em "Adicionar à Tela de Início".',
-        'manual-menu': isTouchDevice()
-            ? 'Abra o menu do navegador (⋮) e toque em "Instalar aplicativo" ou "Adicionar à tela inicial".'
-            : 'No Chrome, use o ícone de instalar na barra de endereço ou o menu ⋮ → “Instalar CâmaraGest”.',
-        'manual-generic':
-            'Use o menu do navegador para adicionar o CâmaraGest à tela inicial.',
-    }[mode];
+    if (mode === 'hidden' && !iosSheetOpen) return null;
 
     return (
-        <div
-            className="pwa-banner pwa-banner--install"
-            role="dialog"
-            aria-label="Instalar aplicativo"
-        >
-            <div className="pwa-banner__body">
-                <GetAppOutlined sx={{ fontSize: 20 }} aria-hidden />
-                <div className="pwa-banner__text">
-                    <strong>Instale o CâmaraGest</strong>
-                    <span>{hint}</span>
-                </div>
-            </div>
-            <div className="pwa-banner__actions">
-                {mode === 'native' ? (
-                    <button
-                        type="button"
-                        className="pwa-banner__action"
-                        onClick={() => void install()}
-                    >
-                        Instalar
-                    </button>
-                ) : null}
-                <button
-                    type="button"
-                    className="pwa-banner__dismiss"
-                    aria-label="Fechar"
-                    onClick={dismiss}
+        <>
+            {mode !== 'hidden' ? (
+                <div
+                    className={`pwa-banner pwa-banner--install${mode === 'manual-ios' ? ' pwa-banner--ios' : ''}`}
+                    role="dialog"
+                    aria-label="Instalar aplicativo"
                 >
-                    <CloseOutlined sx={{ fontSize: 18 }} aria-hidden />
-                </button>
-            </div>
-        </div>
+                    <div className="pwa-banner__body">
+                        <GetAppOutlined sx={{ fontSize: 20 }} aria-hidden />
+                        <div className="pwa-banner__text">
+                            <strong>
+                                {mode === 'manual-ios'
+                                    ? 'Ícone na tela inicial'
+                                    : 'Instale o CâmaraGest'}
+                            </strong>
+                            <span>
+                                {mode === 'native' ? 'Acesso rápido, como um app.' : null}
+                                {mode === 'manual-ios'
+                                    ? 'Opcional. Toque em “Ver como” — 3 passos no Safari.'
+                                    : null}
+                                {mode === 'manual-menu'
+                                    ? isTouchDevice()
+                                        ? 'Menu ⋮ → Instalar aplicativo.'
+                                        : 'Chrome: ícone instalar na barra ou menu ⋮.'
+                                    : null}
+                                {mode === 'manual-generic'
+                                    ? 'Use o menu do navegador para adicionar à tela inicial.'
+                                    : null}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="pwa-banner__actions">
+                        {mode === 'native' ? (
+                            <button
+                                type="button"
+                                className="pwa-banner__action"
+                                onClick={() => void install()}
+                            >
+                                Instalar
+                            </button>
+                        ) : null}
+                        {mode === 'manual-ios' ? (
+                            <button
+                                type="button"
+                                className="pwa-banner__action"
+                                onClick={() => setIosSheetOpen(true)}
+                            >
+                                Ver como
+                            </button>
+                        ) : null}
+                        <button
+                            type="button"
+                            className="pwa-banner__dismiss"
+                            aria-label="Agora não"
+                            onClick={dismiss}
+                        >
+                            <CloseOutlined sx={{ fontSize: 18 }} aria-hidden />
+                        </button>
+                    </div>
+                </div>
+            ) : null}
+
+            <IosInstallSheet
+                open={iosSheetOpen}
+                onClose={() => {
+                    setIosSheetOpen(false);
+                    dismiss();
+                }}
+            />
+        </>
     );
 }
