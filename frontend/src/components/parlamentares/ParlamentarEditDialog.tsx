@@ -145,7 +145,7 @@ export function ParlamentarEditDialog({
                 parlamentar.photoUrl,
             );
 
-            await parlamentaresApi.update(parliamentarianId, {
+            await parlamentaresApi.update(parlamentarianId, {
                 parliamentaryName: parliamentaryName.trim(),
                 officeNumber: officeNumber.trim() || undefined,
                 ...(parlamentar.user
