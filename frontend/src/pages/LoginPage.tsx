@@ -7,7 +7,7 @@ import { ROUTES } from '../app/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { FooterBar } from '../components/FooterBar';
-import { IosInstallGuide } from '../components/pwa/IosInstallGuide';
+import { BaixarAppButton } from '../components/pwa/InstallAppGuide';
 import { isParlamentarianUser, isPlatformUser } from '../types/auth';
 import { isPlatformHostname } from '../utils/tenantHost';
 import logoSrc from '../../assets/camara-gest-logo.png';
@@ -165,7 +165,7 @@ export function LoginPage() {
                     />
                 </form>
 
-                <IosInstallGuide autoOpenOnce />
+                <BaixarAppButton className="baixar-app-btn--login" />
             </div>
 
             <FooterBar compact className="login-page__footer" />

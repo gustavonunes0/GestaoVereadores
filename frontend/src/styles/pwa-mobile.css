@@ -120,68 +120,47 @@
     align-items: flex-start;
 }
 
-/* Guia iOS — card no login + bottom sheet */
-.ios-install-embed {
-    margin-top: 1.15rem;
-    padding: 0.85rem 0.9rem;
-    border-radius: 12px;
-    background: #f0f5fb;
-    border: 1px solid #d5e2f2;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    text-align: left;
-}
-
-.ios-install-embed__copy {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.65rem;
-    color: #0e1e46;
-}
-
-.ios-install-embed__copy > div {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    min-width: 0;
-}
-
-.ios-install-embed__copy strong {
-    font-size: 0.875rem;
-}
-
-.ios-install-embed__copy span {
-    font-size: 0.75rem;
-    color: #4b5563;
-    line-height: 1.35;
-}
-
-.ios-install-embed__btn {
-    min-height: 44px;
-    border: none;
+/* Guia “Baixar app” — botão + pop-up mobile-first */
+.baixar-app-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    min-height: var(--touch-min, 44px);
+    margin-top: 0.85rem;
+    padding: 0.65rem 1rem;
     border-radius: 10px;
-    background: #0e1e46;
-    color: #fff;
-    font-size: 0.875rem;
+    border: 1px solid #c9d7ea;
+    background: #f0f5fb;
+    color: #0e1e46;
+    font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
-.ios-install-embed__btn:active {
-    background: #1d4f8a;
+.baixar-app-btn:active {
+    background: #e4eef8;
 }
 
-.ios-install-sheet {
+.baixar-app-btn--login {
+    margin-top: 1rem;
+}
+
+.install-app-popup {
     position: fixed;
     inset: 0;
-    z-index: 400;
+    z-index: 1200;
     display: flex;
     align-items: flex-end;
     justify-content: center;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.ios-install-sheet__backdrop {
+.install-app-popup__backdrop {
     position: absolute;
     inset: 0;
     border: none;
@@ -189,143 +168,349 @@
     padding: 0;
     background: rgba(15, 23, 42, 0.45);
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.ios-install-sheet__panel {
+.install-app-popup__card {
     position: relative;
-    width: min(100%, 28rem);
-    max-height: min(92vh, 40rem);
-    overflow: auto;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(92dvh, 92vh);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     background: #fff;
-    border-radius: 18px 18px 0 0;
-    padding: 1rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.18);
+    border-radius: 16px 16px 0 0;
+    padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.2);
     color: #1c2f4a;
+    box-sizing: border-box;
 }
 
-.ios-install-sheet__header {
+.install-app-popup__card--interactive {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
+    flex-direction: column;
+    gap: 0;
 }
 
-.ios-install-sheet__header h2 {
+.install-app-popup__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+}
+
+.install-app-popup__header h2 {
     margin: 0;
-    font-size: 1.1rem;
-    line-height: 1.3;
+    font-size: 1.05rem;
+    font-weight: 700;
     color: #0e1e46;
 }
 
-.ios-install-sheet__close {
+.install-app-popup__close {
     border: none;
     background: #f3f4f6;
     border-radius: 999px;
-    width: 36px;
-    height: 36px;
+    width: var(--touch-min, 44px);
+    height: var(--touch-min, 44px);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: #4b5563;
+    color: #6b7280;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.install-app-popup__tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem;
+    margin-bottom: 0.65rem;
+    padding: 0.25rem;
+    background: #f3f4f6;
+    border-radius: 10px;
     flex-shrink: 0;
 }
 
-.ios-install-sheet__lead {
-    margin: 0 0 0.85rem;
-    font-size: 0.8125rem;
-    line-height: 1.45;
-    color: #4b5563;
+.install-app-popup__tab {
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    min-height: var(--touch-min, 44px);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
-.ios-install-sheet__alert {
-    padding: 0.75rem 0.85rem;
+.install-app-popup__tab.is-active {
+    background: #fff;
+    color: #0e1e46;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.install-app-popup__native {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    width: 100%;
+    min-height: var(--touch-min, 44px);
+    margin-bottom: 0.55rem;
+    border: none;
     border-radius: 10px;
+    background: #0e1e46;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.install-app-popup__alert {
+    margin: 0 0 0.55rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
     background: #fff7ed;
     border: 1px solid #fed7aa;
     font-size: 0.8125rem;
     line-height: 1.4;
-    margin-bottom: 0.85rem;
-}
-
-.ios-install-sheet__steps {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-}
-
-.ios-install-sheet__steps li {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-start;
-}
-
-.ios-install-sheet__num {
     flex-shrink: 0;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 999px;
-    background: #0e1e46;
-    color: #fff;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
 }
 
-.ios-install-sheet__steps li > div {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    min-width: 0;
-}
-
-.ios-install-sheet__steps strong {
-    font-size: 0.9rem;
-    color: #0e1e46;
-}
-
-.ios-install-sheet__steps span {
-    font-size: 0.8rem;
-    line-height: 1.4;
-    color: #4b5563;
-}
-
-.ios-install-sheet__actions {
-    margin-top: 1.15rem;
+.install-app-popup__stage {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    animation: install-illu-in 0.28s ease;
 }
 
-.ios-install-sheet__primary,
-.ios-install-sheet__secondary {
-    min-height: 48px;
+@keyframes install-illu-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.install-illu {
+    width: 100%;
+    height: auto;
+    max-height: min(32vw, 9.5rem);
+    display: block;
     border-radius: 10px;
-    font-size: 0.9rem;
+    background: #f5f7fb;
+    flex-shrink: 0;
+}
+
+.install-illu__pulse {
+    animation: install-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes install-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.55;
+    }
+}
+
+.install-app-popup__step-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.install-app-popup__step-count {
+    font-size: 0.6875rem;
     font-weight: 600;
-    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #8492a6;
 }
 
-.ios-install-sheet__primary {
-    border: none;
-    background: #0e1e46;
-    color: #fff;
+.install-app-popup__step-title {
+    font-size: 1rem;
+    color: #0e1e46;
 }
 
-.ios-install-sheet__secondary {
-    border: 1px solid #dde2ea;
-    background: #fff;
+.install-app-popup__step-text {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.45;
     color: #4b5563;
 }
 
-/* legado hint removido — mantém compat se cache antigo */
-.ios-pwa-hint {
+.install-app-popup__dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.65rem;
+    flex-shrink: 0;
+    min-height: 28px;
+}
+
+.install-app-popup__dot {
+    width: 10px;
+    height: 10px;
+    min-width: 10px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: #d1d5db;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.install-app-popup__dot.is-active {
+    width: 18px;
+    background: #0e1e46;
+}
+
+.install-app-popup__nav {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.install-app-popup__nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    min-height: var(--touch-min, 44px);
+    min-width: 5.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid #dde2ea;
+    border-radius: 10px;
+    background: #fff;
+    color: #4b5563;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.install-app-popup__nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.install-app-popup__ok {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    width: 100%;
+    min-height: var(--touch-min, 44px);
+    border: none;
+    border-radius: 10px;
+    background: #0e1e46;
+    color: #fff;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.install-app-popup__nav .install-app-popup__ok {
+    flex: 1;
+    width: auto;
+}
+
+/* Celulares estreitos */
+@media (max-width: 380px) {
+    .install-app-popup__card {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    .install-illu {
+        max-height: 7.25rem;
+    }
+
+    .install-app-popup__step-text {
+        font-size: 0.8125rem;
+    }
+
+    .install-app-popup__nav-btn {
+        min-width: 0;
+        padding: 0 0.5rem;
+        font-size: 0.8125rem;
+    }
+}
+
+/* Landscape celular: card mais baixo, ilustração menor */
+@media (max-height: 480px) and (orientation: landscape) {
+    .install-app-popup {
+        align-items: center;
+        padding: 0.5rem;
+    }
+
+    .install-app-popup__card {
+        border-radius: 12px;
+        max-height: 96dvh;
+        max-width: min(100%, 26rem);
+        padding-bottom: 0.75rem;
+    }
+
+    .install-illu {
+        max-height: 5.5rem;
+    }
+
+    .install-app-popup__step-text {
+        font-size: 0.75rem;
+    }
+}
+
+/* Tablet / desktop: pop-up centralizado */
+@media (min-width: 600px) {
+    .install-app-popup {
+        align-items: center;
+        padding: max(1rem, env(safe-area-inset-top, 0px)) 1.25rem
+            max(1rem, env(safe-area-inset-bottom, 0px));
+    }
+
+    .install-app-popup__card {
+        width: min(100%, 24rem);
+        max-height: min(85dvh, 36rem);
+        border-radius: 14px;
+        padding: 1rem 1.15rem 1.1rem;
+    }
+
+    .install-illu {
+        max-height: 10rem;
+    }
+}
+
+/* legado */
+.ios-install-embed,
+.ios-pwa-hint,
+.ios-install-sheet,
+.install-app-popup__hint,
+.install-app-popup__body,
+.install-app-popup__steps {
     display: none;
 }
 

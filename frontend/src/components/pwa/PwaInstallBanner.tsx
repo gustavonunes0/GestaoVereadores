@@ -7,7 +7,7 @@ import {
     subscribeToInstallPrompt,
 } from '../../pwa/installPrompt';
 import { isIosDevice, isStandaloneDisplay } from '../../pwa/device';
-import { IosInstallSheet } from './IosInstallGuide';
+import { InstallAppPopup } from './InstallAppGuide';
 
 const DISMISS_KEY = 'sigl.pwa.install.dismissed';
 const DISMISS_AT_KEY = 'sigl.pwa.install.dismissedAt';
@@ -183,12 +183,13 @@ export function PwaInstallBanner() {
                 </div>
             ) : null}
 
-            <IosInstallSheet
+            <InstallAppPopup
                 open={iosSheetOpen}
                 onClose={() => {
                     setIosSheetOpen(false);
                     dismiss();
                 }}
+                initialPlatform="ios"
             />
         </>
     );

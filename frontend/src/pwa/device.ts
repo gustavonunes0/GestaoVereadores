@@ -1,4 +1,4 @@
-/** Detecção de ambiente PWA / iOS — usada no login e no banner de instalação. */
+/** Detecção de ambiente PWA — login, banner e guia “Baixar app”. */
 
 export function isStandaloneDisplay(): boolean {
     if (typeof window === 'undefined') return false;
@@ -17,6 +17,11 @@ export function isIosDevice(): boolean {
     );
 }
 
+export function isAndroidDevice(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    return /android/i.test(navigator.userAgent);
+}
+
 /** Safari (não Chrome/Firefox no iOS) — “Adicionar à Tela de Início” é confiável aqui. */
 export function isIosSafari(): boolean {
     if (!isIosDevice()) return false;
@@ -26,4 +31,11 @@ export function isIosSafari(): boolean {
     const isFxiOS = /fxios/i.test(ua);
     const isEdgiOS = /edgios/i.test(ua);
     return isWebkit && !isCriOS && !isFxiOS && !isEdgiOS;
+}
+
+export type InstallPlatform = 'ios' | 'android';
+
+export function preferredInstallPlatform(): InstallPlatform {
+    if (isIosDevice()) return 'ios';
+    return 'android';
 }
