@@ -35,10 +35,20 @@ export function ParlamentarJitsiPanel({
     const podeEntrar = sessaoPermiteTransmissao(sessao.statusSessao);
 
     const sairDaSala = useCallback(() => {
+        const api = externalApiRef.current as {
+            executeCommand?: (command: string) => void;
+            dispose?: () => void;
+        } | null;
+        externalApiRef.current = null;
+        try {
+            api?.executeCommand?.('hangup');
+            api?.dispose?.();
+        } catch {
+            /* já desconectado */
+        }
         setJitsiData(null);
         setConectado(false);
         setParticipantCount(0);
-        externalApiRef.current = null;
     }, []);
 
     useEffect(() => {
@@ -159,8 +169,10 @@ export function ParlamentarJitsiPanel({
                     <JitsiMeetingEmbed
                         jitsiData={jitsiData}
                         userName={userName}
+                        mode="participante"
                         jitsiContainerRef={jitsiContainerRef}
                         onApiReady={handleApiReady}
+                        onLeave={sairDaSala}
                     />
                 </div>
             ) : (
@@ -176,7 +188,7 @@ export function ParlamentarJitsiPanel({
                             <p className="m-0 mt-1 text-sm text-color-secondary">
                                 {sessao.statusSessao === 'SUSPENSA'
                                     ? 'A sala foi fechada. Aguarde a retomada da sessão.'
-                                    : 'Clique em Entrar na videoconferência para abrir a sala Jitsi.'}
+                                    : 'Clique em Entrar na videoconferência. Microfone e câmera começam desligados — ative quando quiser (no iPhone, permita o acesso à câmera se o sistema pedir).'}
                             </p>
                         </div>
                     </div>

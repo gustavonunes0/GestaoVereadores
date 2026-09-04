@@ -9,38 +9,39 @@ type Step = {
 const VIDEO_STEPS: Step[] = [
     {
         id: 'v1',
-        text: 'No OBS Studio, clique em “Iniciar Câmera Virtual”.',
+        text: 'No OBS, em Fontes, adicione as câmeras/telas da casa (pode ser mais de uma). Ajuste cada fonte com o botão direito → Transformar → Ajustar à tela — o preview não pode ficar preto nem só um quadradinho no canto.',
     },
     {
         id: 'v2',
-        text: 'Abra a sala no Jitsi Meet pelo navegador (Chrome, Edge ou Firefox).',
+        text: 'Clique em “Iniciar Câmera Virtual”. O botão deve ficar azul como “Interromper câmera virtual”. Não use “Iniciar transmissão” do OBS para a sessão no sistema.',
     },
     {
         id: 'v3',
-        text: 'Clique na seta ao lado do ícone de câmera (ou vá em Configurações → Dispositivos).',
+        text: 'Só então abra a sala no CâmaraGest (Chrome ou Edge). Se a sala já estava aberta, saia e entre de novo — o navegador só lista a OBS com a câmera virtual já ligada.',
     },
     {
         id: 'v4',
-        text: 'Selecione “OBS Virtual Camera” como dispositivo de vídeo.',
+        text: 'Na sala: Configurações → Vídeo → selecione “OBS Virtual Camera” uma vez e confirme OK. Depois disso, trocas de câmera/cena ficam só no OBS; o Jitsi continua recebendo o mesmo dispositivo.',
     },
 ];
 
 const AUDIO_STEPS: Step[] = [
     {
         id: 'a1',
-        text: 'No OBS, mantenha o VB-Audio Virtual Cable ativo: monitoramento no cabo virtual e Mixer em “Monitorar e Saída”.',
+        text: 'Instale o VB-Audio Virtual Cable (se ainda não tiver). No OBS, no Mixer, em cada faixa de áudio que deve ir à sala: engrenagem → Avançado → Monitoramento de áudio → “Monitorar e Saída”, com saída no cabo virtual.',
     },
     {
         id: 'a2',
-        text: 'Na sala do Jitsi, clique na seta ao lado do ícone de microfone.',
+        text: 'Na sala: Configurações → Áudio → Microfone → “CABLE Output” (ou “Cabo Virtual”). Se não aparecer, saia da sala, confirme o cabo e entre de novo.',
     },
     {
         id: 'a3',
-        text: 'Selecione o cabo virtual (ex.: “CABLE Output” ou “Cabo Virtual”) como microfone principal.',
+        text: 'Fale/teste o áudio no OBS e confira o nível no Jitsi. O headset Bluetooth pode ficar só na saída de áudio (fones); o microfone da sala deve ser o cabo virtual se o programa de áudio sair do OBS.',
     },
 ];
 
-const STORAGE_KEY = 'obs-jitsi-guide-checklist';
+/** Versão no key: limpa checklist antigo ao mudar os passos. */
+const STORAGE_KEY = 'obs-jitsi-guide-checklist-v2';
 
 type ChecklistState = Record<string, boolean>;
 
@@ -162,7 +163,8 @@ export function ObsVirtualDevicesGuide({ defaultExpanded = false }: Props) {
                         OBS → Jitsi (câmera e áudio)
                     </p>
                     <p className="transmissao-convite__sub m-0 text-color-secondary">
-                        Checklist sequencial: primeiro vídeo, depois áudio. Vale para Jitsi e Zoom.
+                        O OBS gerencia as câmeras da casa; o Jitsi recebe só a Câmera Virtual.
+                        Checklist: primeiro vídeo, depois áudio.
                     </p>
                 </div>
                 <Button
@@ -179,11 +181,12 @@ export function ObsVirtualDevicesGuide({ defaultExpanded = false }: Props) {
                     <div className="obs-guide__banner" role="note">
                         <i className="pi pi-info-circle" aria-hidden />
                         <div>
-                            <strong>Jitsi e Zoom</strong>
+                            <strong>Como funciona</strong>
                             <p className="m-0">
-                                A Câmera Virtual do OBS e o cabo de áudio virtual funcionam da mesma forma
-                                no Jitsi Meet e no Zoom — o sistema operacional expõe os dispositivos; o
-                                app só precisa selecioná-los.
+                                Várias câmeras ficam no OBS (cenas/fontes). A sala enxerga um único
+                                dispositivo — <strong>OBS Virtual Camera</strong> — definido uma vez
+                                nas Configurações. Trocas de ângulo depois disso são só no OBS.
+                                O mesmo padrão vale no Zoom.
                             </p>
                         </div>
                     </div>
@@ -191,17 +194,22 @@ export function ObsVirtualDevicesGuide({ defaultExpanded = false }: Props) {
                     <div className="obs-guide__alert" role="alert">
                         <i className="pi pi-exclamation-triangle" aria-hidden />
                         <div>
-                            <strong>Navegador compatível</strong>
+                            <strong>Problemas comuns</strong>
                             <p className="m-0">
-                                Para o Jitsi reconhecer dispositivos virtuais, use{' '}
-                                <strong>Chrome</strong>, <strong>Edge</strong> ou <strong>Firefox</strong>.
-                                Evite Safari e navegadores embutidos.
+                                <strong>OBS não na lista:</strong> ligue a câmera virtual antes de
+                                entrar; se a sala já estiver aberta, saia e entre de novo (Chrome/Edge).
+                                <br />
+                                <strong>Preview preto:</strong> Fontes vazias ou fonte sem “Ajustar à
+                                tela”.
+                                <br />
+                                <strong>Diálogo apertado:</strong> use Tela cheia na sala antes de abrir
+                                Configurações.
                             </p>
                         </div>
                     </div>
 
                     <ChecklistSection
-                        title="1. Câmera Virtual (OBS → Jitsi)"
+                        title="1. Vídeo (OBS → Câmera Virtual → Jitsi)"
                         icon="pi pi-video"
                         steps={VIDEO_STEPS}
                         checked={checked}
@@ -209,7 +217,7 @@ export function ObsVirtualDevicesGuide({ defaultExpanded = false }: Props) {
                     />
 
                     <ChecklistSection
-                        title="2. Compartilhamento de áudio (OBS → Jitsi)"
+                        title="2. Áudio (OBS → cabo virtual → Jitsi)"
                         icon="pi pi-volume-up"
                         steps={AUDIO_STEPS}
                         checked={checked}
@@ -221,13 +229,14 @@ export function ObsVirtualDevicesGuide({ defaultExpanded = false }: Props) {
                         {allDone ? (
                             <p className="obs-guide__done m-0">
                                 <i className="pi pi-check-circle" aria-hidden />
-                                Configuração concluída — vídeo e áudio do OBS prontos no Jitsi.
+                                Pronto — programa de vídeo/áudio do OBS na sala. Gerencie as câmeras
+                                só no OBS.
                             </p>
                         ) : (
                             <p className="obs-guide__hint m-0 text-color-secondary">
                                 {videoDone
                                     ? 'Agora marque os passos de áudio.'
-                                    : 'Marque cada passo de câmera para liberar o áudio.'}
+                                    : 'Marque cada passo de vídeo para liberar o áudio.'}
                             </p>
                         )}
                         <Button

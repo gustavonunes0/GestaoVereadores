@@ -1,5 +1,5 @@
 import { JitsiMeeting } from '@jitsi/react-sdk';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { JitsiTokenData } from '../../../types/sessoes';
@@ -9,26 +9,104 @@ import {
     isJitsiScriptLoadError,
 } from '../../../utils/jitsiExternalApi';
 
+export type JitsiEmbedMode = 'operador' | 'participante';
+
 interface Props {
     jitsiData: JitsiTokenData;
     userName: string;
+    /**
+     * `operador` — staff/OBS (pode pedir resolução alta após escolher dispositivo).
+     * `participante` — vereador/convidado (entra sem exigir câmera; evita erro no iOS/PWA).
+     */
+    mode?: JitsiEmbedMode;
     onApiReady?: (api: unknown) => void;
+    /** Hangup do Jitsi (botão vermelho) — desmonta a sala no React. */
+    onLeave?: () => void;
     jitsiContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function JitsiMeetingEmbed({
     jitsiData,
     userName,
+    mode = 'operador',
     onApiReady,
+    onLeave,
     jitsiContainerRef,
 }: Props) {
     const { showToast } = useAppToast();
     const localRef = useRef<HTMLDivElement>(null);
     const containerRef = jitsiContainerRef ?? localRef;
+    const apiRef = useRef<{
+        addListener?: (event: string, cb: (...args: unknown[]) => void) => void;
+        removeListener?: (event: string, cb: (...args: unknown[]) => void) => void;
+        dispose?: () => void;
+        executeCommand?: (command: string, ...args: unknown[]) => void;
+    } | null>(null);
+    const leftRef = useRef(false);
+    const onLeaveRef = useRef(onLeave);
+    onLeaveRef.current = onLeave;
+    const onApiReadyRef = useRef(onApiReady);
+    onApiReadyRef.current = onApiReady;
+
     const [telaCheia, setTelaCheia] = useState(false);
     const [scriptReady, setScriptReady] = useState(!!window.JitsiMeetExternalAPI);
     const [scriptError, setScriptError] = useState<string | null>(null);
     const jitsiOrigin = buildJitsiOrigin(jitsiData.domain);
+    const isParticipante = mode === 'participante';
+
+    const notifyLeave = useCallback(() => {
+        if (leftRef.current) return;
+        leftRef.current = true;
+        try {
+            apiRef.current?.dispose?.();
+        } catch {
+            /* iframe já pode ter sido destruído */
+        }
+        apiRef.current = null;
+        onLeaveRef.current?.();
+    }, []);
+
+    const handleApiReady = useCallback(
+        (api: unknown) => {
+            leftRef.current = false;
+            const jitsiApi = api as NonNullable<typeof apiRef.current>;
+            apiRef.current = jitsiApi;
+
+            const onReadyToClose = () => notifyLeave();
+            const onVideoConferenceLeft = () => notifyLeave();
+
+            jitsiApi.addListener?.('readyToClose', onReadyToClose);
+            jitsiApi.addListener?.('videoConferenceLeft', onVideoConferenceLeft);
+
+            onApiReadyRef.current?.(api);
+        },
+        [notifyLeave],
+    );
+
+    const configOverwrite = useMemo(() => {
+        const base = {
+            prejoinPageEnabled: false,
+            enableWelcomePage: false,
+            disableDeepLinking: true,
+            // Sem página de feedback — dispara readyToClose ao hangup
+            enableClosePage: false,
+            resolution: 720,
+        };
+
+        if (isParticipante) {
+            return {
+                ...base,
+                startWithAudioMuted: true,
+                startWithVideoMuted: true,
+            };
+        }
+
+        return {
+            ...base,
+            startWithAudioMuted: false,
+            startWithVideoMuted: true,
+        };
+    }, [isParticipante]);
 
     useEffect(() => {
         let cancelled = false;
@@ -126,22 +204,10 @@ export function JitsiMeetingEmbed({
                     domain={jitsiData.domain}
                     roomName={jitsiData.roomName}
                     {...(jitsiData.token ? { jwt: jitsiData.token } : {})}
-                    configOverwrite={{
-                        startWithAudioMuted: false,
-                        startWithVideoMuted: false,
-                        prejoinPageEnabled: false,
-                        enableWelcomePage: false,
-                        disableDeepLinking: true,
-                        // Operador escolhe OBS Virtual Camera + cabo virtual em Dispositivos
-                        constraints: {
-                            video: {
-                                height: { ideal: 1080, max: 1080 },
-                                width: { ideal: 1920, max: 1920 },
-                            },
-                        },
-                    }}
+                    configOverwrite={configOverwrite}
                     interfaceConfigOverwrite={{
                         DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+                        // Mais espaço útil no modal de configurações (dispositivos em destaque)
                         TOOLBAR_BUTTONS: [
                             'microphone',
                             'camera',
@@ -150,13 +216,15 @@ export function JitsiMeetingEmbed({
                             'tileview',
                             'hangup',
                         ],
-                        SETTINGS_SECTIONS: ['devices', 'language'],
+                        SETTINGS_SECTIONS: ['devices', 'language', 'profile'],
+                        VERTICAL_FILMSTRIP: false,
                     }}
                     userInfo={{ displayName: userName, email: '' }}
-                    onApiReady={onApiReady}
+                    onApiReady={handleApiReady}
                     getIFrameRef={(ref) => {
                         ref.style.height = '100%';
                         ref.style.width = '100%';
+                        ref.style.minHeight = '560px';
                         ref.style.borderRadius = '8px';
                         ref.style.border = '1px solid var(--surface-border)';
                     }}

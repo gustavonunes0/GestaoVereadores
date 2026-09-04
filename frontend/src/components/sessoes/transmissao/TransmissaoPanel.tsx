@@ -39,6 +39,10 @@ export function TransmissaoPanel({
     const { showToast } = useAppToast();
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const jitsiContainerRef = useRef<HTMLDivElement>(null);
+    const jitsiApiRef = useRef<{
+        executeCommand?: (command: string) => void;
+        dispose?: () => void;
+    } | null>(null);
     const avisouEncerrarRef = useRef(false);
 
     const [transmitindo, setTransmitindo] = useState(false);
@@ -68,7 +72,10 @@ export function TransmissaoPanel({
         const jitsiApi = api as {
             addListener?: (event: string, cb: (...args: unknown[]) => void) => void;
             getParticipantsInfo?: () => { participantId: string; displayName?: string }[];
+            executeCommand?: (command: string) => void;
+            dispose?: () => void;
         };
+        jitsiApiRef.current = jitsiApi;
 
         const syncParticipants = () => {
             const participants = jitsiApi.getParticipantsInfo?.() ?? [];
@@ -82,6 +89,13 @@ export function TransmissaoPanel({
     }, []);
 
     const pararTransmissao = useCallback(() => {
+        try {
+            jitsiApiRef.current?.executeCommand?.('hangup');
+            jitsiApiRef.current?.dispose?.();
+        } catch {
+            /* já desconectado */
+        }
+        jitsiApiRef.current = null;
         setTransmitindo(false);
         setJitsiData(null);
         setJitsiConectado(false);
@@ -193,8 +207,10 @@ export function TransmissaoPanel({
                                 <JitsiMeetingEmbed
                                     jitsiData={jitsiData}
                                     userName={userName}
+                                    mode="operador"
                                     jitsiContainerRef={jitsiContainerRef}
                                     onApiReady={handleApiReady}
+                                    onLeave={pararTransmissao}
                                 />
                                 <ConvidarParticipantesJitsi jitsiData={jitsiData} />
                             </>

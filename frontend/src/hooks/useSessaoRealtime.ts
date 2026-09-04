@@ -20,6 +20,13 @@ export interface PresencaUpdate {
 
 export type MotivoEncerrarTransmissao = 'cancelada' | 'suspensa';
 
+export type PedidoPalavraUpdate = {
+    pedidoId: string;
+    sessaoId?: string;
+    parlamentarNome?: string;
+    status: 'AGUARDANDO' | 'CONCEDIDO' | 'NEGADO' | 'ENCERRADO';
+};
+
 function normalizeVotacaoAberta(
     data: PartialVotacaoAberta & Record<string, unknown>,
     sessaoId: string,
@@ -77,6 +84,8 @@ export function useSessaoRealtime(sessaoId: string) {
     const [presencaUpdate, setPresencaUpdate] = useState<PresencaUpdate | null>(null);
     const [encerrarTransmissao, setEncerrarTransmissao] =
         useState<MotivoEncerrarTransmissao | null>(null);
+    const [pedidoPalavraUpdate, setPedidoPalavraUpdate] =
+        useState<PedidoPalavraUpdate | null>(null);
 
     const syncVotacaoFromPauta = useCallback(async () => {
         if (!sessaoId) return;
@@ -158,6 +167,50 @@ export function useSessaoRealtime(sessaoId: string) {
             if (data.sessaoId && data.sessaoId !== sessaoId) return;
             setPresencaUpdate({ ...data });
         });
+        socket.on(
+            'palavra:pedida',
+            (data: { pedidoId: string; sessaoId?: string; parlamentarNome?: string }) => {
+                if (!matchSessao(data)) return;
+                setPedidoPalavraUpdate({
+                    pedidoId: data.pedidoId,
+                    sessaoId: data.sessaoId ?? sessaoId,
+                    parlamentarNome: data.parlamentarNome,
+                    status: 'AGUARDANDO',
+                });
+            },
+        );
+        socket.on(
+            'palavra:concedida',
+            (data: { pedidoId: string; sessaoId?: string; parlamentarNome?: string }) => {
+                if (!matchSessao(data)) return;
+                setPedidoPalavraUpdate({
+                    pedidoId: data.pedidoId,
+                    sessaoId: data.sessaoId ?? sessaoId,
+                    parlamentarNome: data.parlamentarNome,
+                    status: 'CONCEDIDO',
+                });
+            },
+        );
+        socket.on('palavra:negada', (data: { pedidoId: string; sessaoId?: string }) => {
+            if (!matchSessao(data)) return;
+            setPedidoPalavraUpdate({
+                pedidoId: data.pedidoId,
+                sessaoId: data.sessaoId ?? sessaoId,
+                status: 'NEGADO',
+            });
+        });
+        socket.on(
+            'palavra:encerrada',
+            (data: { pedidoId: string; sessaoId?: string; parlamentarNome?: string }) => {
+                if (!matchSessao(data)) return;
+                setPedidoPalavraUpdate({
+                    pedidoId: data.pedidoId,
+                    sessaoId: data.sessaoId ?? sessaoId,
+                    parlamentarNome: data.parlamentarNome,
+                    status: 'ENCERRADO',
+                });
+            },
+        );
 
         return () => {
             socket.disconnect();
@@ -172,6 +225,7 @@ export function useSessaoRealtime(sessaoId: string) {
         wsConectado,
         presencaUpdate,
         encerrarTransmissao,
+        pedidoPalavraUpdate,
         syncVotacaoFromPauta,
         limparVotacaoEncerrada: () => setVotacaoEncerrada(null),
         limparEncerrarTransmissao: () => setEncerrarTransmissao(null),

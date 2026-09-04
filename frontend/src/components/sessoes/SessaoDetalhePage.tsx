@@ -21,6 +21,7 @@ import { SessaoAcoesMenu } from './SessaoAcoesMenu';
 import { PautaManager } from './pauta/PautaManager';
 import { PresencaPanel } from './presencas/PresencaPanel';
 import { TransmissaoPanel } from './transmissao/TransmissaoPanel';
+import { PedidosPalavraPanel } from './PedidosPalavraPanel';
 import { AtaTab } from './ata/AtaTab';
 import { HistoricoTimeline } from './historico/HistoricoTimeline';
 import { RegistrarVotoDialog } from './RegistrarVotoDialog';
@@ -61,6 +62,7 @@ export function SessaoDetalhePage() {
         syncVotacaoFromPauta,
         encerrarTransmissao,
         limparEncerrarTransmissao,
+        pedidoPalavraUpdate,
     } = useSessaoRealtime(id ?? '');
 
     const faseExibida = faseAtual ?? resolveFaseSessao(sessao?.faseAtual);
@@ -277,6 +279,21 @@ export function SessaoDetalhePage() {
                         legislatureId={sessao.sessaoLegislativa?.legislatura?.id}
                         legislaturaNumero={sessao.sessaoLegislativa?.legislatura?.numero}
                         statusSessao={sessao.statusSessao}
+                    />
+                </TabPanel>
+
+                <TabPanel
+                    header={
+                        <span className="sigl-tabview-menu-header">
+                            <i className="pi pi-microphone" aria-hidden />
+                            Palavra
+                        </span>
+                    }
+                >
+                    <PedidosPalavraPanel
+                        sessaoId={sessao.id}
+                        statusSessao={sessao.statusSessao}
+                        pedidoUpdate={pedidoPalavraUpdate}
                     />
                 </TabPanel>
 

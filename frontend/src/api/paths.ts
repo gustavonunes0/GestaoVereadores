@@ -66,6 +66,12 @@ export const API_PATHS = {
     sessoesContextoLegislatura: '/legislative/sessoes-plenarias/contexto-legislatura',
     sessaoById:          (id: string) => `/legislative/sessoes-plenarias/${id}`,
     sessaoMinhaPresenca: (id: string) => `/legislative/sessoes-plenarias/${id}/minha-presenca`,
+    sessaoPedirPalavra:  (id: string) => `/legislative/sessoes-plenarias/${id}/pedir-palavra`,
+    sessaoPedidosPalavra:(id: string) => `/legislative/sessoes-plenarias/${id}/pedidos-palavra`,
+    sessaoPedidoPalavra: (sid: string, pid: string) =>
+        `/legislative/sessoes-plenarias/${sid}/pedidos-palavra/${pid}`,
+    sessaoPedidoPalavraEncerrar: (sid: string, pid: string) =>
+        `/legislative/sessoes-plenarias/${sid}/pedidos-palavra/${pid}/encerrar`,
     sessoesAbrir:        (id: string) => `/legislative/sessoes-plenarias/${id}/abrir`,
     sessoesSuspender:    (id: string) => `/legislative/sessoes-plenarias/${id}/suspender`,
     sessoesEncerrar:     (id: string) => `/legislative/sessoes-plenarias/${id}/encerrar`,

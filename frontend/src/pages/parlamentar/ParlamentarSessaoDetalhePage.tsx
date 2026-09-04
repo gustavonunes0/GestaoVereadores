@@ -8,6 +8,7 @@ import { MinhaPresencaPanel } from '../../components/parlamentar/sessoes/MinhaPr
 import { ParlamentarJitsiPanel } from '../../components/parlamentar/sessoes/ParlamentarJitsiPanel';
 import { ParlamentarPautaPanel } from '../../components/parlamentar/sessoes/ParlamentarPautaPanel';
 import { ParlamentarVotacaoPanel } from '../../components/parlamentar/sessoes/ParlamentarVotacaoPanel';
+import { PedirPalavraPanel } from '../../components/parlamentar/sessoes/PedirPalavraPanel';
 import { RegistrarVotoDialog } from '../../components/sessoes/RegistrarVotoDialog';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppToast } from '../../hooks/useAppToast';
@@ -57,6 +58,7 @@ export function ParlamentarSessaoDetalhePage() {
         syncVotacaoFromPauta,
         encerrarTransmissao,
         limparEncerrarTransmissao,
+        pedidoPalavraUpdate,
     } = useSessaoRealtime(id);
 
     const buscar = useCallback(async () => {
@@ -193,6 +195,12 @@ export function ParlamentarSessaoDetalhePage() {
                     loading={loadingPresenca}
                     confirming={confirming}
                     onConfirm={() => void confirmPresence()}
+                />
+                <PedirPalavraPanel
+                    sessaoId={id}
+                    statusSessao={sessao.statusSessao}
+                    hasConfirmed={hasConfirmed}
+                    pedidoUpdate={pedidoPalavraUpdate}
                 />
                 <ParlamentarVotacaoPanel
                     sessaoId={id}

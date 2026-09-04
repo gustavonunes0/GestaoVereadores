@@ -20,6 +20,22 @@ export type ChamadaResultado = {
     totalAusentes: number;
 };
 
+export type PedidoPalavraStatus = 'AGUARDANDO' | 'CONCEDIDO' | 'NEGADO' | 'ENCERRADO';
+
+export type PedidoPalavraHttp = {
+    id: string;
+    sessaoId: string;
+    parlamentarNome: string;
+    status: PedidoPalavraStatus;
+    criadoEm: string;
+    respondidoEm: string | null;
+    encerradoEm: string | null;
+    duracaoSegundos: number | null;
+    tema: string | null;
+    fase: string | null;
+    tempoConcedidoSegundos: number | null;
+};
+
 export type ResumoPublicoSessao = {
     sessaoTitulo: string;
     dataAbertura: string | null;
@@ -207,6 +223,31 @@ export const sessoesApi = {
 
     registrarMinhaPresenca: (sessaoId: string) =>
         api<PresencaRegistroApi>(API_PATHS.sessaoMinhaPresenca(sessaoId), {
+            method: 'POST',
+            body: JSON.stringify({}),
+        }),
+
+    pedirPalavra: (sessaoId: string, body?: { tema?: string }) =>
+        api<PedidoPalavraHttp>(API_PATHS.sessaoPedirPalavra(sessaoId), {
+            method: 'POST',
+            body: JSON.stringify(body ?? {}),
+        }),
+
+    listPedidosPalavra: (sessaoId: string) =>
+        api<PedidoPalavraHttp[]>(API_PATHS.sessaoPedidosPalavra(sessaoId)),
+
+    responderPedidoPalavra: (
+        sessaoId: string,
+        pedidoId: string,
+        body: { status: 'CONCEDIDO' | 'NEGADO'; tempoConcedidoSegundos?: number },
+    ) =>
+        api<PedidoPalavraHttp>(API_PATHS.sessaoPedidoPalavra(sessaoId, pedidoId), {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+        }),
+
+    encerrarPedidoPalavra: (sessaoId: string, pedidoId: string) =>
+        api<PedidoPalavraHttp>(API_PATHS.sessaoPedidoPalavraEncerrar(sessaoId, pedidoId), {
             method: 'POST',
             body: JSON.stringify({}),
         }),
