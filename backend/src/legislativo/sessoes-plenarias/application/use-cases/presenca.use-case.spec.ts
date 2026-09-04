@@ -23,15 +23,18 @@ function buildRepositoryMock() {
 const presencaBase = {
     id: 'presenca-1',
     sessaoId: 'sessao-1',
-    parlamentarId: 'parlamentar-1',
+    parlamentarId: null,
+    parliamentarianId: 'parliamentarian-1',
     presente: true,
     situacao: SituacaoPresenca.PRESENTE,
     justificativa: null,
+    autoRegistrado: false,
+    registradoEm: null,
     createdAt: new Date(),
-    parlamentar: {
-        id: 'parlamentar-1',
-        ativo: true,
-        pessoa: { nome: 'Vereador Teste', nomeParlamentar: null },
+    parliamentarian: {
+        id: 'parliamentarian-1',
+        parliamentaryName: 'Vereador Teste',
+        photoUrl: null,
     },
 };
 
@@ -42,10 +45,11 @@ describe('RegistrarPresencaUseCase', () => {
 
         const useCase = new RegistrarPresencaUseCase(repository as never, { registrar: jest.fn() } as never);
         const result = await useCase.execute('tenant-1', 'sessao-1', {
-            parlamentarId: 'parlamentar-1',
+            parliamentarianId: 'parliamentarian-1',
         });
 
         expect(result.situacao.value).toBe(SituacaoPresenca.PRESENTE);
+        expect(result.parliamentarian?.parliamentaryName).toBe('Vereador Teste');
         expect(result.parlamentar?.nome).toBe('Vereador Teste');
         expect(result.contaParaQuorum).toBe(true);
     });
@@ -62,7 +66,7 @@ describe('RegistrarPresencaUseCase', () => {
 
         await expect(
             useCase.execute('tenant-1', 'sessao-1', {
-                parlamentarId: 'parlamentar-1',
+                parliamentarianId: 'parliamentarian-1',
             }),
         ).rejects.toBeInstanceOf(PresencaDuplicadaError);
     });
@@ -79,7 +83,7 @@ describe('RegistrarPresencaUseCase', () => {
 
         await expect(
             useCase.execute('tenant-1', 'sessao-1', {
-                parlamentarId: 'parlamentar-1',
+                parliamentarianId: 'parliamentarian-1',
             }),
         ).rejects.toBeInstanceOf(PresencaMandatoInativoError);
     });

@@ -1,4 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import {
+    BadRequestException,
+    Inject,
+    Injectable,
+} from '@nestjs/common';
+import { PasswordHasher } from '../../../../identidade/users/application/contracts/password-hasher';
+import { UserRepository } from '../../../../identidade/users/domain/user.repository';
+import {
+    PASSWORD_HASHER,
+    USER_REPOSITORY,
+} from '../../../../identidade/users/users.tokens';
 import { POLITICAL_PARTY_REPOSITORY } from '../../../partidos-politicos/partidos-politicos.tokens';
 import { PoliticalPartyRepository } from '../../../partidos-politicos/domain/repositories/political-party.repository';
 import { ParliamentarianRepository } from '../../domain/repositories/parliamentarian.repository';
@@ -28,6 +38,10 @@ export class UpdateParliamentarianUseCase {
         private readonly parlamentarianUserRepository: ParlamentarianUserRepository,
         @Inject(POLITICAL_PARTY_REPOSITORY)
         private readonly politicalPartyRepository: PoliticalPartyRepository,
+        @Inject(USER_REPOSITORY)
+        private readonly userRepository: UserRepository,
+        @Inject(PASSWORD_HASHER)
+        private readonly passwordHasher: PasswordHasher,
     ) {}
 
     async execute(tenantId: string, id: string, dto: UpdateParliamentarianDto) {
@@ -36,6 +50,19 @@ export class UpdateParliamentarianUseCase {
             id,
         );
         if (!existing) throw new ParliamentarianNotFoundError();
+
+        if (dto.password) {
+            if (!existing.user) {
+                throw new BadRequestException(
+                    'Parlamentar sem conta de acesso; não é possível definir senha',
+                );
+            }
+            const user = await this.userRepository.findById(existing.user.id);
+            if (!user) throw new ParliamentarianNotFoundError();
+            const passwordHash = await this.passwordHasher.hash(dto.password);
+            user.update({ passwordHash });
+            await this.userRepository.update(user);
+        }
 
         if (dto.politicalPartyId !== undefined) {
             if (!existing.user) {

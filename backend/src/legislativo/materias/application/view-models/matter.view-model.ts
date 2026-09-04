@@ -6,11 +6,6 @@ import {
 import { getMatterWorkflowCapabilities } from '../../domain/services/materia-workflow';
 import { MatterTramitationEntry } from '../../domain/types/matter-workflow.types';
 
-type ParlamentarResumo = {
-    id: string;
-    pessoa?: { nomeParlamentar?: string | null; nome?: string | null };
-};
-
 type ParliamentarianSummary = {
     id: string;
     parliamentaryName: string;
@@ -27,17 +22,6 @@ function formatLinkedUserName(
     if (!user) return null;
     const nome = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
     return nome || null;
-}
-
-function mapParlamentar(parlamentar: ParlamentarResumo | null | undefined) {
-    if (!parlamentar) return null;
-    return {
-        id: parlamentar.id,
-        nome:
-            parlamentar.pessoa?.nomeParlamentar ??
-            parlamentar.pessoa?.nome ??
-            null,
-    };
 }
 
 function mapParliamentarianSummary(
@@ -160,14 +144,7 @@ function mapRelatorPrincipal(data: MateriaPrismaPayload) {
         };
     }
 
-    const legado = mapParlamentar(data.relator);
-    if (!legado?.nome) return null;
-
-    return {
-        id: legado.id,
-        nome: legado.nome,
-        parlamentarId: legado.id,
-    };
+    return null;
 }
 
 /** Payload Prisma enriquecido retornado pelo repositório legado. */
@@ -199,9 +176,6 @@ export type MateriaPrismaPayload = {
         nome: string;
         tenantPartner?: TenantPartnerAutorResumo | null;
     } | null;
-    relator?: ParlamentarResumo | null;
-    primeiroAutor?: ParlamentarResumo | null;
-    coautores?: Array<{ parlamentar: ParlamentarResumo }>;
     matterCoauthors?: Array<{
         id: string;
         ordem: number;
@@ -278,15 +252,13 @@ export class MatterViewModel {
                       observacao: ultimaTramitacao.observacao ?? null,
                   }
                 : null,
-            coautores: (data.coautores ?? []).map((item) => ({
-                parlamentar: mapParlamentar(item.parlamentar),
-            })),
+            coautores: [],
             autoresAdicionais: (data.materiaAutores ?? []).map((item) => ({
                 id: item.id,
                 ordem: item.ordem,
                 autor: { id: item.autor.id, nome: item.autor.nome },
             })),
-            primeiroAutor: mapParlamentar(data.primeiroAutor),
+            primeiroAutor: null,
             authorship: {
                 authorParliamentarian: data.authorParliamentarian
                     ? mapParliamentarianSummary(data.authorParliamentarian)

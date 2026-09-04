@@ -49,6 +49,14 @@ export type SessaoEncerradaPayload = {
     sessaoId: string;
 };
 
+export type SessaoCanceladaPayload = {
+    sessaoId: string;
+};
+
+export type SessaoSuspensaPayload = {
+    sessaoId: string;
+};
+
 export type SessaoAbertaPayload = {
     sessaoId: string;
 };
@@ -59,6 +67,7 @@ export type PresencaAtualizadaPayload = {
     /** @deprecated use parliamentarianId */
     parlamentarianUserId: string;
     presente: boolean;
+    situacao?: 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO';
     origem: 'APP' | 'STAFF';
     presentes: number;
     ausentes: number;
@@ -143,6 +152,14 @@ export class SessaoRealtimeGateway
 
     emitSessaoEncerrada(tenantId: string, payload: SessaoEncerradaPayload) {
         this.server.to(`tenant:${tenantId}`).emit('sessao:encerrada', payload);
+    }
+
+    emitSessaoCancelada(tenantId: string, payload: SessaoCanceladaPayload) {
+        this.server.to(`tenant:${tenantId}`).emit('sessao:cancelada', payload);
+    }
+
+    emitSessaoSuspensa(tenantId: string, payload: SessaoSuspensaPayload) {
+        this.server.to(`tenant:${tenantId}`).emit('sessao:suspensa', payload);
     }
 
     emitSessaoAberta(tenantId: string, payload: SessaoAbertaPayload) {

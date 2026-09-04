@@ -5,6 +5,20 @@ export type StatusSessao =
     | 'ENCERRADA'
     | 'CANCELADA';
 
+/** Transmissão Jitsi/OBS: libera em AGENDADA (antes da abertura) e ABERTA. Fecha em SUSPENSA/CANCELADA. */
+export function sessaoPermiteTransmissao(status: StatusSessao | null | undefined): boolean {
+    return status === 'AGENDADA' || status === 'ABERTA';
+}
+
+/** Aba de transmissão ainda visível (ex.: suspensa mostra sala fechada até retomar). */
+export function sessaoMostraAbaTransmissao(status: StatusSessao | null | undefined): boolean {
+    return (
+        status === 'AGENDADA' ||
+        status === 'ABERTA' ||
+        status === 'SUSPENSA'
+    );
+}
+
 export type FaseSessao =
     | 'NAO_INICIADA'
     | 'EXPEDIENTE'

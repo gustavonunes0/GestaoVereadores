@@ -27,7 +27,6 @@ export class GetResumoPublicoSessaoUseCase {
                 tipoSessao: { select: { nome: true } },
                 presencas: {
                     include: {
-                        parlamentar: { include: { pessoa: true } },
                         parliamentarian: {
                             include: {
                                 parliamentarianUser: { include: { politicalParty: true } },
@@ -60,10 +59,7 @@ export class GetResumoPublicoSessaoUseCase {
 
         const presencas = sessao.presencas.map((p) => {
             const nome =
-                p.parliamentarian?.parliamentaryName ??
-                p.parlamentar?.pessoa?.nomeParlamentar ??
-                p.parlamentar?.pessoa?.nome ??
-                'Parlamentar';
+                p.parliamentarian?.parliamentaryName ?? 'Parlamentar';
             const partido = p.parliamentarian?.parliamentarianUser?.politicalParty?.acronym ?? null;
             return { nome, partido, situacao: p.situacao };
         });

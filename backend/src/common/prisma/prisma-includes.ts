@@ -1,25 +1,4 @@
-/** Includes Prisma reutilizados entre módulos legislativos. */
-export const parlamentarComPessoa = {
-    include: {
-        pessoa: true,
-        mandatos: {
-            include: { legislatura: true },
-            orderBy: { legislatura: { numero: 'desc' as const } },
-        },
-    },
-} as const;
-
-export const membrosComParlamentar = {
-    include: { parlamentar: parlamentarComPessoa },
-} as const;
-
-export const materiaAutoresInclude = {
-    include: { autor: true },
-    orderBy: { ordem: 'asc' as const },
-} as const;
-
-export const materiaParlamentaresVinculoInclude = {
-    include: { parlamentar: parlamentarComPessoa },
+export const materiaAutoresInclude = {    include: { autor: true },
     orderBy: { ordem: 'asc' as const },
 } as const;
 
@@ -70,10 +49,6 @@ export const materiaRelationsInclude = {
         },
     },
     materiaAutores: materiaAutoresInclude,
-    representantes: materiaParlamentaresVinculoInclude,
-    coautores: materiaParlamentaresVinculoInclude,
-    primeiroAutor: parlamentarComPessoa,
-    relator: parlamentarComPessoa,
     statusTramitacao: true,
     unidadeTramitacaoDestino: true,
     localOrigemExterna: true,
@@ -111,7 +86,9 @@ export const materiaAutoriaInclude = {
 export const votacaoInclude = {
     include: {
         votos: {
-            include: { parlamentar: parlamentarComPessoa },
+            include: {
+                parliamentarian: { select: materiaParliamentarianSelect },
+            },
         },
     },
 } as const;
@@ -130,16 +107,15 @@ export const sessaoPlenariaInclude = {
         },
         orderBy: { ordem: 'asc' as const },
     },
-    presencas: membrosComParlamentar,
-} as const;
-
-export const mesaDiretoraInclude = {
-    legislatura: true,
-    sessao: true,
-    membros: {
+    presencas: {
         include: {
-            parlamentar: parlamentarComPessoa,
-            cargo: true,
+            parliamentarian: {
+                select: {
+                    id: true,
+                    parliamentaryName: true,
+                    photoUrl: true,
+                },
+            },
         },
     },
 } as const;

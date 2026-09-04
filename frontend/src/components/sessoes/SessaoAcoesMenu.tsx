@@ -80,7 +80,11 @@ export function SessaoAcoesMenu({ sessaoId, status, onUpdated }: Props) {
 
         if (acao.destrutiva) {
             confirmDestructive(
-                `Confirma: ${acao.label.toLowerCase()}?`,
+                path === 'cancelar'
+                    ? 'Confirma cancelar a sessão? A transmissão será encerrada.'
+                    : path === 'suspender'
+                      ? 'Confirma suspender a sessão? A transmissão será encerrada.'
+                      : `Confirma: ${acao.label.toLowerCase()}?`,
                 () => executar(path),
                 acao.label,
             );

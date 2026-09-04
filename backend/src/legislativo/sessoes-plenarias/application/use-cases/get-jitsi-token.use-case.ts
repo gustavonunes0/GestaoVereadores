@@ -42,13 +42,17 @@ export class GetJitsiTokenUseCase {
         }
 
         const podeTransmitir =
-            sessao.statusSessao === StatusSessao.ABERTA ||
-            sessao.statusSessao === StatusSessao.SUSPENSA;
+            sessao.statusSessao === StatusSessao.AGENDADA ||
+            sessao.statusSessao === StatusSessao.ABERTA;
 
         if (!podeTransmitir) {
-            throw new BadRequestException(
-                'Inicie a transmissão apenas com a sessão aberta ou suspensa',
-            );
+            const msg =
+                sessao.statusSessao === StatusSessao.CANCELADA
+                    ? 'Sessão cancelada — transmissão não disponível'
+                    : sessao.statusSessao === StatusSessao.SUSPENSA
+                      ? 'Sessão suspensa — transmissão encerrada'
+                      : 'Transmissão disponível apenas com a sessão agendada ou aberta';
+            throw new BadRequestException(msg);
         }
 
         const domain =

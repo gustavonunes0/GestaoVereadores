@@ -11,7 +11,6 @@ describe('AutorResolverService', () => {
         it('lança erro quando zero FKs preenchidas', () => {
             expect(() =>
                 service.validar({
-                    parlamentarId: null,
                     parliamentarianId: null,
                     tenantPartnerId: null,
                 }),
@@ -21,9 +20,8 @@ describe('AutorResolverService', () => {
         it('lança erro quando duas FKs preenchidas', () => {
             expect(() =>
                 service.validar({
-                    parlamentarId: 'parl-1',
                     parliamentarianId: 'new-parl-1',
-                    tenantPartnerId: null,
+                    tenantPartnerId: 'partner-1',
                 }),
             ).toThrow('exatamente uma referência é obrigatória');
         });
@@ -31,7 +29,6 @@ describe('AutorResolverService', () => {
         it('não lança erro quando exatamente uma FK preenchida', () => {
             expect(() =>
                 service.validar({
-                    parlamentarId: null,
                     parliamentarianId: 'new-parl-1',
                     tenantPartnerId: null,
                 }),

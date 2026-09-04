@@ -150,7 +150,14 @@ export class RelatoriosService {
             },
             include: {
                 presencas: {
-                    include: { parlamentar: { include: { pessoa: true } } },
+                    include: {
+                        parliamentarian: {
+                            select: {
+                                id: true,
+                                parliamentaryName: true,
+                            },
+                        },
+                    },
                 },
                 tipoSessao: true,
             },

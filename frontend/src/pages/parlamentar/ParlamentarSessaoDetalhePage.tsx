@@ -17,6 +17,7 @@ import { useSessaoRealtime } from '../../hooks/useSessaoRealtime';
 import {
     sessaoDetalheLabel,
     sessaoDetalheSubtitulo,
+    sessaoMostraAbaTransmissao,
     type SessaoPlenariaDetalhe,
     type StatusSessao,
 } from '../../types/sessoes';
@@ -50,7 +51,13 @@ export function ParlamentarSessaoDetalhePage() {
         confirmPresence,
     } = useMinhaPresenca(id);
 
-    const { votacaoAberta, wsConectado, syncVotacaoFromPauta } = useSessaoRealtime(id);
+    const {
+        votacaoAberta,
+        wsConectado,
+        syncVotacaoFromPauta,
+        encerrarTransmissao,
+        limparEncerrarTransmissao,
+    } = useSessaoRealtime(id);
 
     const buscar = useCallback(async () => {
         if (!id) return;
@@ -68,6 +75,11 @@ export function ParlamentarSessaoDetalhePage() {
     useEffect(() => {
         void buscar();
     }, [buscar]);
+
+    useEffect(() => {
+        if (!encerrarTransmissao) return;
+        void buscar();
+    }, [encerrarTransmissao, buscar]);
 
     useEffect(() => {
         if (!id) return;
@@ -118,7 +130,7 @@ export function ParlamentarSessaoDetalhePage() {
     }
 
     const statusCfg = STATUS_BADGE[sessao.statusSessao];
-    const mostrarTransmissao = ['ABERTA', 'SUSPENSA', 'AGENDADA'].includes(sessao.statusSessao);
+    const mostrarTransmissao = sessaoMostraAbaTransmissao(sessao.statusSessao);
     const userName = user
         ? ('displayName' in user
               ? String(user.displayName)
@@ -167,7 +179,12 @@ export function ParlamentarSessaoDetalhePage() {
             ) : null}
 
             {mostrarTransmissao ? (
-                <ParlamentarJitsiPanel sessao={sessao} userName={userName} />
+                <ParlamentarJitsiPanel
+                    sessao={sessao}
+                    userName={userName}
+                    encerrarTransmissao={encerrarTransmissao}
+                    onEncerrarTransmissaoConsumido={limparEncerrarTransmissao}
+                />
             ) : null}
 
             <div className="parl-sessao-detalhe-grid">

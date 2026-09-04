@@ -62,8 +62,14 @@ type MandateProfileRefs = {
 };
 
 const votoParlamentarInclude = {
-    parlamentar: { include: { pessoa: true } },
-    parliamentarian: true,
+    parliamentarian: {
+        select: {
+            id: true,
+            parliamentaryName: true,
+            officeNumber: true,
+            photoUrl: true,
+        },
+    },
 } as const;
 
 type VotoActorRefs = {
@@ -107,8 +113,12 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
                 where: { sessaoId },
                 select: { presente: true, situacao: true },
             }),
-            this.prisma.parlamentar.count({
-                where: { ...tenantWhere(tenantId), ativo: true },
+            this.prisma.parliamentarian.count({
+                where: {
+                    tenantId,
+                    isRemoved: false,
+                    status: 'ACTIVE',
+                },
             }),
         ]);
         const presentes = presencas.filter((presenca) =>
@@ -190,30 +200,6 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         });
         if (!mandato) {
             throw new BadRequestException('Parlamentar não possui mandato ativo');
-        }
-    }
-
-    private async assertParlamentarMandatoAtivo(
-        parlamentarId: string,
-        legislaturaId?: string | null,
-    ) {
-        const where: Prisma.ParlamentarMandatoWhereInput = {
-            parlamentarId,
-            ativo: true,
-        };
-        if (legislaturaId) {
-            where.legislaturaId = legislaturaId;
-        }
-
-        const mandato = await this.prisma.parlamentarMandato.findFirst({
-            where,
-        });
-        if (!mandato) {
-            throw new BadRequestException(
-                legislaturaId
-                    ? 'Parlamentar não possui mandato ativo na legislatura da sessão'
-                    : 'Parlamentar não possui mandato ativo',
-            );
         }
     }
 
@@ -307,44 +293,7 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             };
         }
 
-        if (!actor.parlamentarId) {
-            throw new BadRequestException(
-                'Informe parlamentarId ou parliamentarianId',
-            );
-        }
-
-        const parlamentar = await this.prisma.parlamentar.findFirst({
-            where: { id: actor.parlamentarId, ...tenantWhere(tenantId) },
-        });
-        if (!parlamentar) {
-            throw new NotFoundException('Parlamentar não encontrado');
-        }
-
-        const legislaturaId = sessao.sessaoLegislativa?.legislaturaId ?? null;
-        await this.assertParlamentarMandatoAtivo(
-            actor.parlamentarId,
-            legislaturaId,
-        );
-        await this.assertMandateIfProvided(tenantId, actor);
-
-        const presenca = await this.prisma.presencaSessao.findUnique({
-            where: {
-                sessaoId_parlamentarId: {
-                    sessaoId,
-                    parlamentarId: actor.parlamentarId,
-                },
-            },
-        });
-        const estaPresente = parlamentarPresenteParaVotar(
-            presenca,
-            contaPresencaParaQuorum,
-        );
-        assertPresencaQuandoExigida(votacao.exigePresenca, estaPresente);
-
-        return {
-            votacao,
-            parlamentarId: actor.parlamentarId,
-        };
+        throw new BadRequestException('Informe parliamentarianId');
     }
 
     async abrirVotacao(
@@ -408,8 +357,12 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         });
         const tipoQuorum = (materiaComTipo?.tipo?.tipoQuorum ?? 'MAIORIA_SIMPLES') as any;
 
-        const totalMembros = await this.prisma.parlamentar.count({
-            where: { ...tenantWhere(tenantId), ativo: true },
+        const totalMembros = await this.prisma.parliamentarian.count({
+            where: {
+                tenantId,
+                isRemoved: false,
+                status: 'ACTIVE',
+            },
         });
 
         const votacao = await this.prisma.votacao.create({
@@ -538,35 +491,15 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             dto,
         );
 
-        if (ctx.parliamentarianId) {
-            const existing = await this.prisma.votoParlamentar.findUnique({
-                where: {
-                    votacaoId_parliamentarianId: {
-                        votacaoId: ctx.votacao.id,
-                        parliamentarianId: ctx.parliamentarianId,
-                    },
-                },
-            });
-            assertVotoNaoDuplicado(!!existing);
-
-            const voto = await this.prisma.votoParlamentar.create({
-                data: {
-                    votacaoId: ctx.votacao.id,
-                    parliamentarianId: ctx.parliamentarianId,
-                    voto: dto.voto,
-                },
-                include: votoParlamentarInclude,
-            });
-
-            await this.recalcularTotaisVotacao(ctx.votacao.id);
-            return voto;
+        if (!ctx.parliamentarianId) {
+            throw new BadRequestException('Informe parliamentarianId');
         }
 
         const existing = await this.prisma.votoParlamentar.findUnique({
             where: {
-                votacaoId_parlamentarId: {
+                votacaoId_parliamentarianId: {
                     votacaoId: ctx.votacao.id,
-                    parlamentarId: ctx.parlamentarId!,
+                    parliamentarianId: ctx.parliamentarianId,
                 },
             },
         });
@@ -575,7 +508,7 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         const voto = await this.prisma.votoParlamentar.create({
             data: {
                 votacaoId: ctx.votacao.id,
-                parlamentarId: ctx.parlamentarId!,
+                parliamentarianId: ctx.parliamentarianId,
                 voto: dto.voto,
             },
             include: votoParlamentarInclude,

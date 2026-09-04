@@ -19,10 +19,10 @@ import { ConvidarTenantStaffUseCase } from '../use-cases/convidar-tenant-staff.u
 import { ListTenantStaffUseCase } from '../use-cases/list-tenant-staff.use-case';
 import { UpdateTenantStaffUseCase } from '../use-cases/update-tenant-staff.use-case';
 
-@ApiTags('identidade-usuarios')
+@ApiTags('identidade-user-manager')
 @ApiBearerAuth()
-@Controller('identidade/usuarios')
-export class UsuariosIdentidadeController {
+@Controller('identidade/user-manager')
+export class UserManagerController {
     constructor(
         private readonly listTenantStaff: ListTenantStaffUseCase,
         private readonly convidarTenantStaff: ConvidarTenantStaffUseCase,

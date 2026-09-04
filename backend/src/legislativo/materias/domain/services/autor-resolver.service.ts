@@ -1,5 +1,4 @@
 type AutorFKs = {
-    parlamentarId?: string | null;
     parliamentarianId?: string | null;
     tenantPartnerId?: string | null;
 };
@@ -19,14 +18,13 @@ export class AutorResolverService {
      */
     validar(autor: AutorFKs): void {
         const preenchidas = [
-            autor.parlamentarId,
             autor.parliamentarianId,
             autor.tenantPartnerId,
         ].filter(Boolean).length;
 
         if (preenchidas !== 1) {
             throw new Error(
-                'Autor inválido: exatamente uma referência é obrigatória (parlamentarId, parliamentarianId ou tenantPartnerId)',
+                'Autor inválido: exatamente uma referência é obrigatória (parliamentarianId ou tenantPartnerId)',
             );
         }
     }

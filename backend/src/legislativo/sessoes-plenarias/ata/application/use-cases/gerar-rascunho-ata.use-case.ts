@@ -43,7 +43,6 @@ export class GerarRascunhoAtaUseCase {
                 },
                 presencas: {
                     include: {
-                        parlamentar: { include: { pessoa: true } },
                         parliamentarian: {
                             include: {
                                 parliamentarianUser: { include: { politicalParty: true } },
@@ -62,10 +61,7 @@ export class GerarRascunhoAtaUseCase {
 
         const presencas = dadosSessao.presencas.map((p) => {
             const nomeParlamentar =
-                p.parliamentarian?.parliamentaryName ??
-                p.parlamentar?.pessoa?.nomeParlamentar ??
-                p.parlamentar?.pessoa?.nome ??
-                'Parlamentar';
+                p.parliamentarian?.parliamentaryName ?? 'Parlamentar';
             const partido = p.parliamentarian?.parliamentarianUser?.politicalParty?.acronym ?? null;
             return { nome: nomeParlamentar, partido, situacao: p.situacao };
         });

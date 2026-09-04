@@ -15,6 +15,7 @@ import {
     resolveFaseSessao,
     sessaoDetalheLabel,
     sessaoDetalheSubtitulo,
+    sessaoMostraAbaTransmissao,
 } from '../../types/sessoes';
 import { SessaoAcoesMenu } from './SessaoAcoesMenu';
 import { PautaManager } from './pauta/PautaManager';
@@ -58,11 +59,13 @@ export function SessaoDetalhePage() {
         placar,
         wsConectado,
         syncVotacaoFromPauta,
+        encerrarTransmissao,
+        limparEncerrarTransmissao,
     } = useSessaoRealtime(id ?? '');
 
     const faseExibida = faseAtual ?? resolveFaseSessao(sessao?.faseAtual);
-    const mostrarTransmissao = ['ABERTA', 'SUSPENSA', 'AGENDADA'].includes(sessao?.statusSessao ?? '');
-    const [transmitindo] = useState(false);
+    const mostrarTransmissao = sessaoMostraAbaTransmissao(sessao?.statusSessao);
+    const [transmitindo, setTransmitindo] = useState(false);
 
     const buscar = useCallback(async () => {
         if (!id) return;
@@ -78,6 +81,11 @@ export function SessaoDetalhePage() {
     }, [id, showApiError]);
 
     useEffect(() => { void buscar(); }, [buscar]);
+
+    useEffect(() => {
+        if (!encerrarTransmissao) return;
+        void buscar();
+    }, [encerrarTransmissao, buscar]);
 
     useEffect(() => {
         if (!votacaoAberta || !canVotar) return;
@@ -284,7 +292,13 @@ export function SessaoDetalhePage() {
                             </span>
                         }
                     >
-                        <TransmissaoPanel sessao={sessao} userName={userName} />
+                        <TransmissaoPanel
+                            sessao={sessao}
+                            userName={userName}
+                            encerrarTransmissao={encerrarTransmissao}
+                            onEncerrarTransmissaoConsumido={limparEncerrarTransmissao}
+                            onTransmitindoChange={setTransmitindo}
+                        />
                     </TabPanel>
                 )}
 

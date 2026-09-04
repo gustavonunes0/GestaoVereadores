@@ -96,16 +96,86 @@ export function TenantPartnerEditDialog({ partner, onClose, onSaved }: Props) {
 
     async function handleSubmit() {
         if (!nomeValido) return;
+
+        const pendingCreateUser =
+            !usuarioVinculado &&
+            userNome.trim().length >= 3 &&
+            isValidCpf(userCpf);
+        const pendingEditUser =
+            Boolean(usuarioVinculado) &&
+            (editingUser || Boolean(userPhotoFile));
+
+        if (userPhotoFile && !usuarioVinculado && !pendingCreateUser) {
+            showApiError(
+                new Error(
+                    'Para salvar a foto, preencha nome e CPF do usuário na aba Usuário e clique em Salvar.',
+                ),
+            );
+            return;
+        }
+
+        if (pendingCreateUser || pendingEditUser) {
+            if (pendingCreateUser && !podeVincular) {
+                showApiError(
+                    new Error(
+                        'Preencha nome e CPF válidos do usuário (aba Usuário) para salvar a foto.',
+                    ),
+                );
+                return;
+            }
+            if (pendingEditUser && editingUser && !podeSalvarUsuario) {
+                showApiError(
+                    new Error(
+                        'Preencha nome e CPF válidos do usuário (aba Usuário) para salvar a foto.',
+                    ),
+                );
+                return;
+            }
+        }
+
         setLoading(true);
-        const dto: Partial<CreateTenantPartnerDto> = {
-            nome: nome.trim(),
-            cpf: digitsOnly(identificacao) || undefined,
-            cargo: cargo.trim() || undefined,
-            registro: registro.trim() || undefined,
-            partido: partido.trim() || undefined,
-            uf: uf || undefined,
-        };
         try {
+            // Foto/usuário só vão na API de usuário — o Salvar da instituição não os envia.
+            if (pendingCreateUser) {
+                const fotoPerfil = await prepareFotoPerfil('create');
+                if (fotoPerfil === null) {
+                    setLoading(false);
+                    return;
+                }
+                await tenantPartnersApi.provisionUser(partner.id, {
+                    nome: userNome.trim(),
+                    cpf: normalizeCpf(userCpf),
+                    ...(fotoPerfil ? { fotoPerfil } : {}),
+                });
+                resetUserForm();
+            } else if (pendingEditUser) {
+                const fotoPerfil = await prepareFotoPerfil('edit');
+                if (fotoPerfil === null) {
+                    setLoading(false);
+                    return;
+                }
+                const nomeParaSalvar = editingUser
+                    ? userNome.trim()
+                    : (detail?.usuario?.nome ?? '');
+                const cpfParaSalvar = editingUser
+                    ? normalizeCpf(userCpf)
+                    : normalizeCpf(detail?.usuario?.cpf ?? '');
+                await tenantPartnersApi.updateUser(partner.id, {
+                    ...(nomeParaSalvar ? { nome: nomeParaSalvar } : {}),
+                    ...(cpfParaSalvar ? { cpf: cpfParaSalvar } : {}),
+                    ...(fotoPerfil !== undefined ? { fotoPerfil } : {}),
+                });
+                resetUserForm();
+            }
+
+            const dto: Partial<CreateTenantPartnerDto> = {
+                nome: nome.trim(),
+                cpf: digitsOnly(identificacao) || undefined,
+                cargo: cargo.trim() || undefined,
+                registro: registro.trim() || undefined,
+                partido: partido.trim() || undefined,
+                uf: uf || undefined,
+            };
             const updated = await tenantPartnersApi.update(partner.id, dto);
             setDetail(updated);
             showSuccess('Instituição parceira atualizada com sucesso.');
@@ -396,40 +466,41 @@ export function TenantPartnerEditDialog({ partner, onClose, onSaved }: Props) {
                         >
                             <div className="sigl-dialog-secao">
                                 {usuarioVinculado && detail?.usuario && !editingUser ? (
-                                    <>
-                                        <div className="flex align-items-center gap-3">
+                                    <div className="sigl-col-full tp-partner-user-card">
+                                        <div className="tp-partner-user-card__main">
                                             {detail.usuario.fotoPerfil ? (
                                                 <img
                                                     src={detail.usuario.fotoPerfil}
                                                     alt=""
-                                                    className="border-circle"
-                                                    style={{
-                                                        width: 48,
-                                                        height: 48,
-                                                        objectFit: 'cover',
-                                                    }}
+                                                    className="tp-partner-user-card__avatar"
                                                 />
                                             ) : (
                                                 <span
-                                                    className="border-circle bg-primary-100 flex align-items-center justify-content-center"
-                                                    style={{ width: 48, height: 48 }}
+                                                    className="tp-partner-user-card__avatar tp-partner-user-card__avatar--placeholder"
+                                                    aria-hidden
                                                 >
-                                                    <i className="pi pi-user text-primary" />
+                                                    <i className="pi pi-user" />
                                                 </span>
                                             )}
-                                            <div className="flex-1">
-                                                <p className="m-0 font-medium">{detail.usuario.nome}</p>
-                                                <p className="m-0 text-sm text-color-secondary">
+                                            <div className="tp-partner-user-card__info">
+                                                <p className="tp-partner-user-card__name">
+                                                    {detail.usuario.nome}
+                                                </p>
+                                                <p className="tp-partner-user-card__cpf">
                                                     CPF: {formatCpf(detail.usuario.cpf)}
                                                 </p>
                                             </div>
+                                            <span className="tp-partner-user-card__badge">
+                                                <i className="pi pi-check-circle" aria-hidden />
+                                                Vinculado
+                                            </span>
                                         </div>
                                         <Message
                                             severity="success"
                                             text="Usuário vinculado (sem acesso à plataforma)."
                                             className="w-full"
                                         />
-                                        <div className="flex gap-2">
+                                        <div className="tp-partner-user-card__actions">
                                             <Button
                                                 label="Editar"
                                                 icon="pi pi-pencil"
@@ -446,7 +517,7 @@ export function TenantPartnerEditDialog({ partner, onClose, onSaved }: Props) {
                                                 onClick={handleRemoveUser}
                                             />
                                         </div>
-                                    </>
+                                    </div>
                                 ) : editingUser ? (
                                     renderUserForm('edit')
                                 ) : (

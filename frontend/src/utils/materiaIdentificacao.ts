@@ -28,13 +28,16 @@ export type NumeroAnoParseResult =
 /** Interpreta "85/2026" ou "85 / 2026". */
 export function parseNumeroAnoMateria(raw: string): NumeroAnoParseResult {
     const trimmed = raw.trim();
-    if (!trimmed) {
-        return { ok: false, message: 'Informe o número no formato 85/2026.' };
+    if (!trimmed || trimmed === '/') {
+        return { ok: false, message: 'Informe o nº da matéria e o ano da legislatura.' };
     }
 
     const match = trimmed.match(/^(\d+)\s*\/\s*(\d{4})$/);
     if (!match) {
-        return { ok: false, message: 'Use o formato número/ano, ex.: 85/2026.' };
+        return {
+            ok: false,
+            message: 'Preencha o nº (ex.: 85) e o ano com 4 dígitos (ex.: 2026).',
+        };
     }
 
     const numero = Number(match[1]);
@@ -56,6 +59,11 @@ export function formatNumeroAnoInput(
 ): string {
     if (numero == null || numero === '' || ano == null) return '';
     return `${numero}/${ano}`;
+}
+
+/** Junta os campos separados do formulário no formato esperado pela API: "85/2026". */
+export function composeNumeroAnoMateria(numero: string, ano: string): string {
+    return `${numero.trim()}/${ano.trim()}`;
 }
 
 export function resolveAnoIdByValor(

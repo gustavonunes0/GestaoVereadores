@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 import { ParliamentarianStatus } from '../../domain/enums/parliamentarian-status.enum';
 
 export class UpdateParliamentarianDto {
@@ -32,4 +32,10 @@ export class UpdateParliamentarianDto {
     @IsOptional()
     @IsEnum(ParliamentarianStatus)
     status?: ParliamentarianStatus;
+
+    @ApiPropertyOptional({ minLength: 8, description: 'Nova senha de acesso (opcional)' })
+    @IsOptional()
+    @IsString()
+    @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres' })
+    password?: string;
 }

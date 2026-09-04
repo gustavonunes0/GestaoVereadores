@@ -28,14 +28,6 @@ export type VotoParlamentarPayload = {
     parlamentarId?: string | null;
     parliamentarianId?: string | null;
     voto: Voto;
-    parlamentar?: {
-        id: string;
-        ativo?: boolean;
-        pessoa?: {
-            nome?: string | null;
-            nomeParlamentar?: string | null;
-        } | null;
-    } | null;
     parliamentarian?: {
         id: string;
         parliamentaryName: string;
@@ -57,14 +49,7 @@ export type VotacaoPrismaPayload = {
     totalMembros?: number | null;
     votoQualidade?: boolean;
     createdAt: Date;
-    votos?: Array<
-        VotoParlamentarPayload & {
-            votacaoId?: string;
-            parlamentar?: VotoParlamentarPayload['parlamentar'] & {
-                ativo?: boolean;
-            };
-        }
-    >;
+    votos?: VotoParlamentarPayload[];
 };
 
 export class VotacaoViewModel {
@@ -121,13 +106,6 @@ export class VotacaoViewModel {
                           parlamentarId: item.parlamentarId ?? null,
                           parliamentarianId: item.parliamentarianId ?? null,
                           voto: item.voto,
-                          parlamentar: item.parlamentar
-                              ? {
-                                    id: item.parlamentar.id,
-                                    ativo: item.parlamentar.ativo ?? true,
-                                    pessoa: item.parlamentar.pessoa,
-                                }
-                              : null,
                           parliamentarian: item.parliamentarian ?? null,
                       }),
                   ),

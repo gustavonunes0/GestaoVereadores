@@ -131,17 +131,26 @@ export function JitsiMeetingEmbed({
                         startWithVideoMuted: false,
                         prejoinPageEnabled: false,
                         enableWelcomePage: false,
+                        disableDeepLinking: true,
+                        // Operador escolhe OBS Virtual Camera + cabo virtual em Dispositivos
+                        constraints: {
+                            video: {
+                                height: { ideal: 1080, max: 1080 },
+                                width: { ideal: 1920, max: 1920 },
+                            },
+                        },
                     }}
                     interfaceConfigOverwrite={{
                         DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
                         TOOLBAR_BUTTONS: [
                             'microphone',
                             'camera',
-                            'desktop',
+                            'settings',
                             'fullscreen',
                             'tileview',
                             'hangup',
                         ],
+                        SETTINGS_SECTIONS: ['devices', 'language'],
                     }}
                     userInfo={{ displayName: userName, email: '' }}
                     onApiReady={onApiReady}

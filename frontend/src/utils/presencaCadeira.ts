@@ -34,10 +34,18 @@ export const LABELS_SITUACAO: Record<SituacaoPresencaValor, string> = {
 };
 
 export function resolveSituacaoCadeira(p: PresencaParlamentar): SituacaoPresencaValor {
-    if (!p.presencaId) return 'PENDENTE';
+    // Update otimista (ainda sem id): respeita presente/situacao já aplicados no clique
+    if (!p.presencaId) {
+        if (p.situacao === 'JUSTIFICADO') return 'JUSTIFICADO';
+        if (p.presente || p.situacao === 'PRESENTE') return 'PRESENTE';
+        if (p.situacao === 'AUSENTE') return 'AUSENTE';
+        return 'PENDENTE';
+    }
     if (p.situacao === 'JUSTIFICADO') return 'JUSTIFICADO';
-    if (p.presente && p.situacao === 'PRESENTE') return 'PRESENTE';
-    if (p.situacao === 'AUSENTE' || !p.presente) return 'AUSENTE';
+    if (p.presente) return 'PRESENTE';
+    if (p.situacao === 'AUSENTE' || p.situacao === 'PRESENTE' || p.situacao == null) {
+        return 'AUSENTE';
+    }
     return 'PENDENTE';
 }
 
@@ -50,7 +58,9 @@ export type VarianteCadeiraVisual =
     | 'pendente';
 
 export function resolveVarianteVisual(p: PresencaParlamentar): VarianteCadeiraVisual {
-    if (!p.presencaId) return 'institucional';
+    if (!p.presencaId && !p.presente && p.situacao !== 'PRESENTE' && p.situacao !== 'AUSENTE') {
+        return 'institucional';
+    }
     const situacao = resolveSituacaoCadeira(p);
     if (situacao === 'PENDENTE') return 'pendente';
     return situacao.toLowerCase() as VarianteCadeiraVisual;

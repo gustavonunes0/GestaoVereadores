@@ -18,8 +18,25 @@ import {
     fetchMesaMembrosAtivos,
     type PresencaRegistroApi,
 } from '../../../utils/presencaSessao';
+import { resolveSituacaoCadeira } from '../../../utils/presencaCadeira';
 import { PresencaMetrics } from './PresencaMetrics';
 import { PlenarioMapa } from './PlenarioMapa';
+
+function recalcularDashboard(prev: PresencaSessao, parlamentares: PresencaSessao['parlamentares']): PresencaSessao {
+    const presentes = parlamentares.filter(
+        (p) => resolveSituacaoCadeira(p) === 'PRESENTE',
+    ).length;
+    const totalMembros = parlamentares.length;
+    const quorumMinimo = prev.quorumMinimo;
+    return {
+        ...prev,
+        parlamentares,
+        totalMembros,
+        presentes,
+        ausentes: Math.max(0, totalMembros - presentes),
+        temQuorum: presentes >= quorumMinimo,
+    };
+}
 
 function atualizarParlamentar(
     prev: PresencaSessao,
@@ -31,16 +48,10 @@ function atualizarParlamentar(
     const parlamentares = prev.parlamentares.map(map);
     const mesaMembros = prev.mesaMembros.map(map);
     const vereadores = prev.vereadores.map(map);
-    const presentes = parlamentares.filter((p) => p.presente).length;
-    const quorumMinimo = prev.quorumMinimo;
     return {
-        ...prev,
-        parlamentares,
+        ...recalcularDashboard(prev, parlamentares),
         mesaMembros,
         vereadores,
-        presentes,
-        ausentes: parlamentares.length - presentes,
-        temQuorum: presentes >= quorumMinimo,
     };
 }
 
@@ -52,6 +63,7 @@ function togglePresencaLocal(
 ): PresencaSessao {
     return atualizarParlamentar(prev, parliamentarianId, {
         presente: novoPresente,
+        situacao: novoPresente ? 'PRESENTE' : 'AUSENTE',
         origem,
         registradoEm: new Date().toISOString(),
     });
@@ -60,6 +72,7 @@ function togglePresencaLocal(
 function aplicarUpdate(
     prev: PresencaSessao,
     update: {
+        sessaoId?: string;
         parliamentarianId?: string;
         parlamentarianUserId: string;
         presente: boolean;
@@ -67,20 +80,32 @@ function aplicarUpdate(
         presentes: number;
         ausentes: number;
         temQuorum: boolean;
+        situacao?: 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO';
     },
 ): PresencaSessao {
-    const parliamentarianId = update.parliamentarianId ?? update.parlamentarianUserId;
-    const base = atualizarParlamentar(prev, parliamentarianId, {
+    const parliamentarianId = update.parliamentarianId || update.parlamentarianUserId;
+    if (!parliamentarianId) {
+        // Sem alvo: só sincroniza totais se vierem do servidor (chamada em lote usa reload).
+        return {
+            ...prev,
+            presentes: update.presentes,
+            ausentes: update.ausentes,
+            temQuorum: update.temQuorum,
+        };
+    }
+
+    const situacao =
+        update.situacao ??
+        (update.presente ? 'PRESENTE' : 'AUSENTE');
+
+    // Dashboard sempre recalcula a partir das cadeiras (mesma regra visual),
+    // para não divergir do mapa nem depender do denominador do quórum da API.
+    return atualizarParlamentar(prev, parliamentarianId, {
         presente: update.presente,
+        situacao,
         origem: update.origem,
         registradoEm: new Date().toISOString(),
     });
-    return {
-        ...base,
-        presentes: update.presentes,
-        ausentes: update.ausentes,
-        temQuorum: update.temQuorum,
-    };
 }
 
 export function PresencaPanel({
@@ -138,10 +163,14 @@ export function PresencaPanel({
 
     const { presencaUpdate, wsConectado } = useSessaoRealtime(sessaoId);
     useEffect(() => {
-        if (presencaUpdate) {
-            setPresenca((prev) => (prev ? aplicarUpdate(prev, presencaUpdate) : prev));
+        if (!presencaUpdate) return;
+        // Chamada em lote (sem parlamentar específico) — recarrega o mapa completo
+        if (!presencaUpdate.parliamentarianId && !presencaUpdate.parlamentarianUserId) {
+            void carregar();
+            return;
         }
-    }, [presencaUpdate]);
+        setPresenca((prev) => (prev ? aplicarUpdate(prev, presencaUpdate) : prev));
+    }, [presencaUpdate, carregar]);
 
     useEffect(() => {
         if (wsConectado) return;

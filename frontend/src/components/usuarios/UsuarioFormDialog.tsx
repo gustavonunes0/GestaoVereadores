@@ -10,7 +10,7 @@ import {
     type TenantStaffRole,
     type TenantStaffUser,
     type UpdateUsuarioInput,
-} from '../../api/usuarios.api';
+} from '../../api/user-manager.api';
 import { Dropdown } from '../ui';
 import { useAppToast } from '../../hooks/useAppToast';
 import { isValidCpf, normalizeCpf } from '../../utils/cpf';
@@ -19,6 +19,8 @@ const ROLE_OPTIONS: { label: string; value: TenantStaffRole }[] = [
     { label: 'Administrador', value: 'ADMIN_STAFF' },
     { label: 'Operador', value: 'STAFF' },
 ];
+
+const MIN_SENHA = 8;
 
 type Props =
     | {
@@ -57,17 +59,24 @@ export function UsuarioFormDialog(props: Props) {
         setEmail(props.usuario.email);
         setRole(props.usuario.role);
         setAtivo(props.usuario.ativo);
+        setPassword('');
+        setConfirmPassword('');
     }, [isEdit, props]);
 
     const cpfValid = isEdit || isValidCpf(cpf);
     const emailValid = isValidEmail(email);
-    const passwordValid = isEdit || password.length >= 8;
-    const passwordsMatch =
-        isEdit || (password.length > 0 && password === confirmPassword);
+    const passwordFilled = password.length > 0;
+    const passwordValid = isEdit
+        ? !passwordFilled || password.length >= MIN_SENHA
+        : password.length >= MIN_SENHA;
+    const passwordsMatch = isEdit
+        ? !passwordFilled || (password === confirmPassword && confirmPassword.length > 0)
+        : password.length > 0 && password === confirmPassword;
 
     const canSubmit = useMemo(() => {
         if (!nome.trim() || !emailValid) return false;
-        if (!isEdit && (!cpfValid || !passwordValid || !passwordsMatch)) return false;
+        if (!passwordValid || !passwordsMatch) return false;
+        if (!isEdit && !cpfValid) return false;
         return true;
     }, [
         nome,
@@ -87,6 +96,7 @@ export function UsuarioFormDialog(props: Props) {
                     nome: nome.trim(),
                     role,
                     ativo,
+                    ...(passwordFilled ? { password } : {}),
                 };
                 await usuariosApi.update(props.usuario.id, body);
                 showSuccess('Usuário atualizado com sucesso.');
@@ -166,7 +176,7 @@ export function UsuarioFormDialog(props: Props) {
                                     />
                                     {password && !passwordValid ? (
                                         <small className="p-error">
-                                            Mínimo de 8 caracteres
+                                            Mínimo de {MIN_SENHA} caracteres
                                         </small>
                                     ) : null}
                                 </div>
@@ -191,14 +201,57 @@ export function UsuarioFormDialog(props: Props) {
                                 </div>
                             </>
                         ) : (
-                            <div className="sigl-filtro-campo sigl-col-full">
-                                <label>CPF</label>
-                                <InputText
-                                    value={props.usuario.cpf}
-                                    readOnly
-                                    className="w-full"
-                                />
-                            </div>
+                            <>
+                                <div className="sigl-filtro-campo sigl-col-full">
+                                    <label>CPF</label>
+                                    <InputText
+                                        value={props.usuario.cpf}
+                                        readOnly
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="usr-senha-nova">Nova senha</label>
+                                    <Password
+                                        id="usr-senha-nova"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        toggleMask
+                                        feedback={false}
+                                        className={`w-full${passwordFilled && !passwordValid ? ' p-invalid' : ''}`}
+                                        inputClassName="w-full"
+                                        autoComplete="new-password"
+                                    />
+                                    <small className="text-color-secondary">
+                                        Deixe em branco para manter a senha atual.
+                                    </small>
+                                    {passwordFilled && !passwordValid ? (
+                                        <small className="p-error">
+                                            Mínimo de {MIN_SENHA} caracteres
+                                        </small>
+                                    ) : null}
+                                </div>
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="usr-confirm-nova">Confirmar nova senha</label>
+                                    <Password
+                                        id="usr-confirm-nova"
+                                        value={confirmPassword}
+                                        onChange={(e) =>
+                                            setConfirmPassword(e.target.value)
+                                        }
+                                        toggleMask
+                                        feedback={false}
+                                        className={`w-full${confirmPassword && !passwordsMatch ? ' p-invalid' : ''}`}
+                                        inputClassName="w-full"
+                                        autoComplete="new-password"
+                                    />
+                                    {confirmPassword && !passwordsMatch ? (
+                                        <small className="p-error">
+                                            As senhas não coincidem
+                                        </small>
+                                    ) : null}
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>

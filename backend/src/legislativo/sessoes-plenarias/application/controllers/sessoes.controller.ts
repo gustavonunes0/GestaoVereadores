@@ -756,14 +756,21 @@ export class SessoesController {
 
     @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/suspender')
-    suspenderSessaoHandler(
+    async suspenderSessaoHandler(
         @TenantId() tenantId: string,
         @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: SuspenderSessaoDto,
         @Req() req: Request,
     ) {
         const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
-        return this.suspenderSessao.execute(tenantId, id, dto, responsavelId);
+        const result = await this.suspenderSessao.execute(
+            tenantId,
+            id,
+            dto,
+            responsavelId,
+        );
+        this.realtimeGateway.emitSessaoSuspensa(tenantId, { sessaoId: id });
+        return result;
     }
 
     @UseGuards(PresidentOrStaffGuard)
@@ -782,14 +789,22 @@ export class SessoesController {
 
     @TenantRoles(...STAFF_AND_ABOVE)
     @Post(':id/cancelar')
-    cancelarSessaoHandler(
+    async cancelarSessaoHandler(
         @TenantId() tenantId: string,
         @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: CancelarSessaoDto,
         @Req() req: Request,
     ) {
         const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
-        return this.cancelarSessao.execute(tenantId, id, dto, responsavelId);
+        const result = await this.cancelarSessao.execute(
+            tenantId,
+            id,
+            dto,
+            responsavelId,
+        );
+        // Encerra transmissão/sala para todos os clientes conectados
+        this.realtimeGateway.emitSessaoCancelada(tenantId, { sessaoId: id });
+        return result;
     }
 
     @TenantRoles(...STAFF_AND_ABOVE, ...PARLIAMENTARIAN_ONLY)
@@ -1097,6 +1112,7 @@ export class SessoesController {
             parliamentarianId?: string | null;
             parlamentarId?: string | null;
             presente?: boolean;
+            situacao?: { value?: string } | string | null;
         },
         origem: 'APP' | 'STAFF',
     ) {
@@ -1107,12 +1123,23 @@ export class SessoesController {
         const quorum = await this.calcularQuorum.execute(tenantId, sessaoId);
         const presentes = quorum.quorumPresente;
         const ausentes = Math.max(0, quorum.totalMembros - presentes);
+        const situacaoRaw =
+            typeof presenca.situacao === 'string'
+                ? presenca.situacao
+                : presenca.situacao?.value;
+        const situacao =
+            situacaoRaw === 'PRESENTE' ||
+            situacaoRaw === 'AUSENTE' ||
+            situacaoRaw === 'JUSTIFICADO'
+                ? situacaoRaw
+                : undefined;
 
         this.realtimeGateway.emitPresencaAtualizada(tenantId, {
             sessaoId,
             parliamentarianId,
             parlamentarianUserId: parliamentarianId,
             presente: presenca.presente ?? true,
+            situacao,
             origem,
             presentes,
             ausentes,

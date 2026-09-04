@@ -631,6 +631,10 @@ async function main() {
         create: { tenantId: DEMO_TENANT_ID, number: 20, startDate: new Date('2025-01-01'), isCurrent: true },
     });
 
+    const legislature = await prisma.legislature.findUniqueOrThrow({
+        where: { tenantId_number: { tenantId: DEMO_TENANT_ID, number: 20 } },
+    });
+
     const sessaoLeg = await prisma.sessaoLegislativa.upsert({
         where: { legislaturaId_numero: { legislaturaId: legislatura.id, numero: 1 } },
         update: {},
@@ -665,30 +669,62 @@ async function main() {
         }
     }
 
-    // --- Vereadores demo ---
+    // --- Parlamentares demo (modelo atual) ---
     const vereadoresDemo = [
-        { cpf: '11111111111', nome: 'João da Silva Santos',   nomeParlamentar: 'João Silva',    partido: 'PT',   gabinete: '01', email: 'joao.silva@camara.teste' },
-        { cpf: '22222222222', nome: 'Maria Oliveira Costa',   nomeParlamentar: 'Maria Oliveira', partido: 'PSDB', gabinete: '02', email: 'maria.oliveira@camara.teste' },
-        { cpf: '33333333333', nome: 'Carlos Pereira Lima',    nomeParlamentar: 'Carlos Pereira', partido: 'MDB',  gabinete: '03', ativo: false },
+        { parliamentaryName: 'João Silva', officeNumber: '01', status: 'ACTIVE' as const, partyAcronym: 'PT' },
+        { parliamentaryName: 'Maria Oliveira', officeNumber: '02', status: 'ACTIVE' as const, partyAcronym: 'PSDB' },
+        { parliamentaryName: 'Carlos Pereira', officeNumber: '03', status: 'INACTIVE' as const, partyAcronym: 'MDB' },
     ];
 
     for (const v of vereadoresDemo) {
-        const pessoa = await prisma.pessoa.upsert({
-            where: { cpf: v.cpf },
-            update: { nome: v.nome, nomeParlamentar: v.nomeParlamentar, email: v.email ?? null },
-            create: { nome: v.nome, nomeParlamentar: v.nomeParlamentar, cpf: v.cpf, email: v.email ?? null },
+        let parliamentarian = await prisma.parliamentarian.findFirst({
+            where: {
+                tenantId: DEMO_TENANT_ID,
+                parliamentaryName: v.parliamentaryName,
+                isRemoved: false,
+            },
         });
 
-        const parlamentar = await prisma.parlamentar.upsert({
-            where: { pessoaId: pessoa.id },
-            update: { partido: v.partido, gabinete: v.gabinete, ativo: v.ativo ?? true },
-            create: { tenantId: DEMO_TENANT_ID, pessoaId: pessoa.id, partido: v.partido, gabinete: v.gabinete, ativo: v.ativo ?? true },
-        });
+        if (!parliamentarian) {
+            parliamentarian = await prisma.parliamentarian.create({
+                data: {
+                    tenantId: DEMO_TENANT_ID,
+                    parliamentaryName: v.parliamentaryName,
+                    officeNumber: v.officeNumber,
+                    status: v.status,
+                },
+            });
+        } else {
+            parliamentarian = await prisma.parliamentarian.update({
+                where: { id: parliamentarian.id },
+                data: {
+                    officeNumber: v.officeNumber,
+                    status: v.status,
+                },
+            });
+        }
 
-        await prisma.parlamentarMandato.upsert({
-            where: { parlamentarId_legislaturaId: { parlamentarId: parlamentar.id, legislaturaId: legislatura.id } },
-            update: { titular: true, ativo: true },
-            create: { parlamentarId: parlamentar.id, legislaturaId: legislatura.id, titular: true, dataPosse: new Date('2025-01-01'), ativo: true },
+        await prisma.parliamentarianMandate.upsert({
+            where: {
+                tenantId_parliamentarianId_legislatureId: {
+                    tenantId: DEMO_TENANT_ID,
+                    parliamentarianId: parliamentarian.id,
+                    legislatureId: legislature.id,
+                },
+            },
+            update: {
+                status: 'ACTIVE',
+                partyAcronym: v.partyAcronym,
+                isRemoved: false,
+            },
+            create: {
+                tenantId: DEMO_TENANT_ID,
+                parliamentarianId: parliamentarian.id,
+                legislatureId: legislature.id,
+                partyAcronym: v.partyAcronym,
+                startedAt: new Date('2025-01-01'),
+                status: 'ACTIVE',
+            },
         });
     }
 

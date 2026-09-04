@@ -429,7 +429,7 @@ Auth: `Authorization: Bearer {access_token}` em `localStorage`.
 | `legislative/agenda.api.ts` | `legislative/agenda-legislativa` |
 | `normas.api.ts` | `normas` |
 | `atos.api.ts` | `atos` |
-| `usuarios.api.ts` | `identidade/usuarios` |
+| `user-manager.api.ts` | `identidade/user-manager` |
 | `tenant-partners.api.ts` | `identidade/tenant-partners` |
 
 ---

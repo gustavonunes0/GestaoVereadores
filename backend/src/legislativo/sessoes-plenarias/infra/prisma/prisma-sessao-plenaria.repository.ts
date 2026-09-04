@@ -7,6 +7,7 @@ import {
 import {
     Prisma,
     CodigoSituacaoSessao,
+    MandateStatus,
     ResultadoPauta,
     StatusMateria,
     StatusSessao as PrismaStatusSessao,
@@ -108,8 +109,13 @@ const pautaItemInclude = {
 } as const;
 
 const presencaInclude = {
-    parlamentar: { include: { pessoa: true } },
-    parliamentarian: true,
+    parliamentarian: {
+        select: {
+            id: true,
+            parliamentaryName: true,
+            photoUrl: true,
+        },
+    },
 } as const;
 
 type LifecycleEntry = {
@@ -783,28 +789,54 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         });
     }
 
-    private async assertParlamentarMandatoAtivo(
-        parlamentarId: string,
-        legislaturaId?: string | null,
+    private async assertParliamentarianMandatoAtivo(
+        tenantId: string,
+        parliamentarianId: string,
+        legislatureId?: string | null,
     ) {
-        const where: Prisma.ParlamentarMandatoWhereInput = {
-            parlamentarId,
-            ativo: true,
+        const where: Prisma.ParliamentarianMandateWhereInput = {
+            tenantId,
+            parliamentarianId,
+            isRemoved: false,
+            status: MandateStatus.ACTIVE,
         };
-        if (legislaturaId) {
-            where.legislaturaId = legislaturaId;
+        if (legislatureId) {
+            where.legislatureId = legislatureId;
         }
 
-        const mandato = await this.prisma.parlamentarMandato.findFirst({
+        const mandato = await this.prisma.parliamentarianMandate.findFirst({
             where,
         });
         if (!mandato) {
             throw new BadRequestException(
-                legislaturaId
+                legislatureId
                     ? 'Parlamentar não possui mandato ativo na legislatura da sessão'
                     : 'Parlamentar não possui mandato ativo',
             );
         }
+    }
+
+    private async resolveLegislatureIdForSessao(
+        tenantId: string,
+        legislaturaNumero?: number | null,
+    ): Promise<string | null> {
+        if (legislaturaNumero != null) {
+            const byNumber = await this.prisma.legislature.findFirst({
+                where: {
+                    tenantId,
+                    number: legislaturaNumero,
+                    isRemoved: false,
+                },
+                select: { id: true },
+            });
+            if (byNumber) return byNumber.id;
+        }
+
+        const current = await this.prisma.legislature.findFirst({
+            where: { tenantId, isCurrent: true, isRemoved: false },
+            select: { id: true },
+        });
+        return current?.id ?? null;
     }
 
     async listPresencas(
@@ -816,7 +848,12 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
 
         const where: Prisma.PresencaSessaoWhereInput = { sessaoId };
         if (filters.situacao) where.situacao = filters.situacao;
-        if (filters.parlamentarId) where.parlamentarId = filters.parlamentarId;
+
+        const parliamentarianId =
+            filters.parliamentarianId ?? filters.parlamentarId;
+        if (parliamentarianId) {
+            where.parliamentarianId = parliamentarianId;
+        }
 
         return this.prisma.presencaSessao.findMany({
             where,
@@ -877,6 +914,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         assertSessaoNaoEncerrada(sessao.situacao, sessao.statusSessao as StatusSessao);
 
         let actor = dto;
+        // Dual remap temporário: cliente pode enviar parlamentarId com UUID de Parliamentarian
         if (!actor.parliamentarianId && actor.parlamentarId) {
             const asParliamentarian = await this.prisma.parliamentarian.findFirst({
                 where: {
@@ -895,67 +933,40 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             }
         }
 
-        if (actor.parliamentarianId) {
-            const parliamentarian = await this.prisma.parliamentarian.findFirst({
-                where: {
-                    id: actor.parliamentarianId,
-                    tenantId,
-                    isRemoved: false,
-                },
-            });
-            if (!parliamentarian) {
-                throw new NotFoundException('Parlamentar não encontrado');
-            }
-
-            await this.assertMandateIfProvided(tenantId, actor);
-
-            const existing = await this.prisma.presencaSessao.findUnique({
-                where: {
-                    sessaoId_parliamentarianId: {
-                        sessaoId,
-                        parliamentarianId: actor.parliamentarianId,
-                    },
-                },
-            });
-            assertPresencaNaoDuplicada(!!existing);
-
-            const campos = resolveCamposPresenca(actor);
-
-            return this.prisma.presencaSessao.create({
-                data: {
-                    sessaoId,
-                    parliamentarianId: actor.parliamentarianId,
-                    ...campos,
-                },
-                include: presencaInclude,
-            });
-        }
-
-        if (!actor.parlamentarId) {
+        const parliamentarianId = actor.parliamentarianId;
+        if (!parliamentarianId) {
             throw new BadRequestException(
-                'Informe parlamentarId ou parliamentarianId',
+                'Informe parliamentarianId (ou parlamentarId com UUID de Parliamentarian)',
             );
         }
 
-        const parlamentar = await this.prisma.parlamentar.findFirst({
-            where: { id: actor.parlamentarId, ...tenantWhere(tenantId) },
+        const parliamentarian = await this.prisma.parliamentarian.findFirst({
+            where: {
+                id: parliamentarianId,
+                tenantId,
+                isRemoved: false,
+            },
         });
-        if (!parlamentar) {
+        if (!parliamentarian) {
             throw new NotFoundException('Parlamentar não encontrado');
         }
 
-        const legislaturaId = sessao.sessaoLegislativa?.legislaturaId ?? null;
-        await this.assertParlamentarMandatoAtivo(
-            actor.parlamentarId,
-            legislaturaId,
+        const legislatureId = await this.resolveLegislatureIdForSessao(
+            tenantId,
+            sessao.sessaoLegislativa?.legislatura?.numero ?? null,
+        );
+        await this.assertParliamentarianMandatoAtivo(
+            tenantId,
+            parliamentarianId,
+            legislatureId,
         );
         await this.assertMandateIfProvided(tenantId, actor);
 
         const existing = await this.prisma.presencaSessao.findUnique({
             where: {
-                sessaoId_parlamentarId: {
+                sessaoId_parliamentarianId: {
                     sessaoId,
-                    parlamentarId: actor.parlamentarId,
+                    parliamentarianId,
                 },
             },
         });
@@ -966,7 +977,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         return this.prisma.presencaSessao.create({
             data: {
                 sessaoId,
-                parlamentarId: actor.parlamentarId,
+                parliamentarianId,
                 ...campos,
             },
             include: presencaInclude,
@@ -1105,12 +1116,18 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             };
         }
 
-        const legislaturaId = sessao.sessaoLegislativa?.legislaturaId;
-        const totalParlamentares = await this.prisma.parlamentarMandato.count({
+        const legislatureId = await this.resolveLegislatureIdForSessao(
+            tenantId,
+            sessao.sessaoLegislativa?.legislatura?.numero ?? null,
+        );
+
+        const totalParlamentares = await this.prisma.parliamentarianMandate.count({
             where: {
-                ativo: true,
-                parlamentar: { tenantId },
-                ...(legislaturaId ? { legislaturaId } : {}),
+                tenantId,
+                isRemoved: false,
+                status: MandateStatus.ACTIVE,
+                parliamentarian: { isRemoved: false },
+                ...(legislatureId ? { legislatureId } : {}),
             },
         });
 

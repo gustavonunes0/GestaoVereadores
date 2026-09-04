@@ -72,14 +72,12 @@ export type PautaItemPrismaPayload = {
         abstencoes?: number;
         votos?: {
             id: string;
-            parlamentarId: string;
+            parlamentarId?: string | null;
+            parliamentarianId?: string | null;
             voto: string;
-            parlamentar?: {
+            parliamentarian?: {
                 id: string;
-                pessoa?: {
-                    nome?: string | null;
-                    nomeParlamentar?: string | null;
-                } | null;
+                parliamentaryName: string;
             } | null;
         }[];
     } | null;
@@ -162,12 +160,14 @@ export class PautaItemViewModel {
                       abstencoes: data.votacao.abstencoes,
                       votos: data.votacao.votos?.map((v) => ({
                           id: v.id,
-                          parlamentarId: v.parlamentarId,
+                          parlamentarId: v.parlamentarId ?? null,
+                          parliamentarianId: v.parliamentarianId ?? null,
                           voto: v.voto,
-                          parlamentar: v.parlamentar
+                          parlamentar: null,
+                          parliamentarian: v.parliamentarian
                               ? {
-                                    id: v.parlamentar.id,
-                                    pessoa: v.parlamentar.pessoa ?? null,
+                                    id: v.parliamentarian.id,
+                                    nome: v.parliamentarian.parliamentaryName,
                                 }
                               : null,
                       })),

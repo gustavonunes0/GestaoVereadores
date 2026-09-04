@@ -7,6 +7,7 @@ import { pautaItemRotulo, votacaoJaEncerradaNoItem } from '../types/sessoes';
 import { resolveSocketBaseUrl } from '../utils/socketUrl';
 
 export interface PresencaUpdate {
+    sessaoId?: string;
     parliamentarianId?: string;
     parlamentarianUserId: string;
     presente: boolean;
@@ -14,10 +15,13 @@ export interface PresencaUpdate {
     presentes: number;
     ausentes: number;
     temQuorum: boolean;
+    situacao?: 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO';
 }
 
+export type MotivoEncerrarTransmissao = 'cancelada' | 'suspensa';
+
 function normalizeVotacaoAberta(
-    data: Partial<VotacaoAbertaEvent> & Record<string, unknown>,
+    data: PartialVotacaoAberta & Record<string, unknown>,
     sessaoId: string,
 ): VotacaoAbertaEvent | null {
     const eventSessaoId = (data.sessaoId as string | undefined) ?? sessaoId;
@@ -40,6 +44,8 @@ function normalizeVotacaoAberta(
         aceitaVotoIndividual: Boolean(data.aceitaVotoIndividual ?? data.tipoVotacao === 'NOMINAL'),
     };
 }
+
+type PartialVotacaoAberta = Partial<VotacaoAbertaEvent>;
 
 export function mapPautaItemVotacaoAberta(
     sessaoId: string,
@@ -69,6 +75,8 @@ export function useSessaoRealtime(sessaoId: string) {
     const [votacaoEncerrada, setVotacaoEncerrada] = useState<VotacaoEncerradaEvent | null>(null);
     const [wsConectado, setWsConectado] = useState(false);
     const [presencaUpdate, setPresencaUpdate] = useState<PresencaUpdate | null>(null);
+    const [encerrarTransmissao, setEncerrarTransmissao] =
+        useState<MotivoEncerrarTransmissao | null>(null);
 
     const syncVotacaoFromPauta = useCallback(async () => {
         if (!sessaoId) return;
@@ -99,6 +107,7 @@ export function useSessaoRealtime(sessaoId: string) {
 
     useEffect(() => {
         if (!sessaoId) return;
+        setEncerrarTransmissao(null);
 
         const token = localStorage.getItem('access_token');
         const socketBase = resolveSocketBaseUrl();
@@ -109,7 +118,7 @@ export function useSessaoRealtime(sessaoId: string) {
             transports: ['websocket', 'polling'],
         });
 
-        const handleVotacaoAberta = (data: Partial<VotacaoAbertaEvent> & Record<string, unknown>) => {
+        const handleVotacaoAberta = (data: PartialVotacaoAberta & Record<string, unknown>) => {
             const normalized = normalizeVotacaoAberta(data, sessaoId);
             if (normalized) {
                 setVotacaoAberta(normalized);
@@ -117,6 +126,9 @@ export function useSessaoRealtime(sessaoId: string) {
                 setVotacaoEncerrada(null);
             }
         };
+
+        const matchSessao = (data: { sessaoId?: string }) =>
+            !data?.sessaoId || data.sessaoId === sessaoId;
 
         socket.on('connect', () => setWsConectado(true));
         socket.on('disconnect', () => setWsConectado(false));
@@ -134,7 +146,18 @@ export function useSessaoRealtime(sessaoId: string) {
             void syncRef.current();
         });
         socket.on('sessao:encerrada', () => setFaseAtual('ENCERRADA'));
-        socket.on('presenca:atualizada', (data: PresencaUpdate) => setPresencaUpdate(data));
+        socket.on('sessao:cancelada', (data: { sessaoId?: string }) => {
+            if (!matchSessao(data)) return;
+            setEncerrarTransmissao('cancelada');
+        });
+        socket.on('sessao:suspensa', (data: { sessaoId?: string }) => {
+            if (!matchSessao(data)) return;
+            setEncerrarTransmissao('suspensa');
+        });
+        socket.on('presenca:atualizada', (data: PresencaUpdate) => {
+            if (data.sessaoId && data.sessaoId !== sessaoId) return;
+            setPresencaUpdate({ ...data });
+        });
 
         return () => {
             socket.disconnect();
@@ -148,7 +171,9 @@ export function useSessaoRealtime(sessaoId: string) {
         placar,
         wsConectado,
         presencaUpdate,
+        encerrarTransmissao,
         syncVotacaoFromPauta,
         limparVotacaoEncerrada: () => setVotacaoEncerrada(null),
+        limparEncerrarTransmissao: () => setEncerrarTransmissao(null),
     };
 }

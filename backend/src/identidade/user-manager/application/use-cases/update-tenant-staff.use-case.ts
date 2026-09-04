@@ -1,10 +1,13 @@
 import {
+    Inject,
     Injectable,
     NotFoundException,
     UnprocessableEntityException,
 } from '@nestjs/common';
 import { TenantUserRole, TenantUserStatus } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { PasswordHasher } from '../../../users/application/contracts/password-hasher';
+import { PASSWORD_HASHER } from '../../../users/users.tokens';
 import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 import { TenantStaffViewModel } from '../view-models/tenant-staff.view-model';
 import { StaffUserNameService } from '../../domain/staff-user-name.service';
@@ -13,7 +16,11 @@ import { StaffUserNameService } from '../../domain/staff-user-name.service';
 export class UpdateTenantStaffUseCase {
     private readonly nameService = new StaffUserNameService();
 
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        @Inject(PASSWORD_HASHER)
+        private readonly passwordHasher: PasswordHasher,
+    ) {}
 
     async execute(tenantId: string, id: string, dto: UpdateUsuarioDto) {
         const existing = await this.prisma.tenantUser.findFirst({
@@ -41,13 +48,25 @@ export class UpdateTenantStaffUseCase {
             throw new NotFoundException('Usuário não encontrado nesta câmara');
         }
 
-        if (dto.nome) {
-            const { firstName, lastName } = this.nameService.splitDisplayName(
-                dto.nome,
-            );
+        const passwordHash = dto.password
+            ? await this.passwordHasher.hash(dto.password)
+            : undefined;
+
+        if (dto.nome || passwordHash) {
+            const nameParts = dto.nome
+                ? this.nameService.splitDisplayName(dto.nome)
+                : null;
             await this.prisma.user.update({
                 where: { id: existing.userId },
-                data: { firstName, lastName },
+                data: {
+                    ...(nameParts
+                        ? {
+                              firstName: nameParts.firstName,
+                              lastName: nameParts.lastName,
+                          }
+                        : {}),
+                    ...(passwordHash ? { passwordHash } : {}),
+                },
             });
         }
 

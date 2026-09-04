@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
+import { Password } from 'primereact/password';
 import { RadioButton } from 'primereact/radiobutton';
 import { apiList } from '../../api/client';
 import { API_PATHS } from '../../api/paths';
@@ -18,6 +19,8 @@ import {
     PARLAMENTAR_PHOTO_ACCEPT,
     resolveParlamentarPhotoUrl,
 } from './parlamentar-photo';
+
+const MIN_SENHA = 8;
 
 type Partido = { id: string; name: string; acronym: string };
 type Legislatura = {
@@ -89,6 +92,8 @@ export function ParlamentarEditDialog({
     const [statusAcesso, setStatusAcesso] = useState<ParliamentarianUserStatus>(
         wasAccessActive ? 'ACTIVE' : 'INACTIVE',
     );
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     useEffect(() => {
         apiList<Legislatura>(API_PATHS.legislaturas, { limit: 50 })
@@ -101,6 +106,10 @@ export function ParlamentarEditDialog({
     }, []);
 
     const nomeValido = parliamentaryName.trim().length >= 3;
+    const passwordFilled = password.length > 0;
+    const passwordValid = !passwordFilled || password.length >= MIN_SENHA;
+    const passwordsMatch =
+        !passwordFilled || (password === confirmPassword && confirmPassword.length > 0);
 
     const legislaturaOptions = useMemo(
         () => legislaturas.map((l) => ({ label: `Legislatura ${l.number}`, value: l.id })),
@@ -128,7 +137,7 @@ export function ParlamentarEditDialog({
     };
 
     async function handleSubmit() {
-        if (!nomeValido) return;
+        if (!nomeValido || !passwordValid || !passwordsMatch) return;
         setSaving(true);
         try {
             const photoUrl = await resolveParlamentarPhotoUrl(
@@ -136,7 +145,7 @@ export function ParlamentarEditDialog({
                 parlamentar.photoUrl,
             );
 
-            await parlamentaresApi.update(parlamentarianId, {
+            await parlamentaresApi.update(parliamentarianId, {
                 parliamentaryName: parliamentaryName.trim(),
                 officeNumber: officeNumber.trim() || undefined,
                 ...(parlamentar.user
@@ -145,6 +154,7 @@ export function ParlamentarEditDialog({
                 ...(photoUrl !== undefined
                     ? { photoUrl: photoUrl === null ? '' : photoUrl }
                     : {}),
+                ...(passwordFilled && parlamentar.user ? { password } : {}),
             });
 
             if (parlamentar.user) {
@@ -173,7 +183,7 @@ export function ParlamentarEditDialog({
                 label="Salvar"
                 icon="pi pi-check"
                 loading={saving}
-                disabled={!nomeValido}
+                disabled={!nomeValido || !passwordValid || !passwordsMatch}
                 onClick={() => void handleSubmit()}
             />
         </div>
@@ -217,6 +227,43 @@ export function ParlamentarEditDialog({
                                 <small className="text-color-secondary">
                                     CPF e e-mail não podem ser alterados nesta tela.
                                 </small>
+                            </div>
+                            <div className="sigl-filtro-campo">
+                                <label htmlFor="pe-senha-nova">Nova senha</label>
+                                <Password
+                                    id="pe-senha-nova"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    toggleMask
+                                    feedback={false}
+                                    className={`w-full${passwordFilled && !passwordValid ? ' p-invalid' : ''}`}
+                                    inputClassName="w-full"
+                                    autoComplete="new-password"
+                                />
+                                <small className="text-color-secondary">
+                                    Deixe em branco para manter a senha atual.
+                                </small>
+                                {passwordFilled && !passwordValid ? (
+                                    <small className="p-error">
+                                        Mínimo de {MIN_SENHA} caracteres
+                                    </small>
+                                ) : null}
+                            </div>
+                            <div className="sigl-filtro-campo">
+                                <label htmlFor="pe-senha-confirm">Confirmar nova senha</label>
+                                <Password
+                                    id="pe-senha-confirm"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    toggleMask
+                                    feedback={false}
+                                    className={`w-full${confirmPassword && !passwordsMatch ? ' p-invalid' : ''}`}
+                                    inputClassName="w-full"
+                                    autoComplete="new-password"
+                                />
+                                {confirmPassword && !passwordsMatch ? (
+                                    <small className="p-error">As senhas não coincidem</small>
+                                ) : null}
                             </div>
                         </div>
                     ) : (

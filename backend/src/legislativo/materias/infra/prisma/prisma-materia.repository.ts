@@ -77,44 +77,6 @@ export class PrismaMateriaRepository implements MateriaRepository {
         return lista as Prisma.InputJsonValue;
     }
 
-    private async assertParlamentaresDoTenant(
-        tenantId: string,
-        parlamentarIds: string[],
-    ) {
-        const count = await this.prisma.parlamentar.count({
-            where: {
-                id: { in: parlamentarIds },
-                ...tenantWhere(tenantId),
-            },
-        });
-        if (count !== parlamentarIds.length) {
-            throw new BadRequestException(
-                'Um ou mais representantes não pertencem a esta câmara',
-            );
-        }
-    }
-
-    private async syncRepresentantes(
-        tenantId: string,
-        materiaId: string,
-        representanteIds?: string[],
-    ) {
-        if (representanteIds === undefined) return;
-        await this.prisma.materiaRepresentante.deleteMany({
-            where: { materiaId },
-        });
-        if (!representanteIds.length) return;
-
-        await this.assertParlamentaresDoTenant(tenantId, representanteIds);
-        await this.prisma.materiaRepresentante.createMany({
-            data: representanteIds.map((parlamentarId, index) => ({
-                materiaId,
-                parlamentarId,
-                ordem: index + 1,
-            })),
-        });
-    }
-
     private async assertParliamentarianOfTenant(
         tenantId: string,
         parliamentarianId: string,
@@ -331,18 +293,19 @@ export class PrismaMateriaRepository implements MateriaRepository {
             dataApresentacaoFim: _df,
             status: _status,
             emTramitacao: _em,
-            representanteIds,
+            representanteIds: _representanteIds,
             coautorIds: _coautorIds,
             coautores: _coautores,
             relatoresIds: _relatoresIds,
             tenantPartnerId: _tenantPartnerId,
             authorParliamentarianId: _authorParliamentarianId,
+            primeiroAutorId: _primeiroAutorId,
+            relatorId: _relatorId,
             ...rest
         } = dto;
         const { dataApresentacaoInicio, dataApresentacaoFim } =
             this.mapPresentationDates(dto);
 
-        const primeiroAutorId = representanteIds?.[0] ?? rest.primeiroAutorId;
         const dataProtocolo = rest.dataProtocolo
             ? new Date(rest.dataProtocolo)
             : undefined;
@@ -359,7 +322,6 @@ export class PrismaMateriaRepository implements MateriaRepository {
                 ...matterFields,
                 ...(numeroProtocolo != null ? { numeroProtocolo } : {}),
                 dataProtocolo,
-                primeiroAutorId,
                 tenantId,
                 dataApresentacaoInicio,
                 dataApresentacaoFim,
@@ -373,7 +335,6 @@ export class PrismaMateriaRepository implements MateriaRepository {
             },
         });
 
-        await this.syncRepresentantes(tenantId, materia.id, representanteIds);
         return this.findOne(tenantId, materia.id);
     }
 
@@ -383,7 +344,9 @@ export class PrismaMateriaRepository implements MateriaRepository {
         if (filters.anoId) where.anoId = filters.anoId;
         if (filters.tematicaId) where.tematicaId = filters.tematicaId;
         if (filters.autorId) where.autorId = filters.autorId;
-        if (filters.relatorId) where.relatorId = filters.relatorId;
+        if (filters.relatorId) {
+            where.rapporteurParliamentarianId = filters.relatorId;
+        }
         if (filters.statusTramitacaoId) {
             where.statusTramitacaoId = filters.statusTramitacaoId;
         }
@@ -452,22 +415,18 @@ export class PrismaMateriaRepository implements MateriaRepository {
             dataApresentacaoFim: _df,
             status: _status,
             emTramitacao: _em,
-            representanteIds,
+            representanteIds: _representanteIds,
             coautorIds,
             coautores,
             relatoresIds: _relatoresIds,
             tenantPartnerId: _tenantPartnerId,
             authorParliamentarianId: _authorParliamentarianId,
+            primeiroAutorId: _primeiroAutorId,
+            relatorId: _relatorId,
             ...rest
         } = dto;
         const { dataApresentacaoInicio, dataApresentacaoFim } =
             this.mapPresentationDates(dto);
-
-        let primeiroAutorId = rest.primeiroAutorId;
-        if (representanteIds !== undefined) {
-            primeiroAutorId =
-                representanteIds.length > 0 ? representanteIds[0] : undefined;
-        }
 
         if (dto.status !== undefined || dto.emTramitacao !== undefined) {
             throw new BadRequestException(
@@ -479,13 +438,11 @@ export class PrismaMateriaRepository implements MateriaRepository {
             where: { id },
             data: {
                 ...rest,
-                primeiroAutorId,
                 dataApresentacaoInicio,
                 dataApresentacaoFim,
             },
         });
 
-        await this.syncRepresentantes(tenantId, id, representanteIds);
         const coautoresSync =
             coautores !== undefined
                 ? coautores.map((item) => ({

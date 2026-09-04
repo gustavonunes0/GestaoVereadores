@@ -16,23 +16,18 @@ export type PresencaSessaoPrismaPayload = {
     autoRegistrado: boolean;
     registradoEm: Date | null;
     createdAt: Date;
-    parlamentar?: {
-        id: string;
-        ativo: boolean;
-        pessoa?: {
-            nome?: string | null;
-            nomeParlamentar?: string | null;
-        } | null;
-    } | null;
     parliamentarian?: {
         id: string;
         parliamentaryName: string;
+        photoUrl?: string | null;
     } | null;
 };
 
 export class PresencaSessaoViewModel {
     static toHttp(data: PresencaSessaoPrismaPayload) {
         const situacao = data.situacao as AttendanceStatus;
+        const nome =
+            data.parliamentarian?.parliamentaryName ?? null;
         return {
             id: data.id,
             sessaoId: data.sessaoId,
@@ -42,18 +37,17 @@ export class PresencaSessaoViewModel {
                 ? {
                       id: data.parliamentarian.id,
                       parliamentaryName: data.parliamentarian.parliamentaryName,
+                      photoUrl: data.parliamentarian.photoUrl ?? null,
                   }
                 : null,
             autoRegistrado: data.autoRegistrado,
             registradoEm: data.registradoEm?.toISOString() ?? null,
-            parlamentar: data.parlamentar
+            // Shape legado mantido para clientes antigos — nome vem de Parliamentarian
+            parlamentar: data.parliamentarian
                 ? {
-                      id: data.parlamentar.id,
-                      nome:
-                          data.parlamentar.pessoa?.nomeParlamentar ??
-                          data.parlamentar.pessoa?.nome ??
-                          null,
-                      ativo: data.parlamentar.ativo,
+                      id: data.parliamentarian.id,
+                      nome,
+                      ativo: true,
                   }
                 : null,
             presente: data.presente,

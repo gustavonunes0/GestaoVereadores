@@ -7,6 +7,20 @@ import {
     buildPoliticalPartyRepositoryMock,
 } from './__tests__/parliamentarian-test.helpers';
 
+function buildUserRepositoryMock() {
+    return {
+        findById: jest.fn(),
+        update: jest.fn(),
+    };
+}
+
+function buildPasswordHasherMock() {
+    return {
+        hash: jest.fn().mockResolvedValue('hashed'),
+        compare: jest.fn(),
+    };
+}
+
 describe('UpdateParliamentarianUseCase', () => {
     it('atualiza parlamentar existente', async () => {
         const repository = buildParliamentarianRepositoryMock();
@@ -20,6 +34,8 @@ describe('UpdateParliamentarianUseCase', () => {
             repository as never,
             buildParlamentarianUserRepositoryMock() as never,
             buildPoliticalPartyRepositoryMock() as never,
+            buildUserRepositoryMock() as never,
+            buildPasswordHasherMock() as never,
         );
         const result = await useCase.execute('tenant-1', 'parl-1', {
             parliamentaryName: 'Novo Nome',
@@ -37,6 +53,8 @@ describe('UpdateParliamentarianUseCase', () => {
             repository as never,
             buildParlamentarianUserRepositoryMock() as never,
             buildPoliticalPartyRepositoryMock() as never,
+            buildUserRepositoryMock() as never,
+            buildPasswordHasherMock() as never,
         );
 
         await expect(

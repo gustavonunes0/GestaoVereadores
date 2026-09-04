@@ -186,17 +186,25 @@ describe('MatterViewModel', () => {
 
         const http = MatterViewModel.toHttp({
             ...materiaBase,
-            autorId: 'autor-1',
-            autor: { id: 'autor-1', nome: 'Executivo' },
-            relator: {
+            autorId: null,
+            authorParliamentarian: {
                 id: 'parl-1',
-                pessoa: { nomeParlamentar: 'Relator Teste' },
+                parliamentaryName: 'Autor Teste',
+                officeNumber: '01',
             },
-            coautores: [
+            rapporteurParliamentarian: {
+                id: 'parl-2',
+                parliamentaryName: 'Relator Teste',
+                officeNumber: null,
+            },
+            matterCoauthors: [
                 {
-                    parlamentar: {
-                        id: 'parl-2',
-                        pessoa: { nomeParlamentar: 'Coautor' },
+                    id: 'co-1',
+                    ordem: 1,
+                    parliamentarian: {
+                        id: 'parl-3',
+                        parliamentaryName: 'Coautor',
+                        officeNumber: null,
                     },
                 },
             ],
@@ -204,9 +212,9 @@ describe('MatterViewModel', () => {
             normas: [],
         });
 
-        expect(http.autor?.nome).toBe('Executivo');
+        expect(http.autor?.nome).toBe('Autor Teste');
         expect(http.relator?.nome).toBe('Relator Teste');
-        expect(http.coautores).toHaveLength(1);
+        expect(http.authorship.coauthors).toHaveLength(1);
         expect(http.workflow.capabilities.canEnterAgenda).toBe(true);
     });
 });

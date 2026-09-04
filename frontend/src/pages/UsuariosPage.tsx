@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
-import { usuariosApi, type TenantStaffUser } from '../api/usuarios.api';
+import { usuariosApi, type TenantStaffUser } from '../api/user-manager.api';
 import { MODULE_ICONS } from '../app/navigation';
 import { DataTableLayout } from '../components/common/DataTableLayout';
 import { PageHeader } from '../components/PageHeader';

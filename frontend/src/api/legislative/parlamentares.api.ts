@@ -120,6 +120,7 @@ export type UpdateParliamentarianInput = {
     biography?: string;
     politicalPartyId?: string | null;
     status?: string;
+    password?: string;
 };
 
 export const parlamentaresApi = {

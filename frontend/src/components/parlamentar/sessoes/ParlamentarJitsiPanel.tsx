@@ -1,20 +1,30 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import { sessoesApi } from '../../../api/legislative/sessoes.api';
 import { useAppToast } from '../../../hooks/useAppToast';
+import type { MotivoEncerrarTransmissao } from '../../../hooks/useSessaoRealtime';
 import type { JitsiTokenData, SessaoPlenariaDetalhe } from '../../../types/sessoes';
+import { sessaoPermiteTransmissao } from '../../../types/sessoes';
 import { JitsiMeetingEmbed } from '../../sessoes/transmissao/JitsiMeetingEmbed';
 import { StatusConexaoJitsi } from '../../sessoes/transmissao/StatusConexaoJitsi';
 
 interface Props {
     sessao: SessaoPlenariaDetalhe;
     userName: string;
+    encerrarTransmissao?: MotivoEncerrarTransmissao | null;
+    onEncerrarTransmissaoConsumido?: () => void;
 }
 
-export function ParlamentarJitsiPanel({ sessao, userName }: Props) {
+export function ParlamentarJitsiPanel({
+    sessao,
+    userName,
+    encerrarTransmissao = null,
+    onEncerrarTransmissaoConsumido,
+}: Props) {
     const { showToast } = useAppToast();
     const jitsiContainerRef = useRef<HTMLDivElement>(null);
     const externalApiRef = useRef<unknown>(null);
+    const avisouEncerrarRef = useRef(false);
 
     const [conectando, setConectando] = useState(false);
     const [conectado, setConectado] = useState(false);
@@ -22,6 +32,7 @@ export function ParlamentarJitsiPanel({ sessao, userName }: Props) {
     const [jitsiData, setJitsiData] = useState<JitsiTokenData | null>(null);
 
     const roomName = jitsiData?.roomName ?? `sessao-${sessao.id.slice(0, 8)}`;
+    const podeEntrar = sessaoPermiteTransmissao(sessao.statusSessao);
 
     const sairDaSala = useCallback(() => {
         setJitsiData(null);
@@ -30,9 +41,55 @@ export function ParlamentarJitsiPanel({ sessao, userName }: Props) {
         externalApiRef.current = null;
     }, []);
 
+    useEffect(() => {
+        const motivoStatus =
+            sessao.statusSessao === 'CANCELADA'
+                ? ('cancelada' as const)
+                : sessao.statusSessao === 'SUSPENSA'
+                  ? ('suspensa' as const)
+                  : null;
+        const motivo = encerrarTransmissao ?? motivoStatus;
+        if (!motivo) {
+            avisouEncerrarRef.current = false;
+            return;
+        }
+        if (!jitsiData) {
+            onEncerrarTransmissaoConsumido?.();
+            return;
+        }
+        sairDaSala();
+        if (!avisouEncerrarRef.current) {
+            avisouEncerrarRef.current = true;
+            showToast(
+                'warn',
+                'Videoconferência encerrada',
+                motivo === 'cancelada'
+                    ? 'A sessão foi cancelada.'
+                    : 'A sessão foi suspensa.',
+            );
+        }
+        onEncerrarTransmissaoConsumido?.();
+    }, [
+        encerrarTransmissao,
+        jitsiData,
+        onEncerrarTransmissaoConsumido,
+        sairDaSala,
+        sessao.statusSessao,
+        showToast,
+    ]);
+
     const entrarNaSala = useCallback(async () => {
         if (jitsiData) {
             sairDaSala();
+            return;
+        }
+
+        if (!podeEntrar) {
+            showToast(
+                'warn',
+                'Sala indisponível',
+                'A videoconferência só está disponível com a sessão agendada ou aberta.',
+            );
             return;
         }
 
@@ -47,7 +104,7 @@ export function ParlamentarJitsiPanel({ sessao, userName }: Props) {
         } finally {
             setConectando(false);
         }
-    }, [jitsiData, sairDaSala, sessao.id, showToast]);
+    }, [jitsiData, podeEntrar, sairDaSala, sessao.id, showToast]);
 
     const handleApiReady = useCallback((api: unknown) => {
         externalApiRef.current = api;
@@ -83,6 +140,7 @@ export function ParlamentarJitsiPanel({ sessao, userName }: Props) {
                     icon={jitsiData ? 'pi pi-sign-out' : 'pi pi-video'}
                     severity={jitsiData ? 'secondary' : undefined}
                     loading={conectando}
+                    disabled={!jitsiData && !podeEntrar}
                     onClick={() => void entrarNaSala()}
                 />
             </div>
@@ -110,10 +168,15 @@ export function ParlamentarJitsiPanel({ sessao, userName }: Props) {
                     <div className="transmissao-jitsi-hint">
                         <i className="pi pi-video" aria-hidden />
                         <div>
-                            <strong>Videoconferência da sessão</strong>
+                            <strong>
+                                {sessao.statusSessao === 'SUSPENSA'
+                                    ? 'Sessão suspensa'
+                                    : 'Videoconferência da sessão'}
+                            </strong>
                             <p className="m-0 mt-1 text-sm text-color-secondary">
-                                Clique em <strong>Entrar na videoconferência</strong> para abrir a sala Jitsi
-                                e participar com câmera e microfone.
+                                {sessao.statusSessao === 'SUSPENSA'
+                                    ? 'A sala foi fechada. Aguarde a retomada da sessão.'
+                                    : 'Clique em Entrar na videoconferência para abrir a sala Jitsi.'}
                             </p>
                         </div>
                     </div>

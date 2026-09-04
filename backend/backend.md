@@ -130,7 +130,7 @@ Guards adicionais por contexto:
 | Users (legado) | `users.controller` | `/api/users` |
 | Tenants | `tenants.controller` | `/api/tenants` |
 | Tenant Users | `tenant-users.controller` | `/api/tenant-users` |
-| Usuários staff | `usuarios.controller` | `/api/identidade/usuarios` |
+| Usuários staff | `user-manager.controller` | `/api/identidade/user-manager` |
 | **Tenant Partners** | `tenant-partners.controller` | `/api/identidade/tenant-partners` |
 
 #### Tenant Partner (instituições parceiras / autores externos)

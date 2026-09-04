@@ -21,9 +21,14 @@ export class FilterPresencaDto {
     @IsEnum(SituacaoPresenca)
     situacao?: SituacaoPresenca;
 
+    /** @deprecated use parliamentarianId */
     @IsOptional()
     @IsUUID()
     parlamentarId?: string;
+
+    @IsOptional()
+    @IsUUID()
+    parliamentarianId?: string;
 }
 
 export { RegistrarPresencaDto };

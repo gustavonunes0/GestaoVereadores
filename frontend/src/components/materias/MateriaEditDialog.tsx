@@ -32,7 +32,7 @@ import {
     validateCoautores,
 } from '../../utils/autorMateria';
 import {
-    formatNumeroAnoInput,
+    composeNumeroAnoMateria,
     formatarIdentificacao,
     parseNumeroAnoMateria,
 } from '../../utils/materiaIdentificacao';
@@ -62,9 +62,13 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     const isProtocolada = resolvedStatus === 'PROTOCOLADA';
     const canEditConteudo = isRascunho || isProtocolada;
 
-    const [numeroAno, setNumeroAno] = useState(() =>
-        formatNumeroAnoInput(materia.numero, resolveMateriaAno(materia)),
+    const [numeroMateria, setNumeroMateria] = useState(() =>
+        materia.numero != null && materia.numero !== '' ? String(materia.numero) : '',
     );
+    const [anoLegislatura, setAnoLegislatura] = useState(() => {
+        const ano = resolveMateriaAno(materia);
+        return ano != null ? String(ano) : '';
+    });
     const [ementa, setEmenta] = useState(materia.ementa);
     const [justificativa, setJustificativa] = useState('');
     const [dataProtocolo, setDataProtocolo] = useState<Date | null>(
@@ -128,7 +132,9 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
         }
     }
 
+    const numeroAno = composeNumeroAnoMateria(numeroMateria, anoLegislatura);
     const numeroAnoParsed = parseNumeroAnoMateria(numeroAno);
+    const camposPreenchidos = Boolean(numeroMateria.trim() || anoLegislatura.trim());
     const previewIdentificacao = formatarIdentificacao({
         tipo: materia.tipo,
         sigla: materia.sigla,
@@ -137,7 +143,7 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     });
 
     const numeroAnoHint =
-        isRascunho && numeroAno.trim() && !numeroAnoParsed.ok
+        isRascunho && camposPreenchidos && !numeroAnoParsed.ok
             ? numeroAnoParsed.message
             : null;
 
@@ -296,36 +302,56 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                             <label>Tipo de Matéria</label>
                             <p className="materia-form-readonly-value">{materia.tipo.nome}</p>
                         </div>
-                        <div className="materia-form-field">
-                            <label>Número / Ano {isRascunho ? '*' : ''}</label>
-                            {isRascunho ? (
-                                <>
+                        {isRascunho ? (
+                            <>
+                                <div className="materia-form-field">
+                                    <label htmlFor="edit-numero">Nº da matéria *</label>
                                     <InputText
-                                        id="edit-numero-ano"
-                                        value={numeroAno}
-                                        onChange={(e) => setNumeroAno(e.target.value)}
-                                        placeholder="Ex: 85/2026"
+                                        id="edit-numero"
+                                        value={numeroMateria}
+                                        onChange={(e) =>
+                                            setNumeroMateria(e.target.value.replace(/\D/g, ''))
+                                        }
+                                        placeholder="Ex: 85"
+                                        inputMode="numeric"
                                         className="w-full"
                                     />
-                                    {numeroAnoHint ? (
-                                        <span
-                                            className="materia-form-hint"
-                                            style={{ color: 'var(--danger, #ef4444)' }}
-                                        >
-                                            {numeroAnoHint}
-                                        </span>
-                                    ) : (
-                                        <span className="materia-form-hint">
-                                            Informe número e ano separados por barra.
-                                        </span>
-                                    )}
-                                </>
-                            ) : (
+                                </div>
+                                <div className="materia-form-field">
+                                    <label htmlFor="edit-ano">Ano da legislatura *</label>
+                                    <InputText
+                                        id="edit-ano"
+                                        value={anoLegislatura}
+                                        onChange={(e) =>
+                                            setAnoLegislatura(
+                                                e.target.value.replace(/\D/g, '').slice(0, 4),
+                                            )
+                                        }
+                                        placeholder="Ex: 2026"
+                                        inputMode="numeric"
+                                        maxLength={4}
+                                        className="w-full"
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <div className="materia-form-field">
+                                <label>Número / Ano</label>
                                 <p className="materia-form-readonly-value">
                                     {resolveMateriaNumeroAno(materia)}
                                 </p>
-                            )}
-                        </div>
+                            </div>
+                        )}
+                    </div>
+                    {isRascunho && numeroAnoHint ? (
+                        <span
+                            className="materia-form-hint"
+                            style={{ color: 'var(--danger, #ef4444)' }}
+                        >
+                            {numeroAnoHint}
+                        </span>
+                    ) : null}
+                    <div className="materia-form-grid-3" style={{ marginTop: 10 }}>
                         <div className="materia-form-field">
                             <DatePicker
                                 id="edit-data-protocolo"

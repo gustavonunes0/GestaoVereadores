@@ -9,7 +9,9 @@ export const API_PATHS = {
     dominios:    '/dominios',
 
     // ── Identidade ────────────────────────────────────────────────────────
-    usuarios:           '/identidade/usuarios',
+    userManager:        '/identidade/user-manager',
+    /** @deprecated Use userManager */
+    usuarios:           '/identidade/user-manager',
     tenantPartners:     '/identidade/tenant-partners',
     tenantPartnerUsuario: (id: string) => `/identidade/tenant-partners/${id}/usuario`,
 
@@ -24,7 +26,7 @@ export const API_PATHS = {
     parlamentarMeBiografia:  '/legislative/parlamentares/me/biografia',
     parlamentarMandatos:     (id: string) => `/legislative/parlamentares/${id}/mandatos`,
     parlamentarAcesso:       (id: string) => `/legislative/parlamentares/${id}/acesso`,
-    usuariosBusca:           '/identidade/usuarios',
+    usuariosBusca:           '/identidade/user-manager',
     partidosPoliticos:       '/legislative/partidos-politicos',
     comissoes:          '/legislative/comissoes',
     frentes:            '/legislative/frentes-parlamentares',
