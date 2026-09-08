@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { TenantGuard } from './common/guards/tenant.guard';
 import { TenantRolesGuard } from './common/guards/tenant-roles.guard';
 import { PlatformAdminGuard } from './common/guards/platform-admin.guard';
+import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { CommonModule } from './common/common.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -26,7 +26,8 @@ import { NotificationsModule } from './notifications/notifications.module';
         { provide: APP_GUARD, useClass: RolesGuard },
         { provide: APP_GUARD, useClass: TenantRolesGuard },
         { provide: APP_GUARD, useClass: PlatformAdminGuard },
-        { provide: APP_GUARD, useClass: ThrottlerGuard },
+        // Depois do JwtAuthGuard de propósito: precisa do `req.user` para contar por usuário.
+        { provide: APP_GUARD, useClass: UserThrottlerGuard },
     ],
     imports: [
         ConfigModule.forRoot({ isGlobal: true }),

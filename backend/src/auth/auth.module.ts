@@ -22,7 +22,9 @@ import { JwtTokenIssuer } from './infra/security/jwt-token.issuer';
         PrismaModule,
         UsersModule,
         PassportModule.register({ defaultStrategy: 'jwt' }),
-        ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+        // Limite por usuário (ver UserThrottlerGuard). Telas como o detalhe da sessão
+        // abrem dezenas de requisições ao montar, então 100/min estourava com uso normal.
+        ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],

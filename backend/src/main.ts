@@ -41,6 +41,10 @@ async function bootstrap() {
         new FastifyAdapter({
             logger: process.env.NODE_ENV !== 'production',
             bodyLimit: 10 * 1024 * 1024,
+            // A API nunca recebe tráfego direto da internet — só via nginx/NPM. Confiar
+            // apenas em faixas privadas faz o Fastify resolver `req.ip` para o IP real do
+            // cliente (via X-Forwarded-For) sem aceitar o header de origens arbitrárias.
+            trustProxy: ['loopback', 'linklocal', 'uniquelocal'],
         }),
     );
 

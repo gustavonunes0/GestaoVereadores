@@ -63,6 +63,7 @@ export function SessaoDetalhePage() {
         encerrarTransmissao,
         limparEncerrarTransmissao,
         pedidoPalavraUpdate,
+        presencaUpdate,
     } = useSessaoRealtime(id ?? '');
 
     const faseExibida = faseAtual ?? resolveFaseSessao(sessao?.faseAtual);
@@ -279,6 +280,8 @@ export function SessaoDetalhePage() {
                         legislatureId={sessao.sessaoLegislativa?.legislatura?.id}
                         legislaturaNumero={sessao.sessaoLegislativa?.legislatura?.numero}
                         statusSessao={sessao.statusSessao}
+                        presencaUpdate={presencaUpdate}
+                        wsConectado={wsConectado}
                     />
                 </TabPanel>
 

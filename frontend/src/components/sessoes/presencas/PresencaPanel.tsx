@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
@@ -6,10 +6,11 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { confirmDialog } from 'primereact/confirmdialog';
 import { api } from '../../../api/client';
 import { API_PATHS } from '../../../api/paths';
-import { parlamentaresApi } from '../../../api/legislative/parlamentares.api';
+import { parlamentaresApi, type Parliamentarian } from '../../../api/legislative/parlamentares.api';
+import type { BoardMember } from '../../../api/legislative/mesa-diretora.api';
 import { sessoesApi } from '../../../api/legislative/sessoes.api';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useSessaoRealtime } from '../../../hooks/useSessaoRealtime';
+import type { PresencaUpdate } from '../../../hooks/useSessaoRealtime';
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { OrigemPresenca, PresencaSessao } from '../../../types/presenca';
 import type { StatusSessao } from '../../../types/sessoes';
@@ -21,6 +22,9 @@ import {
 import { resolveSituacaoCadeira } from '../../../utils/presencaCadeira';
 import { PresencaMetrics } from './PresencaMetrics';
 import { PlenarioMapa } from './PlenarioMapa';
+
+/** Intervalo do fallback por polling — só usado enquanto o WebSocket está fora. */
+const POLL_PRESENCA_MS = 15_000;
 
 function recalcularDashboard(prev: PresencaSessao, parlamentares: PresencaSessao['parlamentares']): PresencaSessao {
     const presentes = parlamentares.filter(
@@ -113,12 +117,21 @@ export function PresencaPanel({
     legislatureId,
     legislaturaNumero,
     statusSessao,
+    presencaUpdate,
+    wsConectado,
 }: {
     sessaoId: string;
     legislatureId?: string | null;
     /** Número da legislatura da sessão — usado para resolver o ID EN da mesa diretora. */
     legislaturaNumero?: number | null;
     statusSessao?: StatusSessao | null;
+    /**
+     * Estado de tempo real vem do pai: `useSessaoRealtime` abre um socket por chamada,
+     * e a página de detalhe já mantém um. Chamar o hook aqui abriria uma segunda conexão
+     * e duplicaria o `getPauta` que ele dispara ao montar.
+     */
+    presencaUpdate: PresencaUpdate | null;
+    wsConectado: boolean;
 }) {
     const { canWrite } = useAuth();
     const { showApiError, showSuccess } = useAppToast();
@@ -130,6 +143,12 @@ export function PresencaPanel({
     const sessaoAceitaPresenca = ['AGENDADA', 'ABERTA', 'SUSPENSA'].includes(statusSessao ?? '');
     const podeRegistrar = canWrite && sessaoAceitaPresenca;
     const podeChamar = canWrite && statusSessao === 'ABERTA';
+
+    /** Elenco e mesa não mudam durante a sessão — cacheados para a recarga leve. */
+    const elencoRef = useRef<{
+        parlamentares: Parliamentarian[];
+        mesaMembros: BoardMember[];
+    } | null>(null);
 
     const carregar = useCallback(async () => {
         try {
@@ -143,6 +162,7 @@ export function PresencaPanel({
                 }),
             ]);
 
+            elencoRef.current = { parlamentares, mesaMembros };
             setPresenca(
                 buildPresencaSessao({
                     sessaoId,
@@ -157,26 +177,58 @@ export function PresencaPanel({
         }
     }, [sessaoId, legislatureId, legislaturaNumero, showApiError]);
 
+    /**
+     * Recarga leve: só os registros de presença e o quórum, reaproveitando o elenco
+     * já carregado. São 2 requisições contra as 5+ da carga completa (`listActiveAll`
+     * pagina e `fetchMesaMembrosAtivos` faz duas chamadas internas) — o que importa
+     * porque isso roda em intervalo quando o WebSocket está fora.
+     */
+    const recarregarRegistros = useCallback(async () => {
+        const elenco = elencoRef.current;
+        if (!elenco) {
+            await carregar();
+            return;
+        }
+
+        try {
+            const [registros, quorum] = await Promise.all([
+                api<PresencaRegistroApi[]>(API_PATHS.sessoesPresencas(sessaoId)),
+                sessoesApi.getQuorum(sessaoId),
+            ]);
+
+            setPresenca(
+                buildPresencaSessao({
+                    sessaoId,
+                    parlamentares: elenco.parlamentares,
+                    mesaMembros: elenco.mesaMembros,
+                    registros,
+                    quorumMinimo: quorum.minimo,
+                }),
+            );
+        } catch {
+            /* recarga best-effort: mantém o estado atual sem alarmar o usuário */
+        }
+    }, [sessaoId, carregar]);
+
     useEffect(() => {
         void carregar();
     }, [carregar]);
 
-    const { presencaUpdate, wsConectado } = useSessaoRealtime(sessaoId);
     useEffect(() => {
         if (!presencaUpdate) return;
-        // Chamada em lote (sem parlamentar específico) — recarrega o mapa completo
+        // Chamada em lote (sem parlamentar específico) — recarrega os registros
         if (!presencaUpdate.parliamentarianId && !presencaUpdate.parlamentarianUserId) {
-            void carregar();
+            void recarregarRegistros();
             return;
         }
         setPresenca((prev) => (prev ? aplicarUpdate(prev, presencaUpdate) : prev));
-    }, [presencaUpdate, carregar]);
+    }, [presencaUpdate, recarregarRegistros]);
 
     useEffect(() => {
         if (wsConectado) return;
-        const timer = window.setInterval(() => void carregar(), 10000);
+        const timer = window.setInterval(() => void recarregarRegistros(), POLL_PRESENCA_MS);
         return () => window.clearInterval(timer);
-    }, [wsConectado, carregar]);
+    }, [wsConectado, recarregarRegistros]);
 
     const handleToggle = async (parliamentarianId: string) => {
         if (!presenca) return;
@@ -229,7 +281,7 @@ export function PresencaPanel({
             showSuccess(
                 `Chamada realizada — ${resultado.totalPresentes} presentes, ${resultado.totalAusentes} ausentes.`,
             );
-            await carregar();
+            await recarregarRegistros();
         } catch (err) {
             showApiError(err);
         } finally {
@@ -257,7 +309,7 @@ export function PresencaPanel({
             showSuccess('Chamada reiniciada.');
             setDialogReiniciar(false);
             setJustificativa('');
-            await carregar();
+            await recarregarRegistros();
         } catch (err) {
             showApiError(err);
         } finally {
