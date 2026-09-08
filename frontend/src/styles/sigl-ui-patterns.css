@@ -5370,6 +5370,11 @@ body.sessao-painel-body {
     color: var(--text-color-secondary);
 }
 
+.parl-sessao-votacao-waiting .pi {
+    font-size: 1.1rem;
+    color: var(--primary-color, #0d6e6e);
+}
+
 .parl-sessao-votacao-form {
     display: flex;
     flex-direction: column;
@@ -5512,4 +5517,92 @@ body.sessao-painel-body {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+}
+/* ——— Telão: contraste forçado (sobrescreve tema claro do app) ——— */
+body.sessao-painel-body,
+body.sessao-painel-body #root {
+    background: #0b1220 !important;
+    color: #f8fafc !important;
+}
+
+.sessao-painel {
+    background: linear-gradient(165deg, #0b1220 0%, #111827 45%, #0f172a 100%) !important;
+    color: #f8fafc !important;
+}
+
+.sessao-painel-main {
+    background: transparent !important;
+    color: #f8fafc !important;
+}
+
+.sessao-painel-header__camara,
+.sessao-painel-header__sessao,
+.sessao-painel-titulo-idle,
+.sessao-painel-item-titulo,
+.sessao-painel-pauta__titulo,
+.sessao-painel-pauta__item-titulo,
+.sessao-painel-pauta__ordem,
+.sessao-painel-placar__valor {
+    color: #ffffff !important;
+}
+
+.sessao-painel-fase,
+.sessao-painel-sub-idle,
+.sessao-painel-meta,
+.sessao-painel-item-texto,
+.sessao-painel-pauta__resumo,
+.sessao-painel-pauta__item-ementa,
+.sessao-painel-placar__label {
+    color: #cbd5e1 !important;
+}
+
+.sessao-painel-pauta__cat {
+    color: #93c5fd !important;
+}
+
+.sessao-painel-ao-vivo {
+    color: #fecaca !important;
+}
+
+.sessao-painel-pauta__item {
+    background: rgba(30, 41, 59, 0.95) !important;
+    border-color: rgba(148, 163, 184, 0.4) !important;
+    color: #f8fafc !important;
+}
+
+.sessao-painel-pauta__item--destaque {
+    background: rgba(37, 99, 235, 0.4) !important;
+    border-color: rgba(96, 165, 250, 0.8) !important;
+}
+
+.sessao-painel-pauta__ordem {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+}
+
+.sessao-painel-etiqueta {
+    color: #dbeafe !important;
+    background: rgba(37, 99, 235, 0.5) !important;
+}
+
+.sessao-painel-placar__item {
+    background: rgba(15, 23, 42, 0.9) !important;
+}
+
+.sessao-painel-placar__item--sim .sessao-painel-placar__valor {
+    color: #86efac !important;
+}
+
+.sessao-painel-placar__item--nao .sessao-painel-placar__valor {
+    color: #fca5a5 !important;
+}
+
+.sessao-painel-placar__item--abst .sessao-painel-placar__valor {
+    color: #fde68a !important;
+}
+
+.sessao-painel-fs-btn {
+    color: #e2e8f0 !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    background: rgba(15, 23, 42, 0.85) !important;
 }

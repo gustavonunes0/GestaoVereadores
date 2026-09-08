@@ -94,6 +94,11 @@ export function AbrirVotacaoDialog({ sessaoId, item, onClose, onAberta }: Props)
                         />
                     </div>
                 </div>
+                <p className="mt-3 mb-0 text-sm text-color-secondary">
+                    {tipoVotacao === 'NOMINAL'
+                        ? 'Nominal: cada parlamentar registra o voto no aplicativo (popup no PWA).'
+                        : 'Simbólica e secreta: o resultado é lançado pela mesa ao encerrar. O app do vereador não abre popup de voto.'}
+                </p>
             </div>
         </Dialog>
     );

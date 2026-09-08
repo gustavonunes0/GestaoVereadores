@@ -6,7 +6,11 @@ import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { sessoesApi } from '../../../api/legislative/sessoes.api';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { useAppToast } from '../../../hooks/useAppToast';
-import type { VotacaoAbertaEvent } from '../../../types/legislative';
+import {
+    mensagemVotacaoSemVotoIndividual,
+    TIPO_VOTACAO_LABEL,
+    type VotacaoAbertaEvent,
+} from '../../../types/legislative';
 import { resolveVotoLabel, resolveVotoValue, type VotoCampo } from '../../../utils/votoDisplay';
 
 const VOTO_OPTIONS = [
@@ -124,7 +128,7 @@ export function ParlamentarVotacaoPanel({
 
             {!votacaoAberta ? (
                 <div className="parl-sessao-votacao-waiting">
-                    <ProgressSpinner style={{ width: '28px', height: '28px' }} />
+                    <i className="pi pi-clock" aria-hidden />
                     <span>Aguardando início da votação...</span>
                 </div>
             ) : (
@@ -132,11 +136,20 @@ export function ParlamentarVotacaoPanel({
                     <p className="parl-sessao-votacao-titulo m-0">
                         <strong>{votacaoAberta.titulo}</strong>
                     </p>
+                    <p className="parl-sessao-panel__hint m-0">
+                        Tipo:{' '}
+                        {TIPO_VOTACAO_LABEL[votacaoAberta.tipoVotacao] ??
+                            votacaoAberta.tipoVotacao}
+                    </p>
                     {votacaoAberta.ementa ? (
                         <p className="parl-sessao-panel__hint">{votacaoAberta.ementa}</p>
                     ) : null}
 
-                    {!hasConfirmed ? (
+                    {!votacaoAberta.aceitaVotoIndividual ? (
+                        <p className="parl-sessao-panel__hint m-0">
+                            {mensagemVotacaoSemVotoIndividual(votacaoAberta.tipoVotacao)}
+                        </p>
+                    ) : !hasConfirmed ? (
                         <p className="parl-sessao-panel__hint m-0">
                             Marque sua presença antes de votar.
                         </p>

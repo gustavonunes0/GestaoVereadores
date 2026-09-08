@@ -105,3 +105,22 @@ export function canCreateNormaFromMateria(materia: {
 export function shouldHideNominalVotes(tipoVotacao?: TipoVotacao): boolean {
     return tipoVotacao === 'SECRETA';
 }
+
+export const TIPO_VOTACAO_LABEL: Record<TipoVotacao, string> = {
+    NOMINAL: 'Nominal',
+    SIMBOLICA: 'Simbólica',
+    SECRETA: 'Secreta',
+};
+
+/** Texto para o app do parlamentar quando não há voto individual no celular. */
+export function mensagemVotacaoSemVotoIndividual(
+    tipoVotacao?: TipoVotacao | string | null,
+): string {
+    if (tipoVotacao === 'SIMBOLICA') {
+        return 'Votação simbólica em andamento. O resultado é registrado pela mesa — não há voto individual no aplicativo.';
+    }
+    if (tipoVotacao === 'SECRETA') {
+        return 'Votação secreta em andamento. O resultado é registrado pela mesa — não há voto individual no aplicativo.';
+    }
+    return 'Esta votação não aceita voto individual no aplicativo.';
+}

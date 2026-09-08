@@ -96,9 +96,21 @@ export function ParlamentarSessaoDetalhePage() {
         if (ultimaVotacaoNotificada.current === votacaoAberta.votacaoId) return;
         ultimaVotacaoNotificada.current = votacaoAberta.votacaoId;
 
-        showToast('info', 'Votação aberta', votacaoAberta.titulo);
         if (votacaoAberta.aceitaVotoIndividual) {
+            showToast('info', 'Votação aberta', votacaoAberta.titulo);
             setDialogVoto(true);
+        } else {
+            const tipo =
+                votacaoAberta.tipoVotacao === 'SIMBOLICA'
+                    ? 'simbólica'
+                    : votacaoAberta.tipoVotacao === 'SECRETA'
+                      ? 'secreta'
+                      : 'em andamento';
+            showToast(
+                'info',
+                `Votação ${tipo}`,
+                'O resultado é registrado pela mesa. Não há voto individual no aplicativo.',
+            );
         }
     }, [votacaoAberta, hasConfirmed, showToast]);
 
