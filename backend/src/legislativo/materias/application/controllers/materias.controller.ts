@@ -78,7 +78,11 @@ import { MinhasMateriasQueryDto } from '../dto/list-minhas-materias-query.dto';
 import { ParlamentarianGuard } from '../../../../auth/guards/parliamentarian.guard';
 import { Req, UseGuards } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import { RequestWithTenant, isParlamentarianUser } from '../../../../common/types/authenticated-request';
+import {
+    RequestWithTenant,
+    isParlamentarianUser,
+    resolveTenantUserId,
+} from '../../../../common/types/authenticated-request';
 
 @ApiTags('legislative-materias')
 @ApiBearerAuth()
@@ -385,7 +389,7 @@ export class MateriasController {
                 tenantId,
                 id,
                 dto,
-                req.user?.id,
+                resolveTenantUserId(req.user),
             );
         } catch (error) {
             this.handleError(error);

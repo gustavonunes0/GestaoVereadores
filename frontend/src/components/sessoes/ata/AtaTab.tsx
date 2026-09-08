@@ -175,13 +175,21 @@ export function AtaTab({
             </div>
 
             {editavel ? (
-                <InputTextarea
-                    value={conteudo}
-                    onChange={(e) => setConteudo(e.target.value)}
-                    rows={18}
-                    className="w-full ata-editor-textarea"
-                    autoResize={false}
-                />
+                <>
+                    <InputTextarea
+                        value={conteudo}
+                        onChange={(e) => setConteudo(e.target.value)}
+                        rows={12}
+                        className="w-full ata-editor-textarea"
+                        autoResize={false}
+                    />
+                    <div className="ata-conteudo-leitura ata-conteudo-leitura--preview">
+                        <p className="ata-preview-label m-0 mb-2 text-color-secondary text-sm">
+                            Pré-visualização
+                        </p>
+                        <div dangerouslySetInnerHTML={{ __html: conteudo }} />
+                    </div>
+                </>
             ) : (
                 <div className="ata-conteudo-leitura" dangerouslySetInnerHTML={{ __html: ata.conteudo }} />
             )}
