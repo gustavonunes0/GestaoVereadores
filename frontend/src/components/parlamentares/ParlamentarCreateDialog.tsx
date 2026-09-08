@@ -252,10 +252,10 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                     </div>
 
                     {condicao === 'SUPLENTE' && (
-                        <div>
+                        <div className="sigl-filtro-campo">
+                            <label htmlFor="pc-titular-afastado">Titular afastado</label>
                             <Dropdown
                                 id="pc-titular-afastado"
-                                label="Titular afastado"
                                 options={titularesOptions}
                                 value={titularAfastadoId || null}
                                 onChange={(v) => setTitularAfastadoId(String(v))}
@@ -265,8 +265,10 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                                         : 'Selecione o titular'
                                 }
                                 disabled={titularesOptions.length === 0}
+                                className="w-full"
+                                filter
                             />
-                            <small className="text-color-secondary block mt-1">
+                            <small className="text-color-secondary">
                                 Referência interna — vínculo de suplente será persistido em versão futura da API.
                             </small>
                         </div>

@@ -20,6 +20,7 @@ import type {
 } from '../../types/materias';
 import {
     gerarOpcoesStatus,
+    statusExigeDespacho,
     statusTransicaoPermitida,
 } from '../../types/materias';
 import {
@@ -75,6 +76,7 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
         materia.dataProtocolo ? new Date(materia.dataProtocolo) : null,
     );
     const [statusMateria, setStatusMateria] = useState<MateriaStatus>(resolvedStatus);
+    const [despacho, setDespacho] = useState('');
     const [autorPrincipal, setAutorPrincipal] = useState<AutorSelecionado | null>(null);
     const [coautores, setCoautores] = useState<CoautorFormItem[]>([]);
     const [textoOriginal, setTextoOriginal] = useState<File | string | null>(() => {
@@ -127,10 +129,14 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     );
 
     function handleStatusChange(next: MateriaStatus) {
-        if (statusTransicaoPermitida(resolvedStatus, next)) {
-            setStatusMateria(next);
-        }
+        if (!statusTransicaoPermitida(resolvedStatus, next)) return;
+        setStatusMateria(next);
+        // Voltar ao status original cancela a tramitação: descarta o despacho.
+        if (next === resolvedStatus) setDespacho('');
     }
+
+    const vaiTramitar = statusMateria !== resolvedStatus;
+    const despachoObrigatorio = vaiTramitar && statusExigeDespacho(statusMateria);
 
     const numeroAno = composeNumeroAnoMateria(numeroMateria, anoLegislatura);
     const numeroAnoParsed = parseNumeroAnoMateria(numeroAno);
@@ -235,6 +241,14 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
             return;
         }
 
+        if (despachoObrigatorio && !despacho.trim()) {
+            showApiError(
+                new Error('Informe o despacho para registrar esta tramitação.'),
+            );
+            setActiveTab('identificacao');
+            return;
+        }
+
         setSaving(true);
         try {
             await materiasApi.update(materia.id, {
@@ -254,9 +268,10 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                 await materiasApi.uploadTextoOriginal(materia.id, textoOriginal);
             }
 
-            if (statusMateria !== resolvedStatus) {
+            if (vaiTramitar) {
                 await materiasApi.tramitar(materia.id, {
                     novoStatus: statusMateria,
+                    ...(despacho.trim() ? { despacho: despacho.trim() } : {}),
                 });
             }
 
@@ -375,6 +390,9 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                         value={statusMateria}
                         options={statusOptions}
                         onChange={handleStatusChange}
+                        despacho={despacho}
+                        onDespachoChange={setDespacho}
+                        despachoObrigatorio={despachoObrigatorio}
                     />
                 </div>
             )}

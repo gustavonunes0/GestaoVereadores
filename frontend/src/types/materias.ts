@@ -19,6 +19,20 @@ const STATUS_TRAMITAR_GRAPH: Record<MateriaStatus, MateriaStatus[]> = {
     TRANSFORMADA_EM_NORMA: [],
 };
 
+/**
+ * Espelha `DESPACHO_OBRIGATORIO` do `TramitarMateriaUseCase` — o backend recusa
+ * a tramitação para estes status sem despacho preenchido.
+ */
+const STATUS_DESPACHO_OBRIGATORIO: MateriaStatus[] = [
+    'EM_TRAMITACAO',
+    'APROVADA',
+    'REJEITADA',
+];
+
+export function statusExigeDespacho(status: MateriaStatus): boolean {
+    return STATUS_DESPACHO_OBRIGATORIO.includes(status);
+}
+
 export function gerarOpcoesStatus(statusAtual: MateriaStatus): MateriaStatus[] {
     const next = STATUS_TRAMITAR_GRAPH[statusAtual] ?? [];
     return [statusAtual, ...next];
