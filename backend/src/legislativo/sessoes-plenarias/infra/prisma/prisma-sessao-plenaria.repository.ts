@@ -782,16 +782,27 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         const atual = itens[posicao];
         const vizinho = itens[destino];
 
+        // `PautaItem_sessaoId_ordem_active_key` é um índice único parcial em
+        // (sessaoId, ordem) — criado em SQL cru, não declarado no schema. Como o
+        // Postgres valida a cada statement, trocar as ordens direto deixaria os
+        // dois itens na mesma ordem no meio da transação e violaria o índice.
+        // Daí o desvio: o item sai para uma ordem livre antes da troca.
+        const ordemLivre = Math.max(...itens.map((i) => i.ordem)) + 1;
+
         // A fase entra na troca porque pesa mais que a ordem na exibição: trocar
         // só a ordem entre itens de fases diferentes não mudaria nada na tela.
         await this.prisma.$transaction([
             this.prisma.pautaItem.update({
                 where: { id: atual.id },
-                data: { ordem: vizinho.ordem, fase: vizinho.fase },
+                data: { ordem: ordemLivre },
             }),
             this.prisma.pautaItem.update({
                 where: { id: vizinho.id },
                 data: { ordem: atual.ordem, fase: atual.fase },
+            }),
+            this.prisma.pautaItem.update({
+                where: { id: atual.id },
+                data: { ordem: vizinho.ordem, fase: vizinho.fase },
             }),
         ]);
 
