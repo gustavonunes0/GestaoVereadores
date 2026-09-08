@@ -1,3 +1,5 @@
+import type { StatusAta } from './ata';
+
 export type StatusSessao =
     | 'AGENDADA'
     | 'ABERTA'
@@ -112,7 +114,23 @@ export function sessaoDetalheSubtitulo(
 }
 
 /** Natureza do item de pauta — define o tratamento visual na tela. */
-export type PautaItemCategoria = 'MATERIA' | 'ATO' | 'NORMA' | 'AVISO' | 'COMISSAO';
+export type PautaItemCategoria =
+    | 'MATERIA'
+    | 'ATO'
+    | 'NORMA'
+    | 'AVISO'
+    | 'COMISSAO'
+    | 'ATA';
+
+/** Item de leitura da ata — o nome é digitado; o vínculo é opcional. */
+export interface PautaItemAta {
+    titulo?: string;
+    ataReferenciada?: {
+        id: string;
+        status: { value: StatusAta; label: string };
+        sessao: { id: string; dataInicio: string; tipoNome: string | null } | null;
+    } | null;
+}
 
 /** Referência genérica para itens que não são matéria (ato, norma, aviso). */
 export interface PautaItemReferencia {
@@ -147,6 +165,8 @@ export interface PautaItemDetalhe {
     aviso?: PautaItemReferencia | null;
     /** Preenchido quando categoria === 'COMISSAO' (parecer). */
     comissao?: PautaItemReferencia | null;
+    /** Preenchido quando categoria === 'ATA'. */
+    ata?: PautaItemAta | null;
     fase: FasePauta | { value: FasePauta; label?: string };
     tipoPautaItem: TipoPautaItem | { value: TipoPautaItem; label?: string };
     ordem: number;
@@ -172,6 +192,7 @@ export const PAUTA_CATEGORIA_LABELS: Record<PautaItemCategoria, string> = {
     NORMA: 'Norma jurídica',
     AVISO: 'Aviso',
     COMISSAO: 'Parecer de comissão',
+    ATA: 'Ata',
 };
 
 /**
@@ -180,6 +201,7 @@ export const PAUTA_CATEGORIA_LABELS: Record<PautaItemCategoria, string> = {
  */
 export function resolvePautaCategoria(item: PautaItemDetalhe): PautaItemCategoria {
     if (item.categoria) return item.categoria;
+    if (item.ata) return 'ATA';
     if (item.comissao) return 'COMISSAO';
     if (item.norma) return 'NORMA';
     if (item.ato) return 'ATO';
@@ -251,6 +273,8 @@ export function pautaItemRotulo(item: PautaItemDetalhe): string {
             return referenciaRotulo(item.norma, 'Norma jurídica');
         case 'AVISO':
             return item.aviso?.titulo ?? referenciaRotulo(item.aviso, 'Aviso');
+        case 'ATA':
+            return item.ata?.titulo?.trim() || 'Ata';
         case 'COMISSAO': {
             const com = item.comissao?.tipo?.nome ?? item.comissao?.titulo ?? 'Comissão';
             const mat = item.materia ? pautaMateriaRotulo(item.materia) : 'matéria';
@@ -271,6 +295,8 @@ export function pautaItemRotuloCompleto(item: PautaItemDetalhe): string {
             return referenciaRotulo(item.norma, 'Norma jurídica');
         case 'AVISO':
             return item.aviso?.titulo ?? referenciaRotulo(item.aviso, 'Aviso');
+        case 'ATA':
+            return item.ata?.titulo?.trim() || 'Ata';
         case 'COMISSAO': {
             const com = item.comissao?.tipo?.nome ?? item.comissao?.titulo ?? 'Comissão';
             const mat = item.materia
@@ -284,6 +310,19 @@ export function pautaItemRotuloCompleto(item: PautaItemDetalhe): string {
     }
 }
 
+/**
+ * Identifica a ata vinculada ao item — ex.: "Sessão Ordinária de 03/09/2026 · Rascunho".
+ * Retorna `null` quando o item guarda apenas o nome digitado.
+ */
+export function ataReferenciadaRotulo(ata: PautaItemAta): string | null {
+    const ref = ata.ataReferenciada;
+    if (!ref) return null;
+    if (!ref.sessao) return `Ata vinculada · ${ref.status.label}`;
+    const tipo = ref.sessao.tipoNome ?? 'Sessão';
+    const data = new Date(ref.sessao.dataInicio).toLocaleDateString('pt-BR');
+    return `${tipo} de ${data} · ${ref.status.label}`;
+}
+
 /** Texto descritivo secundário (ementa/descrição) do item. */
 export function pautaItemDescricao(item: PautaItemDetalhe): string {
     switch (resolvePautaCategoria(item)) {
@@ -293,6 +332,8 @@ export function pautaItemDescricao(item: PautaItemDetalhe): string {
             return item.norma?.titulo ?? item.norma?.descricao ?? '';
         case 'AVISO':
             return item.aviso?.descricao ?? '';
+        case 'ATA':
+            return (item.ata ? ataReferenciadaRotulo(item.ata) : null) ?? '';
         case 'COMISSAO':
             return item.materia?.ementa ?? item.comissao?.descricao ?? '';
         case 'MATERIA':
@@ -301,14 +342,21 @@ export function pautaItemDescricao(item: PautaItemDetalhe): string {
     }
 }
 
-/** Matéria ou parecer de comissão deliberável — sessão deve estar ABERTA. */
+/**
+ * Categorias que vão a voto. Ata entra porque a câmara delibera sobre a
+ * aprovação da ata da sessão anterior — espelha a regra do backend.
+ */
+export function categoriaDeliberavel(categoria: PautaItemCategoria): boolean {
+    return categoria === 'MATERIA' || categoria === 'COMISSAO' || categoria === 'ATA';
+}
+
+/** Item deliberável (matéria, parecer ou ata) — sessão deve estar ABERTA. */
 export function podeAbrirVotacaoNoItem(
     item: PautaItemDetalhe,
     statusSessao: StatusSessao,
 ): boolean {
     if (statusSessao !== 'ABERTA') return false;
-    const cat = resolvePautaCategoria(item);
-    if (cat !== 'MATERIA' && cat !== 'COMISSAO') return false;
+    if (!categoriaDeliberavel(resolvePautaCategoria(item))) return false;
     const tipo = resolvePautaTipo(item.tipoPautaItem);
     if (tipo === 'LEITURA' || tipo === 'COMUNICACAO') return false;
     if (item.votacao) return false;
@@ -325,14 +373,13 @@ export function votacaoJaEncerradaNoItem(
     return Boolean(votacao.finalizada || votacao.resultado);
 }
 
-/** Votação aberta no item — apenas matéria ou parecer de comissão. */
+/** Votação aberta no item — apenas categorias deliberáveis. */
 export function podeFecharVotacaoNoItem(
     item: PautaItemDetalhe,
     statusSessao: StatusSessao,
 ): boolean {
     if (statusSessao !== 'ABERTA') return false;
-    const cat = resolvePautaCategoria(item);
-    if (cat !== 'MATERIA' && cat !== 'COMISSAO') return false;
+    if (!categoriaDeliberavel(resolvePautaCategoria(item))) return false;
     if (!item.votacao) return false;
     if (votacaoJaEncerradaNoItem(item)) return false;
     return true;
@@ -373,6 +420,8 @@ export interface AddPautaItemDto {
     comissaoId?: string;
     avisoTitulo?: string;
     avisoTexto?: string;
+    ataTitulo?: string;
+    ataReferenciadaId?: string;
     fase?: FasePauta;
     tipoPautaItem?: TipoPautaItem;
     ordem?: number;

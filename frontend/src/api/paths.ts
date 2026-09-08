@@ -102,6 +102,7 @@ export const API_PATHS = {
     sessaoAtaGerarRascunho:  (id: string) => `/legislative/sessoes-plenarias/${id}/ata/gerar-rascunho`,
     sessaoAtaAprovar:        (id: string) => `/legislative/sessoes-plenarias/${id}/ata/aprovar`,
     sessaoAtaPdf:            (id: string) => `/legislative/sessoes-plenarias/${id}/ata/pdf`,
+    atasDisponiveis:         '/legislative/sessoes-plenarias/atas/disponiveis',
 
     // ── Portal Público da Sessão ──────────────────────────────────────────
     sessaoResumoPublico:     (id: string) => `/legislative/sessoes-plenarias/${id}/resumo-publico`,

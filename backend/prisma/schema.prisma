@@ -674,6 +674,7 @@ enum CategoriaPautaItem {
     NORMA
     AVISO
     COMISSAO
+    ATA
 }
 
 enum CodigoTipoSessao {
@@ -1574,7 +1575,7 @@ model PautaItem {
     norma       Norma?           @relation(fields: [normaId], references: [id])
     comissaoId  String?
     comissao    Comissao?        @relation(fields: [comissaoId], references: [id])
-    // AVISO — texto livre lido em plenário
+    // Texto livre lido em plenário — AVISO (título e corpo) e ATA (nome da ata)
     avisoTitulo String?
     avisoTexto  String?          @db.Text
     ordem       Int

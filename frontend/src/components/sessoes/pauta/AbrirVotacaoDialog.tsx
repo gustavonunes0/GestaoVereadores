@@ -5,7 +5,11 @@ import { Dropdown } from '../../ui';
 import { sessoesApi } from '../../../api/legislative/sessoes.api';
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { TipoVotacao } from '../../../types/legislative';
-import { pautaItemRotulo, type PautaItemDetalhe } from '../../../types/sessoes';
+import {
+    pautaItemRotulo,
+    resolvePautaCategoria,
+    type PautaItemDetalhe,
+} from '../../../types/sessoes';
 
 const TIPO_VOTACAO_OPTIONS: { label: string; value: TipoVotacao }[] = [
     { label: 'Nominal', value: 'NOMINAL' },
@@ -26,12 +30,19 @@ export function AbrirVotacaoDialog({ sessaoId, item, onClose, onAberta }: Props)
     const [saving, setSaving] = useState(false);
 
     const rotulo = pautaItemRotulo(item);
+    // Só a votação da própria matéria a tramita: parecer de comissão e ata não
+    // alteram status de matéria alguma.
+    const alteraStatusMateria = resolvePautaCategoria(item) === 'MATERIA';
 
     async function confirmar() {
         setSaving(true);
         try {
             await sessoesApi.abrirVotacao(sessaoId, item.id, { tipoVotacao });
-            showSuccess('Votação aberta. A matéria está em votação.');
+            showSuccess(
+                alteraStatusMateria
+                    ? 'Votação aberta. A matéria está em votação.'
+                    : 'Votação aberta.',
+            );
             onAberta();
             onClose();
         } catch (err) {
@@ -64,8 +75,13 @@ export function AbrirVotacaoDialog({ sessaoId, item, onClose, onAberta }: Props)
         >
             <div className="sigl-dialog-body">
                 <p className="mt-0 mb-3 text-sm">
-                    Abrir votação para <strong>{rotulo}</strong>. O status da matéria passará para{' '}
-                    <strong>Em votação</strong>.
+                    Abrir votação para <strong>{rotulo}</strong>.
+                    {alteraStatusMateria && (
+                        <>
+                            {' '}
+                            O status da matéria passará para <strong>Em votação</strong>.
+                        </>
+                    )}
                 </p>
                 <div className="sigl-grid-12">
                     <div className="sigl-col-6">

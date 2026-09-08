@@ -95,6 +95,19 @@ const pautaItemInclude = {
     comissao: {
         select: { id: true, nome: true, sigla: true },
     },
+    ataReferenciada: {
+        select: {
+            id: true,
+            status: true,
+            sessaoPlenaria: {
+                select: {
+                    id: true,
+                    dataInicio: true,
+                    tipoSessao: { select: { nome: true } },
+                },
+            },
+        },
+    },
     votacao: {
         select: {
             id: true,
@@ -540,6 +553,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 comissaoId: referencia.comissaoId,
                 avisoTitulo: referencia.avisoTitulo,
                 avisoTexto: referencia.avisoTexto,
+                ataReferenciadaId: referencia.ataReferenciadaId,
                 ordem,
                 fase: (dto.fase ?? referencia.faseInferida) as never,
                 tipoPautaItem: (dto.tipoPautaItem ??
@@ -565,6 +579,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         comissaoId: string | null;
         avisoTitulo: string | null;
         avisoTexto: string | null;
+        ataReferenciadaId: string | null;
         faseInferida: string;
         tipoInferido: string;
     }> {
@@ -575,6 +590,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             comissaoId: null as string | null,
             avisoTitulo: null as string | null,
             avisoTexto: null as string | null,
+            ataReferenciadaId: null as string | null,
             faseInferida: 'ORDEM_DO_DIA',
             tipoInferido: 'DELIBERACAO',
         };
@@ -659,6 +675,39 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             base.avisoTexto = dto.avisoTexto?.trim() || null;
             base.faseInferida = 'PEQUENO_EXPEDIENTE';
             base.tipoInferido = 'COMUNICACAO';
+            return base;
+        }
+
+        if (categoria === 'ATA') {
+            if (!dto.ataTitulo?.trim()) {
+                throw new BadRequestException('Nome da ata é obrigatório');
+            }
+
+            if (dto.ataReferenciadaId) {
+                const ata = await this.prisma.ata.findFirst({
+                    where: {
+                        id: dto.ataReferenciadaId,
+                        tenantId,
+                        isRemoved: false,
+                    },
+                    select: { sessaoPlenariaId: true },
+                });
+                if (!ata) throw new NotFoundException('Ata não encontrada');
+                // O item existe para ler a ata de uma sessão anterior; a ata da própria
+                // sessão só nasce depois que ela é encerrada, então apontar para si é erro.
+                if (ata.sessaoPlenariaId === sessaoId) {
+                    throw new BadRequestException(
+                        'Não é possível referenciar a ata da própria sessão',
+                    );
+                }
+                base.ataReferenciadaId = dto.ataReferenciadaId;
+            }
+
+            base.avisoTitulo = dto.ataTitulo.trim();
+            // Deliberação porque a câmara vota a aprovação da ata; fase de expediente
+            // porque a leitura da ata abre a sessão (e `fase` ordena antes de `ordem`).
+            base.faseInferida = 'PEQUENO_EXPEDIENTE';
+            base.tipoInferido = 'DELIBERACAO';
             return base;
         }
 

@@ -60,6 +60,7 @@ import { GerarRascunhoAtaUseCase } from './ata/application/use-cases/gerar-rascu
 import { GetAtaBySessaoUseCase } from './ata/application/use-cases/get-ata-by-sessao.use-case';
 import { UpdateAtaUseCase } from './ata/application/use-cases/update-ata.use-case';
 import { AprovarAtaUseCase } from './ata/application/use-cases/aprovar-ata.use-case';
+import { ListAtasDisponiveisUseCase } from './ata/application/use-cases/list-atas-disponiveis.use-case';
 import { SessaoRealtimeGateway } from './realtime/sessao-realtime.gateway';
 import { PresidenciaService } from './domain/services/presidencia.service';
 import { PresidentOrStaffGuard } from '../../auth/guards/president-or-staff.guard';
@@ -128,6 +129,7 @@ import { PEDIDO_PALAVRA_REPOSITORY } from './sessoes-plenarias.tokens';
         GetAtaBySessaoUseCase,
         UpdateAtaUseCase,
         AprovarAtaUseCase,
+        ListAtasDisponiveisUseCase,
         GetResumoPublicoSessaoUseCase,
         GetListaPresencaPdfUseCase,
         GetAtaPdfUseCase,

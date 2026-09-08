@@ -20,6 +20,7 @@ import type {
     TipoPautaItem,
 } from '../../../types/sessoes';
 import { PAUTA_CATEGORIA_LABELS } from '../../../types/sessoes';
+import type { AtaResumo } from '../../../types/ata';
 
 interface Option {
     id: string;
@@ -45,13 +46,17 @@ interface Props {
     onSaved: () => void;
 }
 
+// Ata em primeiro lugar: é o item que abre a pauta, então é o primeiro a ser cadastrado.
 const CATEGORIAS: DropdownOption[] = [
+    { label: PAUTA_CATEGORIA_LABELS.ATA, value: 'ATA' },
     { label: PAUTA_CATEGORIA_LABELS.MATERIA, value: 'MATERIA' },
     { label: PAUTA_CATEGORIA_LABELS.COMISSAO, value: 'COMISSAO' },
     { label: PAUTA_CATEGORIA_LABELS.ATO, value: 'ATO' },
     { label: PAUTA_CATEGORIA_LABELS.NORMA, value: 'NORMA' },
     { label: PAUTA_CATEGORIA_LABELS.AVISO, value: 'AVISO' },
 ];
+
+const ATA_SEM_VINCULO = '';
 
 const FASES: DropdownOption[] = [
     { label: 'Pequeno Expediente', value: 'PEQUENO_EXPEDIENTE' },
@@ -83,6 +88,11 @@ function toDropdownOptions(items: Option[]): DropdownOption[] {
     return items.map((item) => ({ label: item.label, value: item.id }));
 }
 
+function ataSessaoDescricao(ata: AtaResumo): string {
+    const tipo = ata.sessao.tipoNome ?? 'Sessão';
+    return `${tipo} de ${new Date(ata.sessao.dataInicio).toLocaleDateString('pt-BR')}`;
+}
+
 export function AddPautaItemDialog({ sessaoId, onClose, onSaved }: Props) {
     const { showSuccess, showApiError } = useAppToast();
     const [saving, setSaving] = useState(false);
@@ -100,6 +110,9 @@ export function AddPautaItemDialog({ sessaoId, onClose, onSaved }: Props) {
     const [comissaoId, setComissaoId] = useState('');
     const [avisoTitulo, setAvisoTitulo] = useState('');
     const [avisoTexto, setAvisoTexto] = useState('');
+    const [atas, setAtas] = useState<AtaResumo[]>([]);
+    const [ataTitulo, setAtaTitulo] = useState('');
+    const [ataReferenciadaId, setAtaReferenciadaId] = useState(ATA_SEM_VINCULO);
 
     const [fase, setFase] = useState<FasePauta>('ORDEM_DO_DIA');
     const [tipo, setTipo] = useState<TipoPautaItem>('DELIBERACAO');
@@ -108,12 +121,15 @@ export function AddPautaItemDialog({ sessaoId, onClose, onSaved }: Props) {
     const carregarOpcoes = useCallback(async () => {
         setLoading(true);
         try {
-            const [matRes, atoRes, normaRes, comRes] = await Promise.all([
+            const [matRes, atoRes, normaRes, comRes, ataRes] = await Promise.all([
                 api<{ data: MateriaApi[] }>(`${API_PATHS.materias}?limit=100`),
                 atosApi.list({ limit: 100 }),
                 normasApi.list({ limit: 100 }),
                 comissoesApi.list({ limit: 100 }),
+                sessoesApi.listAtasDisponiveis(sessaoId),
             ]);
+
+            setAtas(ataRes);
 
             setMaterias(
                 matRes.data.map((m) => ({
@@ -146,7 +162,7 @@ export function AddPautaItemDialog({ sessaoId, onClose, onSaved }: Props) {
         } finally {
             setLoading(false);
         }
-    }, [showApiError]);
+    }, [sessaoId, showApiError]);
 
     useEffect(() => {
         void carregarOpcoes();
@@ -158,6 +174,10 @@ export function AddPautaItemDialog({ sessaoId, onClose, onSaved }: Props) {
         if (cat === 'AVISO') {
             setFase('PEQUENO_EXPEDIENTE');
             setTipo('COMUNICACAO');
+        } else if (cat === 'ATA') {
+            // Expediente para abrir a pauta; deliberação porque a ata vai a voto.
+            setFase('PEQUENO_EXPEDIENTE');
+            setTipo('DELIBERACAO');
         } else if (cat === 'ATO' || cat === 'NORMA') {
             setFase('PEQUENO_EXPEDIENTE');
             setTipo('LEITURA');
@@ -178,16 +198,38 @@ export function AddPautaItemDialog({ sessaoId, onClose, onSaved }: Props) {
         }
     }
 
-    const podeSalvar =
-        categoria === 'MATERIA'
-            ? !!materiaId
-            : categoria === 'COMISSAO'
-              ? !!materiaId && !!comissaoId
-              : categoria === 'ATO'
-                ? !!atoId
-                : categoria === 'NORMA'
-                  ? !!normaId
-                  : !!avisoTitulo.trim();
+    /** Vincular uma ata já registrada sugere o nome, que segue editável. */
+    function handleSelecionarAta(id: string) {
+        setAtaReferenciadaId(id);
+        if (!id || ataTitulo.trim()) return;
+        const ata = atas.find((a) => a.id === id);
+        if (ata) setAtaTitulo(`Ata da ${ataSessaoDescricao(ata)}`);
+    }
+
+    const ataOptions: DropdownOption[] = [
+        { label: 'Nenhuma — usar só o nome', value: ATA_SEM_VINCULO },
+        ...atas.map((ata) => ({
+            label: `${ataSessaoDescricao(ata)} · ${ata.status.label}`,
+            value: ata.id,
+        })),
+    ];
+
+    const podeSalvar = ((): boolean => {
+        switch (categoria) {
+            case 'MATERIA':
+                return !!materiaId;
+            case 'COMISSAO':
+                return !!materiaId && !!comissaoId;
+            case 'ATO':
+                return !!atoId;
+            case 'NORMA':
+                return !!normaId;
+            case 'ATA':
+                return !!ataTitulo.trim();
+            case 'AVISO':
+                return !!avisoTitulo.trim();
+        }
+    })();
 
     async function submit() {
         if (!podeSalvar) return;
@@ -201,6 +243,10 @@ export function AddPautaItemDialog({ sessaoId, onClose, onSaved }: Props) {
             if (categoria === 'AVISO') {
                 body.avisoTitulo = avisoTitulo.trim();
                 body.avisoTexto = avisoTexto.trim() || undefined;
+            }
+            if (categoria === 'ATA') {
+                body.ataTitulo = ataTitulo.trim();
+                if (ataReferenciadaId) body.ataReferenciadaId = ataReferenciadaId;
             }
 
             await sessoesApi.addPautaItemDetalhe(sessaoId, body as Record<string, unknown>);
@@ -312,6 +358,35 @@ export function AddPautaItemDialog({ sessaoId, onClose, onSaved }: Props) {
                         </div>
                     )}
 
+                    {categoria === 'ATA' && (
+                        <>
+                            <div className="sigl-col-6 sigl-filtro-campo">
+                                <label htmlFor="add-pauta-ata-titulo">Nome da ata *</label>
+                                <InputText
+                                    id="add-pauta-ata-titulo"
+                                    value={ataTitulo}
+                                    onChange={(e) => setAtaTitulo(e.target.value)}
+                                    placeholder="Ex.: Ata da 12ª Sessão Ordinária"
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="sigl-col-6 sigl-filtro-campo">
+                                <label htmlFor="add-pauta-ata-ref">Ata registrada no sistema</label>
+                                <Dropdown
+                                    id="add-pauta-ata-ref"
+                                    value={ataReferenciadaId}
+                                    options={ataOptions}
+                                    filter
+                                    loading={loading}
+                                    onChange={(v) => handleSelecionarAta(String(v))}
+                                />
+                                <small className="text-color-secondary">
+                                    Opcional — vincule para abrir o teor da ata durante a leitura.
+                                </small>
+                            </div>
+                        </>
+                    )}
+
                     {categoria === 'AVISO' && (
                         <div className="sigl-col-6 sigl-filtro-campo">
                             <label htmlFor="add-pauta-aviso-titulo">Título do aviso *</label>
@@ -356,6 +431,15 @@ export function AddPautaItemDialog({ sessaoId, onClose, onSaved }: Props) {
                                 onChange={(e) => setAvisoTexto(e.target.value)}
                                 rows={4}
                                 className="w-full"
+                            />
+                        </div>
+                    )}
+
+                    {categoria === 'ATA' && (
+                        <div className="sigl-col-12">
+                            <Message
+                                severity="info"
+                                text="A ata entra no Pequeno Expediente, então aparece antes dos demais itens da pauta mesmo se for cadastrada depois. Como o tipo é Deliberação, dá para abrir votação nela para registrar a aprovação."
                             />
                         </div>
                     )}

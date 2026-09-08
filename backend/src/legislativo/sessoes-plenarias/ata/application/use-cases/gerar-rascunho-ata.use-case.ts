@@ -146,6 +146,8 @@ export class GerarRascunhoAtaUseCase {
             } else if (item.categoria === 'AVISO') {
                 identificacao = item.avisoTitulo?.trim() || `Aviso — item ${item.ordem}`;
                 ementa = item.avisoTexto ?? '';
+            } else if (item.categoria === 'ATA') {
+                identificacao = item.avisoTitulo?.trim() || `Ata — item ${item.ordem}`;
             } else if (item.comissao) {
                 identificacao = `Parecer — ${item.comissao.nome}`;
                 ementa = item.avisoTexto ?? '';

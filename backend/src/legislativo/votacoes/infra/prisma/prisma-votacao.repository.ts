@@ -308,21 +308,23 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             pautaItemId,
         );
 
-        // Apenas matéria e parecer de comissão podem ir à votação
+        // Ata entra na lista porque a câmara delibera sobre a aprovação da ata
+        // da sessão anterior, mesmo não havendo matéria envolvida.
         if (
             pautaItem.categoria !== 'MATERIA' &&
-            pautaItem.categoria !== 'COMISSAO'
+            pautaItem.categoria !== 'COMISSAO' &&
+            pautaItem.categoria !== 'ATA'
         ) {
             throw new BadRequestException(
-                'Apenas matérias e pareceres de comissão podem ser votados',
+                'Apenas matérias, pareceres de comissão e atas podem ser votados',
             );
         }
-        if (!pautaItem.materiaId) {
+        const materiaId = pautaItem.materiaId;
+        if (pautaItem.categoria !== 'ATA' && !materiaId) {
             throw new BadRequestException(
                 'Item de pauta sem matéria associada não pode ser votado',
             );
         }
-        const materiaId: string = pautaItem.materiaId;
 
         // Bloqueia votação em itens de leitura ou comunicação
         const tipoPautaItemAtual = pautaItem.tipoPautaItem as TipoPautaItem;
@@ -350,11 +352,14 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             sessao.tipoSessao.requerQuorum,
         );
 
-        // Buscar tipoQuorum do tipo de matéria e totalMembros
-        const materiaComTipo = await this.prisma.materia.findUnique({
-            where: { id: materiaId },
-            include: { tipo: true },
-        });
+        // Buscar tipoQuorum do tipo de matéria e totalMembros. Ata não tem matéria,
+        // então cai no padrão maioria simples abaixo.
+        const materiaComTipo = materiaId
+            ? await this.prisma.materia.findUnique({
+                  where: { id: materiaId },
+                  include: { tipo: true },
+              })
+            : null;
         const tipoQuorum = (materiaComTipo?.tipo?.tipoQuorum ?? 'MAIORIA_SIMPLES') as any;
 
         const totalMembros = await this.prisma.parliamentarian.count({
@@ -380,6 +385,7 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         // Parecer de comissão não altera o status da matéria objeto.
         if (
             pautaItem.categoria === 'MATERIA' &&
+            materiaId &&
             pautaItem.materia?.status === StatusMateria.EM_PAUTA
         ) {
             try {

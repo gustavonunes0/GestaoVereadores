@@ -9,6 +9,7 @@ import type { VotacaoEncerradaEvent } from '../../../types/legislative';
 import type { FaseSessao, PautaItemDetalhe, SessaoPlenariaDetalhe } from '../../../types/sessoes';
 import {
     PAUTA_CATEGORIA_LABELS,
+    categoriaDeliberavel,
     pautaItemDescricao,
     pautaItemRotulo,
     resolveFaseSessao,
@@ -85,10 +86,9 @@ function PainelPautaDoDia({
     itens: PautaItemDetalhe[];
     itemDestacadoId?: string | null;
 }) {
-    const deliberaveis = itens.filter((i) => {
-        const cat = resolvePautaCategoria(i);
-        return cat === 'MATERIA' || cat === 'COMISSAO';
-    }).length;
+    const deliberaveis = itens.filter((i) =>
+        categoriaDeliberavel(resolvePautaCategoria(i)),
+    ).length;
 
     return (
         <div className="sessao-painel-pauta">

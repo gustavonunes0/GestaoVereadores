@@ -3,7 +3,12 @@ import { StatusAta as PrismaStatusAta } from '@prisma/client';
 import { PrismaService } from '../../../../../prisma/prisma.service';
 import { AtaEntity } from '../../domain/entities/ata.entity';
 import { StatusAta } from '../../domain/enums/status-ata.enum';
-import { AtaRepository, CreateAtaData, UpdateAtaData } from '../../domain/repositories/ata.repository';
+import {
+    AtaRepository,
+    AtaResumo,
+    CreateAtaData,
+    UpdateAtaData,
+} from '../../domain/repositories/ata.repository';
 
 type RawAta = {
     id: string;
@@ -65,6 +70,42 @@ export class PrismaAtaRepository extends AtaRepository {
             },
         });
         return toEntity(raw);
+    }
+
+    async listResumos(
+        tenantId: string,
+        opcoes?: { excluirSessaoId?: string; limite?: number },
+    ): Promise<AtaResumo[]> {
+        const raws = await this.prisma.ata.findMany({
+            where: {
+                tenantId,
+                isRemoved: false,
+                ...(opcoes?.excluirSessaoId
+                    ? { sessaoPlenariaId: { not: opcoes.excluirSessaoId } }
+                    : {}),
+            },
+            select: {
+                id: true,
+                status: true,
+                sessaoPlenariaId: true,
+                sessaoPlenaria: {
+                    select: {
+                        dataInicio: true,
+                        tipoSessao: { select: { nome: true } },
+                    },
+                },
+            },
+            orderBy: { sessaoPlenaria: { dataInicio: 'desc' } },
+            take: opcoes?.limite ?? 50,
+        });
+
+        return raws.map((raw) => ({
+            id: raw.id,
+            status: raw.status as unknown as StatusAta,
+            sessaoPlenariaId: raw.sessaoPlenariaId,
+            sessaoDataInicio: raw.sessaoPlenaria.dataInicio,
+            sessaoTipoNome: raw.sessaoPlenaria.tipoSessao?.nome ?? null,
+        }));
     }
 
     async update(id: string, dados: UpdateAtaData): Promise<AtaEntity> {

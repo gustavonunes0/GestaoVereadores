@@ -179,6 +179,8 @@ import { GetAtaBySessaoUseCase } from '../../ata/application/use-cases/get-ata-b
 import { UpdateAtaUseCase } from '../../ata/application/use-cases/update-ata.use-case';
 import { AprovarAtaUseCase } from '../../ata/application/use-cases/aprovar-ata.use-case';
 import { UpdateAtaDto } from '../../ata/application/dto/update-ata.dto';
+import { ListAtasDisponiveisUseCase } from '../../ata/application/use-cases/list-atas-disponiveis.use-case';
+import { ListAtasDisponiveisQueryDto } from '../../ata/application/dto/list-atas-disponiveis-query.dto';
 import { GetResumoPublicoSessaoUseCase } from '../use-cases/get-resumo-publico-sessao.use-case';
 import { GetListaPresencaPdfUseCase } from '../use-cases/get-lista-presenca-pdf.use-case';
 import { GetAtaPdfUseCase } from '../use-cases/get-ata-pdf.use-case';
@@ -248,6 +250,7 @@ export class SessoesController {
         private readonly getAtaBySessao: GetAtaBySessaoUseCase,
         private readonly updateAta: UpdateAtaUseCase,
         private readonly aprovarAta: AprovarAtaUseCase,
+        private readonly listAtasDisponiveis: ListAtasDisponiveisUseCase,
         private readonly getResumoPublicoSessao: GetResumoPublicoSessaoUseCase,
         private readonly getListaPresencaPdf: GetListaPresencaPdfUseCase,
         private readonly getAtaPdf: GetAtaPdfUseCase,
@@ -864,6 +867,19 @@ export class SessoesController {
         @Query() query: ListSessaoHistoricoQueryDto,
     ) {
         return this.listSessaoHistorico.execute(id, tenantId, query);
+    }
+
+    /**
+     * Duas rotas no caminho de propósito: `atas/disponiveis` não colide com `:id`,
+     * que casa só um segmento.
+     */
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Get('atas/disponiveis')
+    async listAtasDisponiveisHandler(
+        @TenantId() tenantId: string,
+        @Query() query: ListAtasDisponiveisQueryDto,
+    ) {
+        return this.listAtasDisponiveis.execute(tenantId, query.sessaoId);
     }
 
     @TenantRoles(...STAFF_AND_ABOVE)

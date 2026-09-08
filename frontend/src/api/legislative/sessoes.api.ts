@@ -3,7 +3,7 @@ import { API_PATHS } from '../paths';
 import type { SessaoStatus } from '../../types/legislative';
 import type { JitsiTokenData, PautaItemDetalhe, SessaoPlenariaDetalhe, StatusSessao } from '../../types/sessoes';
 import type { PresencaRegistroApi } from '../../utils/presencaSessao';
-import type { Ata } from '../../types/ata';
+import type { Ata, AtaResumo } from '../../types/ata';
 
 export type SessaoHistoricoEvento = {
     id: string;
@@ -316,6 +316,12 @@ export const sessoesApi = {
 
     aprovarAta: (sessaoId: string) =>
         api<Ata>(API_PATHS.sessaoAtaAprovar(sessaoId), { method: 'POST' }),
+
+    /** Atas de outras sessões, para vincular a um item de pauta do tipo ATA. */
+    listAtasDisponiveis: (excluirSessaoId?: string) => {
+        const query = excluirSessaoId ? `?sessaoId=${excluirSessaoId}` : '';
+        return api<AtaResumo[]>(`${API_PATHS.atasDisponiveis}${query}`);
+    },
 
     // ── Portal Público ────────────────────────────────────────────────────
     getResumoPublico: (sessaoId: string) =>

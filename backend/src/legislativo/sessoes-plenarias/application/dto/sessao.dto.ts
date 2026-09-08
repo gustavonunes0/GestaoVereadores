@@ -100,6 +100,19 @@ export class AddPautaItemDto {
     @IsString()
     avisoTexto?: string;
 
+    /** Nome da ata a ser lida em plenário — obrigatório para ATA. */
+    @ValidateIf((o: AddPautaItemDto) => o.categoria === CategoriaPautaItem.ATA)
+    @IsString()
+    ataTitulo?: string;
+
+    /**
+     * Ata de uma sessão anterior já registrada no sistema. Opcional: a ata pode
+     * ainda não ter sido gerada aqui, e nesse caso o item guarda apenas o nome.
+     */
+    @IsOptional()
+    @IsUUID()
+    ataReferenciadaId?: string;
+
     @IsOptional()
     @IsInt()
     @Min(1)

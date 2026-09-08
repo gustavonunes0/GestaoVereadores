@@ -2395,11 +2395,13 @@ textarea:not(:disabled):focus {
 .pauta-cat--norma   { background: var(--success-bg); color: var(--success); border-color: var(--success-border); }
 .pauta-cat--aviso   { background: var(--warning-bg); color: var(--warning); border-color: var(--warning-border); }
 .pauta-cat--comissao { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+.pauta-cat--ata     { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
 
 .pauta-row--materia td:first-child { border-left-color: var(--info); }
 .pauta-row--ato     td:first-child { border-left-color: #6d28d9; }
 .pauta-row--norma   td:first-child { border-left-color: var(--success); }
 .pauta-row--aviso   td:first-child { border-left-color: var(--warning); }
+.pauta-row--ata     td:first-child { border-left-color: #4338ca; }
 
 /* Legenda/resumo por categoria acima da tabela */
 .pauta-cat-legend {

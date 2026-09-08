@@ -2,6 +2,7 @@ import {
     CategoriaPautaItem,
     FasePauta,
     ResultadoPauta,
+    StatusAta,
     StatusMateria,
     StatusPautaItem,
     TipoPautaItem,
@@ -61,6 +62,16 @@ export type PautaItemPrismaPayload = {
         id: string;
         nome: string;
         sigla?: string | null;
+    } | null;
+    ataReferenciadaId?: string | null;
+    ataReferenciada?: {
+        id: string;
+        status: StatusAta;
+        sessaoPlenaria?: {
+            id: string;
+            dataInicio: Date;
+            tipoSessao?: { nome: string } | null;
+        } | null;
     } | null;
     votacao?: {
         id: string;
@@ -146,6 +157,30 @@ export class PautaItemViewModel {
                     ? {
                           titulo: data.avisoTitulo ?? undefined,
                           descricao: data.avisoTexto ?? undefined,
+                      }
+                    : null,
+            ata:
+                data.categoria === 'ATA'
+                    ? {
+                          titulo: data.avisoTitulo ?? undefined,
+                          // Ausente quando a ata da sessão anterior não está no sistema:
+                          // o item vale pelo nome digitado.
+                          ataReferenciada: data.ataReferenciada
+                              ? {
+                                    id: data.ataReferenciada.id,
+                                    status: data.ataReferenciada.status,
+                                    sessao: data.ataReferenciada.sessaoPlenaria
+                                        ? {
+                                              id: data.ataReferenciada.sessaoPlenaria.id,
+                                              dataInicio:
+                                                  data.ataReferenciada.sessaoPlenaria.dataInicio.toISOString(),
+                                              tipoNome:
+                                                  data.ataReferenciada.sessaoPlenaria
+                                                      .tipoSessao?.nome ?? null,
+                                          }
+                                        : null,
+                                }
+                              : null,
                       }
                     : null,
             votacao: data.votacao

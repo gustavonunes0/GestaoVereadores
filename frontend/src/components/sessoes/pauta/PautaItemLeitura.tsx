@@ -4,11 +4,13 @@ import { PreviewImg } from '../../ui';
 import type { PautaItemDetalhe } from '../../../types/sessoes';
 import {
     PAUTA_CATEGORIA_LABELS,
+    ataReferenciadaRotulo,
     pautaItemRotulo,
     resolvePautaCategoria,
     resolvePautaFase,
     resolvePautaTipo,
 } from '../../../types/sessoes';
+import { API_PATHS } from '../../../api/paths';
 import { CategoriaPautaBadge, FasePautaBadge, TipoPautaBadge } from './PautaBadges';
 import { resolveMateriaTitulo } from '../../../utils/materiaDisplay';
 import { usePautaItemConteudo, type PautaItemConteudo } from './usePautaItemConteudo';
@@ -27,6 +29,8 @@ type ArquivoPreview = {
     fileName: string;
     mimeType?: string;
 };
+
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
 function MetaLinha({ label, valor }: { label: string; valor?: string | null }) {
     if (!valor) return null;
@@ -69,6 +73,12 @@ export function PautaItemLeitura({
             mimeType: isPdf ? 'application/pdf' : undefined,
         });
     }
+
+    // Ata vinculada: o PDF é gerado a partir da sessão de origem, não desta.
+    const ataVinculada = detalhe.ata?.ataReferenciada ?? null;
+    const ataPdfUrl = ataVinculada?.sessao
+        ? `${API_BASE}${API_PATHS.sessaoAtaPdf(ataVinculada.sessao.id)}`
+        : null;
 
     const isPainel = modo === 'painel';
     const isLista = modo === 'lista';
@@ -172,6 +182,15 @@ export function PautaItemLeitura({
                         {categoria === 'COMISSAO' && (
                             <MetaLinha label="Comissão" valor={comissaoNome} />
                         )}
+                        {categoria === 'ATA' && detalhe.ata && (
+                            <MetaLinha
+                                label="Ata vinculada"
+                                valor={
+                                    ataReferenciadaRotulo(detalhe.ata) ??
+                                    'Não vinculada a uma ata do sistema'
+                                }
+                            />
+                        )}
                         {statusMateria && (
                             <MetaLinha label="Status da matéria" valor={statusMateria} />
                         )}
@@ -204,6 +223,20 @@ export function PautaItemLeitura({
                                 <i className="pi pi-eye" aria-hidden />
                                 Ver texto integral
                             </button>
+                        </div>
+                    )}
+
+                    {ataPdfUrl && (
+                        <div className="pauta-leitura-acoes">
+                            <a
+                                className="pauta-leitura-link"
+                                href={ataPdfUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <i className="pi pi-file-pdf" aria-hidden />
+                                Abrir ata em PDF
+                            </a>
                         </div>
                     )}
                 </div>

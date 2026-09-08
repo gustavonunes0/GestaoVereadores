@@ -41,6 +41,7 @@ const CATEGORIA_META: Record<
     NORMA: { icon: 'pi pi-book', className: 'pauta-cat--norma' },
     AVISO: { icon: 'pi pi-megaphone', className: 'pauta-cat--aviso' },
     COMISSAO: { icon: 'pi pi-users', className: 'pauta-cat--comissao' },
+    ATA: { icon: 'pi pi-file-check', className: 'pauta-cat--ata' },
 };
 
 export function CategoriaPautaBadge({
