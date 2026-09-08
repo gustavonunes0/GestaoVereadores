@@ -222,9 +222,13 @@ export function JitsiMeetingEmbed({
                     userInfo={{ displayName: userName, email: '' }}
                     onApiReady={handleApiReady}
                     getIFrameRef={(ref) => {
+                        // Sem piso em px: inline vence media query, então um `minHeight`
+                        // aqui faria o iframe estourar o `.jitsi-stage` encolhido no
+                        // tablet e pintar por cima do conteúdo de baixo. A altura é
+                        // responsabilidade do CSS do palco.
                         ref.style.height = '100%';
                         ref.style.width = '100%';
-                        ref.style.minHeight = '560px';
+                        ref.style.display = 'block';
                         ref.style.borderRadius = '8px';
                         ref.style.border = '1px solid var(--surface-border)';
                     }}

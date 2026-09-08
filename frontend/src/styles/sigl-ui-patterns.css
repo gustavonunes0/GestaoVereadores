@@ -2963,6 +2963,8 @@ textarea:not(:disabled):focus {
     height: min(78vh, 780px);
     min-height: 560px;
     width: 100%;
+    /* Guarda: o iframe do Jitsi nunca deve transbordar sobre o conteúdo seguinte. */
+    overflow: hidden;
 }
 
 .jitsi-stage__cert-hint {
@@ -3119,6 +3121,15 @@ textarea:not(:disabled):focus {
     .transmissao-layout__video,
     .transmissao-layout__side {
         grid-column: 1 / -1;
+    }
+
+    /* Empilhado (tablet), o painel lateral desce para baixo do vídeo. Exigir 640px
+       de palco empurraria os controles para fora da viewport — e `min-height` tem
+       de cair junto com `height`, senão a altura usada continua sendo a maior das duas. */
+    .jitsi-stage:not(:fullscreen),
+    .transmissao-panel-wrap--obs .jitsi-stage:not(:fullscreen) {
+        height: min(58vh, 520px);
+        min-height: 300px;
     }
 }
 .transmissao-section {

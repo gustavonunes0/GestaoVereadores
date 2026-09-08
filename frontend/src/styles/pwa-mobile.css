@@ -623,8 +623,11 @@
         justify-content: center;
     }
 
-    .parl-sessao-jitsi .jitsi-stage {
-        min-height: min(52vh, 420px);
+    /* `height` junto com `min-height`: a altura usada é a maior das duas, então
+       reduzir só o piso não encolhe o palco. */
+    .parl-sessao-jitsi .jitsi-stage:not(:fullscreen) {
+        height: min(52vh, 420px);
+        min-height: 260px;
     }
 
     .parl-sessao-ativa-card {
@@ -771,8 +774,9 @@
         width: 100%;
     }
 
-    .parl-sessao-jitsi .jitsi-stage {
-        min-height: min(56vh, 480px);
+    .parl-sessao-jitsi .jitsi-stage:not(:fullscreen) {
+        height: min(56vh, 480px);
+        min-height: 300px;
     }
 
     .content {
@@ -920,8 +924,9 @@
         padding: 0.85rem 1rem;
     }
 
-    .parl-sessao-jitsi .jitsi-stage {
-        min-height: min(42vh, 280px);
+    .parl-sessao-jitsi .jitsi-stage:not(:fullscreen) {
+        height: min(42vh, 280px);
+        min-height: 200px;
     }
 }
 
