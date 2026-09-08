@@ -57,19 +57,26 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
         setSelectedId(itemId);
     }, []);
 
-    const buscarPauta = useCallback(async () => {
-        setLoading(true);
-        try {
-            const data = await sessoesApi.getPauta(sessao.id);
-            const lista = data ?? [];
-            setItens(lista);
-            setSelectedId((atual) => resolverSelecaoInicial(lista, atual));
-        } catch (err) {
-            showApiError(err);
-        } finally {
-            setLoading(false);
-        }
-    }, [sessao.id, showApiError]);
+    /**
+     * `mostrarLoading` desligado quando a tela já mostra o resultado esperado
+     * (reordenação otimista) — aí o refetch só reconcilia, sem piscar o spinner.
+     */
+    const buscarPauta = useCallback(
+        async (mostrarLoading = true) => {
+            if (mostrarLoading) setLoading(true);
+            try {
+                const data = await sessoesApi.getPauta(sessao.id);
+                const lista = data ?? [];
+                setItens(lista);
+                setSelectedId((atual) => resolverSelecaoInicial(lista, atual));
+            } catch (err) {
+                showApiError(err);
+            } finally {
+                if (mostrarLoading) setLoading(false);
+            }
+        },
+        [sessao.id, showApiError],
+    );
 
     useEffect(() => {
         void buscarPauta();
@@ -103,7 +110,13 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
         setItens(novo);
 
         try {
-            await sessoesApi.reordenarPautaItem(sessao.id, itens[index].id, newIndex + 1);
+            await sessoesApi.moverPautaItem(
+                sessao.id,
+                itens[index].id,
+                direction === -1 ? 'CIMA' : 'BAIXO',
+            );
+            // A troca pode mudar a fase dos dois itens, e a fase aparece nos badges.
+            await buscarPauta(false);
         } catch (err) {
             setItens(anterior);
             showApiError(err);

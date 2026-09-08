@@ -14,6 +14,7 @@ import {
     GetPautaItemByIdUseCase,
     ListPautaFasesUseCase,
     ListPautaItensUseCase,
+    MoverPautaItemUseCase,
     RemovePautaItemUseCase,
     UpdatePautaItemUseCase,
 } from './application/use-cases/pauta.use-case';
@@ -107,6 +108,7 @@ import { PEDIDO_PALAVRA_REPOSITORY } from './sessoes-plenarias.tokens';
         ListPautaFasesUseCase,
         AddPautaItemUseCase,
         UpdatePautaItemUseCase,
+        MoverPautaItemUseCase,
         RemovePautaItemUseCase,
         RegistrarResultadoPautaUseCase,
         ListPresencasUseCase,

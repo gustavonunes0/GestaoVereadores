@@ -279,10 +279,15 @@ export const sessoesApi = {
     removePautaItem: (sessaoId: string, itemId: string) =>
         api<void>(API_PATHS.sessoesPautaItem(sessaoId, itemId), { method: 'DELETE' }),
 
-    reordenarPautaItem: (sessaoId: string, itemId: string, ordem: number) =>
-        api<PautaItemDetalhe>(API_PATHS.sessoesPautaItem(sessaoId, itemId), {
+    /**
+     * Troca o item de posição com o vizinho. É o backend que resolve o par a
+     * trocar: a ordem precisa estar livre, então mandar "assuma a posição N"
+     * de um item só sempre colide com quem já ocupa aquela posição.
+     */
+    moverPautaItem: (sessaoId: string, itemId: string, direcao: 'CIMA' | 'BAIXO') =>
+        api<PautaItemDetalhe>(API_PATHS.sessoesPautaItemMover(sessaoId, itemId), {
             method: 'PATCH',
-            body: JSON.stringify({ ordem }),
+            body: JSON.stringify({ direcao }),
         }),
 
     publicarPauta: (sessaoId: string) =>

@@ -80,6 +80,7 @@ export const API_PATHS = {
     sessaoJitsiToken:    (id: string) => `/legislative/sessoes-plenarias/${id}/jitsi-token`,
     sessoesPauta:        (id: string) => `/legislative/sessoes-plenarias/${id}/pauta`,
     sessoesPautaItem:    (sid: string, iid: string) => `/legislative/sessoes-plenarias/${sid}/pauta/${iid}`,
+    sessoesPautaItemMover: (sid: string, iid: string) => `/legislative/sessoes-plenarias/${sid}/pauta/${iid}/mover`,
     sessoesPautaPublicar:(id: string) => `/legislative/sessoes-plenarias/${id}/pauta/publicar`,
     sessoesPautaVotacao: (sid: string, iid: string) =>
         `/legislative/sessoes-plenarias/${sid}/pauta/${iid}/votacao`,

@@ -39,7 +39,11 @@ import {
     RegistrarPresencaDto,
     UpdatePresencaDto,
 } from '../dto/presenca.dto';
-import { FilterPautaDto, UpdatePautaItemDto } from '../dto/pauta.dto';
+import {
+    FilterPautaDto,
+    MoverPautaItemDto,
+    UpdatePautaItemDto,
+} from '../dto/pauta.dto';
 import { ExecutarCicloVidaSessaoDto } from '../dto/session-lifecycle.dto';
 import { UpdateSessaoPlenariaDto } from '../dto/update-sessao.dto';
 import {
@@ -117,6 +121,7 @@ import {
     GetPautaItemByIdUseCase,
     ListPautaFasesUseCase,
     ListPautaItensUseCase,
+    MoverPautaItemUseCase,
     RemovePautaItemUseCase,
     UpdatePautaItemUseCase,
 } from '../use-cases/pauta.use-case';
@@ -211,6 +216,7 @@ export class SessoesController {
         private readonly listPautaFases: ListPautaFasesUseCase,
         private readonly addPautaItem: AddPautaItemUseCase,
         private readonly updatePautaItem: UpdatePautaItemUseCase,
+        private readonly moverPautaItem: MoverPautaItemUseCase,
         private readonly removePautaItem: RemovePautaItemUseCase,
         private readonly registrarResultadoPauta: RegistrarResultadoPautaUseCase,
         private readonly listPresencas: ListPresencasUseCase,
@@ -410,6 +416,26 @@ export class SessoesController {
     ) {
         try {
             return await this.addPautaItem.execute(tenantId, id, dto);
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Patch(':id/pauta/:pautaItemId/mover')
+    async moverPautaItemHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Param('pautaItemId', ParseUUIDPipe) pautaItemId: string,
+        @Body() dto: MoverPautaItemDto,
+    ) {
+        try {
+            return await this.moverPautaItem.execute(
+                tenantId,
+                id,
+                pautaItemId,
+                dto,
+            );
         } catch (error) {
             this.handleError(error);
         }

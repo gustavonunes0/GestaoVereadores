@@ -40,6 +40,7 @@ import {
     RegistrarResultadoPautaDto,
 } from '../../application/dto/sessao.dto';
 import { FilterPautaDto, UpdatePautaItemDto } from '../../application/dto/pauta.dto';
+import { DirecaoMovimentoPauta } from '../../domain/enums/direcao-movimento-pauta.enum';
 import {
     FilterPresencaDto,
     UpdatePresencaDto,
@@ -740,6 +741,62 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 ordem: dto.ordem,
                 fase: dto.fase,
             },
+            include: pautaItemInclude,
+        });
+    }
+
+    /**
+     * Troca o item de posição com o vizinho na ordem exibida (fase e depois ordem).
+     *
+     * É uma troca entre dois itens, e não "assuma a ordem N": a ordem tem de estar
+     * livre dentro da sessão, então mover para uma posição ocupada obriga a mexer
+     * nos dois registros de uma vez — daí a transação.
+     */
+    async moverPautaItem(
+        tenantId: string,
+        sessaoId: string,
+        pautaItemId: string,
+        direcao: DirecaoMovimentoPauta,
+    ) {
+        await this.assertSessaoGerenciaPauta(tenantId, sessaoId);
+
+        const itens = await this.prisma.pautaItem.findMany({
+            where: { sessaoId, isRemoved: false },
+            select: { id: true, ordem: true, fase: true },
+            orderBy: [{ fase: 'asc' }, { ordem: 'asc' }],
+        });
+
+        const posicao = itens.findIndex((i) => i.id === pautaItemId);
+        if (posicao < 0) {
+            throw new NotFoundException('Item de pauta não encontrado');
+        }
+
+        const destino =
+            posicao + (direcao === DirecaoMovimentoPauta.CIMA ? -1 : 1);
+        if (destino < 0 || destino >= itens.length) {
+            throw new BadRequestException(
+                'Item já está no limite da pauta',
+            );
+        }
+
+        const atual = itens[posicao];
+        const vizinho = itens[destino];
+
+        // A fase entra na troca porque pesa mais que a ordem na exibição: trocar
+        // só a ordem entre itens de fases diferentes não mudaria nada na tela.
+        await this.prisma.$transaction([
+            this.prisma.pautaItem.update({
+                where: { id: atual.id },
+                data: { ordem: vizinho.ordem, fase: vizinho.fase },
+            }),
+            this.prisma.pautaItem.update({
+                where: { id: vizinho.id },
+                data: { ordem: atual.ordem, fase: atual.fase },
+            }),
+        ]);
+
+        return this.prisma.pautaItem.findFirst({
+            where: { id: pautaItemId },
             include: pautaItemInclude,
         });
     }

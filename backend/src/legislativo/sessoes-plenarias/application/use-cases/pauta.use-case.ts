@@ -5,7 +5,11 @@ import {
 } from '../../domain/enums/agenda-phase.enum';
 import { SessaoPlenariaRepository } from '../../domain/repositories/sessao-plenaria.repository';
 import { SESSAO_PLENARIA_REPOSITORY } from '../../sessoes-plenarias.tokens';
-import { FilterPautaDto, UpdatePautaItemDto } from '../dto/pauta.dto';
+import {
+    FilterPautaDto,
+    MoverPautaItemDto,
+    UpdatePautaItemDto,
+} from '../dto/pauta.dto';
 import { AddPautaItemDto } from '../dto/sessao.dto';
 import {
     PautaItemComVotacaoAbertaError,
@@ -135,6 +139,33 @@ export class UpdatePautaItemUseCase {
                 sessaoId,
                 pautaItemId,
                 dto,
+            )) as PautaItemPrismaPayload;
+            return PautaItemViewModel.toHttp(item);
+        } catch (error) {
+            mapRepositoryError(error);
+        }
+    }
+}
+
+@Injectable()
+export class MoverPautaItemUseCase {
+    constructor(
+        @Inject(SESSAO_PLENARIA_REPOSITORY)
+        private readonly repository: SessaoPlenariaRepository,
+    ) {}
+
+    async execute(
+        tenantId: string,
+        sessaoId: string,
+        pautaItemId: string,
+        dto: MoverPautaItemDto,
+    ) {
+        try {
+            const item = (await this.repository.moverPautaItem(
+                tenantId,
+                sessaoId,
+                pautaItemId,
+                dto.direcao,
             )) as PautaItemPrismaPayload;
             return PautaItemViewModel.toHttp(item);
         } catch (error) {

@@ -15,6 +15,7 @@ import { ExecutarCicloVidaSessaoDto } from '../../application/dto/session-lifecy
 import { SessaoPlenariaEntity } from '../entities/sessao-plenaria.entity';
 import { StatusSessao } from '../enums/status-sessao.enum';
 import { FaseSessao } from '../enums/fase-sessao.enum';
+import { DirecaoMovimentoPauta } from '../enums/direcao-movimento-pauta.enum';
 
 export type TransicionarStatusDados = {
     novoStatus: StatusSessao;
@@ -77,6 +78,12 @@ export abstract class SessaoPlenariaRepository {
         sessaoId: string,
         pautaItemId: string,
         dto: UpdatePautaItemDto,
+    ): Promise<unknown>;
+    abstract moverPautaItem(
+        tenantId: string,
+        sessaoId: string,
+        pautaItemId: string,
+        direcao: DirecaoMovimentoPauta,
     ): Promise<unknown>;
     abstract removerPautaItem(
         tenantId: string,
