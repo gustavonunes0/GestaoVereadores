@@ -13,6 +13,7 @@ export type TenantHostResolution =
           host: string;
           id: string;
           name: string;
+          tradeName: string | null;
           logo: string | null;
           cnpj: string;
       }
@@ -39,6 +40,7 @@ export class ResolveTenantByHostUseCase {
                     select: {
                         id: true,
                         name: true,
+                        tradeName: true,
                         logo: true,
                         cnpj: true,
                         status: true,
@@ -59,6 +61,7 @@ export class ResolveTenantByHostUseCase {
                 host,
                 id: tenant.id,
                 name: tenant.name,
+                tradeName: tenant.tradeName,
                 logo: tenant.logo,
                 cnpj: tenant.cnpj,
             };

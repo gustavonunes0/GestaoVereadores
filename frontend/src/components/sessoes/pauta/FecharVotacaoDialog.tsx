@@ -50,11 +50,14 @@ export function FecharVotacaoDialog({
 
     const rotulo = titulo ?? (detalhe ? pautaItemRotulo(detalhe) : 'Votação');
     const tipoVotacao = detalhe?.votacao?.tipoVotacao ?? 'NOMINAL';
-    const entradaManual = tipoVotacao === 'SIMBOLICA' || tipoVotacao === 'SECRETA';
+    /** Só simbólica lança totais manuais; secreta e nominal contam votos individuais. */
+    const entradaManual = tipoVotacao === 'SIMBOLICA';
 
     const simAtual = placar?.votosSim ?? detalhe?.votacao?.votosSim ?? 0;
     const naoAtual = placar?.votosNao ?? detalhe?.votacao?.votosNao ?? 0;
     const abstAtual = placar?.abstencoes ?? detalhe?.votacao?.abstencoes ?? 0;
+    const totalPlacar = simAtual + naoAtual + abstAtual;
+    const placarZerado = !entradaManual && totalPlacar === 0;
 
     const sincronizarFechamento = useCallback(
         async (mensagem?: string) => {
@@ -193,6 +196,13 @@ export function FecharVotacaoDialog({
                         />
                     )}
 
+                    {placarZerado ? (
+                        <Message
+                            severity="warn"
+                            text="Nenhum voto individual registrado. Ao fechar, o resultado será empate (adiado) em maioria simples, ou rejeição conforme o quórum exigido."
+                        />
+                    ) : null}
+
                     {entradaManual && (
                         <div className="grid p-fluid">
                             <div className="col-4">
@@ -222,6 +232,14 @@ export function FecharVotacaoDialog({
                                     className="w-full"
                                 />
                             </div>
+                            {votosSim === 0 && votosNao === 0 ? (
+                                <div className="col-12">
+                                    <Message
+                                        severity="warn"
+                                        text="Placar zerado: o resultado será empate (matéria adiada na pauta)."
+                                    />
+                                </div>
+                            ) : null}
                         </div>
                     )}
 

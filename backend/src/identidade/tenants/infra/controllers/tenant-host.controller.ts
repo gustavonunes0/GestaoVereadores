@@ -33,11 +33,14 @@ export class TenantHostController {
         }
 
         if (resolved.kind === 'tenant') {
+            const displayName = resolved.tradeName?.trim() || resolved.name;
             return {
                 kind: 'tenant' as const,
                 host: resolved.host,
                 id: resolved.id,
-                name: resolved.name,
+                name: displayName,
+                legalName: resolved.name,
+                tradeName: resolved.tradeName,
                 logo: resolved.logo,
                 cnpj: resolved.cnpj,
             };

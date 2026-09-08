@@ -139,6 +139,18 @@ export type UpdateTenantPaymentPayload = Partial<{
 }>;
 
 export const tenantsApi = {
+    current: () =>
+        api<{
+            kind: 'tenant' | 'platform';
+            host: string;
+            id?: string;
+            name: string;
+            legalName?: string;
+            tradeName?: string | null;
+            logo?: string | null;
+            cnpj?: string;
+        }>(API_PATHS.tenantsCurrent),
+
     list: () => api<TenantListItem[]>(API_PATHS.tenants),
 
     getById: (id: string) => api<TenantDetail>(API_PATHS.tenantById(id)),

@@ -18,12 +18,17 @@ describe('LegislativeMatterDomainService', () => {
         expect(service.getDefaultStatus()).toBe(MatterStatus.DRAFT);
     });
 
-    it('permite tramitação em PROTOCOLADA e pauta em EM_TRAMITACAO', () => {
+    it('permite tramitação e pauta em PROTOCOLADA ou rascunho', () => {
         const protocolada = service.getWorkflowCapabilities(
             MatterStatus.PROTOCOLADA,
         );
         expect(protocolada.canTramitate).toBe(true);
-        expect(protocolada.canEnterAgenda).toBe(false);
+        expect(protocolada.canEnterAgenda).toBe(true);
+        expect(protocolada.canBeVoted).toBe(true);
+
+        const rascunho = service.getWorkflowCapabilities(MatterStatus.DRAFT);
+        expect(rascunho.canEnterAgenda).toBe(true);
+        expect(rascunho.canBeVoted).toBe(true);
 
         const emTramitacao = service.getWorkflowCapabilities(
             MatterStatus.EM_TRAMITACAO,
@@ -115,7 +120,7 @@ describe('materia-workflow facade', () => {
             assertMateriaPodeEntrarNaPauta({
                 status: StatusMateria.APROVADA,
             }),
-        ).toThrow('Somente matérias com status EM_TRAMITACAO');
+        ).toThrow('Somente matérias em rascunho, protocoladas ou em tramitação');
     });
 
     it('permite gerar norma apenas de matéria aprovada', () => {

@@ -6,6 +6,7 @@ export type TenantAuthProps = {
     cnpj: string;
     status: TenantStatus;
     logo: string | null;
+    tradeName?: string | null;
 };
 
 export class TenantAuthEntity {
@@ -14,6 +15,7 @@ export class TenantAuthEntity {
     readonly cnpj: string;
     readonly status: TenantStatus;
     readonly logo: string | null;
+    readonly tradeName: string | null;
 
     constructor(props: TenantAuthProps) {
         this.id = props.id;
@@ -21,6 +23,13 @@ export class TenantAuthEntity {
         this.cnpj = props.cnpj;
         this.status = props.status;
         this.logo = props.logo;
+        this.tradeName = props.tradeName ?? null;
+    }
+
+    /** Nome de exibição da câmara (fantasia ou razão). */
+    displayName(): string {
+        const fantasia = this.tradeName?.trim();
+        return fantasia || this.name;
     }
 }
 

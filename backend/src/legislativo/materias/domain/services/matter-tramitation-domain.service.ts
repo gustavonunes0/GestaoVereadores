@@ -19,22 +19,35 @@ const ACTION_RULES: Record<MatterTramitationAction, ActionRule> = {
         defaultObservacao: 'Tramitação iniciada',
     },
     [MatterTramitationAction.COLOCAR_EM_PAUTA]: {
-        from: [MatterStatus.EM_TRAMITACAO],
+        from: [
+            MatterStatus.DRAFT,
+            MatterStatus.PROTOCOLADA,
+            MatterStatus.EM_TRAMITACAO,
+        ],
         to: MatterStatus.EM_PAUTA,
         defaultObservacao: 'Matéria incluída em pauta',
     },
     [MatterTramitationAction.INICIAR_VOTACAO]: {
-        from: [MatterStatus.EM_PAUTA],
+        // Plenário pode votar rascunho ou matéria já protocolada,
+        // sem exigir o intermediário EM_PAUTA.
+        from: [
+            MatterStatus.DRAFT,
+            MatterStatus.PROTOCOLADA,
+            MatterStatus.EM_TRAMITACAO,
+            MatterStatus.EM_PAUTA,
+        ],
         to: MatterStatus.EM_VOTACAO,
         defaultObservacao: 'Votação aberta na sessão plenária',
     },
     [MatterTramitationAction.RETIRAR_DA_PAUTA]: {
-        from: [MatterStatus.EM_PAUTA],
+        from: [MatterStatus.EM_PAUTA, MatterStatus.EM_VOTACAO],
         to: MatterStatus.EM_TRAMITACAO,
         defaultObservacao: 'Matéria retirada da pauta',
     },
     [MatterTramitationAction.APROVAR]: {
         from: [
+            MatterStatus.DRAFT,
+            MatterStatus.PROTOCOLADA,
             MatterStatus.EM_TRAMITACAO,
             MatterStatus.EM_PAUTA,
             MatterStatus.EM_VOTACAO,
@@ -44,6 +57,8 @@ const ACTION_RULES: Record<MatterTramitationAction, ActionRule> = {
     },
     [MatterTramitationAction.REJEITAR]: {
         from: [
+            MatterStatus.DRAFT,
+            MatterStatus.PROTOCOLADA,
             MatterStatus.EM_TRAMITACAO,
             MatterStatus.EM_PAUTA,
             MatterStatus.EM_VOTACAO,

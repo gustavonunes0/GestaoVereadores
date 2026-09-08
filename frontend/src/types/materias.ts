@@ -7,11 +7,32 @@ export type StatusMateria = MateriaStatus;
 export const STATUS_MATERIA_LABELS = MATERIA_STATUS_LABELS;
 
 const STATUS_TRAMITAR_GRAPH: Record<MateriaStatus, MateriaStatus[]> = {
-    DRAFT: ['PROTOCOLADA'],
-    PROTOCOLADA: ['EM_TRAMITACAO'],
-    EM_TRAMITACAO: ['EM_PAUTA', 'ARQUIVADA', 'RETIRADA'],
+    DRAFT: [
+        'PROTOCOLADA',
+        'EM_PAUTA',
+        'EM_VOTACAO',
+        'APROVADA',
+        'REJEITADA',
+        'ARQUIVADA',
+    ],
+    PROTOCOLADA: [
+        'EM_TRAMITACAO',
+        'EM_PAUTA',
+        'EM_VOTACAO',
+        'APROVADA',
+        'REJEITADA',
+        'ARQUIVADA',
+    ],
+    EM_TRAMITACAO: [
+        'EM_PAUTA',
+        'EM_VOTACAO',
+        'APROVADA',
+        'REJEITADA',
+        'ARQUIVADA',
+        'RETIRADA',
+    ],
     EM_PAUTA: ['EM_VOTACAO', 'APROVADA', 'REJEITADA', 'EM_TRAMITACAO'],
-    EM_VOTACAO: ['APROVADA', 'REJEITADA'],
+    EM_VOTACAO: ['APROVADA', 'REJEITADA', 'EM_TRAMITACAO'],
     APROVADA: ['TRANSFORMADA_EM_NORMA'],
     REJEITADA: [],
     ARQUIVADA: [],

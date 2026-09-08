@@ -56,6 +56,7 @@ export class PrismaTenantAuthRepository extends TenantAuthRepository {
         cnpj: string;
         status: TenantStatus;
         logo: string | null;
+        tradeName?: string | null;
     }): TenantAuthEntity {
         return new TenantAuthEntity({
             id: row.id,
@@ -63,6 +64,7 @@ export class PrismaTenantAuthRepository extends TenantAuthRepository {
             cnpj: row.cnpj,
             status: row.status,
             logo: row.logo,
+            tradeName: row.tradeName ?? null,
         });
     }
 }

@@ -60,23 +60,33 @@ export class LegislativeMatterDomainService {
 
     getWorkflowCapabilities(status: MatterStatus): MatterWorkflowCapabilities {
         const active =
+            status === MatterStatus.DRAFT ||
+            status === MatterStatus.PROTOCOLADA ||
             status === MatterStatus.EM_TRAMITACAO ||
             status === MatterStatus.EM_PAUTA ||
             status === MatterStatus.EM_VOTACAO;
         return {
             canTramitate:
+                status === MatterStatus.DRAFT ||
                 status === MatterStatus.EM_TRAMITACAO ||
                 status === MatterStatus.PROTOCOLADA,
-            canEnterAgenda: status === MatterStatus.EM_TRAMITACAO,
+            canEnterAgenda:
+                status === MatterStatus.DRAFT ||
+                status === MatterStatus.PROTOCOLADA ||
+                status === MatterStatus.EM_TRAMITACAO,
             canBeVoted: active,
             canGenerateNorm: status === MatterStatus.APROVADA,
         };
     }
 
     assertCanEnterAgenda(status: MatterStatus) {
-        if (status !== MatterStatus.EM_TRAMITACAO) {
+        if (
+            status !== MatterStatus.DRAFT &&
+            status !== MatterStatus.PROTOCOLADA &&
+            status !== MatterStatus.EM_TRAMITACAO
+        ) {
             throw new Error(
-                'Somente matérias com status EM_TRAMITACAO podem entrar na pauta',
+                'Somente matérias em rascunho, protocoladas ou em tramitação podem entrar na pauta',
             );
         }
     }

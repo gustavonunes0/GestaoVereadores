@@ -44,6 +44,42 @@ describe('MatterTramitationDomainService', () => {
         ).toBe(MatterStatus.EM_VOTACAO);
     });
 
+    it('inicia votação a partir de PROTOCOLADA', () => {
+        expect(
+            service.resolveTransition(
+                MatterStatus.PROTOCOLADA,
+                MatterTramitationAction.INICIAR_VOTACAO,
+            ),
+        ).toBe(MatterStatus.EM_VOTACAO);
+    });
+
+    it('inicia votação a partir de rascunho', () => {
+        expect(
+            service.resolveTransition(
+                MatterStatus.DRAFT,
+                MatterTramitationAction.INICIAR_VOTACAO,
+            ),
+        ).toBe(MatterStatus.EM_VOTACAO);
+    });
+
+    it('permite aprovar matéria protocolada após deliberação', () => {
+        expect(
+            service.resolveTransition(
+                MatterStatus.PROTOCOLADA,
+                MatterTramitationAction.APROVAR,
+            ),
+        ).toBe(MatterStatus.APROVADA);
+    });
+
+    it('permite aprovar matéria em rascunho após deliberação', () => {
+        expect(
+            service.resolveTransition(
+                MatterStatus.DRAFT,
+                MatterTramitationAction.APROVAR,
+            ),
+        ).toBe(MatterStatus.APROVADA);
+    });
+
     it('permite aprovar de EM_VOTACAO', () => {
         expect(
             service.resolveTransition(

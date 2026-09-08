@@ -45,10 +45,27 @@ export class TramitarMateriaUseCase {
         const statusAtual = materia.status as MatterStatus;
 
         const TRANSICOES: Record<MatterStatus, MatterStatus[]> = {
-            [MatterStatus.DRAFT]: [MatterStatus.PROTOCOLADA],
-            [MatterStatus.PROTOCOLADA]: [MatterStatus.EM_TRAMITACAO],
+            [MatterStatus.DRAFT]: [
+                MatterStatus.PROTOCOLADA,
+                MatterStatus.EM_PAUTA,
+                MatterStatus.EM_VOTACAO,
+                MatterStatus.APROVADA,
+                MatterStatus.REJEITADA,
+                MatterStatus.ARQUIVADA,
+            ],
+            [MatterStatus.PROTOCOLADA]: [
+                MatterStatus.EM_TRAMITACAO,
+                MatterStatus.EM_PAUTA,
+                MatterStatus.EM_VOTACAO,
+                MatterStatus.APROVADA,
+                MatterStatus.REJEITADA,
+                MatterStatus.ARQUIVADA,
+            ],
             [MatterStatus.EM_TRAMITACAO]: [
                 MatterStatus.EM_PAUTA,
+                MatterStatus.EM_VOTACAO,
+                MatterStatus.APROVADA,
+                MatterStatus.REJEITADA,
                 MatterStatus.ARQUIVADA,
                 MatterStatus.RETIRADA,
             ],
@@ -61,6 +78,7 @@ export class TramitarMateriaUseCase {
             [MatterStatus.EM_VOTACAO]: [
                 MatterStatus.APROVADA,
                 MatterStatus.REJEITADA,
+                MatterStatus.EM_TRAMITACAO,
             ],
             [MatterStatus.APROVADA]: [MatterStatus.TRANSFORMADA_EM_NORMA],
             [MatterStatus.REJEITADA]: [],

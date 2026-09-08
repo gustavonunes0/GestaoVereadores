@@ -88,6 +88,7 @@ export function canAddMateriaToPauta(materia: {
 }): boolean {
     if (materia.status) {
         return (
+            materia.status === 'DRAFT' ||
             materia.status === 'EM_TRAMITACAO' ||
             materia.status === 'EM_PAUTA' ||
             materia.status === 'PROTOCOLADA'

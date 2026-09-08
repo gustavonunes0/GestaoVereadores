@@ -383,10 +383,16 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
 
         // Tramitação da matéria só ocorre na votação da própria matéria.
         // Parecer de comissão não altera o status da matéria objeto.
+        const statusMateria = pautaItem.materia?.status;
+        const podeIniciarVotacao =
+            statusMateria === StatusMateria.DRAFT ||
+            statusMateria === StatusMateria.PROTOCOLADA ||
+            statusMateria === StatusMateria.EM_TRAMITACAO ||
+            statusMateria === StatusMateria.EM_PAUTA;
         if (
             pautaItem.categoria === 'MATERIA' &&
             materiaId &&
-            pautaItem.materia?.status === StatusMateria.EM_PAUTA
+            podeIniciarVotacao
         ) {
             try {
                 await this.materiaRepository.tramitarMateria(
@@ -652,6 +658,43 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         );
     }
 
+    private async aplicarResultadoNaMateria(
+        tenantId: string,
+        materiaId: string,
+        resultado: 'APROVADO' | 'REJEITADO',
+        observacao: string,
+    ) {
+        const materia = await this.prisma.materia.findFirst({
+            where: { id: materiaId, tenantId, isRemoved: false },
+            select: { status: true },
+        });
+        if (!materia) return;
+
+        // Se a votação abriu sem avançar o status (ex.: matéria protocolada/rascunho),
+        // normaliza para EM_VOTACAO antes de aprovar/rejeitar.
+        const status = materia.status;
+        if (
+            status === StatusMateria.DRAFT ||
+            status === StatusMateria.PROTOCOLADA ||
+            status === StatusMateria.EM_TRAMITACAO ||
+            status === StatusMateria.EM_PAUTA
+        ) {
+            try {
+                await this.materiaRepository.tramitarMateria(tenantId, materiaId, {
+                    action: MatterTramitationAction.INICIAR_VOTACAO,
+                    observacao: 'Status ajustado ao encerrar a votação',
+                });
+            } catch {
+                /* se já puder aprovar/rejeitar direto, segue abaixo */
+            }
+        }
+
+        await this.materiaRepository.tramitarMateria(tenantId, materiaId, {
+            action: this.mapResultadoParaAcao(resultado),
+            observacao,
+        });
+    }
+
     private async aplicarResultadoNaPautaEMateria(
         tenantId: string,
         pautaItemId: string,
@@ -673,12 +716,12 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             payload.atualizaMateria &&
             payload.resultadoPauta
         ) {
-            await this.materiaRepository.tramitarMateria(tenantId, materiaId, {
-                action: this.mapResultadoParaAcao(
-                    payload.resultadoPauta as 'APROVADO' | 'REJEITADO',
-                ),
-                observacao: `Resultado da votação: ${payload.resultadoPauta}`,
-            });
+            await this.aplicarResultadoNaMateria(
+                tenantId,
+                materiaId,
+                payload.resultadoPauta as 'APROVADO' | 'REJEITADO',
+                `Resultado da votação: ${payload.resultadoPauta}`,
+            );
         }
     }
 
@@ -826,10 +869,12 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             (dados.resultado === ResultadoVotacaoEnum.APROVADO ||
                 dados.resultado === ResultadoVotacaoEnum.REJEITADO)
         ) {
-            await this.materiaRepository.tramitarMateria(tenantId, materiaId, {
-                action: this.mapResultadoParaAcao(dados.resultado as 'APROVADO' | 'REJEITADO'),
-                observacao: `Resultado da votação: ${dados.resultado}`,
-            });
+            await this.aplicarResultadoNaMateria(
+                tenantId,
+                materiaId,
+                dados.resultado as 'APROVADO' | 'REJEITADO',
+                `Resultado da votação: ${dados.resultado}`,
+            );
         }
     }
 }

@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { sessoesApi } from '../../../api/legislative/sessoes.api';
+import { tenantsApi } from '../../../api/tenants.api';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useSessaoRealtime } from '../../../hooks/useSessaoRealtime';
-import { isStaffUser } from '../../../types/auth';
 import type { VotacaoEncerradaEvent } from '../../../types/legislative';
 import type { FaseSessao, PautaItemDetalhe, SessaoPlenariaDetalhe } from '../../../types/sessoes';
 import {
@@ -19,7 +19,8 @@ import {
     sessaoDetalheLabel,
 } from '../../../types/sessoes';
 import { criarPainelChannel, type PainelMensagem } from '../../../utils/sessaoPainelChannel';
-import logoSrc from '../../../../assets/logo.png';
+import { resolveTenantLogoUrl } from '../../../utils/tenantLogo';
+import fallbackLogoSrc from '../../../../assets/logo.png';
 
 const RESULTADO_LABEL: Record<string, string> = {
     APROVADO: 'Aprovado',
@@ -67,7 +68,13 @@ function PlacarGrande({
     );
 }
 
-function PainelAguardando({ sessaoLabel }: { sessaoLabel: string }) {
+function PainelAguardando({
+    sessaoLabel,
+    logoSrc,
+}: {
+    sessaoLabel: string;
+    logoSrc: string;
+}) {
     return (
         <div className="sessao-painel-centro">
             <img src={logoSrc} alt="" className="sessao-painel-logo-grande" />
@@ -215,6 +222,10 @@ export function SessaoPainelPage() {
     const [carregando, setCarregando] = useState(true);
     const [itemCarregando, setItemCarregando] = useState(false);
     const [modoResultado, setModoResultado] = useState(false);
+    const [tenantBranding, setTenantBranding] = useState<{
+        name: string;
+        logo: string | null;
+    } | null>(null);
 
     const {
         faseAtual,
@@ -300,6 +311,25 @@ export function SessaoPainelPage() {
         return () => document.body.classList.remove('sessao-painel-body');
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        void tenantsApi
+            .current()
+            .then((res) => {
+                if (cancelled || res.kind !== 'tenant') return;
+                setTenantBranding({
+                    name: res.name,
+                    logo: res.logo ?? null,
+                });
+            })
+            .catch(() => {
+                /* mantém fallback do usuário autenticado */
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const placarAtual =
         placar?.votacaoId === votacaoAberta?.votacaoId ? placar : null;
 
@@ -312,7 +342,17 @@ export function SessaoPainelPage() {
     const sessaoLabel = sessao ? sessaoDetalheLabel(sessao) : 'Sessão plenária';
     const faseExibida = faseAtual ?? (sessao ? resolveFaseSessao(sessao.faseAtual) : null);
     const faseLabel = faseExibida ? FASE_LABEL[faseExibida] ?? faseExibida : null;
-    const tenantName = user && isStaffUser(user) ? user.tenantName : undefined;
+    const userTenantName =
+        user && 'tenantName' in user ? user.tenantName : undefined;
+    const userTenantLogo =
+        user && 'tenantLogo' in user ? user.tenantLogo : undefined;
+    const tenantName =
+        tenantBranding?.name?.trim() ||
+        userTenantName?.trim() ||
+        'Câmara Municipal';
+    const logoSrc =
+        resolveTenantLogoUrl(tenantBranding?.logo ?? userTenantLogo) ??
+        fallbackLogoSrc;
 
     if (carregando) {
         return (
@@ -338,7 +378,7 @@ export function SessaoPainelPage() {
                 <div className="sessao-painel-header__marca">
                     <img src={logoSrc} alt="" className="sessao-painel-logo" />
                     <span className="sessao-painel-header__camara">
-                        {tenantName ?? 'Câmara Municipal'}
+                        {tenantName}
                     </span>
                 </div>
                 <div className="sessao-painel-header__sessao">{sessaoLabel}</div>
@@ -377,7 +417,7 @@ export function SessaoPainelPage() {
                         itemDestacadoId={itemExibido?.id}
                     />
                 ) : (
-                    <PainelAguardando sessaoLabel={sessaoLabel} />
+                    <PainelAguardando sessaoLabel={sessaoLabel} logoSrc={logoSrc} />
                 )}
             </main>
 
