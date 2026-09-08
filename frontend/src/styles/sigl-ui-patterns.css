@@ -3822,8 +3822,8 @@ body.transmissao-fs-active {
 }
 
 .materia-card-author-photo.sigl-avatar {
-    --sigl-avatar-size: 2.75rem;
-    border-radius: 9px;
+    --sigl-avatar-size: 4rem;
+    border-radius: 10px;
 }
 
 .materia-detail__author-text {

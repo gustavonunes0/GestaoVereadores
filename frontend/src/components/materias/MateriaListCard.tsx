@@ -67,10 +67,10 @@ function AuthorPhotoBox({ autor }: { autor: MateriaAutorResumo | null }) {
     if (!autor) {
         return (
             <div
-                className="w-11 h-11 rounded-[9px] bg-[#e8edf5] flex items-center justify-center text-[#b0bac8]"
+                className="w-16 h-16 rounded-[10px] bg-[#e8edf5] flex items-center justify-center text-[#b0bac8]"
                 aria-hidden
             >
-                <PersonOutlined sx={{ fontSize: 22 }} />
+                <PersonOutlined sx={{ fontSize: 32 }} />
             </div>
         );
     }
@@ -79,13 +79,13 @@ function AuthorPhotoBox({ autor }: { autor: MateriaAutorResumo | null }) {
         <PersonAvatar
             photoUrl={autor.photoUrl}
             name={autor.nome}
-            size="md"
+            size="lg"
             shape="rounded"
             alt={autor.nome}
             className="materia-card-author-photo"
             fallback={
                 autor.tipo === 'tenant_partner' ? (
-                    <PersonOutlined sx={{ fontSize: 22, color: '#1c3557' }} />
+                    <PersonOutlined sx={{ fontSize: 32, color: '#1c3557' }} />
                 ) : undefined
             }
         />
@@ -124,9 +124,9 @@ export function MateriaListCard({
                 aria-hidden
             />
 
-            <div className="flex flex-col items-center gap-1.5 w-14 flex-shrink-0">
+            <div className="flex flex-col items-center gap-2 w-[4.75rem] flex-shrink-0">
                 <AuthorPhotoBox autor={autorPrincipal} />
-                <span className="text-[12px] font-semibold text-[#374151] text-center leading-tight line-clamp-2">
+                <span className="text-[13.5px] font-semibold text-[#1f2937] text-center leading-snug line-clamp-2">
                     {autorPrincipal?.nome ?? 'Sem autor'}
                 </span>
             </div>
