@@ -1,10 +1,24 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { existsSync } from 'fs';
 import puppeteer, { Browser } from 'puppeteer';
 
 export type PdfOpcoes = {
     formato?: 'A4' | 'Letter';
     paisagem?: boolean;
 };
+
+function resolveChromiumExecutable(): string | undefined {
+    const fromEnv = process.env.PUPPETEER_EXECUTABLE_PATH?.trim();
+    if (fromEnv && existsSync(fromEnv)) return fromEnv;
+
+    const candidates = [
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium',
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable',
+    ];
+    return candidates.find((path) => existsSync(path));
+}
 
 /**
  * Único ponto de geração de PDF do projeto — reusado por Ata, Lista de Presença e
@@ -18,10 +32,31 @@ export class PdfGeneratorService implements OnModuleDestroy {
 
     private async getBrowser(): Promise<Browser> {
         if (!this.browserPromise) {
-            this.browserPromise = puppeteer.launch({
-                headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            });
+            const executablePath = resolveChromiumExecutable();
+            if (executablePath) {
+                this.logger.log(`Puppeteer usando Chromium em ${executablePath}`);
+            } else {
+                this.logger.warn(
+                    'PUPPETEER_EXECUTABLE_PATH não encontrado; tentando Chrome empacotado do Puppeteer',
+                );
+            }
+
+            this.browserPromise = puppeteer
+                .launch({
+                    headless: true,
+                    ...(executablePath ? { executablePath } : {}),
+                    args: [
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--disable-gpu',
+                        '--font-render-hinting=none',
+                    ],
+                })
+                .catch((error) => {
+                    this.browserPromise = null;
+                    throw error;
+                });
         }
         return this.browserPromise;
     }
