@@ -174,7 +174,7 @@ describe('materiaTextoOriginalTemplate — conformidade com .cursor/modelos', ()
 
     it('gera 3 páginas lógicas (capa, termo, proposição) como nos modelos REQ/MOÇ', () => {
         const html = materiaTextoOriginalTemplate(fixtureReq107());
-        const pages = html.match(/class="page/g) ?? [];
+        const pages = html.match(/class="page(?:\s|")/g) ?? [];
         expect(pages.length).toBe(3);
     });
 

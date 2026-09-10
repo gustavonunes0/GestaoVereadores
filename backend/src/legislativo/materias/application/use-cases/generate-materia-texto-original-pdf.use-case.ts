@@ -14,8 +14,6 @@ import {
     verboPorSigla,
 } from '../../../../common/pdf/templates/materia-texto-original.helpers';
 import {
-    buildMateriaPdfFooterTemplate,
-    buildMateriaPdfHeaderTemplate,
     resolveMateriaPdfBranding,
 } from '../../../../common/pdf/templates/materia-texto-original.branding';
 import { PrismaService } from '../../../../prisma/prisma.service';
@@ -279,11 +277,11 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
             secretariaCargo: 'Secretária Legislativa',
         };
 
-        const html = materiaTextoOriginalTemplate(payload);
+        const html = materiaTextoOriginalTemplate(payload, branding);
         const pdf = await this.pdfGenerator.gerarDeHtml(html, {
-            cabecalhoHtml: buildMateriaPdfHeaderTemplate(branding),
-            rodapeHtml: buildMateriaPdfFooterTemplate(branding),
-            margem: { top: '42mm', bottom: '42mm', left: '24mm', right: '24mm' },
+            // Cabeçalho/rodapé no HTML (position:fixed) — zero margem top/bottom
+            // para a barra azul e os ornamentos colarem nas bordas da folha.
+            margem: { top: '0mm', bottom: '0mm', left: '0mm', right: '0mm' },
         });
 
         const uploadDir = join(process.cwd(), 'uploads', 'materias', tenantId);

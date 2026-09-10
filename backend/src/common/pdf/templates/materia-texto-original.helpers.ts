@@ -61,6 +61,35 @@ export function textToParagraphsHtml(
         .join('\n');
 }
 
+/**
+ * Ementa curta da capa (modelo da câmara): só o objeto/resumo,
+ * sem corpo de lei/artigos que vão na proposição.
+ */
+export function ementaResumoParaCapa(ementa: string): string {
+    const normalized = ementa.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+    if (!normalized) return '';
+
+    const blankSplit = normalized.split(/\n\s*\n+/);
+    if (blankSplit.length > 1) {
+        return blankSplit[0]
+            .split('\n')
+            .map((l) => l.trim())
+            .filter(Boolean)
+            .join(' ');
+    }
+
+    const lines = normalized
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean);
+    const parts: string[] = [];
+    for (const line of lines) {
+        if (NOVO_PARAGRAFO.test(line) && parts.length > 0) break;
+        parts.push(line);
+    }
+    return parts.join(' ');
+}
+
 export function verboPorSigla(sigla: string | null | undefined): string {
     const s = (sigla ?? '')
         .toUpperCase()
