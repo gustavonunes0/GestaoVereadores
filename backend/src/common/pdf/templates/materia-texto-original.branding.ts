@@ -111,24 +111,25 @@ export function resolveMateriaPdfBranding(input: {
 }
 
 export function buildMateriaPdfHeaderTemplate(branding: MateriaPdfBranding): string {
+    // Puppeteer zera font-size no header/footer — definir explicitamente.
     const topo = branding.topoDataUrl
-        ? `<img src="${branding.topoDataUrl}" style="width:100%;height:7px;display:block;border:0;" />`
-        : `<div style="height:7px;background:linear-gradient(90deg,#0b3d91 0%,#0b3d91 38%,#2f6fd6 38%,#2f6fd6 72%,#7eb6ff 72%,#7eb6ff 100%);"></div>`;
+        ? `<img src="${branding.topoDataUrl}" style="width:100%;height:10px;display:block;border:0;margin:0;padding:0;" />`
+        : `<div style="width:100%;height:10px;background:linear-gradient(90deg,#0b3d91 0%,#0b3d91 38%,#2f6fd6 38%,#2f6fd6 72%,#7eb6ff 72%,#7eb6ff 100%);"></div>`;
 
     const logo = branding.logoDataUrl
-        ? `<img src="${branding.logoDataUrl}" style="height:48px;max-width:280px;object-fit:contain;margin:6px auto 0;display:block;" />`
+        ? `<img src="${branding.logoDataUrl}" style="width:78%;max-width:520px;height:auto;max-height:78px;object-fit:contain;margin:8px auto 0;display:block;" />`
         : '';
 
-    return `<div style="width:100%;padding:0 12mm;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;">${topo}${logo}</div>`;
+    return `<div style="width:100%;margin:0;padding:0;box-sizing:border-box;font-size:10px;font-family:Arial,Helvetica,sans-serif;">${topo}<div style="padding:0 8mm;box-sizing:border-box;">${logo}</div></div>`;
 }
 
 export function buildMateriaPdfFooterTemplate(
     branding: MateriaPdfBranding,
 ): string {
     if (branding.rodapeDataUrl) {
-        return `<div style="width:100%;padding:0 10mm;box-sizing:border-box;text-align:center;font-family:Arial,Helvetica,sans-serif;">
-  <img src="${branding.rodapeDataUrl}" style="width:100%;max-height:52px;object-fit:contain;display:block;margin:0 auto;" />
-  <div style="font-size:7px;color:#666;margin-top:2px;"><span class="pageNumber"></span> / <span class="totalPages"></span></div>
+        return `<div style="width:100%;margin:0;padding:0 6mm;box-sizing:border-box;text-align:center;font-size:10px;font-family:Arial,Helvetica,sans-serif;">
+  <img src="${branding.rodapeDataUrl}" style="width:100%;height:auto;max-height:72px;object-fit:contain;object-position:center bottom;display:block;margin:0 auto;" />
+  <div style="font-size:8px;color:#555;margin-top:2px;"><span class="pageNumber"></span> / <span class="totalPages"></span></div>
 </div>`;
     }
 
@@ -138,8 +139,8 @@ export function buildMateriaPdfFooterTemplate(
         branding.cnpj ? `CNPJ: ${branding.cnpj}` : '',
     ].filter(Boolean);
 
-    return `<div style="width:100%;padding:0 12mm;box-sizing:border-box;text-align:center;font-family:Arial,Helvetica,sans-serif;color:#2a6bb5;font-size:8px;line-height:1.35;">
-  ${linhas.map((l) => `<div>${l}</div>`).join('')}
-  <div style="font-size:7px;color:#666;margin-top:3px;"><span class="pageNumber"></span> / <span class="totalPages"></span></div>
+    return `<div style="width:100%;margin:0;padding:0 8mm;box-sizing:border-box;text-align:center;font-family:Arial,Helvetica,sans-serif;color:#2a6bb5;font-size:10px;line-height:1.4;">
+  ${linhas.map((l) => `<div style="font-size:10px;">${l}</div>`).join('')}
+  <div style="font-size:8px;color:#555;margin-top:3px;"><span class="pageNumber"></span> / <span class="totalPages"></span></div>
 </div>`;
 }
