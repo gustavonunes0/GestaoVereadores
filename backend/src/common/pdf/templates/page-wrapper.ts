@@ -1,5 +1,22 @@
 /** Layout HTML compartilhado por todos os templates de PDF do projeto. */
-export function pageWrapper(titulo: string, corpo: string): string {
+
+export type PageWrapperOptions = {
+    omitDefaultFooter?: boolean;
+    fontFamily?: string;
+    fontSize?: string;
+};
+
+export function pageWrapper(
+    titulo: string,
+    corpo: string,
+    options?: PageWrapperOptions,
+): string {
+    const fontFamily = options?.fontFamily ?? "'Helvetica Neue', Arial, sans-serif";
+    const fontSize = options?.fontSize ?? '12px';
+    const footer = options?.omitDefaultFooter
+        ? ''
+        : `<p class="footer">Documento gerado eletronicamente em ${new Date().toLocaleString('pt-BR')}.</p>`;
+
     return `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -7,7 +24,7 @@ export function pageWrapper(titulo: string, corpo: string): string {
 <title>${titulo}</title>
 <style>
   * { box-sizing: border-box; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a1a; font-size: 12px; line-height: 1.5; }
+  body { font-family: ${fontFamily}; color: #1a1a1a; font-size: ${fontSize}; line-height: 1.5; margin: 0; }
   h1 { font-size: 18px; margin-bottom: 4px; }
   h2 { font-size: 14px; margin-top: 20px; margin-bottom: 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
   p { margin: 2px 0; }
@@ -21,7 +38,7 @@ export function pageWrapper(titulo: string, corpo: string): string {
 </head>
 <body>
 ${corpo}
-<p class="footer">Documento gerado eletronicamente em ${new Date().toLocaleString('pt-BR')}.</p>
+${footer}
 </body>
 </html>`;
 }

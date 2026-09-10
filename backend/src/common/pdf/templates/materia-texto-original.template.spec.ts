@@ -127,7 +127,30 @@ describe('materiaTextoOriginalTemplate — conformidade com .cursor/modelos', ()
         const ocorrencias = text.split(trechoEmenta).length - 1;
         expect(ocorrencias).toBeGreaterThanOrEqual(2);
 
-        expect(text).toMatch(/REQUERER\s+Que seja direcionado Ofício/i);
+        expect(text).toMatch(/REQUERER/i);
+        expect(text).toContain('Que seja direcionado Ofício');
+    });
+
+    it('respeita parágrafos da ementa/justificativa e texto justificado', () => {
+        const dados = fixtureReq107();
+        dados.ementa = [
+            'Primeiro parágrafo da ementa.',
+            '',
+            'Segundo parágrafo da ementa.',
+        ].join('\n');
+        dados.justificativa = [
+            'Justificativa linha 1 com soft\nwrap no meio.',
+            '',
+            'Art. 1°. Novo artigo em parágrafo próprio.',
+        ].join('\n');
+
+        const html = materiaTextoOriginalTemplate(dados);
+        expect(html).toContain('>Primeiro parágrafo da ementa.</p>');
+        expect(html).toContain('>Segundo parágrafo da ementa.</p>');
+        expect(html).toContain('Justificativa linha 1 com soft wrap no meio.');
+        expect(html).toContain('Art. 1°. Novo artigo em parágrafo próprio.');
+        expect(html).toMatch(/text-align:\s*justify/);
+        expect(html).not.toContain('Documento gerado eletronicamente');
     });
 
     it('MOÇ 32: título e verbo seguem o modelo de moção', () => {

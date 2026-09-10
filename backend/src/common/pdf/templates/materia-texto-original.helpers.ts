@@ -1,5 +1,66 @@
 /** Helpers de texto do PDF de matéria — compartilhados entre use-case e testes. */
 
+export function escHtml(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+const NOVO_PARAGRAFO =
+    /^(Art\.?\s*\d|LEI\b|Cap[ií]tulo\b|T[ií]tulo\b|Se[cç][aã]o\b|Par[aá]grafo\b|§|JUSTIFICATIVA\b|OBSERVA|O Vereador\b|A C[aâ]mara\b|Pa[cç]o\b|Nestes Termos\b|Pede e Aguarda\b|Salas? das Sess)/i;
+
+/**
+ * Converte texto livre em parágrafos HTML justificados.
+ * - Blocos separados por linha em branco viram `<p>`.
+ * - Quebras simples no meio da frase são unidas (soft wrap).
+ * - Linhas que iniciam artigo/seção abrem novo parágrafo.
+ */
+export function textToParagraphsHtml(
+    value: string,
+    className = 'par',
+): string {
+    const normalized = value.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+    if (!normalized) return '';
+
+    const blankSplit = normalized.split(/\n\s*\n+/);
+    let blocks: string[];
+
+    if (blankSplit.length > 1) {
+        blocks = blankSplit.map((block) =>
+            block
+                .split('\n')
+                .map((l) => l.trim())
+                .filter(Boolean)
+                .join(' '),
+        );
+    } else {
+        const lines = normalized
+            .split('\n')
+            .map((l) => l.trim())
+            .filter(Boolean);
+        blocks = [];
+        let current = '';
+        for (const line of lines) {
+            if (NOVO_PARAGRAFO.test(line) && current) {
+                blocks.push(current);
+                current = line;
+            } else if (current) {
+                current = `${current} ${line}`;
+            } else {
+                current = line;
+            }
+        }
+        if (current) blocks.push(current);
+    }
+
+    return blocks
+        .filter((b) => b.trim())
+        .map((b) => `<p class="${className}">${escHtml(b.trim())}</p>`)
+        .join('\n');
+}
+
 export function verboPorSigla(sigla: string | null | undefined): string {
     const s = (sigla ?? '')
         .toUpperCase()

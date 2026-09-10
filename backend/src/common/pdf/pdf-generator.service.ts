@@ -5,6 +5,16 @@ import puppeteer, { Browser } from 'puppeteer';
 export type PdfOpcoes = {
     formato?: 'A4' | 'Letter';
     paisagem?: boolean;
+    margem?: {
+        top?: string;
+        bottom?: string;
+        left?: string;
+        right?: string;
+    };
+    /** HTML do cabeçalho Puppeteer (requer displayHeaderFooter). */
+    cabecalhoHtml?: string;
+    /** HTML do rodapé Puppeteer (requer displayHeaderFooter). */
+    rodapeHtml?: string;
 };
 
 function resolveChromiumExecutable(): string | undefined {
@@ -66,11 +76,24 @@ export class PdfGeneratorService implements OnModuleDestroy {
         const page = await browser.newPage();
         try {
             await page.setContent(html, { waitUntil: 'load' });
+            const comCabRodape = Boolean(
+                opcoes?.cabecalhoHtml || opcoes?.rodapeHtml,
+            );
             const pdf = await page.pdf({
                 format: opcoes?.formato ?? 'A4',
                 landscape: opcoes?.paisagem ?? false,
                 printBackground: true,
-                margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
+                displayHeaderFooter: comCabRodape,
+                headerTemplate: opcoes?.cabecalhoHtml ?? '<div></div>',
+                footerTemplate: opcoes?.rodapeHtml ?? '<div></div>',
+                margin: {
+                    top: opcoes?.margem?.top ?? (comCabRodape ? '32mm' : '20mm'),
+                    bottom:
+                        opcoes?.margem?.bottom ??
+                        (comCabRodape ? '34mm' : '20mm'),
+                    left: opcoes?.margem?.left ?? '15mm',
+                    right: opcoes?.margem?.right ?? '15mm',
+                },
             });
             return Buffer.from(pdf);
         } finally {

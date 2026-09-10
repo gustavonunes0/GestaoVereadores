@@ -13,6 +13,11 @@ import {
     tituloProposicao,
     verboPorSigla,
 } from '../../../../common/pdf/templates/materia-texto-original.helpers';
+import {
+    buildMateriaPdfFooterTemplate,
+    buildMateriaPdfHeaderTemplate,
+    resolveMateriaPdfBranding,
+} from '../../../../common/pdf/templates/materia-texto-original.branding';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { MateriaRepository } from '../../domain/repositories/materia.repository';
 import { MATERIA_REPOSITORY } from '../../materias.tokens';
@@ -105,6 +110,11 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
                 tradeName: true,
                 city: true,
                 state: true,
+                logo: true,
+                cnpj: true,
+                contactEmail: true,
+                contactPhone: true,
+                settings: true,
             },
         });
 
@@ -217,6 +227,28 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
             tenant.name.trim() ||
             `Câmara Municipal de ${municipio}`;
 
+        const settings =
+            tenant.settings &&
+            typeof tenant.settings === 'object' &&
+            !Array.isArray(tenant.settings)
+                ? (tenant.settings as Record<string, unknown>)
+                : {};
+        const enderecoSetting =
+            typeof settings.endereco === 'string'
+                ? settings.endereco
+                : typeof settings.address === 'string'
+                  ? settings.address
+                  : null;
+
+        const branding = resolveMateriaPdfBranding({
+            logo: tenant.logo,
+            municipio,
+            contactPhone: tenant.contactPhone,
+            contactEmail: tenant.contactEmail,
+            cnpj: tenant.cnpj,
+            endereco: enderecoSetting,
+        });
+
         const payload: MateriaTextoOriginalPdfInput = {
             tenantNome,
             municipio,
@@ -248,7 +280,11 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
         };
 
         const html = materiaTextoOriginalTemplate(payload);
-        const pdf = await this.pdfGenerator.gerarDeHtml(html);
+        const pdf = await this.pdfGenerator.gerarDeHtml(html, {
+            cabecalhoHtml: buildMateriaPdfHeaderTemplate(branding),
+            rodapeHtml: buildMateriaPdfFooterTemplate(branding),
+            margem: { top: '34mm', bottom: '36mm', left: '14mm', right: '14mm' },
+        });
 
         const uploadDir = join(process.cwd(), 'uploads', 'materias', tenantId);
         await mkdir(uploadDir, { recursive: true });
