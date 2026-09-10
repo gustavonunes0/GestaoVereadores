@@ -5,13 +5,12 @@ import { materiasApi } from '../../api/legislative/materias.api';
 import type { Materia, MatterAuthorship } from '../../api/legislative/materias.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { DatePicker, FileUpload, LexDialogFooter } from '../../components/ui';
+import { DatePicker, LexDialogFooter } from '../../components/ui';
 import {
     resolveMateriaIdentificacao,
     resolveMateriaNumeroAno,
     resolveMateriaAno,
     resolveMateriaStatus,
-    resolveMateriaTextoOriginalUrl,
 } from '../../utils/materiaDisplay';
 import type { MateriaStatus } from '../../types/legislative';
 import type {
@@ -79,10 +78,6 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     const [despacho, setDespacho] = useState('');
     const [autorPrincipal, setAutorPrincipal] = useState<AutorSelecionado | null>(null);
     const [coautores, setCoautores] = useState<CoautorFormItem[]>([]);
-    const [textoOriginal, setTextoOriginal] = useState<File | string | null>(() => {
-        const url = materia.textoOriginalUrl?.trim();
-        return url ? resolveMateriaTextoOriginalUrl(url) : null;
-    });
 
     const coautoresIniciaisRef = useRef<
         Array<{ id: string; identityKey: string }>
@@ -264,8 +259,9 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
 
             await syncCoautores();
 
-            if (textoOriginal instanceof File) {
-                await materiasApi.uploadTextoOriginal(materia.id, textoOriginal);
+            if (canEditConteudo) {
+                // Regenera após autoria/coautores para o PDF refletir o autor atual.
+                await materiasApi.gerarTextoOriginal(materia.id);
             }
 
             if (vaiTramitar) {
@@ -460,25 +456,14 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                         />
                     </div>
                     {canEditConteudo ? (
-                        <div className="materia-form-field materia-form-field--file">
-                            <FileUpload
-                                id="edit-texto-original"
-                                label="Texto Original"
-                                value={textoOriginal}
-                                onChange={setTextoOriginal}
-                                accept=".pdf,.doc,.docx"
-                            />
-                        </div>
-                    ) : textoOriginal ? (
-                        <div className="materia-form-field materia-form-field--file">
-                            <FileUpload
-                                id="edit-texto-original-readonly"
-                                label="Texto Original"
-                                value={textoOriginal}
-                                onChange={() => undefined}
-                                disabled
-                            />
-                        </div>
+                        <p className="text-sm text-color-secondary m-0">
+                            O texto original em PDF será regenerado automaticamente ao
+                            salvar, com base na ementa e demais dados da matéria.
+                        </p>
+                    ) : materia.textoOriginalUrl ? (
+                        <p className="text-sm text-color-secondary m-0">
+                            Texto original disponível (gerado automaticamente).
+                        </p>
                     ) : null}
                 </div>
             )}

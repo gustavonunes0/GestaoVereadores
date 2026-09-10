@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { IdentidadeModule } from '../../identidade/identidade.module';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { PdfModule } from '../../common/pdf/pdf.module';
 import { MateriasController } from './application/controllers/materias.controller';
 import { AddMateriaAutorUseCase } from './application/use-cases/add-materia-autor.use-case';
 import { CreateMateriaUseCase } from './application/use-cases/create-materia.use-case';
@@ -27,6 +28,7 @@ import { AddPublicacaoMateriaUseCase } from './application/use-cases/add-publica
 import { ListTenantPartnersForMatterUseCase } from './application/use-cases/list-autores-externos.use-case';
 import { ListMatterAuthorOptionsUseCase } from './application/use-cases/list-matter-author-options.use-case';
 import { UploadMatterTextoOriginalUseCase } from './application/use-cases/upload-matter-texto-original.use-case';
+import { GenerateMateriaTextoOriginalPdfUseCase } from './application/use-cases/generate-materia-texto-original-pdf.use-case';
 import { ListMinhasMateriasUseCase } from './application/use-cases/list-minhas-materias.use-case';
 import { MvpMatterCommitteeOpinionGate } from './infra/gates/mvp-matter-committee-opinion.gate';
 import { PrismaMateriaRepository } from './infra/prisma/prisma-materia.repository';
@@ -38,7 +40,7 @@ import {
 import { TramitacaoHistoricoRepository } from './domain/repositories/tramitacao-historico.repository';
 
 @Module({
-    imports: [PrismaModule, IdentidadeModule],
+    imports: [PrismaModule, IdentidadeModule, PdfModule],
     controllers: [MateriasController],
     providers: [
         CreateMateriaUseCase,
@@ -64,6 +66,7 @@ import { TramitacaoHistoricoRepository } from './domain/repositories/tramitacao-
         ListTenantPartnersForMatterUseCase,
         ListMatterAuthorOptionsUseCase,
         UploadMatterTextoOriginalUseCase,
+        GenerateMateriaTextoOriginalPdfUseCase,
         ListMinhasMateriasUseCase,
         PrismaMateriaRepository,
         PrismaTramitacaoHistoricoRepository,

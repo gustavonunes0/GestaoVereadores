@@ -255,6 +255,11 @@ export const materiasApi = {
         return apiFormData<Materia>(API_PATHS.materiasTextoOriginal(id), fd);
     },
 
+    gerarTextoOriginal: (id: string) =>
+        api<Materia>(API_PATHS.materiasTextoOriginalGerar(id), {
+            method: 'POST',
+        }),
+
     listCoautores: (id: string) =>
         api<CoautorMateria[]>(API_PATHS.materiaCoautores(id)),
 

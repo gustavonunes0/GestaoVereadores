@@ -1,7 +1,10 @@
 import { api, apiList } from './client';
 import { API_PATHS } from './paths';
 
-export type TenantStaffRole = 'ADMIN_STAFF' | 'STAFF';
+export type TenantStaffRole =
+    | 'ADMIN_STAFF'
+    | 'STAFF'
+    | 'SECRETARIA_LEGISLATIVA';
 
 export type TenantStaffUser = {
     id: string;

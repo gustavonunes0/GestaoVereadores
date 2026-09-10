@@ -18,6 +18,7 @@ import { isValidCpf, normalizeCpf } from '../../utils/cpf';
 const ROLE_OPTIONS: { label: string; value: TenantStaffRole }[] = [
     { label: 'Administrador', value: 'ADMIN_STAFF' },
     { label: 'Operador', value: 'STAFF' },
+    { label: 'Secretária Legislativa', value: 'SECRETARIA_LEGISLATIVA' },
 ];
 
 const MIN_SENHA = 8;

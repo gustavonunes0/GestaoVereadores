@@ -41,6 +41,8 @@ export const API_PATHS = {
     materiaById:         (id: string) => `/legislative/materias/${id}`,
     materiasTextoOriginal: (id: string) => `/legislative/materias/${id}/texto-original`,
     materiaTextoOriginal: (id: string) => `/legislative/materias/${id}/texto-original`,
+    materiasTextoOriginalGerar: (id: string) =>
+        `/legislative/materias/${id}/texto-original/gerar`,
     materiasAutoria:     (id: string) => `/legislative/materias/${id}/autoria`,
     materiaAutoria:      (id: string) => `/legislative/materias/${id}/autoria`,
     materiasAutoriaParlamentar: (id: string) => `/legislative/materias/${id}/autoria/autor-parlamentar`,

@@ -12,6 +12,7 @@ import { formatCpf } from '../utils/cpf';
 const ROLE_LABELS: Record<TenantStaffUser['role'], string> = {
     ADMIN_STAFF: 'Administrador',
     STAFF: 'Operador',
+    SECRETARIA_LEGISLATIVA: 'Secretária Legislativa',
 };
 
 export function UsuariosPage() {

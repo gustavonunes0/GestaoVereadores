@@ -8,7 +8,7 @@ export interface StaffUser {
     name: string;
     cpf: string;
     email?: string;
-    role: 'ADMIN_STAFF' | 'STAFF';
+    role: 'ADMIN_STAFF' | 'STAFF' | 'SECRETARIA_LEGISLATIVA';
     tenantName?: string;
     /** Logo da câmara (data URL ou path). */
     tenantLogo?: string | null;

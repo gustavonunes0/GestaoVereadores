@@ -15,6 +15,7 @@ import {
     MateriaPrismaPayload,
     MatterViewModel,
 } from '../view-models/matter.view-model';
+import { GenerateMateriaTextoOriginalPdfUseCase } from './generate-materia-texto-original-pdf.use-case';
 
 @Injectable()
 export class CreateMateriaUseCase {
@@ -23,6 +24,7 @@ export class CreateMateriaUseCase {
     constructor(
         @Inject(MATERIA_REPOSITORY)
         private readonly repository: MateriaRepository,
+        private readonly generateTextoOriginalPdf: GenerateMateriaTextoOriginalPdfUseCase,
     ) {}
 
     async execute(
@@ -103,7 +105,14 @@ export class CreateMateriaUseCase {
             });
         }
 
-        const full = await this.repository.findOne(tenantId, created.id);
-        return MatterViewModel.toHttp(full as MateriaPrismaPayload);
+        try {
+            return await this.generateTextoOriginalPdf.execute(
+                tenantId,
+                created.id,
+            );
+        } catch {
+            const full = await this.repository.findOne(tenantId, created.id);
+            return MatterViewModel.toHttp(full as MateriaPrismaPayload);
+        }
     }
 }

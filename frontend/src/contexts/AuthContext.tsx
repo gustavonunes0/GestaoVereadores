@@ -102,7 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const value = useMemo<AuthContextValue>(() => {
         const isAdminStaff =
             !!user && isStaffUser(user) && user.role === 'ADMIN_STAFF';
-        const isStaff = !!user && isStaffUser(user) && user.role === 'STAFF';
+        const isStaff =
+            !!user &&
+            isStaffUser(user) &&
+            (user.role === 'STAFF' ||
+                user.role === 'SECRETARIA_LEGISLATIVA');
         const isParliamentarian = !!user && isParlamentarianUser(user);
         const isPlatformAdmin = !!user && isPlatformUser(user);
 

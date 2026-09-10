@@ -118,6 +118,10 @@ describe('CreateMateriaUseCase', () => {
         authorParliamentarianId: 'parl-1',
     };
 
+    const generatePdf = {
+        execute: jest.fn().mockRejectedValue(new Error('pdf skip')),
+    };
+
     it('cadastra proposição em DRAFT', async () => {
         const repository = buildMateriaRepositoryMock();
         repository.create.mockResolvedValue({
@@ -136,7 +140,10 @@ describe('CreateMateriaUseCase', () => {
             emTramitacao: false,
         });
 
-        const useCase = new CreateMateriaUseCase(repository as never);
+        const useCase = new CreateMateriaUseCase(
+            repository as never,
+            generatePdf as never,
+        );
         const result = await useCase.execute('tenant-1', dto);
 
         expect(result.status.value).toBe(StatusMateria.DRAFT);
@@ -157,6 +164,7 @@ describe('CreateMateriaUseCase', () => {
     it('bloqueia ementa vazia', async () => {
         const useCase = new CreateMateriaUseCase(
             buildMateriaRepositoryMock() as never,
+            generatePdf as never,
         );
 
         await expect(

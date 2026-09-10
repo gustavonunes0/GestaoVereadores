@@ -14,7 +14,13 @@ export class ListTenantStaffUseCase {
             tenantId,
             isRemoved: false,
             isParliamentarian: false,
-            role: { in: [TenantUserRole.ADMIN_STAFF, TenantUserRole.STAFF] },
+            role: {
+                in: [
+                    TenantUserRole.ADMIN_STAFF,
+                    TenantUserRole.STAFF,
+                    TenantUserRole.SECRETARIA_LEGISLATIVA,
+                ],
+            },
         };
 
         const result = await paginatedQuery(

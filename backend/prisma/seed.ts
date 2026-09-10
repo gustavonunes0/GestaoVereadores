@@ -267,6 +267,55 @@ async function main() {
     });
     console.log('Usuário ADMIN_STAFF: CPF 07415914309 / senha admin123 (Gustavo)');
 
+    // --- Antonio Leandro — SECRETARIA_LEGISLATIVA (homologação) ---
+    const antonioPasswordHash = await hashPasswordScrypt('admin123');
+    const antonioUser = await prisma.user.upsert({
+        where: { cpf: '00000000001' },
+        update: {
+            firstName: 'Antonio Leandro',
+            lastName: 'de Barros Ramos',
+            email: 'antonio.leandro@camara.teste',
+            passwordHash: antonioPasswordHash,
+            isRemoved: false,
+        },
+        create: {
+            firstName: 'Antonio Leandro',
+            lastName: 'de Barros Ramos',
+            cpf: '00000000001',
+            email: 'antonio.leandro@camara.teste',
+            passwordHash: antonioPasswordHash,
+        },
+    });
+
+    await prisma.tenantUser.upsert({
+        where: {
+            tenantId_userId: {
+                tenantId: DEMO_TENANT_ID,
+                userId: antonioUser.id,
+            },
+        },
+        update: {
+            role: TenantUserRole.SECRETARIA_LEGISLATIVA,
+            isTenantAdmin: false,
+            isTenantStaff: true,
+            isParliamentarian: false,
+            status: TenantUserStatus.ACTIVE,
+            isRemoved: false,
+        },
+        create: {
+            tenantId: DEMO_TENANT_ID,
+            userId: antonioUser.id,
+            role: TenantUserRole.SECRETARIA_LEGISLATIVA,
+            isTenantAdmin: false,
+            isTenantStaff: true,
+            isParliamentarian: false,
+            status: TenantUserStatus.ACTIVE,
+        },
+    });
+    console.log(
+        'Usuário SECRETARIA_LEGISLATIVA: CPF 00000000001 / senha admin123 (Antonio Leandro)',
+    );
+
     // --- Ano ---
     const ano2026 = await prisma.ano.upsert({
         where: { valor: 2026 },

@@ -9,7 +9,11 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-const STAFF_ROLES = [TenantUserRole.ADMIN_STAFF, TenantUserRole.STAFF] as const;
+const STAFF_ROLES = [
+    TenantUserRole.ADMIN_STAFF,
+    TenantUserRole.STAFF,
+    TenantUserRole.SECRETARIA_LEGISLATIVA,
+] as const;
 
 export class ConvidarUsuarioDto {
     @ApiProperty({ example: '529.982.247-25' })
@@ -36,7 +40,8 @@ export class ConvidarUsuarioDto {
 
     @ApiProperty({ enum: STAFF_ROLES })
     @IsEnum(STAFF_ROLES, {
-        message: 'Perfil deve ser ADMIN_STAFF ou STAFF',
+        message:
+            'Perfil deve ser ADMIN_STAFF, STAFF ou SECRETARIA_LEGISLATIVA',
     })
     role!: (typeof STAFF_ROLES)[number];
 }

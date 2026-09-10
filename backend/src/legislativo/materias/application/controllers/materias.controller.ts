@@ -73,6 +73,7 @@ import { AddPublicacaoMateriaUseCase } from '../use-cases/add-publicacao-materia
 import { ListTenantPartnersForMatterUseCase } from '../use-cases/list-autores-externos.use-case';
 import { ListMatterAuthorOptionsUseCase } from '../use-cases/list-matter-author-options.use-case';
 import { UploadMatterTextoOriginalUseCase } from '../use-cases/upload-matter-texto-original.use-case';
+import { GenerateMateriaTextoOriginalPdfUseCase } from '../use-cases/generate-materia-texto-original-pdf.use-case';
 import { ListMinhasMateriasUseCase } from '../use-cases/list-minhas-materias.use-case';
 import { MinhasMateriasQueryDto } from '../dto/list-minhas-materias-query.dto';
 import { ParlamentarianGuard } from '../../../../auth/guards/parliamentarian.guard';
@@ -112,6 +113,7 @@ export class MateriasController {
         private readonly listTenantPartnersForMatter: ListTenantPartnersForMatterUseCase,
         private readonly listMatterAuthorOptions: ListMatterAuthorOptionsUseCase,
         private readonly uploadMatterTextoOriginal: UploadMatterTextoOriginalUseCase,
+        private readonly generateMateriaTextoOriginalPdf: GenerateMateriaTextoOriginalPdfUseCase,
         private readonly listMinhasMaterias: ListMinhasMateriasUseCase,
     ) {}
 
@@ -305,6 +307,22 @@ export class MateriasController {
                 tenantId,
                 id,
                 file,
+            );
+        } catch (error) {
+            this.handleError(error);
+        }
+    }
+
+    @TenantRoles(...ALL_AUTHENTICATED)
+    @Post(':id/texto-original/gerar')
+    async gerarTextoOriginal(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+    ) {
+        try {
+            return await this.generateMateriaTextoOriginalPdf.execute(
+                tenantId,
+                id,
             );
         } catch (error) {
             this.handleError(error);

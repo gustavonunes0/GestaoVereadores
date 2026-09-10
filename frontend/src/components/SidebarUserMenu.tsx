@@ -11,8 +11,12 @@ import { isStaffUser } from '../types/auth';
 import { AlterarSenhaDialog } from './auth/AlterarSenhaDialog';
 import { PersonAvatar } from './common/PersonAvatar';
 
-function staffRoleLabel(role: 'ADMIN_STAFF' | 'STAFF') {
-    return role === 'ADMIN_STAFF' ? 'Administrador' : 'Operador';
+function staffRoleLabel(
+    role: 'ADMIN_STAFF' | 'STAFF' | 'SECRETARIA_LEGISLATIVA',
+) {
+    if (role === 'ADMIN_STAFF') return 'Administrador';
+    if (role === 'SECRETARIA_LEGISLATIVA') return 'Secretária Legislativa';
+    return 'Operador';
 }
 
 function userRoleLabel(user: AuthUser): string {

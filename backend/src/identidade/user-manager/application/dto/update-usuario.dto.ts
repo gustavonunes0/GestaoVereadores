@@ -8,7 +8,11 @@ import {
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-const STAFF_ROLES = [TenantUserRole.ADMIN_STAFF, TenantUserRole.STAFF] as const;
+const STAFF_ROLES = [
+    TenantUserRole.ADMIN_STAFF,
+    TenantUserRole.STAFF,
+    TenantUserRole.SECRETARIA_LEGISLATIVA,
+] as const;
 
 export class UpdateUsuarioDto {
     @ApiPropertyOptional()
@@ -20,7 +24,8 @@ export class UpdateUsuarioDto {
     @ApiPropertyOptional({ enum: STAFF_ROLES })
     @IsOptional()
     @IsEnum(STAFF_ROLES, {
-        message: 'Perfil deve ser ADMIN_STAFF ou STAFF',
+        message:
+            'Perfil deve ser ADMIN_STAFF, STAFF ou SECRETARIA_LEGISLATIVA',
     })
     role?: (typeof STAFF_ROLES)[number];
 

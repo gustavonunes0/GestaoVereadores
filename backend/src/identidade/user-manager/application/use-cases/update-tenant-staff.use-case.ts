@@ -29,7 +29,13 @@ export class UpdateTenantStaffUseCase {
                 tenantId,
                 isRemoved: false,
                 isParliamentarian: false,
-                role: { in: [TenantUserRole.ADMIN_STAFF, TenantUserRole.STAFF] },
+                role: {
+                    in: [
+                        TenantUserRole.ADMIN_STAFF,
+                        TenantUserRole.STAFF,
+                        TenantUserRole.SECRETARIA_LEGISLATIVA,
+                    ],
+                },
             },
             include: {
                 user: {

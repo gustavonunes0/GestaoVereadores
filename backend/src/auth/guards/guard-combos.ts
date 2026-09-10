@@ -10,6 +10,7 @@ export type TenantRoleRequirement =
 export const STAFF_AND_ABOVE: TenantUserRole[] = [
     TenantUserRole.ADMIN_STAFF,
     TenantUserRole.STAFF,
+    TenantUserRole.SECRETARIA_LEGISLATIVA,
 ];
 
 export const ADMIN_ONLY: TenantUserRole[] = [TenantUserRole.ADMIN_STAFF];

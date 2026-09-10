@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { materiasApi } from '../../api/legislative/materias.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
-import { DatePicker, Dropdown, FileUpload, LexDialogFooter } from '../../components/ui';
+import { DatePicker, Dropdown, LexDialogFooter } from '../../components/ui';
 import type { MateriaStatus } from '../../types/legislative';
 import type {
     AutorSelecionado,
@@ -43,7 +43,6 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
     const [coautores, setCoautores] = useState<CoautorFormItem[]>([]);
     const [ementa, setEmenta] = useState('');
     const [justificativa, setJustificativa] = useState('');
-    const [textoOriginal, setTextoOriginal] = useState<File | null>(null);
     const [statusMateria, setStatusMateria] = useState<MateriaStatus>('DRAFT');
 
     const statusOptions = useMemo(() => gerarOpcoesStatus('DRAFT'), []);
@@ -113,10 +112,7 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
 
         setSaving(true);
         try {
-            const created = await materiasApi.create(body);
-            if (textoOriginal) {
-                await materiasApi.uploadTextoOriginal(created.id, textoOriginal);
-            }
+            await materiasApi.create(body);
 
             const idStr = previewId ?? tipoSelecionado?.nome ?? 'Matéria';
             const msg =
@@ -251,7 +247,7 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
                             onChange={(e) => setEmenta(e.target.value)}
                             rows={3}
                             autoResize
-                            placeholder="Descreva o objetivo da matéria…"
+                            placeholder="Objeto / solicitação requerida da matéria…"
                             className="w-full"
                         />
                     </div>
@@ -267,15 +263,10 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
                             className="w-full"
                         />
                     </div>
-                    <div className="materia-form-field materia-form-field--file">
-                        <FileUpload
-                            id="mc-texto-original"
-                            label="Texto Original"
-                            value={textoOriginal}
-                            onChange={setTextoOriginal}
-                            accept=".pdf,.doc,.docx"
-                        />
-                    </div>
+                    <p className="text-sm text-color-secondary m-0">
+                        O texto original em PDF será gerado automaticamente a partir da
+                        ementa, justificativa, autoria e identificação da matéria.
+                    </p>
                 </div>
             )}
 

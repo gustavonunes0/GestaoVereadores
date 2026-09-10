@@ -53,6 +53,8 @@ enum TenantUserStatus {
 enum TenantUserRole {
     ADMIN_STAFF
     STAFF
+    /// Secretária Legislativa — assina autuação/termo e opera o fluxo legislativo.
+    SECRETARIA_LEGISLATIVA
 }
 
 enum ParlamentarianUserStatus {

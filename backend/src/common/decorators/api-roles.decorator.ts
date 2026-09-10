@@ -3,7 +3,11 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 
 /** Staff da câmara (leitura de recursos de plataforma. */
 export const ReadRoles = () =>
-    Roles(TenantUserRole.ADMIN_STAFF, TenantUserRole.STAFF);
+    Roles(
+        TenantUserRole.ADMIN_STAFF,
+        TenantUserRole.STAFF,
+        TenantUserRole.SECRETARIA_LEGISLATIVA,
+    );
 
 /** Mutações de plataforma (antes: MASTER/ADMIN SIGL). */
 export const WriteRoles = () => Roles(TenantUserRole.ADMIN_STAFF);
