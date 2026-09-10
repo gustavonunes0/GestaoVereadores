@@ -144,12 +144,13 @@ ${textToParagraphsHtml(dados.justificativa.trim(), 'par')}`
   }
 
   .destinatario {
-    text-align: center;
+    text-align: left;
     font-weight: 700;
-    margin: 14px 0 12px;
+    margin: 18px 0 14px;
     text-transform: uppercase;
-    font-size: 11.5px;
-    line-height: 1.4;
+    font-size: 15px;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
   }
 
   .sec {

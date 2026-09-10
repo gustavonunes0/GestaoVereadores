@@ -283,7 +283,7 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
         const pdf = await this.pdfGenerator.gerarDeHtml(html, {
             cabecalhoHtml: buildMateriaPdfHeaderTemplate(branding),
             rodapeHtml: buildMateriaPdfFooterTemplate(branding),
-            margem: { top: '42mm', bottom: '42mm', left: '14mm', right: '14mm' },
+            margem: { top: '42mm', bottom: '42mm', left: '24mm', right: '24mm' },
         });
 
         const uploadDir = join(process.cwd(), 'uploads', 'materias', tenantId);
