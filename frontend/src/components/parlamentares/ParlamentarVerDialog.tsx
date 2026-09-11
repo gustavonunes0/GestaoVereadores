@@ -237,7 +237,7 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
 
             {showEdit && parlamentar && (
                 <ParlamentarEditDialog
-                    parliamentarianId={parlamentarianId}
+                    parlamentarianId={parlamentarianId}
                     parlamentar={parlamentar}
                     mandatos={mandatos}
                     onClose={() => setShowEdit(false)}
