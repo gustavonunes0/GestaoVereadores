@@ -92,7 +92,7 @@ export function SessaoPesquisaFilters({
         const list: string[] = [];
         if (leg) list.push(`${leg.numero}ª legislatura`);
         const sl = sessoesLeg.find((s) => s.id === filtros.sessaoLegislativaId);
-        if (sl) list.push(`${sl.numero}ª sessão legislativa`);
+        if (sl) list.push(`${sl.numero}º ano legislativo`);
         if (periodoModo === 'rapido' && filtros.ano) {
             let p = filtros.ano;
             if (filtros.mes)
@@ -193,7 +193,7 @@ export function SessaoPesquisaFilters({
                     value={filtros.sessaoLegislativaId}
                     options={withEmptyOption(
                         sessoesLeg.map((s) => ({
-                            label: `${s.numero}ª sessão legislativa`,
+                            label: `${s.numero}º ano legislativo`,
                             value: s.id,
                         })),
                         filtros.legislaturaId

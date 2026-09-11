@@ -4856,6 +4856,108 @@ body.sessao-painel-body {
     z-index: 0;
 }
 
+.sessao-painel--votacao .sessao-painel-marca-dagua {
+    width: min(72vw, 40rem);
+    max-height: 70vh;
+    opacity: 0.16;
+}
+
+.sessao-painel-emergencia {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: rgba(185, 28, 28, 0.88);
+    color: #fff;
+    font-size: clamp(1.25rem, 3vw, 2rem);
+    animation: sessao-painel-emergencia-pulse 0.8s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+.sessao-painel-emergencia .pi {
+    font-size: 3rem;
+}
+
+@keyframes sessao-painel-emergencia-pulse {
+    from { background: rgba(185, 28, 28, 0.82); }
+    to { background: rgba(127, 29, 29, 0.94); }
+}
+
+.sessao-painel-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sessao-painel-emergencia-btn {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 40;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid #fecaca;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 999px;
+    padding: 0.65rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(185, 28, 28, 0.25);
+}
+
+.sessao-painel-emergencia-btn:hover {
+    background: #fecaca;
+}
+
+.voto-cor--sim { color: #1d4ed8; font-weight: 700; }
+.voto-cor--nao { color: #b91c1c; font-weight: 700; }
+.voto-cor--abstencao { color: #6b7280; font-weight: 700; }
+
+.parl-historico-voto__toggle {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    padding: 0;
+    color: inherit;
+}
+
+.parl-historico-voto__placar {
+    display: inline-flex;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    margin-left: auto;
+}
+
+.parl-historico-voto__lista {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.parl-historico-voto__lista li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
 /* Lista da pauta: ancora no topo para não cortar itens abaixo da dobra */
 .sessao-painel-main:has(.sessao-painel-pauta) {
     align-items: flex-start;
@@ -4968,16 +5070,16 @@ body.sessao-painel-body {
 }
 
 .sessao-painel-placar__item--sim {
-    background: #ecfdf5;
-    border-color: #86efac;
+    background: #eff6ff;
+    border-color: #93c5fd;
 }
 .sessao-painel-placar__item--nao {
     background: #fef2f2;
     border-color: #fca5a5;
 }
 .sessao-painel-placar__item--abst {
-    background: #fffbeb;
-    border-color: #fde68a;
+    background: #f3f4f6;
+    border-color: #d1d5db;
 }
 
 .sessao-painel-placar__valor {
@@ -4989,7 +5091,7 @@ body.sessao-painel-body {
 }
 
 .sessao-painel-placar__item--sim .sessao-painel-placar__valor {
-    color: #15803d;
+    color: #1d4ed8;
     text-shadow: none;
 }
 .sessao-painel-placar__item--nao .sessao-painel-placar__valor {
@@ -4997,7 +5099,7 @@ body.sessao-painel-body {
     text-shadow: none;
 }
 .sessao-painel-placar__item--abst .sessao-painel-placar__valor {
-    color: #a16207;
+    color: #6b7280;
     text-shadow: none;
 }
 
@@ -5661,7 +5763,7 @@ body.sessao-painel-body #root {
 }
 
 .sessao-painel-placar__item--sim .sessao-painel-placar__valor {
-    color: #15803d !important;
+    color: #1d4ed8 !important;
 }
 
 .sessao-painel-placar__item--nao .sessao-painel-placar__valor {
@@ -5669,7 +5771,7 @@ body.sessao-painel-body #root {
 }
 
 .sessao-painel-placar__item--abst .sessao-painel-placar__valor {
-    color: #a16207 !important;
+    color: #6b7280 !important;
 }
 
 .sessao-painel-fs-btn {

@@ -70,6 +70,10 @@ export interface VotacaoPlacarEvent {
     votosSim: number;
     votosNao: number;
     abstencoes: number;
+    /** Total de votos individuais (= sim+não+abst). */
+    totalRegistrados?: number;
+    /** Quem já votou — sem revelar a opção até o encerramento. */
+    parliamentarianIdsQueVotaram?: string[];
 }
 
 export interface VotacaoEncerradaEvent {

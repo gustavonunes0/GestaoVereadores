@@ -12,10 +12,10 @@
     --presenca-gap-assento: 5px;
     --presenca-seat-w: 36px;
     --presenca-seat-h: 28px;
-    --presenca-seat-mesa-w: 58px;
-    --presenca-seat-mesa-h: 48px;
-    --presenca-seat-pres-w: 64px;
-    --presenca-seat-pres-h: 54px;
+    --presenca-seat-mesa-w: 78px;
+    --presenca-seat-mesa-h: 64px;
+    --presenca-seat-pres-w: 88px;
+    --presenca-seat-pres-h: 72px;
 }
 
 /* Painel */
@@ -131,23 +131,23 @@
 .presenca-mesa__bar {
     background: var(--presenca-desk-brown);
     color: rgba(255, 255, 255, 0.95);
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
-    padding: 14px 64px;
+    padding: 18px 72px;
     border-radius: 3px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
     text-transform: uppercase;
     letter-spacing: 0.12em;
     text-align: center;
     white-space: nowrap;
-    min-width: 320px;
+    min-width: 380px;
 }
 
 .presenca-mesa__side {
     position: absolute;
-    top: 32px;
-    width: 72px;
-    height: 108px;
+    top: 36px;
+    width: 84px;
+    height: 128px;
     background: var(--presenca-desk-brown);
     border-radius: 3px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -263,7 +263,77 @@
 .presenca-seat--mesa {
     width: var(--presenca-seat-mesa-w);
     height: var(--presenca-seat-mesa-h);
-    font-size: 0.8125rem;
+    font-size: 0.9rem;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.presenca-seat__sigla {
+    line-height: 1.1;
+}
+
+.presenca-seat__voto-badge {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+    border: 1.5px solid #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+}
+
+.presenca-seat__voto-badge--ok {
+    background: #0f766e;
+    color: #fff;
+}
+
+.presenca-seat__voto-badge--pendente {
+    background: #e5e7eb;
+    color: #4b5563;
+}
+
+.presenca-legenda__voto-badge {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.presenca-legenda__voto-badge--ok {
+    background: #0f766e;
+    color: #fff;
+}
+
+.presenca-legenda__voto-badge--pendente {
+    background: #e5e7eb;
+    color: #4b5563;
+}
+
+.ptt-voto {
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.ptt-voto--ok {
+    color: #0f766e;
+}
+
+.ptt-voto--pendente {
+    color: #6b7280;
 }
 
 /* Presidente — centro da mesa, leve destaque */

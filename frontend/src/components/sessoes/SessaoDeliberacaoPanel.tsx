@@ -10,7 +10,6 @@ import {
     shouldHideNominalVotes,
     type TipoVotacao,
 } from '../../types/legislative';
-import { resolveVotoLabel } from '../../utils/votoDisplay';
 
 type ParlamentarOption = {
     id: string;
@@ -30,7 +29,9 @@ type Votacao = {
         id: string;
         voto: string;
         parlamentarId: string;
+        parliamentarianId?: string | null;
         parlamentar?: { pessoa?: { nome: string } };
+        parliamentarian?: { nome?: string } | null;
     }[];
 };
 
@@ -333,8 +334,10 @@ export function SessaoDeliberacaoPanel({
                                                             {v.parlamentar
                                                                 ?.pessoa
                                                                 ?.nome ??
+                                                                v.parliamentarian?.nome ??
+                                                                v.parliamentarianId ??
                                                                 v.parlamentarId}
-                                                            : {resolveVotoLabel(v.voto)}
+                                                            : Votou
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -343,8 +346,9 @@ export function SessaoDeliberacaoPanel({
                                         {hideVotes && (
                                             <p className="alert-warn">
                                                 Votação secreta: a interface não
-                                                exibe votos nominais
-                                                individuais.
+                                                exibe a opção escolhida até o
+                                                encerramento — apenas quem já
+                                                votou.
                                             </p>
                                         )}
 

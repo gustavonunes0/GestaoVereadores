@@ -25,6 +25,7 @@ import { TenantRoles } from '../../../../common/decorators/tenant-roles.decorato
 import { TenantId } from '../../../../common/decorators/tenant-id.decorator';
 import {
     ADMIN_ONLY,
+    ALL_AUTHENTICATED,
     PARLIAMENTARIAN_ONLY,
     STAFF_AND_ABOVE,
 } from '../../../../auth/guards/guard-combos';
@@ -173,7 +174,10 @@ import { ResponderPedidoPalavraDto } from '../dto/responder-pedido-palavra.dto';
 import { PedirPalavraDto } from '../dto/pedir-palavra.dto';
 import { GetJitsiTokenUseCase } from '../use-cases/get-jitsi-token.use-case';
 import { GetLegislaturaContextoUseCase } from '../use-cases/get-legislatura-contexto.use-case';
-import { buildVotacaoAbertaPayload } from '../../realtime/votacao-realtime.mapper';
+import {
+    buildVotacaoAbertaPayload,
+    buildVotacaoPlacarPayload,
+} from '../../realtime/votacao-realtime.mapper';
 import { ListSessaoHistoricoUseCase } from '../../../sessao-historico/application/use-cases/list-sessao-historico.use-case';
 import { ListSessaoHistoricoQueryDto } from '../../../sessao-historico/application/dto/list-sessao-historico-query.dto';
 import { ChamarVereadoresUseCase } from '../use-cases/chamar-vereadores.use-case';
@@ -600,6 +604,16 @@ export class SessoesController {
                 });
                 this.realtimeGateway.emitVotacaoAberta(tenantId, payload);
                 this.realtimeGateway.emitVotacaoConvocada(tenantId, payload);
+                this.realtimeGateway.emitVotacaoPlacar(
+                    tenantId,
+                    buildVotacaoPlacarPayload({
+                        id: result.id,
+                        totais: result.totais,
+                        parliamentarianIdsQueVotaram:
+                            result.parliamentarianIdsQueVotaram ?? [],
+                        totalRegistrados: result.totalRegistrados ?? 0,
+                    }),
+                );
             }
             return result;
         } catch (error) {
@@ -645,7 +659,7 @@ export class SessoesController {
         }
     }
 
-    @TenantRoles(...PARLIAMENTARIAN_ONLY)
+    @TenantRoles(...ALL_AUTHENTICATED)
     @Post(':id/pauta/:pautaItemId/votacao/votos')
     async registrarVotoHandler(
         @TenantId() tenantId: string,
@@ -674,12 +688,10 @@ export class SessoesController {
             );
             const votacao = await this.obterVotacao.execute(tenantId, id, pautaItemId);
             if (votacao) {
-                this.realtimeGateway.emitVotacaoPlacar(tenantId, {
-                    votacaoId: votacao.id,
-                    votosSim: votacao.totais?.votosSim ?? 0,
-                    votosNao: votacao.totais?.votosNao ?? 0,
-                    abstencoes: votacao.totais?.abstencoes ?? 0,
-                });
+                this.realtimeGateway.emitVotacaoPlacar(
+                    tenantId,
+                    buildVotacaoPlacarPayload(votacao),
+                );
             }
             return result;
         } catch (error) {
@@ -697,13 +709,21 @@ export class SessoesController {
         @Body() dto: UpdateVotoDto,
     ) {
         try {
-            return await this.updateVoto.execute(
+            const result = await this.updateVoto.execute(
                 tenantId,
                 id,
                 pautaItemId,
                 votoId,
                 dto,
             );
+            const votacao = await this.obterVotacao.execute(tenantId, id, pautaItemId);
+            if (votacao) {
+                this.realtimeGateway.emitVotacaoPlacar(
+                    tenantId,
+                    buildVotacaoPlacarPayload(votacao),
+                );
+            }
+            return result;
         } catch (error) {
             this.handleError(error);
         }

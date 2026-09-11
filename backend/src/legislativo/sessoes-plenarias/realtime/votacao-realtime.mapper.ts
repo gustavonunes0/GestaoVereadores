@@ -1,6 +1,9 @@
 import { TipoVotacao } from '@prisma/client';
 import { VotingDomainService } from '../../votacoes/domain/services/voting-domain.service';
-import type { VotacaoAbertaPayload } from './sessao-realtime.gateway';
+import type {
+    VotacaoAbertaPayload,
+    VotacaoPlacarPayload,
+} from './sessao-realtime.gateway';
 
 const votingService = new VotingDomainService();
 
@@ -45,5 +48,31 @@ export function buildVotacaoAbertaPayload(input: {
         votosNao: input.votosNao ?? 0,
         abstencoes: input.abstencoes ?? 0,
         aceitaVotoIndividual: votingService.acceptsIndividualVotes(tipo),
+    };
+}
+
+/** Placar com IDs de quem votou (sem revelar a opção). */
+export function buildVotacaoPlacarPayload(votacao: {
+    id: string;
+    totais?: {
+        votosSim?: number;
+        votosNao?: number;
+        abstencoes?: number;
+    } | null;
+    parliamentarianIdsQueVotaram?: string[] | null;
+    totalRegistrados?: number | null;
+}): VotacaoPlacarPayload {
+    const votosSim = votacao.totais?.votosSim ?? 0;
+    const votosNao = votacao.totais?.votosNao ?? 0;
+    const abstencoes = votacao.totais?.abstencoes ?? 0;
+    const ids = votacao.parliamentarianIdsQueVotaram ?? [];
+    return {
+        votacaoId: votacao.id,
+        votosSim,
+        votosNao,
+        abstencoes,
+        totalRegistrados:
+            votacao.totalRegistrados ?? votosSim + votosNao + abstencoes,
+        parliamentarianIdsQueVotaram: ids,
     };
 }

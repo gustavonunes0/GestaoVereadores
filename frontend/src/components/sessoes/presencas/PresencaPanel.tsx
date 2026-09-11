@@ -119,6 +119,8 @@ export function PresencaPanel({
     statusSessao,
     presencaUpdate,
     wsConectado,
+    votacaoAberta = false,
+    idsQueVotaram = null,
 }: {
     sessaoId: string;
     legislatureId?: string | null;
@@ -132,6 +134,9 @@ export function PresencaPanel({
      */
     presencaUpdate: PresencaUpdate | null;
     wsConectado: boolean;
+    /** Durante votação aberta: exibe indicador votou/não votou (sem revelar opção). */
+    votacaoAberta?: boolean;
+    idsQueVotaram?: Set<string> | null;
 }) {
     const { canWrite } = useAuth();
     const { showApiError, showSuccess } = useAppToast();
@@ -363,6 +368,8 @@ export function PresencaPanel({
                 presenca={presenca}
                 podeRegistrar={podeRegistrar}
                 onToggle={handleToggle}
+                votacaoAberta={votacaoAberta}
+                idsQueVotaram={idsQueVotaram}
             />
 
             <Dialog

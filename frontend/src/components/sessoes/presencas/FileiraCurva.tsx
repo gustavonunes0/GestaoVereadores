@@ -1,5 +1,6 @@
 import type { MouseEvent } from 'react';
 import type { AssentoPlenario } from '../../../utils/plenarioLayout';
+import { resolveSituacaoCadeira } from '../../../utils/presencaCadeira';
 import { CadeiraParlamentar } from './CadeiraParlamentar';
 import { CadeiraVazia } from './CadeiraVazia';
 import type { PresencaParlamentar } from '../../../types/presenca';
@@ -13,6 +14,8 @@ interface FileiraCurvaProps {
     podeRegistrar: boolean;
     onToggle: (parlUserId: string) => void;
     onHover: (p: PresencaParlamentar | null, e?: MouseEvent) => void;
+    idsQueVotaram?: Set<string> | null;
+    votacaoAberta?: boolean;
 }
 
 export function FileiraCurva({
@@ -24,6 +27,8 @@ export function FileiraCurva({
     podeRegistrar,
     onToggle,
     onHover,
+    idsQueVotaram = null,
+    votacaoAberta = false,
 }: FileiraCurvaProps) {
     return (
         <div
@@ -46,6 +51,15 @@ export function FileiraCurva({
                         podeRegistrar={podeRegistrar}
                         onToggle={onToggle}
                         onHover={onHover}
+                        situacaoVoto={
+                            votacaoAberta &&
+                            idsQueVotaram &&
+                            resolveSituacaoCadeira(assento) === 'PRESENTE'
+                                ? idsQueVotaram.has(assento.parliamentarianId)
+                                    ? 'votou'
+                                    : 'nao_votou'
+                                : null
+                        }
                     />
                 ) : (
                     <CadeiraVazia key={`${rowKey}-vazia-${i}`} />

@@ -11,7 +11,7 @@ import {
     TIPO_VOTACAO_LABEL,
     type VotacaoAbertaEvent,
 } from '../../../types/legislative';
-import { resolveVotoLabel, resolveVotoValue, type VotoCampo } from '../../../utils/votoDisplay';
+import { resolveVotoLabel, resolveVotoValue, resolveVotoCorClass, type VotoCampo } from '../../../utils/votoDisplay';
 
 const VOTO_OPTIONS = [
     { label: 'Sim', value: 'SIM' },
@@ -24,6 +24,9 @@ interface Props {
     hasConfirmed: boolean;
     votacaoAberta: VotacaoAbertaEvent | null;
     statusSessao: string;
+    /** Presidente: voto não obrigatório — CTA opcional em vez de popup automático. */
+    votoOpcional?: boolean;
+    onAbrirDialogVoto?: () => void;
 }
 
 function findMyVote(
@@ -52,6 +55,8 @@ export function ParlamentarVotacaoPanel({
     hasConfirmed,
     votacaoAberta,
     statusSessao,
+    votoOpcional = false,
+    onAbrirDialogVoto,
 }: Props) {
     const { parliamentarianId } = usePermissions();
     const { showSuccess, showApiError } = useAppToast();
@@ -158,12 +163,18 @@ export function ParlamentarVotacaoPanel({
                             <ProgressSpinner style={{ width: '24px', height: '24px' }} />
                         </div>
                     ) : votoRegistrado ? (
-                        <div className="parl-sessao-presenca-ok">
+                        <div className={`parl-sessao-presenca-ok ${resolveVotoCorClass(votoRegistrado)}`}>
                             <i className="pi pi-check-circle" aria-hidden />
                             Voto registrado: {resolveVotoLabel(votoRegistrado)}
                         </div>
                     ) : podeVotar ? (
                         <div className="parl-sessao-votacao-form">
+                            {votoOpcional ? (
+                                <p className="parl-sessao-panel__hint m-0">
+                                    Como Presidente, seu voto é opcional. Você pode votar agora ou
+                                    abster-se sem pendência.
+                                </p>
+                            ) : null}
                             <SelectButton
                                 value={votoSelecionado}
                                 options={VOTO_OPTIONS}
@@ -172,12 +183,22 @@ export function ParlamentarVotacaoPanel({
                                 onChange={(e) => setVotoSelecionado(e.value)}
                                 disabled={loadingVoto}
                             />
-                            <Button
-                                label="Registrar voto"
-                                icon="pi pi-check"
-                                loading={loadingVoto}
-                                onClick={handleConfirmarVoto}
-                            />
+                            <div className="flex gap-2 flex-wrap">
+                                <Button
+                                    label="Registrar voto"
+                                    icon="pi pi-check"
+                                    loading={loadingVoto}
+                                    onClick={handleConfirmarVoto}
+                                />
+                                {votoOpcional && onAbrirDialogVoto ? (
+                                    <Button
+                                        label="Abrir confirmação"
+                                        icon="pi pi-external-link"
+                                        outlined
+                                        onClick={onAbrirDialogVoto}
+                                    />
+                                ) : null}
+                            </div>
                         </div>
                     ) : (
                         <p className="parl-sessao-panel__hint m-0">

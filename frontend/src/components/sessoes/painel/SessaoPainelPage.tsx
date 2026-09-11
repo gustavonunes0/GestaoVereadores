@@ -18,7 +18,7 @@ import {
     resolvePautaTipo,
     sessaoDetalheLabel,
 } from '../../../types/sessoes';
-import { criarPainelChannel, type PainelMensagem } from '../../../utils/sessaoPainelChannel';
+import { criarPainelChannel, acionarEmergenciaPainel, type PainelMensagem } from '../../../utils/sessaoPainelChannel';
 import { resolveTenantLogoUrl } from '../../../utils/tenantLogo';
 import fallbackLogoSrc from '../../../../assets/logo.png';
 
@@ -185,9 +185,9 @@ function PainelVotacao({
 }) {
     return (
         <div className="sessao-painel-conteudo">
-            <div className="sessao-painel-etiqueta sessao-painel-etiqueta--votacao">
+            <div className={`sessao-painel-etiqueta sessao-painel-etiqueta--votacao`}>
                 <span className="sessao-painel-pulse" aria-hidden />
-                Votação em andamento
+                Votação Aberta
             </div>
             <h1 className="sessao-painel-item-titulo">{titulo}</h1>
             {ementa && <p className="sessao-painel-item-texto">{ementa}</p>}
@@ -225,7 +225,7 @@ export function SessaoPainelPage() {
     const [itemExibido, setItemExibido] = useState<PautaItemDetalhe | null>(null);
     const [carregando, setCarregando] = useState(true);
     const [itemCarregando, setItemCarregando] = useState(false);
-    const [modoResultado, setModoResultado] = useState(false);
+    const [emergenciaAtiva, setEmergenciaAtiva] = useState(false);
     const [tenantBranding, setTenantBranding] = useState<{
         name: string;
         logo: string | null;
@@ -288,6 +288,10 @@ export function SessaoPainelPage() {
                 setItemExibido(null);
                 void carregarPauta();
             }
+            if (ev.data.tipo === 'EMERGENCIA') {
+                setEmergenciaAtiva(true);
+                window.setTimeout(() => setEmergenciaAtiva(false), 8000);
+            }
         };
         channel.addEventListener('message', onMessage);
         return () => channel.close();
@@ -298,17 +302,40 @@ export function SessaoPainelPage() {
     }, [votacaoEncerrada, carregarPauta]);
 
     useEffect(() => {
-        if (!votacaoEncerrada) {
-            setModoResultado(false);
-            return;
-        }
-        setModoResultado(true);
+        if (!votacaoEncerrada) return;
         const timer = window.setTimeout(() => {
-            setModoResultado(false);
             limparVotacaoEncerrada();
         }, RESULTADO_EXIBICAO_MS);
         return () => window.clearTimeout(timer);
     }, [votacaoEncerrada, limparVotacaoEncerrada]);
+
+    const dispararEmergencia = useCallback(() => {
+        if (!sessaoId) return;
+        setEmergenciaAtiva(true);
+        acionarEmergenciaPainel(sessaoId);
+        try {
+            const Ctx =
+                window.AudioContext ||
+                (window as unknown as { webkitAudioContext: typeof AudioContext })
+                    .webkitAudioContext;
+            const ctx = new Ctx();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = 880;
+            gain.gain.value = 0.08;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            window.setTimeout(() => {
+                osc.stop();
+                void ctx.close();
+            }, 600);
+        } catch {
+            /* áudio opcional */
+        }
+        window.setTimeout(() => setEmergenciaAtiva(false), 8000);
+    }, [sessaoId]);
 
     useEffect(() => {
         document.body.classList.add('sessao-painel-body');
@@ -339,7 +366,7 @@ export function SessaoPainelPage() {
 
     let modo: ModoPainel = 'aguardando';
     if (votacaoAberta) modo = 'votacao';
-    else if (modoResultado && votacaoEncerrada) modo = 'resultado';
+    else if (votacaoEncerrada) modo = 'resultado';
     else if (itemExibido) modo = 'item';
     else if (itens.length > 0) modo = 'pauta';
 
@@ -377,7 +404,14 @@ export function SessaoPainelPage() {
     }
 
     return (
-        <div className="sessao-painel">
+        <div className={`sessao-painel${modo === 'votacao' ? ' sessao-painel--votacao' : ''}`}>
+            {emergenciaAtiva ? (
+                <div className="sessao-painel-emergencia" role="alert">
+                    <i className="pi pi-exclamation-triangle" aria-hidden />
+                    <strong>ALERTA DE EMERGÊNCIA</strong>
+                    <span>Atenção da mesa e do plenário</span>
+                </div>
+            ) : null}
             <header className="sessao-painel-header">
                 <div className="sessao-painel-header__marca">
                     <img src={logoSrc} alt="" className="sessao-painel-logo" />
@@ -439,6 +473,15 @@ export function SessaoPainelPage() {
                 >
                     <i className="pi pi-expand" aria-hidden />
                     Tela cheia
+                </button>
+                <button
+                    type="button"
+                    className="sessao-painel-emergencia-btn"
+                    onClick={dispararEmergencia}
+                    title="Alerta visual e sonoro no telão"
+                >
+                    <i className="pi pi-exclamation-triangle" aria-hidden />
+                    Emergência
                 </button>
             </footer>
         </div>

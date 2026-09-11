@@ -294,7 +294,7 @@ ${votacaoBloco}
                 : 'Legislatura não informada';
         const sessaoLegTxt =
             dados.sessaoLegislativaNumero != null
-                ? `${dados.sessaoLegislativaNumero}ª Sessão Legislativa`
+                ? `${dados.sessaoLegislativaNumero}º ano legislativo`
                 : 'Sessão Legislativa não informada';
 
         return `

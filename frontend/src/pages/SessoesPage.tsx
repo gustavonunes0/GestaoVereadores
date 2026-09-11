@@ -137,7 +137,7 @@ export function SessoesPage() {
     const contextoLabel = contextoVigente
         ? `${contextoVigente.legislaturaNumero}ª legislatura${
               contextoVigente.sessaoLegislativaNumero
-                  ? ` · ${contextoVigente.sessaoLegislativaNumero}ª sessão legislativa`
+                  ? ` · ${contextoVigente.sessaoLegislativaNumero}º ano legislativo`
                   : ''
           }`
         : undefined;

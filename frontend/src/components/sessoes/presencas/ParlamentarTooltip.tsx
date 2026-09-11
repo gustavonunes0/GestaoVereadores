@@ -8,7 +8,13 @@ interface TooltipData {
     y: number;
 }
 
-export function ParlamentarTooltip({ data }: { data: TooltipData }) {
+export function ParlamentarTooltip({
+    data,
+    situacaoVoto = null,
+}: {
+    data: TooltipData;
+    situacaoVoto?: 'votou' | 'nao_votou' | null;
+}) {
     const { p, x, y } = data;
     const left = x + 260 > window.innerWidth ? x - 240 : x + 14;
     const top = Math.max(10, y - 10);
@@ -22,6 +28,12 @@ export function ParlamentarTooltip({ data }: { data: TooltipData }) {
 
     const situacao = resolveSituacaoCadeira(p);
     const situacaoLabel = LABELS_SITUACAO[situacao];
+    const votoLabel =
+        situacaoVoto === 'votou'
+            ? 'Votou'
+            : situacaoVoto === 'nao_votou'
+              ? 'Não votou'
+              : null;
 
     return (
         <div className="parlamentar-tooltip" style={{ left, top }}>
@@ -64,6 +76,13 @@ export function ParlamentarTooltip({ data }: { data: TooltipData }) {
                 />
                 {situacaoLabel}
             </div>
+            {votoLabel ? (
+                <div
+                    className={`ptt-voto ptt-voto--${situacaoVoto === 'votou' ? 'ok' : 'pendente'}`}
+                >
+                    {votoLabel}
+                </div>
+            ) : null}
             <div className="ptt-origem">{origemTexto}</div>
         </div>
     );

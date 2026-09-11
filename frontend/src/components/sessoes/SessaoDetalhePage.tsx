@@ -213,17 +213,17 @@ export function SessaoDetalhePage() {
                         )}
                         <span>
                             SIM:{' '}
-                            <strong className="text-green-600">
+                            <strong className="voto-cor--sim">
                                 {placarAtual?.votosSim ?? votacaoAberta.votosSim}
                             </strong>
                             {' | '}
                             NÃO:{' '}
-                            <strong className="text-red-600">
+                            <strong className="voto-cor--nao">
                                 {placarAtual?.votosNao ?? votacaoAberta.votosNao}
                             </strong>
                             {' | '}
                             ABSTENÇÃO:{' '}
-                            <strong>
+                            <strong className="voto-cor--abstencao">
                                 {placarAtual?.abstencoes ?? votacaoAberta.abstencoes}
                             </strong>
                         </span>
@@ -282,6 +282,14 @@ export function SessaoDetalhePage() {
                         statusSessao={sessao.statusSessao}
                         presencaUpdate={presencaUpdate}
                         wsConectado={wsConectado}
+                        votacaoAberta={Boolean(votacaoAberta)}
+                        idsQueVotaram={
+                            placarAtual?.parliamentarianIdsQueVotaram
+                                ? new Set(placarAtual.parliamentarianIdsQueVotaram)
+                                : votacaoAberta
+                                  ? new Set<string>()
+                                  : null
+                        }
                     />
                 </TabPanel>
 

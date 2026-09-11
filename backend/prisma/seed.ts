@@ -684,11 +684,22 @@ async function main() {
         where: { tenantId_number: { tenantId: DEMO_TENANT_ID, number: 20 } },
     });
 
-    const sessaoLeg = await prisma.sessaoLegislativa.upsert({
-        where: { legislaturaId_numero: { legislaturaId: legislatura.id, numero: 1 } },
-        update: {},
-        create: { legislaturaId: legislatura.id, numero: 1, dataInicio: new Date('2025-02-01') },
+    const sessaoLegExisting = await prisma.sessaoLegislativa.findFirst({
+        where: { legislaturaId: legislatura.id },
+        orderBy: { numero: 'asc' },
     });
+    const sessaoLeg = sessaoLegExisting
+        ? await prisma.sessaoLegislativa.update({
+              where: { id: sessaoLegExisting.id },
+              data: { numero: 6 },
+          })
+        : await prisma.sessaoLegislativa.create({
+              data: {
+                  legislaturaId: legislatura.id,
+                  numero: 6,
+                  dataInicio: new Date('2025-02-01'),
+              },
+          });
 
     // --- Sessões plenárias demo ---
     const tipoOrdinaria = await prisma.tipoSessao.findFirst({

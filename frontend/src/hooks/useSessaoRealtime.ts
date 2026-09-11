@@ -96,6 +96,46 @@ export function useSessaoRealtime(sessaoId: string) {
             );
             if (itemAberto) {
                 setVotacaoAberta(mapPautaItemVotacaoAberta(sessaoId, itemAberto));
+                try {
+                    const detalhe = await sessoesApi.getVotacaoPautaItem(
+                        sessaoId,
+                        itemAberto.id,
+                    );
+                    if (detalhe && typeof detalhe === 'object') {
+                        const totais = (detalhe.totais as {
+                            votosSim?: number;
+                            votosNao?: number;
+                            abstencoes?: number;
+                        } | undefined) ?? undefined;
+                        const ids = Array.isArray(detalhe.parliamentarianIdsQueVotaram)
+                            ? (detalhe.parliamentarianIdsQueVotaram as string[])
+                            : [];
+                        const votosSim = Number(
+                            totais?.votosSim ?? detalhe.votosSim ?? itemAberto.votacao?.votosSim ?? 0,
+                        );
+                        const votosNao = Number(
+                            totais?.votosNao ?? detalhe.votosNao ?? itemAberto.votacao?.votosNao ?? 0,
+                        );
+                        const abstencoes = Number(
+                            totais?.abstencoes ??
+                                detalhe.abstencoes ??
+                                itemAberto.votacao?.abstencoes ??
+                                0,
+                        );
+                        setPlacar({
+                            votacaoId: String(detalhe.id ?? itemAberto.votacao?.id),
+                            votosSim,
+                            votosNao,
+                            abstencoes,
+                            totalRegistrados: Number(
+                                detalhe.totalRegistrados ?? votosSim + votosNao + abstencoes,
+                            ),
+                            parliamentarianIdsQueVotaram: ids,
+                        });
+                    }
+                } catch {
+                    /* placar permanece até o próximo evento WS */
+                }
             } else {
                 setVotacaoAberta(null);
                 setPlacar(null);
@@ -131,7 +171,15 @@ export function useSessaoRealtime(sessaoId: string) {
             const normalized = normalizeVotacaoAberta(data, sessaoId);
             if (normalized) {
                 setVotacaoAberta(normalized);
-                setPlacar(null);
+                setPlacar({
+                    votacaoId: normalized.votacaoId,
+                    votosSim: normalized.votosSim,
+                    votosNao: normalized.votosNao,
+                    abstencoes: normalized.abstencoes,
+                    totalRegistrados:
+                        normalized.votosSim + normalized.votosNao + normalized.abstencoes,
+                    parliamentarianIdsQueVotaram: [],
+                });
                 setVotacaoEncerrada(null);
             }
         };
@@ -146,12 +194,17 @@ export function useSessaoRealtime(sessaoId: string) {
         socket.on('votacao:convocada', handleVotacaoAberta);
         socket.on('votacao:placar', (data: VotacaoPlacarEvent) => setPlacar(data));
         socket.on('votacao:encerrada', (data: VotacaoEncerradaEvent) => {
+            const aberta = votacaoAbertaRef.current;
             setVotacaoEncerrada({
                 ...data,
-                titulo: votacaoAbertaRef.current?.titulo,
+                titulo: data.titulo ?? aberta?.titulo,
+                votosSim: Number(data.votosSim ?? aberta?.votosSim ?? 0),
+                votosNao: Number(data.votosNao ?? aberta?.votosNao ?? 0),
+                abstencoes: Number(data.abstencoes ?? aberta?.abstencoes ?? 0),
             });
             setVotacaoAberta(null);
-            setPlacar(null);
+            // Mantém placar até o painel trocar para resultado (evita contador sumir).
+            window.setTimeout(() => setPlacar(null), 50);
             void syncRef.current();
         });
         socket.on('sessao:encerrada', () => setFaseAtual('ENCERRADA'));

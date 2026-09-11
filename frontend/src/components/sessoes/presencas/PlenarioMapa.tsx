@@ -1,6 +1,7 @@
 import { useMemo, useState, type MouseEvent } from 'react';
 import type { PresencaParlamentar, PresencaSessao } from '../../../types/presenca';
 import { calcularParesFileiras, preencherMesa } from '../../../utils/plenarioLayout';
+import { resolveSituacaoCadeira } from '../../../utils/presencaCadeira';
 import { CadeiraParlamentar } from './CadeiraParlamentar';
 import { CadeiraVazia } from './CadeiraVazia';
 import { FileiraCurva } from './FileiraCurva';
@@ -12,6 +13,9 @@ interface PlenarioMapaProps {
     presenca: PresencaSessao;
     podeRegistrar: boolean;
     onToggle: (parlUserId: string) => void;
+    /** Durante votação: IDs que já registraram voto (sem revelar opção). */
+    idsQueVotaram?: Set<string> | null;
+    votacaoAberta?: boolean;
 }
 
 function vereadoresNoPlenario(presenca: PresencaSessao): PresencaParlamentar[] {
@@ -23,7 +27,23 @@ function vereadoresNoPlenario(presenca: PresencaSessao): PresencaParlamentar[] {
     );
 }
 
-export function PlenarioMapa({ presenca, podeRegistrar, onToggle }: PlenarioMapaProps) {
+function resolveSituacaoVoto(
+    parlamentar: PresencaParlamentar,
+    votacaoAberta: boolean,
+    idsQueVotaram: Set<string> | null,
+): 'votou' | 'nao_votou' | null {
+    if (!votacaoAberta || !idsQueVotaram) return null;
+    if (resolveSituacaoCadeira(parlamentar) !== 'PRESENTE') return null;
+    return idsQueVotaram.has(parlamentar.parliamentarianId) ? 'votou' : 'nao_votou';
+}
+
+export function PlenarioMapa({
+    presenca,
+    podeRegistrar,
+    onToggle,
+    idsQueVotaram = null,
+    votacaoAberta = false,
+}: PlenarioMapaProps) {
     const [tooltip, setTooltip] = useState<{
         p: PresencaParlamentar;
         x: number;
@@ -59,6 +79,11 @@ export function PlenarioMapa({ presenca, podeRegistrar, onToggle }: PlenarioMapa
                                         onToggle={onToggle}
                                         onHover={handleHover}
                                         size="md"
+                                        situacaoVoto={resolveSituacaoVoto(
+                                            assento,
+                                            votacaoAberta,
+                                            idsQueVotaram,
+                                        )}
                                     />
                                 ) : (
                                     <CadeiraVazia key={`mesa-vazia-${i}`} size="md" />
@@ -89,6 +114,8 @@ export function PlenarioMapa({ presenca, podeRegistrar, onToggle }: PlenarioMapa
                                     podeRegistrar={podeRegistrar}
                                     onToggle={onToggle}
                                     onHover={handleHover}
+                                    idsQueVotaram={idsQueVotaram}
+                                    votacaoAberta={votacaoAberta}
                                 />
                                 <FileiraCurva
                                     assentos={par.direita}
@@ -99,6 +126,8 @@ export function PlenarioMapa({ presenca, podeRegistrar, onToggle }: PlenarioMapa
                                     podeRegistrar={podeRegistrar}
                                     onToggle={onToggle}
                                     onHover={handleHover}
+                                    idsQueVotaram={idsQueVotaram}
+                                    votacaoAberta={votacaoAberta}
                                 />
                             </div>
                         ))}
@@ -107,9 +136,18 @@ export function PlenarioMapa({ presenca, podeRegistrar, onToggle }: PlenarioMapa
             </div>
 
             <QuorumBar presenca={presenca} />
-            <PresencaLegenda />
+            <PresencaLegenda votacaoAberta={votacaoAberta} />
 
-            {tooltip && <ParlamentarTooltip data={tooltip} />}
+            {tooltip && (
+                <ParlamentarTooltip
+                    data={tooltip}
+                    situacaoVoto={resolveSituacaoVoto(
+                        tooltip.p,
+                        votacaoAberta,
+                        idsQueVotaram,
+                    )}
+                />
+            )}
         </div>
     );
 }

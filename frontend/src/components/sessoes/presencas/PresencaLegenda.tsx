@@ -9,7 +9,7 @@ const LEGENDA: Array<{ key: SituacaoPresencaValor | 'INSTITUCIONAL'; label: stri
     { key: 'INSTITUCIONAL', label: 'Estado/Cadeira' },
 ];
 
-export function PresencaLegenda() {
+export function PresencaLegenda({ votacaoAberta = false }: { votacaoAberta?: boolean }) {
     return (
         <footer className="presenca-legenda" aria-label="Legenda do mapa de presenças">
             {LEGENDA.map((item) => (
@@ -21,6 +21,28 @@ export function PresencaLegenda() {
                     <span>{item.label}</span>
                 </div>
             ))}
+            {votacaoAberta ? (
+                <>
+                    <div className="presenca-legenda__item">
+                        <span
+                            className="presenca-legenda__voto-badge presenca-legenda__voto-badge--ok"
+                            aria-hidden
+                        >
+                            ✓
+                        </span>
+                        <span>Votou</span>
+                    </div>
+                    <div className="presenca-legenda__item">
+                        <span
+                            className="presenca-legenda__voto-badge presenca-legenda__voto-badge--pendente"
+                            aria-hidden
+                        >
+                            ·
+                        </span>
+                        <span>Não votou</span>
+                    </div>
+                </>
+            ) : null}
         </footer>
     );
 }

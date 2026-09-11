@@ -4,17 +4,19 @@ import { Button } from 'primereact/button';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { sessoesApi } from '../../api/legislative/sessoes.api';
 import { ROUTES } from '../../app/navigation';
+import { useAppToast } from '../../hooks/useAppToast';
+import { useIsPresidenteMesa } from '../../hooks/useIsPresidenteMesa';
+import { useMinhaPresenca } from '../../hooks/useMinhaPresenca';
+import { usePermissions } from '../../hooks/usePermissions';
+import { useSessaoRealtime } from '../../hooks/useSessaoRealtime';
 import { MinhaPresencaPanel } from '../../components/parlamentar/sessoes/MinhaPresencaPanel';
+import { ParlamentarHistoricoVotosPanel } from '../../components/parlamentar/sessoes/ParlamentarHistoricoVotosPanel';
 import { ParlamentarJitsiPanel } from '../../components/parlamentar/sessoes/ParlamentarJitsiPanel';
 import { ParlamentarPautaPanel } from '../../components/parlamentar/sessoes/ParlamentarPautaPanel';
 import { ParlamentarVotacaoPanel } from '../../components/parlamentar/sessoes/ParlamentarVotacaoPanel';
 import { PedirPalavraPanel } from '../../components/parlamentar/sessoes/PedirPalavraPanel';
 import { RegistrarVotoDialog } from '../../components/sessoes/RegistrarVotoDialog';
 import { useAuth } from '../../contexts/AuthContext';
-import { useAppToast } from '../../hooks/useAppToast';
-import { useMinhaPresenca } from '../../hooks/useMinhaPresenca';
-import { usePermissions } from '../../hooks/usePermissions';
-import { useSessaoRealtime } from '../../hooks/useSessaoRealtime';
 import {
     sessaoDetalheLabel,
     sessaoDetalheSubtitulo,
@@ -40,6 +42,7 @@ export function ParlamentarSessaoDetalhePage() {
     const { user } = useAuth();
     const { showToast } = useAppToast();
     const { parliamentarianId } = usePermissions();
+    const { isPresidente } = useIsPresidenteMesa(parliamentarianId);
     const [sessao, setSessao] = useState<SessaoPlenariaDetalhe | null>(null);
     const [loading, setLoading] = useState(true);
     const [dialogVoto, setDialogVoto] = useState(false);
@@ -97,8 +100,16 @@ export function ParlamentarSessaoDetalhePage() {
         ultimaVotacaoNotificada.current = votacaoAberta.votacaoId;
 
         if (votacaoAberta.aceitaVotoIndividual) {
-            showToast('info', 'Votação aberta', votacaoAberta.titulo);
-            setDialogVoto(true);
+            if (isPresidente) {
+                showToast(
+                    'info',
+                    'Votação aberta',
+                    `${votacaoAberta.titulo} — como Presidente, seu voto é opcional. Use o painel de votação se desejar votar.`,
+                );
+            } else {
+                showToast('info', 'Votação aberta', votacaoAberta.titulo);
+                setDialogVoto(true);
+            }
         } else {
             const tipo =
                 votacaoAberta.tipoVotacao === 'SIMBOLICA'
@@ -112,7 +123,7 @@ export function ParlamentarSessaoDetalhePage() {
                 'O resultado é registrado pela mesa. Não há voto individual no aplicativo.',
             );
         }
-    }, [votacaoAberta, hasConfirmed, showToast]);
+    }, [votacaoAberta, hasConfirmed, showToast, isPresidente]);
 
     useEffect(() => {
         if (!votacaoAberta) {
@@ -219,7 +230,10 @@ export function ParlamentarSessaoDetalhePage() {
                     hasConfirmed={hasConfirmed}
                     votacaoAberta={votacaoAberta}
                     statusSessao={sessao.statusSessao}
+                    votoOpcional={isPresidente}
+                    onAbrirDialogVoto={() => setDialogVoto(true)}
                 />
+                <ParlamentarHistoricoVotosPanel sessaoId={id} statusSessao={sessao.statusSessao} />
                 <ParlamentarPautaPanel sessaoId={id} />
             </div>
 

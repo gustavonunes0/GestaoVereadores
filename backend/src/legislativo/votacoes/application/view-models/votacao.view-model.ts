@@ -64,6 +64,10 @@ export class VotacaoViewModel {
                 ? calcularQuorumNecessario(tipoQuorum, totalMembros)
                 : null;
 
+        const parliamentarianIdsQueVotaram = (data.votos ?? [])
+            .map((item) => item.parliamentarianId)
+            .filter((id): id is string => Boolean(id));
+
         return {
             id: data.id,
             pautaItemId: data.pautaItemId,
@@ -76,6 +80,10 @@ export class VotacaoViewModel {
                 votosNao: data.votosNao,
                 abstencoes: data.abstencoes,
             },
+            /** Quem já votou — sem revelar a opção (válido também em votação secreta). */
+            parliamentarianIdsQueVotaram,
+            totalRegistrados:
+                data.votosSim + data.votosNao + data.abstencoes,
             resultado: resultado
                 ? {
                       value: data.resultado,

@@ -19,8 +19,17 @@ backend/scripts/**
 !backend/scripts/prisma-deploy-prod.cjs
 !backend/scripts/resolve-vercel-env.cjs
 
+# Documentação — não versionar
+docs/
+backend/src/docs/
+frontend/src/docs/
+.cursor/modelos/
+.cursor/tasks.md
+.cursor/**/DESIGN.md
+.cursor/**/code.html
+.cursor/**/screen.png
+
 .CLAUDE.md
-.backend/docs/
 
 .cursorrules
 .cursorrules.md

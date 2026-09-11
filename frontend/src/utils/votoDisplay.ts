@@ -27,3 +27,22 @@ export function resolveVotoLabel(voto: VotoCampo): string {
     if (!value) return '—';
     return VOTO_LABELS[value] ?? value;
 }
+
+/** Paleta oficial: Sim=azul, Não=vermelho, Abstenção=cinza */
+export const VOTO_COR_CLASS: Record<string, string> = {
+    SIM: 'voto-cor--sim',
+    NAO: 'voto-cor--nao',
+    ABSTENCAO: 'voto-cor--abstencao',
+};
+
+export function resolveVotoCorClass(voto: VotoCampo): string {
+    const value = resolveVotoValue(voto);
+    if (!value) return '';
+    return VOTO_COR_CLASS[value] ?? '';
+}
+
+/** Ex.: 6 → "6º ano legislativo" */
+export function formatAnoLegislativo(numero: number | null | undefined): string | null {
+    if (numero == null || !Number.isFinite(numero)) return null;
+    return `${numero}º ano legislativo`;
+}

@@ -27,6 +27,10 @@ export type VotacaoPlacarPayload = {
     votosSim: number;
     votosNao: number;
     abstencoes: number;
+    /** Total de votos individuais registrados (sim+não+abst). */
+    totalRegistrados?: number;
+    /** IDs dos parlamentares que já votaram — sem revelar a opção. */
+    parliamentarianIdsQueVotaram?: string[];
 };
 
 export type VotacaoEncerradaPayload = {
