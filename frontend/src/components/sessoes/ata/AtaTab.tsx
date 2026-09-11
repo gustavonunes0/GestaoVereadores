@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
-import { InputTextarea } from 'primereact/inputtextarea';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { confirmDialog } from 'primereact/confirmdialog';
@@ -28,13 +27,23 @@ export function AtaTab({
     const [salvando, setSalvando] = useState(false);
     const [aprovando, setAprovando] = useState(false);
     const [conteudo, setConteudo] = useState('');
+    const editorRef = useRef<HTMLDivElement>(null);
+    const conteudoServidorRef = useRef('');
+
+    const sincronizarEditor = useCallback((html: string) => {
+        setConteudo(html);
+        conteudoServidorRef.current = html;
+        if (editorRef.current) {
+            editorRef.current.innerHTML = html;
+        }
+    }, []);
 
     const carregar = useCallback(async () => {
         setLoading(true);
         try {
             const data = await sessoesApi.getAta(sessaoId);
             setAta(data);
-            setConteudo(data.conteudo);
+            sincronizarEditor(data.conteudo);
         } catch (err) {
             if (err instanceof ApiError && err.status === 404) {
                 setAta(null);
@@ -44,11 +53,18 @@ export function AtaTab({
         } finally {
             setLoading(false);
         }
-    }, [sessaoId, showApiError]);
+    }, [sessaoId, showApiError, sincronizarEditor]);
 
     useEffect(() => {
         void carregar();
     }, [carregar]);
+
+    useEffect(() => {
+        if (!editorRef.current || !conteudoServidorRef.current) return;
+        if (editorRef.current.innerHTML !== conteudoServidorRef.current) {
+            editorRef.current.innerHTML = conteudoServidorRef.current;
+        }
+    }, [ata?.id, loading]);
 
     if (statusSessao !== 'ENCERRADA') {
         return (
@@ -72,7 +88,7 @@ export function AtaTab({
         try {
             const data = await sessoesApi.gerarRascunhoAta(sessaoId);
             setAta(data);
-            setConteudo(data.conteudo);
+            sincronizarEditor(data.conteudo);
             showSuccess('Rascunho da ata gerado a partir dos dados da sessão.');
         } catch (err) {
             showApiError(err);
@@ -82,10 +98,12 @@ export function AtaTab({
     }
 
     async function salvar() {
+        const html = editorRef.current?.innerHTML ?? conteudo;
         setSalvando(true);
         try {
-            const data = await sessoesApi.updateAta(sessaoId, conteudo);
+            const data = await sessoesApi.updateAta(sessaoId, html);
             setAta(data);
+            sincronizarEditor(data.conteudo);
             showSuccess('Ata salva.');
         } catch (err) {
             showApiError(err);
@@ -107,8 +125,12 @@ export function AtaTab({
     }
 
     async function aprovar() {
+        const html = editorRef.current?.innerHTML ?? conteudo;
         setAprovando(true);
         try {
+            if (html !== ata?.conteudo) {
+                await sessoesApi.updateAta(sessaoId, html);
+            }
             const data = await sessoesApi.aprovarAta(sessaoId);
             setAta(data);
             showSuccess('Ata aprovada.');
@@ -128,6 +150,7 @@ export function AtaTab({
                     <Button
                         label="Gerar rascunho da ata"
                         icon="pi pi-file-plus"
+                        size="small"
                         loading={gerando}
                         onClick={() => void gerarRascunho()}
                     />
@@ -138,14 +161,14 @@ export function AtaTab({
 
     const editavel = ata.status.value === 'RASCUNHO' && canManageSessao;
     const pdfUrl = `${API_BASE}${API_PATHS.sessaoAtaPdf(sessaoId)}`;
+    const statusBadgeClass =
+        ata.status.value === 'RASCUNHO' ? 'badge badge--info' : 'badge badge--success';
 
     return (
-        <div className="ata-tab flex flex-column gap-3">
-            <div className="flex align-items-center justify-content-between">
-                <span className={`badge badge--${ata.status.value === 'RASCUNHO' ? 'info' : 'success'}`}>
-                    {ata.status.label}
-                </span>
-                <div className="flex gap-2">
+        <div className="ata-tab">
+            <div className="ata-toolbar">
+                <span className={statusBadgeClass}>{ata.status.label}</span>
+                <div className="ata-toolbar__actions">
                     {editavel && (
                         <>
                             <Button
@@ -168,31 +191,40 @@ export function AtaTab({
                     )}
                     {ata.status.value !== 'RASCUNHO' && (
                         <a href={pdfUrl} target="_blank" rel="noreferrer">
-                            <Button label="Baixar PDF" icon="pi pi-download" size="small" outlined />
+                            <Button
+                                label="Baixar PDF"
+                                icon="pi pi-download"
+                                size="small"
+                                outlined
+                            />
                         </a>
                     )}
                 </div>
             </div>
 
-            {editavel ? (
-                <>
-                    <InputTextarea
-                        value={conteudo}
-                        onChange={(e) => setConteudo(e.target.value)}
-                        rows={12}
-                        className="w-full ata-editor-textarea"
-                        autoResize={false}
+            <div
+                className={[
+                    'ata-conteudo-leitura',
+                    editavel ? 'ata-conteudo-leitura--editavel' : '',
+                ]
+                    .filter(Boolean)
+                    .join(' ')}
+            >
+                {editavel ? (
+                    <div
+                        ref={editorRef}
+                        className="ata-editor-visual"
+                        contentEditable
+                        suppressContentEditableWarning
+                        role="textbox"
+                        aria-multiline="true"
+                        aria-label="Conteúdo da ata"
+                        onBlur={(e) => setConteudo(e.currentTarget.innerHTML)}
                     />
-                    <div className="ata-conteudo-leitura ata-conteudo-leitura--preview">
-                        <p className="ata-preview-label m-0 mb-2 text-color-secondary text-sm">
-                            Pré-visualização
-                        </p>
-                        <div dangerouslySetInnerHTML={{ __html: conteudo }} />
-                    </div>
-                </>
-            ) : (
-                <div className="ata-conteudo-leitura" dangerouslySetInnerHTML={{ __html: ata.conteudo }} />
-            )}
+                ) : (
+                    <div dangerouslySetInnerHTML={{ __html: ata.conteudo }} />
+                )}
+            </div>
         </div>
     );
 }

@@ -2205,18 +2205,53 @@ textarea:not(:disabled):focus {
     padding: 1.5rem 1rem;
 }
 
-.ata-conteudo-leitura {
-    padding: 1.25rem 1.5rem;
-    border: 1px solid var(--surface-border);
-    border-radius: var(--border-radius-lg, 8px);
-    background: var(--surface-0);
-    line-height: 1.55;
+.ata-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
 }
 
-.ata-conteudo-leitura--preview {
-    margin-top: 0.75rem;
+.ata-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    width: 100%;
+}
+
+.ata-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.ata-toolbar__actions .p-button {
+    white-space: nowrap;
+}
+
+.ata-conteudo-leitura {
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--surface-border, #e2e8f0);
+    border-radius: 12px;
+    background: #fff;
+    line-height: 1.55;
+    width: 100%;
+    min-width: 0;
     max-height: 70vh;
     overflow: auto;
+}
+
+.ata-conteudo-leitura--editavel {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color, #2b4c8c) 12%, transparent);
+}
+
+.ata-editor-visual {
+    outline: none;
+    min-height: 12rem;
 }
 
 .ata-conteudo-leitura .ata-cabecalho,
@@ -2228,39 +2263,49 @@ textarea:not(:disabled):focus {
 .ata-conteudo-leitura .ata-titulo {
     font-size: 1.05rem;
     text-transform: uppercase;
-    margin: 1rem 0 0.35rem;
+    margin: 1rem 0 0.75rem;
+    line-height: 1.45;
+}
+
+.ata-conteudo-leitura .ata-corpo p,
+.ata-conteudo-leitura .ata-editor-visual p {
+    text-align: justify;
+    margin: 0 0 0.85rem;
+    text-indent: 1.5rem;
+}
+
+.ata-conteudo-leitura .ata-rodape-local {
+    text-align: center;
+    margin: 1.75rem 0 1rem;
+    text-indent: 0;
+}
+
+.ata-conteudo-leitura .ata-lista-vereadores {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+}
+
+.ata-conteudo-leitura .ata-lista-vereadores li {
+    margin: 0.2rem 0;
 }
 
 .ata-conteudo-leitura .ata-secao h2 {
     font-size: 0.95rem;
     margin: 1.25rem 0 0.5rem;
     padding-bottom: 0.25rem;
-    border-bottom: 1px solid var(--surface-border);
-}
-
-.ata-conteudo-leitura .ata-tabela-presenca {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 0.75rem;
-    font-size: 0.875rem;
-}
-
-.ata-conteudo-leitura .ata-tabela-presenca th,
-.ata-conteudo-leitura .ata-tabela-presenca td {
-    border-bottom: 1px solid var(--surface-border);
-    padding: 0.4rem 0.5rem;
-    text-align: left;
+    border-bottom: 1px solid var(--surface-border, #e2e8f0);
 }
 
 .ata-conteudo-leitura .ata-assinaturas {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 1.5rem;
     margin-top: 2.5rem;
 }
 
 .ata-conteudo-leitura .ata-assinatura {
-    flex: 1;
+    flex: 1 1 12rem;
     text-align: center;
 }
 
@@ -2268,11 +2313,6 @@ textarea:not(:disabled):focus {
     margin-top: 2rem;
     margin-bottom: 0.15rem;
     font-size: 0.85rem;
-}
-
-.ata-editor-textarea {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.8rem;
 }
 
 .sessao-empty-state__hint {
