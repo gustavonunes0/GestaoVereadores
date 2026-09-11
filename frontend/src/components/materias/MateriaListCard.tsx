@@ -205,11 +205,6 @@ export function MateriaListCard({
                             {materia.unidadeTramitacao.nome}
                         </span>
                     ) : null}
-                    {materia.statusTramitacao?.nome ? (
-                        <span className="text-[10.5px] font-medium px-2.5 py-1 rounded-[6px] bg-[#eef2ff] text-[#4338ca]">
-                            {materia.statusTramitacao.nome}
-                        </span>
-                    ) : null}
                 </div>
 
                 <p className="text-[14px] text-[#6b7280] leading-relaxed line-clamp-2 m-0">

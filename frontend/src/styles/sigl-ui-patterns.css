@@ -3779,6 +3779,8 @@ body.transmissao-fs-active {
     border: 0.5px solid var(--surface-border);
     border-radius: var(--border-radius-md, 6px);
     padding: 12px 14px;
+    width: 100%;
+    min-width: 0;
 }
 
 .parlamentar-vinculo-card.ativo {
@@ -3787,6 +3789,124 @@ body.transmissao-fs-active {
 
 .parlamentar-vinculo-card.inativo {
     opacity: 0.65;
+}
+
+/* Dialog Ver parlamentar — campos fluidos na largura do modal */
+.parlamentar-ver-dialog .p-dialog-content {
+    overflow-x: hidden;
+}
+
+.parlamentar-ver-body {
+    width: 100%;
+    min-width: 0;
+}
+
+.parlamentar-ver-dialog .sigl-dialog-secao > .parlamentar-ver-full,
+.parlamentar-ver-dialog .sigl-dialog-secao > .parlamentar-ver-grid,
+.parlamentar-ver-dialog .sigl-dialog-secao > .parlamentar-vinculo-card,
+.parlamentar-ver-dialog .sigl-dialog-secao > p,
+.parlamentar-ver-dialog .sigl-dialog-secao > ul {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+}
+
+.parlamentar-ver-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 20px;
+    width: 100%;
+}
+
+.parlamentar-ver-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.parlamentar-ver-field--wide {
+    grid-column: 1 / -1;
+}
+
+.parlamentar-ver-value {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-heading, #0f172a);
+    line-height: 1.35;
+    word-break: normal;
+    overflow-wrap: anywhere;
+}
+
+.parlamentar-ver-acesso {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.parlamentar-ver-acesso__main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.parlamentar-ver-acesso__meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 20px;
+    width: 100%;
+}
+
+.parlamentar-ver-mandatos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.parlamentar-ver-mandato {
+    width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--surface-border, #e2e8f0);
+    border-radius: 10px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.parlamentar-ver-mandato__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.parlamentar-ver-mandato__tags {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .parlamentar-ver-grid,
+    .parlamentar-ver-acesso__meta {
+        grid-template-columns: 1fr;
+    }
+
+    .parlamentar-ver-field--wide {
+        grid-column: auto;
+    }
 }
 
 .parlamentar-user-avatar {
@@ -4709,45 +4829,54 @@ body.transmissao-fs-active {
 
 .parlamentar-tooltip {
     position: fixed;
-    z-index: 300;
-    background: var(--surface-0);
-    border: 1px solid var(--surface-border);
-    border-radius: var(--border-radius-md);
+    z-index: 12000;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     padding: 12px 14px;
     font-size: 12px;
     pointer-events: none;
     min-width: 220px;
     max-width: 280px;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
 }
-.ptt-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.ptt-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
 .ptt-avatar.sigl-avatar {
-    --sigl-avatar-size: 80px;
-    font-size: 22px;
+    --sigl-avatar-size: 72px;
+    font-size: 20px;
     flex-shrink: 0;
 }
-.ptt-nome  { font-weight: 600; font-size: 14px; line-height: 1.25; }
-.ptt-cargo { font-size: 10px; color: var(--text-color-secondary); }
-.ptt-sub   {
-    color: var(--text-color-secondary);
+.ptt-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ptt-nome {
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.3;
+    color: #0f172a;
+}
+.ptt-cargo,
+.ptt-partido {
     font-size: 11px;
-    border-top: 1px solid var(--surface-border);
-    padding-top: 6px;
-    margin-top: 4px;
+    color: #64748b;
 }
 .ptt-status {
     font-size: 11px;
-    font-weight: 500;
-    margin-top: 6px;
+    font-weight: 600;
+    margin-top: 2px;
     display: flex;
     align-items: center;
     gap: 5px;
-}
-.ptt-origem {
-    font-size: 10px;
-    color: var(--text-color-secondary);
-    margin-top: 5px;
-    font-style: italic;
+    padding-top: 8px;
+    border-top: 1px solid #e2e8f0;
 }
 
 .presenca-readonly-hint {
@@ -4902,58 +5031,11 @@ body.sessao-painel-body {
     opacity: 0.16;
 }
 
-.sessao-painel-emergencia {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    background: rgba(185, 28, 28, 0.88);
-    color: #fff;
-    font-size: clamp(1.25rem, 3vw, 2rem);
-    animation: sessao-painel-emergencia-pulse 0.8s ease-in-out infinite alternate;
-    pointer-events: none;
-}
-
-.sessao-painel-emergencia .pi {
-    font-size: 3rem;
-}
-
-@keyframes sessao-painel-emergencia-pulse {
-    from { background: rgba(185, 28, 28, 0.82); }
-    to { background: rgba(127, 29, 29, 0.94); }
-}
-
 .sessao-painel-footer {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     gap: 0.75rem;
-}
-
-.sessao-painel-emergencia-btn {
-    position: fixed;
-    right: 1.25rem;
-    bottom: 1.25rem;
-    z-index: 40;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    border: 1px solid #fecaca;
-    background: #fee2e2;
-    color: #991b1b;
-    border-radius: 999px;
-    padding: 0.65rem 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 8px 20px rgba(185, 28, 28, 0.25);
-}
-
-.sessao-painel-emergencia-btn:hover {
-    background: #fecaca;
 }
 
 .voto-cor--sim { color: #1d4ed8; font-weight: 700; }
@@ -5485,6 +5567,13 @@ body.sessao-painel-body {
 .parl-sessao-palavra-status--encerrado {
     background: var(--surface-100);
     color: var(--text-color-secondary);
+}
+
+.pedidos-palavra-panel--presidente {
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--surface-border);
+    border-radius: var(--border-radius-lg);
+    background: var(--surface-0, #fff);
 }
 
 .pedidos-palavra-list {

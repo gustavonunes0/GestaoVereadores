@@ -15,6 +15,7 @@ import { ParlamentarJitsiPanel } from '../../components/parlamentar/sessoes/Parl
 import { ParlamentarPautaPanel } from '../../components/parlamentar/sessoes/ParlamentarPautaPanel';
 import { ParlamentarVotacaoPanel } from '../../components/parlamentar/sessoes/ParlamentarVotacaoPanel';
 import { PedirPalavraPanel } from '../../components/parlamentar/sessoes/PedirPalavraPanel';
+import { PedidosPalavraPanel } from '../../components/sessoes/PedidosPalavraPanel';
 import { RegistrarVotoDialog } from '../../components/sessoes/RegistrarVotoDialog';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -219,12 +220,21 @@ export function ParlamentarSessaoDetalhePage() {
                     confirming={confirming}
                     onConfirm={() => void confirmPresence()}
                 />
-                <PedirPalavraPanel
-                    sessaoId={id}
-                    statusSessao={sessao.statusSessao}
-                    hasConfirmed={hasConfirmed}
-                    pedidoUpdate={pedidoPalavraUpdate}
-                />
+                {isPresidente ? (
+                    <PedidosPalavraPanel
+                        sessaoId={id}
+                        statusSessao={sessao.statusSessao}
+                        pedidoUpdate={pedidoPalavraUpdate}
+                        variant="presidente"
+                    />
+                ) : (
+                    <PedirPalavraPanel
+                        sessaoId={id}
+                        statusSessao={sessao.statusSessao}
+                        hasConfirmed={hasConfirmed}
+                        pedidoUpdate={pedidoPalavraUpdate}
+                    />
+                )}
                 <ParlamentarVotacaoPanel
                     sessaoId={id}
                     hasConfirmed={hasConfirmed}

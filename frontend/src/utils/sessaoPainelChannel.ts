@@ -2,8 +2,7 @@
 
 export type PainelMensagem =
     | { tipo: 'EXIBIR_ITEM'; itemId: string }
-    | { tipo: 'LIMPAR' }
-    | { tipo: 'EMERGENCIA'; acionadoEm: string };
+    | { tipo: 'LIMPAR' };
 
 const PREFIX = 'sigl-sessao-painel-';
 
@@ -21,14 +20,6 @@ export function enviarItemParaPainel(sessaoId: string, itemId: string): void {
 
 export function limparPainel(sessaoId: string): void {
     criarPainelChannel(sessaoId).postMessage({ tipo: 'LIMPAR' } satisfies PainelMensagem);
-}
-
-/** Alerta de emergência no telão (visual + sonoro) e notificação à mesa. */
-export function acionarEmergenciaPainel(sessaoId: string): void {
-    criarPainelChannel(sessaoId).postMessage({
-        tipo: 'EMERGENCIA',
-        acionadoEm: new Date().toISOString(),
-    } satisfies PainelMensagem);
 }
 
 export function painelUrl(sessaoId: string, itemId?: string): string {

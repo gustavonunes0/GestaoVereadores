@@ -56,12 +56,8 @@ export function CadeiraParlamentar({
             aria-label={[parlamentar.parliamentaryName, situacaoLabel, votoLabel]
                 .filter(Boolean)
                 .join(' — ')}
-            title={[parlamentar.parliamentaryName, situacaoLabel, votoLabel]
-                .filter(Boolean)
-                .join(' — ')}
             onClick={handleClick}
             onMouseEnter={(e) => onHover(parlamentar, e)}
-            onMouseMove={(e) => onHover(parlamentar, e)}
             onMouseLeave={() => onHover(null)}
         >
             {parlamentar.abreviacao}

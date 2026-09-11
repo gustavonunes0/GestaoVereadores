@@ -13,12 +13,15 @@ interface Props {
     sessaoId: string;
     statusSessao: StatusSessao;
     pedidoUpdate: PedidoPalavraUpdate | null;
+    /** Destaca o painel no app do parlamentar (Presidente). */
+    variant?: 'staff' | 'presidente';
 }
 
 export function PedidosPalavraPanel({
     sessaoId,
     statusSessao,
     pedidoUpdate,
+    variant = 'staff',
 }: Props) {
     const { showToast } = useAppToast();
     const [pedidos, setPedidos] = useState<PedidoPalavraHttp[]>([]);
@@ -44,8 +47,15 @@ export function PedidosPalavraPanel({
     useEffect(() => {
         if (!pedidoUpdate) return;
         if (pedidoUpdate.sessaoId && pedidoUpdate.sessaoId !== sessaoId) return;
+        if (pedidoUpdate.status === 'AGUARDANDO') {
+            showToast(
+                'info',
+                'Pedido de palavra',
+                `${pedidoUpdate.parlamentarNome || 'Um parlamentar'} pediu a palavra.`,
+            );
+        }
         void carregar();
-    }, [pedidoUpdate, sessaoId, carregar]);
+    }, [pedidoUpdate, sessaoId, carregar, showToast]);
 
     const responder = async (pedidoId: string, status: 'CONCEDIDO' | 'NEGADO') => {
         setActingId(pedidoId);
@@ -93,12 +103,23 @@ export function PedidosPalavraPanel({
     const sessaoAberta = statusSessao === 'ABERTA';
 
     return (
-        <section className="pedidos-palavra-panel">
+        <section
+            className={[
+                'pedidos-palavra-panel',
+                variant === 'presidente' ? 'pedidos-palavra-panel--presidente' : '',
+            ]
+                .filter(Boolean)
+                .join(' ')}
+        >
             <div className="flex align-items-center justify-content-between mb-3 gap-2">
                 <div>
-                    <h3 className="m-0">Fila de palavra</h3>
+                    <h3 className="m-0">
+                        {variant === 'presidente' ? 'Gerenciar pedidos de palavra' : 'Fila de palavra'}
+                    </h3>
                     <p className="m-0 mt-1 text-color-secondary text-sm">
-                        Conceda ou negue os pedidos dos parlamentares.
+                        {variant === 'presidente'
+                            ? 'Como Presidente, aprove ou negue os pedidos dos demais vereadores.'
+                            : 'Conceda ou negue os pedidos dos parlamentares.'}
                     </p>
                 </div>
                 <Button

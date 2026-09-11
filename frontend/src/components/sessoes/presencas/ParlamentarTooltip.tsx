@@ -1,4 +1,6 @@
+import { createPortal } from 'react-dom';
 import type { PresencaParlamentar } from '../../../types/presenca';
+import { resolveMateriaTextoOriginalUrl } from '../../../utils/materiaDisplay';
 import { LABELS_SITUACAO, resolveSituacaoCadeira } from '../../../utils/presencaCadeira';
 import { PersonAvatar } from '../../common/PersonAvatar';
 
@@ -16,15 +18,16 @@ export function ParlamentarTooltip({
     situacaoVoto?: 'votou' | 'nao_votou' | null;
 }) {
     const { p, x, y } = data;
-    const left = x + 260 > window.innerWidth ? x - 240 : x + 14;
-    const top = Math.max(10, y - 10);
-
-    const origemTexto =
-        p.origem === 'APP'
-            ? 'Registrado pelo aplicativo'
-            : p.origem === 'STAFF'
-              ? 'Registrado pela secretaria'
-              : 'Aguardando registro';
+    const width = 260;
+    const estimatedHeight = 140;
+    const left = Math.min(
+        Math.max(12, x + 12),
+        Math.max(12, window.innerWidth - width - 12),
+    );
+    const top = Math.min(
+        Math.max(12, y - estimatedHeight / 2),
+        Math.max(12, window.innerHeight - estimatedHeight - 12),
+    );
 
     const situacao = resolveSituacaoCadeira(p);
     const situacaoLabel = LABELS_SITUACAO[situacao];
@@ -35,30 +38,32 @@ export function ParlamentarTooltip({
               ? 'Não votou'
               : null;
 
-    return (
-        <div className="parlamentar-tooltip" style={{ left, top }}>
+    const fotoUrl = p.fotoUrl?.trim()
+        ? resolveMateriaTextoOriginalUrl(p.fotoUrl.trim())
+        : undefined;
+
+    return createPortal(
+        <div
+            className="parlamentar-tooltip"
+            style={{ left, top }}
+            role="tooltip"
+        >
             <div className="ptt-head">
                 <PersonAvatar
-                    photoUrl={p.fotoUrl}
+                    photoUrl={fotoUrl}
                     name={p.parliamentaryName}
                     size="xl"
                     fallback={p.abreviacao}
                     className="ptt-avatar"
                     aria-hidden
                 />
-                <div>
+                <div className="ptt-info">
                     <div className="ptt-nome">{p.parliamentaryName}</div>
                     {p.cargoMesa && <div className="ptt-cargo">{p.cargoMesa}</div>}
+                    {p.partidoSigla && (
+                        <div className="ptt-partido">{p.partidoSigla}</div>
+                    )}
                 </div>
-            </div>
-            <div className="ptt-sub">
-                {p.partidoSigla && <>Partido: {p.partidoSigla}</>}
-                {p.gabinete && (
-                    <>
-                        {' '}
-                        &middot; Gabinete: {p.gabinete}
-                    </>
-                )}
             </div>
             <div
                 className={`ptt-status ptt-status--${situacao.toLowerCase()}`}
@@ -73,6 +78,7 @@ export function ParlamentarTooltip({
                                 ? 'pi pi-clock'
                                 : 'pi pi-times-circle'
                     }
+                    aria-hidden
                 />
                 {situacaoLabel}
             </div>
@@ -83,7 +89,7 @@ export function ParlamentarTooltip({
                     {votoLabel}
                 </div>
             ) : null}
-            <div className="ptt-origem">{origemTexto}</div>
-        </div>
+        </div>,
+        document.body,
     );
 }

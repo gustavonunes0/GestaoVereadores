@@ -61,7 +61,8 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
         carregar();
     }, [carregar]);
 
-    const accessStatus = parlamentar?.accessStatus ?? (parlamentar?.hasAccess ? 'ACTIVE' : 'INACTIVE');
+    const accessStatus =
+        parlamentar?.accessStatus ?? (parlamentar?.hasAccess ? 'ACTIVE' : 'INACTIVE');
 
     return (
         <>
@@ -69,7 +70,8 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
                 header={parlamentar?.parliamentaryName ?? 'Parlamentar'}
                 visible
                 onHide={onClose}
-                style={{ width: 'min(95vw, 620px)' }}
+                className="parlamentar-ver-dialog lex-dialog lex-dialog--view"
+                style={{ width: 'min(96vw, 720px)' }}
                 modal
                 footer={
                     parlamentar ? (
@@ -93,36 +95,40 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
                         Parlamentar não encontrado.
                     </p>
                 ) : (
-                    <div className="sigl-dialog-body sigl-dialog-body--dense">
+                    <div className="sigl-dialog-body sigl-dialog-body--dense parlamentar-ver-body">
                         <div className="sigl-dialog-secao">
                             <span className="sigl-dialog-secao-titulo">
                                 <i className="pi pi-id-card" aria-hidden />
                                 Identificação
                             </span>
-                            <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                                <div className="sigl-filtro-campo">
+                            <div className="parlamentar-ver-grid">
+                                <div className="parlamentar-ver-field parlamentar-ver-field--wide">
                                     <span className="sigl-field-label">Nome parlamentar</span>
-                                    <p className="font-medium m-0">{parlamentar.parliamentaryName}</p>
+                                    <p className="parlamentar-ver-value">
+                                        {parlamentar.parliamentaryName}
+                                    </p>
                                 </div>
-                                <div className="sigl-filtro-campo">
+                                <div className="parlamentar-ver-field">
                                     <span className="sigl-field-label">Status legislativo</span>
-                                    <p className="font-medium m-0">{parlamentar.status}</p>
+                                    <p className="parlamentar-ver-value">{parlamentar.status}</p>
                                 </div>
-                                {parlamentar.officeNumber && (
-                                    <div className="sigl-filtro-campo">
+                                {parlamentar.officeNumber ? (
+                                    <div className="parlamentar-ver-field">
                                         <span className="sigl-field-label">Gabinete</span>
-                                        <p className="font-medium m-0">{parlamentar.officeNumber}</p>
+                                        <p className="parlamentar-ver-value">
+                                            {parlamentar.officeNumber}
+                                        </p>
                                     </div>
-                                )}
-                                {parlamentar.user?.politicalParty && (
-                                    <div className="sigl-filtro-campo">
+                                ) : null}
+                                {parlamentar.user?.politicalParty ? (
+                                    <div className="parlamentar-ver-field parlamentar-ver-field--wide">
                                         <span className="sigl-field-label">Partido</span>
-                                        <p className="font-medium m-0">
+                                        <p className="parlamentar-ver-value">
                                             {parlamentar.user.politicalParty.acronym} —{' '}
                                             {parlamentar.user.politicalParty.name}
                                         </p>
                                     </div>
-                                )}
+                                ) : null}
                             </div>
                         </div>
 
@@ -132,29 +138,35 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
                                 Conta de acesso
                             </span>
                             {parlamentar.user ? (
-                                <div className="parlamentar-vinculo-card ativo">
-                                    <div className="flex align-items-start justify-content-between gap-3">
-                                        <div className="min-w-0">
-                                            <div className="flex align-items-center gap-2 flex-wrap mb-1">
-                                                <strong className="text-sm font-semibold">
-                                                    {userDisplayName(parlamentar)}
-                                                </strong>
-                                                <Tag
-                                                    value={ACCESS_LABEL[accessStatus] ?? accessStatus}
-                                                    severity={ACCESS_SEV[accessStatus] ?? 'secondary'}
-                                                />
+                                <div className="parlamentar-vinculo-card ativo parlamentar-ver-full">
+                                    <div className="parlamentar-ver-acesso">
+                                        <div className="parlamentar-ver-acesso__main">
+                                            <strong className="parlamentar-ver-value">
+                                                {userDisplayName(parlamentar)}
+                                            </strong>
+                                            <Tag
+                                                value={ACCESS_LABEL[accessStatus] ?? accessStatus}
+                                                severity={ACCESS_SEV[accessStatus] ?? 'secondary'}
+                                            />
+                                        </div>
+                                        <div className="parlamentar-ver-acesso__meta">
+                                            <div className="parlamentar-ver-field">
+                                                <span className="sigl-field-label">CPF</span>
+                                                <p className="parlamentar-ver-value">
+                                                    {formatCpf(parlamentar.user.cpf)}
+                                                </p>
                                             </div>
-                                            <p className="m-0 text-sm text-color-secondary">
-                                                CPF: {formatCpf(parlamentar.user.cpf)}
-                                            </p>
-                                            <p className="m-0 text-sm text-color-secondary mt-1">
-                                                {parlamentar.user.email}
-                                            </p>
+                                            <div className="parlamentar-ver-field parlamentar-ver-field--wide">
+                                                <span className="sigl-field-label">E-mail</span>
+                                                <p className="parlamentar-ver-value">
+                                                    {parlamentar.user.email}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <p className="text-color-secondary m-0">
+                                <p className="text-color-secondary m-0 parlamentar-ver-full">
                                     Nenhum usuário vinculado — parlamentar sem acesso ao CâmaraGest.
                                 </p>
                             )}
@@ -166,31 +178,54 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
                                 Mandatos
                             </span>
                             {mandatos.length === 0 ? (
-                                <p className="text-color-secondary m-0">Nenhum mandato cadastrado.</p>
+                                <p className="text-color-secondary m-0 parlamentar-ver-full">
+                                    Nenhum mandato cadastrado.
+                                </p>
                             ) : (
-                                <ul className="list-none p-0 m-0 flex flex-column gap-2">
+                                <ul className="parlamentar-ver-mandatos parlamentar-ver-full">
                                     {mandatos.map((m) => (
-                                        <li
-                                            key={m.id}
-                                            className="border-1 border-round p-3 surface-border"
-                                        >
-                                            <div className="flex align-items-center gap-2 mb-1 flex-wrap">
+                                        <li key={m.id} className="parlamentar-ver-mandato">
+                                            <div className="parlamentar-ver-mandato__head">
                                                 <strong>
                                                     Legislatura {m.legislature.number}
                                                 </strong>
-                                                {m.legislature.isCurrent && (
-                                                    <Tag value="Atual" severity="success" />
-                                                )}
-                                                <Tag value={m.status} severity="info" />
+                                                <div className="parlamentar-ver-mandato__tags">
+                                                    {m.legislature.isCurrent ? (
+                                                        <Tag value="Atual" severity="success" />
+                                                    ) : null}
+                                                    <Tag value={m.status} severity="info" />
+                                                </div>
                                             </div>
-                                            <span className="text-sm text-color-secondary">
-                                                Início: {formatDatePt(m.startedAt)}
-                                                {m.endedAt
-                                                    ? ` · Fim: ${formatDatePt(m.endedAt)}`
-                                                    : m.legislature.endDate
-                                                      ? ` · Previsto: ${formatDatePt(m.legislature.endDate)}`
-                                                      : ''}
-                                            </span>
+                                            <div className="parlamentar-ver-acesso__meta">
+                                                <div className="parlamentar-ver-field">
+                                                    <span className="sigl-field-label">Início</span>
+                                                    <p className="parlamentar-ver-value">
+                                                        {formatDatePt(m.startedAt)}
+                                                    </p>
+                                                </div>
+                                                <div className="parlamentar-ver-field">
+                                                    <span className="sigl-field-label">Fim</span>
+                                                    <p className="parlamentar-ver-value">
+                                                        {m.endedAt
+                                                            ? formatDatePt(m.endedAt)
+                                                            : m.legislature.endDate
+                                                              ? `Previsto ${formatDatePt(m.legislature.endDate)}`
+                                                              : 'Em andamento'}
+                                                    </p>
+                                                </div>
+                                                {(m.partyAcronym || m.partyName) && (
+                                                    <div className="parlamentar-ver-field parlamentar-ver-field--wide">
+                                                        <span className="sigl-field-label">
+                                                            Partido no mandato
+                                                        </span>
+                                                        <p className="parlamentar-ver-value">
+                                                            {[m.partyAcronym, m.partyName]
+                                                                .filter(Boolean)
+                                                                .join(' — ')}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>
@@ -202,7 +237,7 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
 
             {showEdit && parlamentar && (
                 <ParlamentarEditDialog
-                    parlamentarianId={parlamentarianId}
+                    parliamentarianId={parlamentarianId}
                     parlamentar={parlamentar}
                     mandatos={mandatos}
                     onClose={() => setShowEdit(false)}

@@ -59,7 +59,12 @@ export function PlenarioMapa({
             setTooltip(null);
             return;
         }
-        setTooltip({ p, x: e.clientX, y: e.clientY });
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        setTooltip({
+            p,
+            x: rect.right,
+            y: rect.top + rect.height / 2,
+        });
     };
 
     return (
