@@ -2233,6 +2233,30 @@ textarea:not(:disabled):focus {
     white-space: nowrap;
 }
 
+.ata-toolbar__actions .p-button.p-button-secondary {
+    background: #475569;
+    border-color: #475569;
+    color: #fff;
+}
+
+.ata-toolbar__actions .p-button.p-button-secondary:enabled:hover {
+    background: #334155;
+    border-color: #334155;
+    color: #fff;
+}
+
+.ata-toolbar__actions .p-button.p-button-success {
+    background: #15803d;
+    border-color: #15803d;
+    color: #fff;
+}
+
+.ata-toolbar__actions .p-button.p-button-success:enabled:hover {
+    background: #166534;
+    border-color: #166534;
+    color: #fff;
+}
+
 .ata-conteudo-leitura {
     padding: 1.25rem 1.5rem;
     border: 1px solid var(--surface-border, #e2e8f0);

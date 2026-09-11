@@ -175,7 +175,7 @@ export function AtaTab({
                                 label="Salvar"
                                 icon="pi pi-save"
                                 size="small"
-                                outlined
+                                severity="secondary"
                                 loading={salvando}
                                 onClick={() => void salvar()}
                             />
