@@ -12,10 +12,10 @@
     --presenca-gap-assento: 5px;
     --presenca-seat-w: 36px;
     --presenca-seat-h: 28px;
-    --presenca-seat-mesa-w: 42px;
-    --presenca-seat-mesa-h: 34px;
-    --presenca-seat-pres-w: 46px;
-    --presenca-seat-pres-h: 38px;
+    --presenca-seat-mesa-w: 58px;
+    --presenca-seat-mesa-h: 48px;
+    --presenca-seat-pres-w: 64px;
+    --presenca-seat-pres-h: 54px;
 }
 
 /* Painel */
@@ -118,49 +118,49 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 28px;
     width: 100%;
 }
 
 .presenca-mesa__chairs {
     display: flex;
-    gap: 6px;
-    margin-bottom: 6px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .presenca-mesa__bar {
     background: var(--presenca-desk-brown);
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 13px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 16px;
     font-weight: 700;
-    padding: 9px 48px;
-    border-radius: 2px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 14px 64px;
+    border-radius: 3px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     text-align: center;
     white-space: nowrap;
-    min-width: 260px;
+    min-width: 320px;
 }
 
 .presenca-mesa__side {
     position: absolute;
-    top: 24px;
-    width: 56px;
-    height: 84px;
+    top: 32px;
+    width: 72px;
+    height: 108px;
     background: var(--presenca-desk-brown);
-    border-radius: 2px;
+    border-radius: 3px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     pointer-events: none;
 }
 
 .presenca-mesa__side--left {
-    left: -112px;
+    left: -132px;
     transform: rotate(12deg);
 }
 
 .presenca-mesa__side--right {
-    right: -112px;
+    right: -132px;
     transform: rotate(-12deg);
 }
 
@@ -263,13 +263,14 @@
 .presenca-seat--mesa {
     width: var(--presenca-seat-mesa-w);
     height: var(--presenca-seat-mesa-h);
+    font-size: 0.8125rem;
 }
 
 /* Presidente — centro da mesa, leve destaque */
 .presenca-seat--presidente {
     width: var(--presenca-seat-pres-w);
     height: var(--presenca-seat-pres-h);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     z-index: 12;
     box-shadow:
         0 5px 0 rgba(0, 0, 0, 0.32),
@@ -362,8 +363,8 @@
 }
 
 @media (max-width: 900px) {
-    .presenca-mesa__side--left { left: -64px; }
-    .presenca-mesa__side--right { right: -64px; }
+    .presenca-mesa__side--left { left: -80px; }
+    .presenca-mesa__side--right { right: -80px; }
 }
 
 @media (max-width: 768px) {
@@ -382,8 +383,15 @@
     }
 
     .presenca-seat--mesa {
-        width: 40px;
-        height: 34px;
+        width: 50px;
+        height: 42px;
+        font-size: 0.75rem;
+    }
+
+    .presenca-seat--presidente {
+        width: 56px;
+        height: 48px;
+        font-size: 0.8125rem;
     }
 
     .presenca-curved-row {
@@ -396,8 +404,8 @@
 
     .presenca-mesa__bar {
         min-width: 0;
-        padding: 10px 24px;
-        font-size: 12px;
+        padding: 12px 32px;
+        font-size: 14px;
     }
 
     .presenca-mesa__side {

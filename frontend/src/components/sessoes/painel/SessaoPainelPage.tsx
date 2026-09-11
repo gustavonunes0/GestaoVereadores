@@ -98,7 +98,11 @@ function PainelPautaDoDia({
     ).length;
 
     return (
-        <div className="sessao-painel-pauta">
+        <div
+            className={`sessao-painel-pauta${
+                itens.length > 6 ? ' sessao-painel-pauta--compact' : ''
+            }`}
+        >
             <div className="sessao-painel-pauta__cabecalho">
                 <div className="sessao-painel-etiqueta">Pauta do dia</div>
                 <h1 className="sessao-painel-pauta__titulo">{sessaoLabel}</h1>
@@ -394,6 +398,12 @@ export function SessaoPainelPage() {
             </header>
 
             <main className="sessao-painel-main">
+                <img
+                    src={logoSrc}
+                    alt=""
+                    className="sessao-painel-marca-dagua"
+                    aria-hidden
+                />
                 {itemCarregando && modo === 'item' ? (
                     <div className="sessao-painel-centro">
                         <ProgressSpinner />
