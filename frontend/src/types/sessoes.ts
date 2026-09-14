@@ -328,8 +328,17 @@ export function ataReferenciadaRotulo(ata: PautaItemAta): string | null {
     return `${tipo} de ${data} · ${statusLabel}`;
 }
 
+function stripHtmlTags(html: string): string {
+    return html
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<\/p>/gi, ' ')
+        .replace(/<[^>]+>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function resumirTexto(texto: string, max = 160): string {
-    const t = texto.trim();
+    const t = stripHtmlTags(texto);
     if (t.length <= max) return t;
     return `${t.slice(0, max)}…`;
 }

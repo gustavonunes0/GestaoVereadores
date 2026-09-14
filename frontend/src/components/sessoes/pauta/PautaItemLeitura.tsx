@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from 'primereact/button';
 import { PreviewImg } from '../../ui';
-import type { PautaItemDetalhe } from '../../../types/sessoes';
+import type { PautaItemCategoria, PautaItemDetalhe } from '../../../types/sessoes';
 import {
     PAUTA_CATEGORIA_LABELS,
     ataReferenciadaRotulo,
@@ -40,6 +40,33 @@ function MetaLinha({ label, valor }: { label: string; valor?: string | null }) {
             <span className="pauta-leitura-meta-valor">{valor}</span>
         </div>
     );
+}
+
+function isConteudoHtml(texto: string, categoria: PautaItemCategoria): boolean {
+    return categoria === 'ATA' && /^\s*</.test(texto);
+}
+
+function PautaTextoConteudo({
+    texto,
+    categoria,
+    className,
+}: {
+    texto: string;
+    categoria: PautaItemCategoria;
+    className: string;
+}) {
+    if (!texto.trim()) {
+        return <p className={className}>Sem texto disponível.</p>;
+    }
+    if (isConteudoHtml(texto, categoria)) {
+        return (
+            <div
+                className={`ata-conteudo-leitura ${className}`.trim()}
+                dangerouslySetInnerHTML={{ __html: texto }}
+            />
+        );
+    }
+    return <p className={className}>{texto}</p>;
 }
 
 export function PautaItemLeitura({
@@ -111,9 +138,11 @@ export function PautaItemLeitura({
                             <div
                                 className={`pauta-doc-card__inner${fill ? ' pauta-doc-card__inner--fill' : ''}`}
                             >
-                                <p className="pauta-doc-card__ementa">
-                                    {textoPrincipal || 'Sem texto disponível.'}
-                                </p>
+                                <PautaTextoConteudo
+                                    texto={textoPrincipal}
+                                    categoria={categoria}
+                                    className="pauta-doc-card__ementa"
+                                />
                                 {textoUrl && (
                                     <button
                                         type="button"
@@ -208,9 +237,11 @@ export function PautaItemLeitura({
                                 ? 'Ementa'
                                 : 'Conteúdo'}
                         </h4>
-                        <p className="pauta-leitura-ementa">
-                            {textoPrincipal || 'Sem texto disponível.'}
-                        </p>
+                        <PautaTextoConteudo
+                            texto={textoPrincipal}
+                            categoria={categoria}
+                            className="pauta-leitura-ementa"
+                        />
                     </div>
 
                     {textoUrl && (
