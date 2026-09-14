@@ -30,6 +30,7 @@ import { ListMatterAuthorOptionsUseCase } from './application/use-cases/list-mat
 import { UploadMatterTextoOriginalUseCase } from './application/use-cases/upload-matter-texto-original.use-case';
 import { GenerateMateriaTextoOriginalPdfUseCase } from './application/use-cases/generate-materia-texto-original-pdf.use-case';
 import { ListMinhasMateriasUseCase } from './application/use-cases/list-minhas-materias.use-case';
+import { GetProximoNumeroMateriaUseCase } from './application/use-cases/get-proximo-numero-materia.use-case';
 import { MvpMatterCommitteeOpinionGate } from './infra/gates/mvp-matter-committee-opinion.gate';
 import { PrismaMateriaRepository } from './infra/prisma/prisma-materia.repository';
 import { PrismaTramitacaoHistoricoRepository } from './infra/prisma/prisma-tramitacao-historico.repository';
@@ -68,6 +69,7 @@ import { TramitacaoHistoricoRepository } from './domain/repositories/tramitacao-
         UploadMatterTextoOriginalUseCase,
         GenerateMateriaTextoOriginalPdfUseCase,
         ListMinhasMateriasUseCase,
+        GetProximoNumeroMateriaUseCase,
         PrismaMateriaRepository,
         PrismaTramitacaoHistoricoRepository,
         MvpMatterCommitteeOpinionGate,

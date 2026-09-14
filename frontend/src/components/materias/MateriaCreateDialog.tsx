@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { materiasApi } from '../../api/legislative/materias.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
@@ -8,13 +8,18 @@ import type {
     AutorSelecionado,
     CoautorFormItem,
 } from '../../types/materias';
-import { gerarOpcoesStatus } from '../../types/materias';import {
+import { gerarOpcoesStatus } from '../../types/materias';
+import {
     buildCreateMateriaApiBody,
     resolveAnoIdFromNumeroAno,
     validateAutorSelecionado,
     validateCoautores,
 } from '../../utils/autorMateria';
-import { parseNumeroAnoMateria, composeNumeroAnoMateria } from '../../utils/materiaIdentificacao';
+import {
+    parseNumeroAnoMateria,
+    composeNumeroAnoMateria,
+    resolveAnoIdByValor,
+} from '../../utils/materiaIdentificacao';
 import { AutorField } from './AutorField';
 import { CoautorList } from './CoautorList';
 import { MateriaFormShell, type MateriaFormTab } from './MateriaFormShell';
@@ -37,7 +42,9 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
 
     const [tipoId, setTipoId] = useState('');
     const [numeroMateria, setNumeroMateria] = useState('');
-    const [anoLegislatura, setAnoLegislatura] = useState('');
+    const [anoLegislatura, setAnoLegislatura] = useState(() =>
+        String(new Date().getFullYear()),
+    );
     const [dataProtocolo, setDataProtocolo] = useState<Date | null>(null);
     const [autorPrincipal, setAutorPrincipal] = useState<AutorSelecionado | null>(null);
     const [coautores, setCoautores] = useState<CoautorFormItem[]>([]);
@@ -46,6 +53,30 @@ export function MateriaCreateDialog({ onClose, onSaved }: Props) {
     const [statusMateria, setStatusMateria] = useState<MateriaStatus>('DRAFT');
 
     const statusOptions = useMemo(() => gerarOpcoesStatus('DRAFT'), []);
+
+    useEffect(() => {
+        if (!tipoId || anoLegislatura.length !== 4) return;
+
+        const anoValor = Number(anoLegislatura);
+        if (!Number.isFinite(anoValor)) return;
+
+        const anoId = resolveAnoIdByValor(anos, anoValor);
+        if (!anoId) return;
+
+        let cancelled = false;
+        void materiasApi
+            .getProximoNumero({ tipoId, anoId })
+            .then((res) => {
+                if (!cancelled) setNumeroMateria(String(res.numero));
+            })
+            .catch(() => {
+                /* mantém o valor atual se a sugestão falhar */
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [tipoId, anoLegislatura, anos]);
 
     const tipoSelecionado = tiposMateria.find((t) => t.id === tipoId);
     const sigla =

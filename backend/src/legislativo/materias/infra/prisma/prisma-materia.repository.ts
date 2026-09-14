@@ -822,16 +822,16 @@ export class PrismaMateriaRepository implements MateriaRepository {
         tipoId: string,
         anoId: string,
     ): Promise<number> {
-        const result = await this.prisma.$queryRaw<[{ proximo: bigint }]>`
-            SELECT COALESCE(MAX(numero), 0) + 1 AS proximo
-            FROM materias
-            WHERE tenant_id = ${tenantId}
-              AND tipo_id = ${tipoId}
-              AND ano_id = ${anoId}
-              AND is_removed = false
-            FOR UPDATE
-        `;
-        return Number(result[0].proximo);
+        const aggregate = await this.prisma.materia.aggregate({
+            where: {
+                tenantId,
+                tipoId,
+                anoId,
+                isRemoved: false,
+            },
+            _max: { numero: true },
+        });
+        return (aggregate._max.numero ?? 0) + 1;
     }
 
     async tramitar(

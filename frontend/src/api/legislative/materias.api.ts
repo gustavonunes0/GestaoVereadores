@@ -185,6 +185,11 @@ export const materiasApi = {
     getById: (id: string) =>
         api<Materia>(`${API_PATHS.materias}/${id}`),
 
+    getProximoNumero: (params: { tipoId: string; anoId: string }) => {
+        const qs = new URLSearchParams(params).toString();
+        return api<{ numero: number }>(`${API_PATHS.materiasProximoNumero}?${qs}`);
+    },
+
     create: (dto: CreateMateriaDto | Record<string, unknown>) =>
         api<Materia>(API_PATHS.materias, { method: 'POST', body: JSON.stringify(dto) }),
 

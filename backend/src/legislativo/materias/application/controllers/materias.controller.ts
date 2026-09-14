@@ -76,6 +76,8 @@ import { UploadMatterTextoOriginalUseCase } from '../use-cases/upload-matter-tex
 import { GenerateMateriaTextoOriginalPdfUseCase } from '../use-cases/generate-materia-texto-original-pdf.use-case';
 import { ListMinhasMateriasUseCase } from '../use-cases/list-minhas-materias.use-case';
 import { MinhasMateriasQueryDto } from '../dto/list-minhas-materias-query.dto';
+import { GetProximoNumeroMateriaUseCase } from '../use-cases/get-proximo-numero-materia.use-case';
+import { ProximoNumeroMateriaQueryDto } from '../dto/proximo-numero-materia-query.dto';
 import { ParlamentarianGuard } from '../../../../auth/guards/parliamentarian.guard';
 import { Req, UseGuards } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
@@ -115,6 +117,7 @@ export class MateriasController {
         private readonly uploadMatterTextoOriginal: UploadMatterTextoOriginalUseCase,
         private readonly generateMateriaTextoOriginalPdf: GenerateMateriaTextoOriginalPdfUseCase,
         private readonly listMinhasMaterias: ListMinhasMateriasUseCase,
+        private readonly getProximoNumeroMateria: GetProximoNumeroMateriaUseCase,
     ) {}
 
     @Get('status')
@@ -156,6 +159,15 @@ export class MateriasController {
         @Query('tipoAutorId') tipoAutorId: string,
     ) {
         return this.listMatterAuthorOptions.execute(tenantId, tipoAutorId);
+    }
+
+    @TenantRoles(...ALL_AUTHENTICATED)
+    @Get('proximo-numero')
+    proximoNumero(
+        @TenantId() tenantId: string,
+        @Query() query: ProximoNumeroMateriaQueryDto,
+    ) {
+        return this.getProximoNumeroMateria.execute(tenantId, query);
     }
 
     @Get(':id/fluxo')

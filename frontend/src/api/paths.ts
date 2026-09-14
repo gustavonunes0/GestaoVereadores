@@ -36,6 +36,7 @@ export const API_PATHS = {
     materias:            '/legislative/materias',
     materiasMinhas:      '/legislative/materias/minhas',
     materiasOpcoesAutor: '/legislative/materias/opcoes-autor',
+    materiasProximoNumero: '/legislative/materias/proximo-numero',
     materiasListarTenantPartners: '/legislative/materias/tenant-partners',
     materiasListarPartners: '/legislative/materias/tenant-partners',
     materiaById:         (id: string) => `/legislative/materias/${id}`,
