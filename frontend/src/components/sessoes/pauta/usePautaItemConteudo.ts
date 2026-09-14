@@ -4,6 +4,7 @@ import { materiasApi, type Materia } from '../../../api/legislative/materias.api
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { PautaItemDetalhe } from '../../../types/sessoes';
 import {
+    pautaAtaConteudo,
     pautaItemDescricao,
     resolvePautaCategoria,
 } from '../../../types/sessoes';
@@ -96,7 +97,10 @@ export function usePautaItemConteudo(
     if (!item) return VAZIO;
 
     const base = detalhe ?? item;
-    const textoPrincipal = materia?.ementa ?? pautaItemDescricao(base);
+    const categoria = resolvePautaCategoria(base);
+    const textoAta = categoria === 'ATA' ? pautaAtaConteudo(base) : '';
+    const textoPrincipal =
+        materia?.ementa ?? textoAta || pautaItemDescricao(base);
     const textoUrl = materia?.textoOriginalUrl
         ? resolveMateriaTextoOriginalUrl(materia.textoOriginalUrl)
         : null;

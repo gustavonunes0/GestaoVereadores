@@ -2,7 +2,7 @@ import {
     CategoriaPautaItem,
     FasePauta,
     ResultadoPauta,
-    StatusAta,
+    StatusAta as PrismaStatusAta,
     StatusMateria,
     StatusPautaItem,
     TipoPautaItem,
@@ -11,6 +11,10 @@ import {
     AGENDA_PHASE_LABELS,
     AgendaPhase,
 } from '../../domain/enums/agenda-phase.enum';
+import {
+    STATUS_ATA_LABELS,
+    StatusAta,
+} from '../../ata/domain/enums/status-ata.enum';
 import {
     TIPO_PAUTA_ITEM_LABELS,
     TipoPautaItem as DomainTipoPautaItem,
@@ -66,7 +70,8 @@ export type PautaItemPrismaPayload = {
     ataReferenciadaId?: string | null;
     ataReferenciada?: {
         id: string;
-        status: StatusAta;
+        status: PrismaStatusAta;
+        conteudo: string;
         sessaoPlenaria?: {
             id: string;
             dataInicio: Date;
@@ -168,7 +173,15 @@ export class PautaItemViewModel {
                           ataReferenciada: data.ataReferenciada
                               ? {
                                     id: data.ataReferenciada.id,
-                                    status: data.ataReferenciada.status,
+                                    status: {
+                                        value: data.ataReferenciada.status,
+                                        label:
+                                            STATUS_ATA_LABELS[
+                                                data.ataReferenciada
+                                                    .status as StatusAta
+                                            ] ?? data.ataReferenciada.status,
+                                    },
+                                    conteudo: data.ataReferenciada.conteudo,
                                     sessao: data.ataReferenciada.sessaoPlenaria
                                         ? {
                                               id: data.ataReferenciada.sessaoPlenaria.id,

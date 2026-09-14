@@ -1,4 +1,4 @@
-import type { StatusAta } from './ata';
+import { resolveStatusAtaLabel, type StatusAta } from './ata';
 
 export type StatusSessao =
     | 'AGENDADA'
@@ -130,7 +130,8 @@ export interface PautaItemAta {
     titulo?: string;
     ataReferenciada?: {
         id: string;
-        status: { value: StatusAta; label: string };
+        status: { value: StatusAta; label: string } | StatusAta;
+        conteudo?: string;
         sessao: { id: string; dataInicio: string; tipoNome: string | null } | null;
     } | null;
 }
@@ -320,10 +321,21 @@ export function pautaItemRotuloCompleto(item: PautaItemDetalhe): string {
 export function ataReferenciadaRotulo(ata: PautaItemAta): string | null {
     const ref = ata.ataReferenciada;
     if (!ref) return null;
-    if (!ref.sessao) return `Ata vinculada · ${ref.status.label}`;
+    const statusLabel = resolveStatusAtaLabel(ref.status);
+    if (!ref.sessao) return `Ata vinculada · ${statusLabel}`;
     const tipo = ref.sessao.tipoNome ?? 'Sessão';
     const data = new Date(ref.sessao.dataInicio).toLocaleDateString('pt-BR');
-    return `${tipo} de ${data} · ${ref.status.label}`;
+    return `${tipo} de ${data} · ${statusLabel}`;
+}
+
+function resumirTexto(texto: string, max = 160): string {
+    const t = texto.trim();
+    if (t.length <= max) return t;
+    return `${t.slice(0, max)}…`;
+}
+
+export function pautaAtaConteudo(item: PautaItemDetalhe): string {
+    return item.ata?.ataReferenciada?.conteudo?.trim() ?? '';
 }
 
 /** Texto descritivo secundário (ementa/descrição) do item. */
@@ -335,8 +347,11 @@ export function pautaItemDescricao(item: PautaItemDetalhe): string {
             return item.norma?.titulo ?? item.norma?.descricao ?? '';
         case 'AVISO':
             return item.aviso?.descricao ?? '';
-        case 'ATA':
+        case 'ATA': {
+            const conteudo = pautaAtaConteudo(item);
+            if (conteudo) return resumirTexto(conteudo);
             return (item.ata ? ataReferenciadaRotulo(item.ata) : null) ?? '';
+        }
         case 'COMISSAO':
             return item.materia?.ementa ?? item.comissao?.descricao ?? '';
         case 'MATERIA':

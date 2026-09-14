@@ -100,6 +100,7 @@ const pautaItemInclude = {
         select: {
             id: true,
             status: true,
+            conteudo: true,
             sessaoPlenaria: {
                 select: {
                     id: true,

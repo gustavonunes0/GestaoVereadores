@@ -149,7 +149,7 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
                         )}
                         {canWrite && !somenteLeitura && (
                             <Button
-                                label="Adicionar matéria"
+                                label="Adicionar pauta"
                                 icon="pi pi-plus"
                                 size="small"
                                 onClick={() => setDialogAdicionar(true)}
