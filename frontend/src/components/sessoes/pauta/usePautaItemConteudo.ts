@@ -100,7 +100,7 @@ export function usePautaItemConteudo(
     const categoria = resolvePautaCategoria(base);
     const textoAta = categoria === 'ATA' ? pautaAtaConteudo(base) : '';
     const textoPrincipal =
-        materia?.ementa ?? textoAta || pautaItemDescricao(base);
+        materia?.ementa ?? (textoAta || pautaItemDescricao(base));
     const textoUrl = materia?.textoOriginalUrl
         ? resolveMateriaTextoOriginalUrl(materia.textoOriginalUrl)
         : null;
