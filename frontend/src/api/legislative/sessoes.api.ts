@@ -121,8 +121,8 @@ export type LegislaturaContextoRef = {
 export type LegislaturaContextoSessoes = {
     legislaturas: LegislaturaSessaoRef[];
     vigente: LegislaturaContextoRef | null;
-    /** Sugestão para nova sessão — última plenária + 1 na legislatura, quando existir. */
-    proposta: LegislaturaContextoRef | null;
+    /** Sugestão de nome para nova sessão (ex.: "29ª Sessão"). */
+    nomeSugerido: string | null;
 };
 
 type QuorumApiResponse = {

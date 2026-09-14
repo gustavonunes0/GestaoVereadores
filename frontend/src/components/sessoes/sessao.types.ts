@@ -4,6 +4,7 @@ import type { MateriaStatus, SessaoStatus } from '../../types/legislative';
 export type Sessao = {
     id: string;
     dataInicio: string;
+    nome?: string | null;
     tipo?: { id?: string; nome: string; label?: string };
     situacao?: { nome: string; codigo?: string };
     statusSessao?: SessaoStatus;
@@ -58,6 +59,8 @@ export function toDateTimeLocal(iso?: string) {
 }
 
 export function sessaoLabel(sessao: Sessao): string {
+    const nome = sessao.nome?.trim();
+    if (nome) return nome;
     const data = new Date(sessao.dataInicio).toLocaleString('pt-BR');
     const tipo = sessao.tipo?.nome ?? 'Sessão plenária';
     return `${data} — ${tipo}`;

@@ -1122,6 +1122,8 @@ model SessaoPlenaria {
     tipoSessao            TipoSessao         @relation(fields: [tipoSessaoId], references: [id])
     situacaoId            String
     situacao              SituacaoSessao     @relation(fields: [situacaoId], references: [id])
+    /** Identificação da sessão na legislatura (ex.: "29ª Sessão Ordinária"). */
+    nome                  String?
     mensagem              String?
     cicloVidaJson         Json?
     // Campos novos M4 — não usar cicloVidaJson em código novo

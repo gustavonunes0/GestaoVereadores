@@ -9,6 +9,7 @@ import { SessaoDialogFormFields } from './SessaoDialogFormFields';
 interface Props {
     sessaoLegislativaId?: string;
     legislaturaLabel?: string;
+    nomeSugerido?: string;
     onClose: () => void;
     onSaved: () => void;
 }
@@ -16,12 +17,14 @@ interface Props {
 export function SessaoCreateDialog({
     sessaoLegislativaId,
     legislaturaLabel,
+    nomeSugerido,
     onClose,
     onSaved,
 }: Props) {
     const { tiposSessao, situacoesSessao } = useDominios();
     const { showSuccess, showApiError } = useAppToast();
     const [saving, setSaving] = useState(false);
+    const [nome, setNome] = useState(nomeSugerido ?? '');
     const [dataInicio, setDataInicio] = useState('');
     const [tipoSessaoId, setTipoSessaoId] = useState('');
     const [mensagem, setMensagem] = useState('');
@@ -43,6 +46,7 @@ export function SessaoCreateDialog({
                 dataInicio: new Date(dataInicio).toISOString(),
                 tipoSessaoId,
                 sessaoLegislativaId: sessaoLegislativaId || undefined,
+                nome: nome.trim() || undefined,
                 mensagem: mensagem.trim() || undefined,
             });
             showSuccess('Sessão plenária cadastrada.');
@@ -78,6 +82,8 @@ export function SessaoCreateDialog({
         >
             <SessaoDialogFormFields
                 idPrefix="create"
+                nome={nome}
+                onNomeChange={setNome}
                 dataInicio={dataInicio}
                 onDataInicioChange={setDataInicio}
                 tipoSessaoId={tipoSessaoId}

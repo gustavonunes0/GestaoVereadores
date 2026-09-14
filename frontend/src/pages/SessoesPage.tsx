@@ -71,8 +71,8 @@ export function SessoesPage() {
     const [legislaturasList, setLegislaturasList] = useState<LegislaturaSessaoRef[]>([]);
     const [contextoVigente, setContextoVigente] =
         useState<LegislaturaContextoSessoes['vigente']>(null);
-    const [contextoProposta, setContextoProposta] =
-        useState<LegislaturaContextoSessoes['proposta']>(null);
+    const [nomeSugerido, setNomeSugerido] =
+        useState<LegislaturaContextoSessoes['nomeSugerido']>(null);
     const [contextReady, setContextReady] = useState(false);
     const [defaultFiltros, setDefaultFiltros] = useState<SessaoFiltrosForm>(() =>
         buildDefaultFiltros(),
@@ -96,7 +96,7 @@ export function SessoesPage() {
         const ctx = await sessoesApi.getContextoLegislatura();
         setLegislaturasList(ctx.legislaturas);
         setContextoVigente(ctx.vigente);
-        setContextoProposta(ctx.proposta);
+        setNomeSugerido(ctx.nomeSugerido);
         const defaults = buildDefaultFiltros(ctx.vigente ?? undefined);
         setDefaultFiltros(defaults);
         setFiltros(defaults);
@@ -151,8 +151,6 @@ export function SessoesPage() {
     }
 
     const contextoVigenteLabel = formatContextoLegislatura(contextoVigente);
-    const contextoPropostaLabel = formatContextoLegislatura(contextoProposta);
-
     const colunas = (
         <>
             <Column
@@ -177,6 +175,11 @@ export function SessoesPage() {
                         s.situacao?.nome ?? '—'
                     )
                 }
+            />
+            <Column
+                header="Nome"
+                style={{ minWidth: '9rem' }}
+                body={(s: Sessao) => s.nome?.trim() || '—'}
             />
             <Column
                 header="Legislatura"
@@ -259,13 +262,10 @@ export function SessoesPage() {
             {dialogCriar && (
                 <SessaoCreateDialog
                     sessaoLegislativaId={
-                        contextoProposta?.sessaoLegislativaId ??
-                        contextoVigente?.sessaoLegislativaId ??
-                        undefined
+                        contextoVigente?.sessaoLegislativaId ?? undefined
                     }
-                    legislaturaLabel={
-                        contextoPropostaLabel ?? contextoVigenteLabel
-                    }
+                    legislaturaLabel={contextoVigenteLabel}
+                    nomeSugerido={nomeSugerido ?? undefined}
                     onClose={() => setDialogCriar(false)}
                     onSaved={() => {
                         void buscar();

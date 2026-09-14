@@ -7,6 +7,8 @@ type TipoSessaoOption = { id: string; nome: string };
 
 interface Props {
     idPrefix: 'create' | 'edit';
+    nome: string;
+    onNomeChange: (value: string) => void;
     dataInicio: string;
     onDataInicioChange: (value: string) => void;
     tipoSessaoId: string;
@@ -20,6 +22,8 @@ interface Props {
 
 export function SessaoDialogFormFields({
     idPrefix,
+    nome,
+    onNomeChange,
     dataInicio,
     onDataInicioChange,
     tipoSessaoId,
@@ -48,6 +52,18 @@ export function SessaoDialogFormFields({
                         </div>
                     </LexDialogCol>
                 ) : null}
+
+                <LexDialogCol span={12}>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor={`sess-${idPrefix}-nome`}>Nome da sessão</label>
+                        <InputText
+                            id={`sess-${idPrefix}-nome`}
+                            value={nome}
+                            onChange={(e) => onNomeChange(e.target.value)}
+                            placeholder="Ex.: 29ª Sessão Ordinária"
+                        />
+                    </div>
+                </LexDialogCol>
 
                 <LexDialogCol span={6}>
                     <div className="sigl-filtro-campo">

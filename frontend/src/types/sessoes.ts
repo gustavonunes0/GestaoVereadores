@@ -41,6 +41,7 @@ export interface SessaoPlenariaDetalhe {
     id: string;
     dataInicio: string;
     dataFim?: string | null;
+    nome?: string | null;
     mensagem?: string | null;
     statusSessao: StatusSessao;
     statusSessaoLabel?: string | null;
@@ -89,8 +90,10 @@ export function resolveFaseSessao(
 }
 
 export function sessaoDetalheLabel(
-    sessao: Pick<SessaoPlenariaDetalhe, 'tipo' | 'dataInicio'>,
+    sessao: Pick<SessaoPlenariaDetalhe, 'tipo' | 'dataInicio' | 'nome'>,
 ): string {
+    const nome = sessao.nome?.trim();
+    if (nome) return nome;
     const tipo = sessao.tipo?.label ?? sessao.tipo?.nome ?? 'Sessão plenária';
     const data = new Date(sessao.dataInicio).toLocaleDateString('pt-BR', {
         day: 'numeric',

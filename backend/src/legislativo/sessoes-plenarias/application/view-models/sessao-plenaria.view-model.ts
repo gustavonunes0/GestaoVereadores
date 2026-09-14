@@ -45,6 +45,7 @@ export type SessaoPlenariaPrismaPayload = {
     tenantId: string;
     dataInicio: Date;
     dataFim: Date | null;
+    nome: string | null;
     mensagem: string | null;
     cicloVidaJson: unknown;
     statusSessao?: PrismaStatusSessao;
@@ -116,6 +117,7 @@ export class SessaoPlenariaViewModel {
             id: data.id,
             dataInicio: data.dataInicio.toISOString(),
             dataFim: data.dataFim?.toISOString() ?? null,
+            nome: data.nome ?? null,
             mensagem: data.mensagem,
             statusSessao,
             statusSessaoLabel: statusSessao

@@ -34,6 +34,11 @@ export class CreateSessaoPlenariaDto {
     @IsString()
     sessaoLegislativaId?: string;
 
+    /** Nome/identificação da sessão (ex.: "29ª Sessão Ordinária"). */
+    @IsOptional()
+    @IsString()
+    nome?: string;
+
     @IsOptional()
     @IsString()
     mensagem?: string;

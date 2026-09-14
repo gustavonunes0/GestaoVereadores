@@ -219,6 +219,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 tipoSessaoId: dto.tipoSessaoId,
                 situacaoId,
                 sessaoLegislativaId,
+                nome: dto.nome?.trim() || null,
                 mensagem: dto.mensagem,
                 cicloVidaJson: this.appendCicloVida([], {
                     status,
@@ -307,6 +308,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                         : undefined,
                 tipoSessaoId: dto.tipoSessaoId,
                 sessaoLegislativaId: dto.sessaoLegislativaId,
+                nome: dto.nome !== undefined ? dto.nome.trim() || null : undefined,
                 mensagem: dto.mensagem,
             },
             include: sessaoPlenariaInclude,
@@ -1346,72 +1348,32 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
     async resolveDefaultSessaoLegislativaId(
         tenantId: string,
     ): Promise<string | null> {
-        const proposta = await this.resolvePropostaNovaSessao(tenantId);
-        if (proposta?.sessaoLegislativaId) return proposta.sessaoLegislativaId;
-
         const vigente = await this.findVigenteLegislaturaPt(tenantId);
         if (!vigente) return null;
         const sessao = vigente.sessoesLegislativas.at(-1);
         return sessao?.id ?? null;
     }
 
-    /**
-     * Contexto sugerido ao cadastrar sessão: parte da última plenária registrada
-     * e tenta a legislatura seguinte (ex.: 28ª → 29ª). Se ela não existir no
-     * banco, mantém a mesma legislatura da última sessão.
-     */
-    private async resolvePropostaNovaSessao(tenantId: string) {
+    /** Sugere o nome da próxima sessão com base na última cadastrada ou na contagem. */
+    private async resolveNomeSugeridoNovaSessao(tenantId: string): Promise<string | null> {
         const ultima = await this.prisma.sessaoPlenaria.findFirst({
-            where: {
-                tenantId,
-                isRemoved: false,
-                sessaoLegislativaId: { not: null },
-            },
+            where: { tenantId, isRemoved: false },
             orderBy: { dataInicio: 'desc' },
-            include: {
-                sessaoLegislativa: {
-                    include: {
-                        legislatura: {
-                            include: {
-                                sessoesLegislativas: { orderBy: { numero: 'asc' } },
-                            },
-                        },
-                    },
-                },
-            },
+            select: { nome: true },
         });
 
-        const legAtual = ultima?.sessaoLegislativa?.legislatura;
-        const slAtual = ultima?.sessaoLegislativa;
-        if (!legAtual || !slAtual) return null;
-
-        const proximaLeg = await this.prisma.legislatura.findFirst({
-            where: {
-                tenantId,
-                numero: legAtual.numero + 1,
-                isRemoved: false,
-            },
-            include: {
-                sessoesLegislativas: { orderBy: { numero: 'asc' } },
-            },
-        });
-
-        if (proximaLeg) {
-            const primeiroAno = proximaLeg.sessoesLegislativas[0] ?? null;
-            return {
-                legislaturaId: proximaLeg.id,
-                legislaturaNumero: proximaLeg.numero,
-                sessaoLegislativaId: primeiroAno?.id ?? null,
-                sessaoLegislativaNumero: primeiroAno?.numero ?? null,
-            };
+        if (ultima?.nome?.trim()) {
+            const match = ultima.nome.trim().match(/^(\d+)/);
+            if (match) {
+                const proximo = Number.parseInt(match[1], 10) + 1;
+                return ultima.nome.replace(/^\d+/, String(proximo));
+            }
         }
 
-        return {
-            legislaturaId: legAtual.id,
-            legislaturaNumero: legAtual.numero,
-            sessaoLegislativaId: slAtual.id,
-            sessaoLegislativaNumero: slAtual.numero,
-        };
+        const total = await this.prisma.sessaoPlenaria.count({
+            where: { tenantId, isRemoved: false },
+        });
+        return `${total + 1}ª Sessão`;
     }
 
     async getLegislaturaContexto(tenantId: string) {
@@ -1444,9 +1406,9 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
               }
             : null;
 
-        const proposta = await this.resolvePropostaNovaSessao(tenantId);
+        const nomeSugerido = await this.resolveNomeSugeridoNovaSessao(tenantId);
 
-        return { legislaturas: mapped, vigente, proposta };
+        return { legislaturas: mapped, vigente, nomeSugerido };
     }
 
     /** Resolve legislatura legada (PT) a partir da legislatura em exercício (EN). */

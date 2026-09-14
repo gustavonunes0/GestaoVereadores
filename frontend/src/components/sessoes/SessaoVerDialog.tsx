@@ -157,6 +157,9 @@ export function SessaoVerDialog({ sessaoId, onClose, onUpdated }: Props) {
                         </div>
 
                         <div className="border-top-1 surface-border pt-3">
+                            {detail.nome?.trim() ? (
+                                <DetailRow label="Nome" value={detail.nome.trim()} />
+                            ) : null}
                             <DetailRow
                                 label="Data início"
                                 value={new Date(detail.dataInicio).toLocaleString('pt-BR')}

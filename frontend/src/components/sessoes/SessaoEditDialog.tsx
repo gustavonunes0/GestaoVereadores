@@ -22,6 +22,7 @@ export function SessaoEditDialog({ sessao, onClose, onSaved }: Props) {
     const [tipoSessaoId, setTipoSessaoId] = useState(
         sessao.tipo?.id ?? tiposSessao[0]?.id ?? '',
     );
+    const [nome, setNome] = useState(sessao.nome ?? '');
     const [mensagem, setMensagem] = useState(sessao.mensagem ?? '');
 
     async function submit() {
@@ -32,6 +33,7 @@ export function SessaoEditDialog({ sessao, onClose, onSaved }: Props) {
                 dataInicio: new Date(dataInicio).toISOString(),
                 tipoSessaoId,
                 sessaoLegislativaId: sessao.sessaoLegislativaId ?? undefined,
+                nome: nome.trim() || undefined,
                 mensagem: mensagem.trim() || undefined,
             });
             showSuccess('Sessão atualizada.');
@@ -71,6 +73,8 @@ export function SessaoEditDialog({ sessao, onClose, onSaved }: Props) {
         >
             <SessaoDialogFormFields
                 idPrefix="edit"
+                nome={nome}
+                onNomeChange={setNome}
                 dataInicio={dataInicio}
                 onDataInicioChange={setDataInicio}
                 tipoSessaoId={tipoSessaoId}
