@@ -148,5 +148,12 @@ export abstract class SessaoPlenariaRepository {
             sessaoLegislativaId: string | null;
             sessaoLegislativaNumero: number | null;
         } | null;
+        /** Sugestão para cadastro — derivada da última sessão plenária (+1 na legislatura). */
+        proposta: {
+            legislaturaId: string;
+            legislaturaNumero: number;
+            sessaoLegislativaId: string | null;
+            sessaoLegislativaNumero: number | null;
+        } | null;
     }>;
 }

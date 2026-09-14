@@ -1346,10 +1346,72 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
     async resolveDefaultSessaoLegislativaId(
         tenantId: string,
     ): Promise<string | null> {
+        const proposta = await this.resolvePropostaNovaSessao(tenantId);
+        if (proposta?.sessaoLegislativaId) return proposta.sessaoLegislativaId;
+
         const vigente = await this.findVigenteLegislaturaPt(tenantId);
         if (!vigente) return null;
-        const sessao = vigente.sessoesLegislativas[0];
+        const sessao = vigente.sessoesLegislativas.at(-1);
         return sessao?.id ?? null;
+    }
+
+    /**
+     * Contexto sugerido ao cadastrar sessão: parte da última plenária registrada
+     * e tenta a legislatura seguinte (ex.: 28ª → 29ª). Se ela não existir no
+     * banco, mantém a mesma legislatura da última sessão.
+     */
+    private async resolvePropostaNovaSessao(tenantId: string) {
+        const ultima = await this.prisma.sessaoPlenaria.findFirst({
+            where: {
+                tenantId,
+                isRemoved: false,
+                sessaoLegislativaId: { not: null },
+            },
+            orderBy: { dataInicio: 'desc' },
+            include: {
+                sessaoLegislativa: {
+                    include: {
+                        legislatura: {
+                            include: {
+                                sessoesLegislativas: { orderBy: { numero: 'asc' } },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const legAtual = ultima?.sessaoLegislativa?.legislatura;
+        const slAtual = ultima?.sessaoLegislativa;
+        if (!legAtual || !slAtual) return null;
+
+        const proximaLeg = await this.prisma.legislatura.findFirst({
+            where: {
+                tenantId,
+                numero: legAtual.numero + 1,
+                isRemoved: false,
+            },
+            include: {
+                sessoesLegislativas: { orderBy: { numero: 'asc' } },
+            },
+        });
+
+        if (proximaLeg) {
+            const primeiroAno = proximaLeg.sessoesLegislativas[0] ?? null;
+            return {
+                legislaturaId: proximaLeg.id,
+                legislaturaNumero: proximaLeg.numero,
+                sessaoLegislativaId: primeiroAno?.id ?? null,
+                sessaoLegislativaNumero: primeiroAno?.numero ?? null,
+            };
+        }
+
+        return {
+            legislaturaId: legAtual.id,
+            legislaturaNumero: legAtual.numero,
+            sessaoLegislativaId: slAtual.id,
+            sessaoLegislativaNumero: slAtual.numero,
+        };
     }
 
     async getLegislaturaContexto(tenantId: string) {
@@ -1382,7 +1444,9 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
               }
             : null;
 
-        return { legislaturas: mapped, vigente };
+        const proposta = await this.resolvePropostaNovaSessao(tenantId);
+
+        return { legislaturas: mapped, vigente, proposta };
     }
 
     /** Resolve legislatura legada (PT) a partir da legislatura em exercício (EN). */

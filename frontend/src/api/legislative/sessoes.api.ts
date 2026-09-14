@@ -111,14 +111,18 @@ export type SessaoAtivaResumo = {
     euSouPresidente?: boolean;
 };
 
+export type LegislaturaContextoRef = {
+    legislaturaId: string;
+    legislaturaNumero: number;
+    sessaoLegislativaId: string | null;
+    sessaoLegislativaNumero: number | null;
+};
+
 export type LegislaturaContextoSessoes = {
     legislaturas: LegislaturaSessaoRef[];
-    vigente: {
-        legislaturaId: string;
-        legislaturaNumero: number;
-        sessaoLegislativaId: string | null;
-        sessaoLegislativaNumero: number | null;
-    } | null;
+    vigente: LegislaturaContextoRef | null;
+    /** Sugestão para nova sessão — última plenária + 1 na legislatura, quando existir. */
+    proposta: LegislaturaContextoRef | null;
 };
 
 type QuorumApiResponse = {

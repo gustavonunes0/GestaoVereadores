@@ -71,6 +71,8 @@ export function SessoesPage() {
     const [legislaturasList, setLegislaturasList] = useState<LegislaturaSessaoRef[]>([]);
     const [contextoVigente, setContextoVigente] =
         useState<LegislaturaContextoSessoes['vigente']>(null);
+    const [contextoProposta, setContextoProposta] =
+        useState<LegislaturaContextoSessoes['proposta']>(null);
     const [contextReady, setContextReady] = useState(false);
     const [defaultFiltros, setDefaultFiltros] = useState<SessaoFiltrosForm>(() =>
         buildDefaultFiltros(),
@@ -90,20 +92,23 @@ export function SessoesPage() {
     const [dialogEditar, setDialogEditar] = useState<Sessao | null>(null);
     const [dialogDeletar, setDialogDeletar] = useState<Sessao | null>(null);
 
+    const carregarContexto = useCallback(async () => {
+        const ctx = await sessoesApi.getContextoLegislatura();
+        setLegislaturasList(ctx.legislaturas);
+        setContextoVigente(ctx.vigente);
+        setContextoProposta(ctx.proposta);
+        const defaults = buildDefaultFiltros(ctx.vigente ?? undefined);
+        setDefaultFiltros(defaults);
+        setFiltros(defaults);
+        setFiltrosApplied(defaults);
+        return ctx;
+    }, []);
+
     useEffect(() => {
-        sessoesApi
-            .getContextoLegislatura()
-            .then((ctx) => {
-                setLegislaturasList(ctx.legislaturas);
-                setContextoVigente(ctx.vigente);
-                const defaults = buildDefaultFiltros(ctx.vigente ?? undefined);
-                setDefaultFiltros(defaults);
-                setFiltros(defaults);
-                setFiltrosApplied(defaults);
-            })
+        void carregarContexto()
             .catch(showApiError)
             .finally(() => setContextReady(true));
-    }, [showApiError]);
+    }, [carregarContexto, showApiError]);
 
     const buscar = useCallback(async () => {
         if (!contextReady) return;
@@ -134,13 +139,19 @@ export function SessoesPage() {
         setPage(1);
     }
 
-    const contextoLabel = contextoVigente
-        ? `${contextoVigente.legislaturaNumero}ª legislatura${
-              contextoVigente.sessaoLegislativaNumero
-                  ? ` · ${contextoVigente.sessaoLegislativaNumero}º ano legislativo`
-                  : ''
-          }`
-        : undefined;
+    function formatContextoLegislatura(
+        ctx: LegislaturaContextoSessoes['vigente'],
+    ): string | undefined {
+        if (!ctx) return undefined;
+        return `${ctx.legislaturaNumero}ª legislatura${
+            ctx.sessaoLegislativaNumero
+                ? ` · ${ctx.sessaoLegislativaNumero}º ano legislativo`
+                : ''
+        }`;
+    }
+
+    const contextoVigenteLabel = formatContextoLegislatura(contextoVigente);
+    const contextoPropostaLabel = formatContextoLegislatura(contextoProposta);
 
     const colunas = (
         <>
@@ -190,8 +201,8 @@ export function SessoesPage() {
                 icon={MODULE_ICONS.sessoes}
                 title="Sessões plenárias"
                 subtitle={
-                    contextoLabel
-                        ? `Legislatura em vigor: ${contextoLabel}`
+                    contextoVigenteLabel
+                        ? `Legislatura em vigor: ${contextoVigenteLabel}`
                         : undefined
                 }
                 actions={
@@ -248,11 +259,18 @@ export function SessoesPage() {
             {dialogCriar && (
                 <SessaoCreateDialog
                     sessaoLegislativaId={
-                        contextoVigente?.sessaoLegislativaId ?? undefined
+                        contextoProposta?.sessaoLegislativaId ??
+                        contextoVigente?.sessaoLegislativaId ??
+                        undefined
                     }
-                    legislaturaLabel={contextoLabel}
+                    legislaturaLabel={
+                        contextoPropostaLabel ?? contextoVigenteLabel
+                    }
                     onClose={() => setDialogCriar(false)}
-                    onSaved={() => void buscar()}
+                    onSaved={() => {
+                        void buscar();
+                        void carregarContexto().catch(showApiError);
+                    }}
                 />
             )}
 
