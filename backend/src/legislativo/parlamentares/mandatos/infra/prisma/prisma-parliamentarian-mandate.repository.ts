@@ -129,6 +129,9 @@ export class PrismaParliamentarianMandateRepository extends ParliamentarianManda
         const result = await this.prisma.parliamentarianMandate.updateMany({
             where: { id, tenantId, isRemoved: false },
             data: {
+                ...(data.legislatureId !== undefined
+                    ? { legislatureId: data.legislatureId }
+                    : {}),
                 ...(data.partyAcronym !== undefined
                     ? { partyAcronym: data.partyAcronym }
                     : {}),

@@ -123,6 +123,7 @@ export type UpdateParliamentarianInput = {
     politicalPartyId?: string | null;
     status?: string;
     password?: string;
+    legislatureId?: string;
     condicao?: 'TITULAR' | 'SUPLENTE';
     titularAfastadoId?: string | null;
 };

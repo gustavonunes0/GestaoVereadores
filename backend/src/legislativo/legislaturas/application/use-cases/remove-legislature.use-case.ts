@@ -2,10 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { LegislatureRepository } from '../../domain/repositories/legislature.repository';
 import { LegislatureDomainService } from '../../domain/services/legislature-domain.service';
 import { LEGISLATURE_REPOSITORY } from '../../legislaturas.tokens';
-import {
-    LegislatureHasActiveMandatesError,
-    LegislatureNotFoundError,
-} from '../errors/legislature.errors';
+import { LegislatureNotFoundError } from '../errors/legislature.errors';
 
 @Injectable()
 export class RemoveLegislatureUseCase {
@@ -29,17 +26,7 @@ export class RemoveLegislatureUseCase {
             throw new LegislatureNotFoundError();
         }
 
-        const activeMandates =
-            await this.legislatureRepository.countActiveMandates(
-                tenantId,
-                id,
-            );
-        try {
-            this.domainService.assertCanRemove(activeMandates);
-        } catch {
-            throw new LegislatureHasActiveMandatesError();
-        }
-
+        // Soft-delete encerra mandatos/mesas ACTIVE vinculados (histórico preservado).
         existing!.markRemoved();
         await this.legislatureRepository.softDelete(tenantId, id);
     }

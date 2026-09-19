@@ -43,6 +43,12 @@ describe('LegislatureDomainService', () => {
         );
     });
 
+    it('exige data fim', () => {
+        expect(() =>
+            service.assertDateRange(new Date('2025-01-01'), null),
+        ).toThrow('Data fim é obrigatória');
+    });
+
     it('garante no máximo uma legislatura atual', () => {
         expect(() => service.assertAtMostOneCurrent(2)).toThrow(
             'Apenas uma legislatura pode ser atual por tenant',

@@ -28,6 +28,7 @@ export type CreateParliamentarianMandateRepositoryInput = {
 };
 
 export type UpdateParliamentarianMandateRepositoryInput = {
+    legislatureId?: string;
     partyAcronym?: string | null;
     partyName?: string | null;
     condicao?: CondicaoMandato;

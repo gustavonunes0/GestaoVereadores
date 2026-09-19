@@ -19,10 +19,9 @@ export class CreateLegislatureDto {
     @IsDateString()
     startDate: string;
 
-    @ApiPropertyOptional({ example: '2028-12-31' })
-    @IsOptional()
+    @ApiProperty({ example: '2028-12-31' })
     @IsDateString()
-    endDate?: string;
+    endDate: string;
 
     @ApiPropertyOptional({ default: false })
     @IsOptional()

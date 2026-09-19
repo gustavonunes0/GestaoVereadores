@@ -83,8 +83,14 @@ export function ParlamentarEditDialog({
             return;
         }
 
-        const legislaturaMandato = legislaturas.find((l) => l.id === mandatoAtivo.legislatureId);
-        const inicio = mandatoAtivo.startedAt ? new Date(mandatoAtivo.startedAt) : null;
+        const legislaturaMandato =
+            legislaturas.find((l) => l.id === legislaturaId) ??
+            legislaturas.find((l) => l.id === mandatoAtivo.legislatureId);
+        const inicio = mandatoAtivo.startedAt
+            ? new Date(mandatoAtivo.startedAt)
+            : legislaturaMandato?.startDate
+              ? new Date(legislaturaMandato.startDate)
+              : null;
         const fim = mandatoAtivo.endedAt
             ? new Date(mandatoAtivo.endedAt)
             : legislaturaMandato?.endDate
@@ -94,7 +100,16 @@ export function ParlamentarEditDialog({
                 : null;
 
         setPeriodoMandato([inicio, fim]);
-    }, [mandatoAtivo, legislaturas]);
+    }, [mandatoAtivo, legislaturas, legislaturaId]);
+
+    useEffect(() => {
+        const leg = legislaturas.find((l) => l.id === legislaturaId);
+        if (!leg) return;
+        setPeriodoMandato([
+            new Date(leg.startDate),
+            leg.endDate ? new Date(leg.endDate) : null,
+        ]);
+    }, [legislaturaId, legislaturas]);
     const [statusAcesso, setStatusAcesso] = useState<ParliamentarianUserStatus>(
         wasAccessActive ? 'ACTIVE' : 'INACTIVE',
     );
@@ -181,6 +196,7 @@ export function ParlamentarEditDialog({
                 ...(passwordFilled && parlamentar.user ? { password } : {}),
                 ...(mandatoAtivo
                     ? {
+                          legislatureId: legislaturaId || undefined,
                           condicao,
                           titularAfastadoId:
                               condicao === 'SUPLENTE'
@@ -368,15 +384,14 @@ export function ParlamentarEditDialog({
                         </span>
                         <div className="sigl-dialog-grid sigl-dialog-grid-2">
                             <div className="sigl-filtro-campo">
-                                <label htmlFor="pe-legislatura">Legislatura</label>
+                                <label htmlFor="pe-legislatura">Legislatura *</label>
                                 <Dropdown
                                     id="pe-legislatura"
                                     options={legislaturaOptions}
                                     value={legislaturaId || null}
                                     onChange={(v) => setLegislaturaId(String(v))}
-                                    placeholder="Legislatura do mandato"
+                                    placeholder="Selecione a legislatura"
                                     className="w-full"
-                                    disabled
                                 />
                             </div>
                             <div className="sigl-filtro-campo">

@@ -19,6 +19,8 @@ export class PrismaLegislatureRepository extends LegislatureRepository {
 
     async create(data: CreateLegislatureRepositoryInput) {
         return this.prisma.$transaction(async (tx) => {
+            // Regra: nova legislatura NÃO apaga nem move mesa/mandatos —
+            // apenas desmarca isCurrent das demais quando a nova for a atual.
             if (data.isCurrent) {
                 await tx.legislature.updateMany({
                     where: {
@@ -116,6 +118,7 @@ export class PrismaLegislatureRepository extends LegislatureRepository {
         data: UpdateLegislatureRepositoryInput,
     ) {
         return this.prisma.$transaction(async (tx) => {
+            // Só atualiza isCurrent — não move mesa nem mandatos.
             if (data.isCurrent === true) {
                 await tx.legislature.updateMany({
                     where: {
@@ -154,13 +157,43 @@ export class PrismaLegislatureRepository extends LegislatureRepository {
     }
 
     async softDelete(tenantId: string, id: string) {
-        await this.prisma.legislature.updateMany({
-            where: { id, tenantId, isRemoved: false },
-            data: {
-                isRemoved: true,
-                removedAt: new Date(),
-                isCurrent: false,
-            },
+        const now = new Date();
+        await this.prisma.$transaction(async (tx) => {
+            // Encerra vínculos ativos — não bloqueia exclusão e não apaga histórico.
+            await tx.parliamentarianMandate.updateMany({
+                where: {
+                    tenantId,
+                    legislatureId: id,
+                    isRemoved: false,
+                    status: 'ACTIVE',
+                },
+                data: {
+                    status: 'FINISHED',
+                    endedAt: now,
+                },
+            });
+
+            await tx.board.updateMany({
+                where: {
+                    tenantId,
+                    legislatureId: id,
+                    isRemoved: false,
+                    status: 'ACTIVE',
+                },
+                data: {
+                    status: 'FINISHED',
+                    endDate: now,
+                },
+            });
+
+            await tx.legislature.updateMany({
+                where: { id, tenantId, isRemoved: false },
+                data: {
+                    isRemoved: true,
+                    removedAt: now,
+                    isCurrent: false,
+                },
+            });
         });
     }
 

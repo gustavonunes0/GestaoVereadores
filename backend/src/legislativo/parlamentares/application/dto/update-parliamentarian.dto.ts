@@ -50,6 +50,13 @@ export class UpdateParliamentarianDto {
     condicao?: CondicaoMandato;
 
     @ApiPropertyOptional({
+        description: 'Legislatura do mandato ativo',
+    })
+    @IsOptional()
+    @IsUUID()
+    legislatureId?: string;
+
+    @ApiPropertyOptional({
         description: 'Titular afastado quando condição = SUPLENTE',
         nullable: true,
     })

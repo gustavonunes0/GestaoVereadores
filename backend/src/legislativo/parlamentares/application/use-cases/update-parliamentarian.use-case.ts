@@ -9,6 +9,8 @@ import {
     PASSWORD_HASHER,
     USER_REPOSITORY,
 } from '../../../../identidade/users/users.tokens';
+import { LegislatureRepository } from '../../../legislaturas/domain/repositories/legislature.repository';
+import { LEGISLATURE_REPOSITORY } from '../../../legislaturas/legislaturas.tokens';
 import { POLITICAL_PARTY_REPOSITORY } from '../../../partidos-politicos/partidos-politicos.tokens';
 import { PoliticalPartyRepository } from '../../../partidos-politicos/domain/repositories/political-party.repository';
 import { ParliamentarianRepository } from '../../domain/repositories/parliamentarian.repository';
@@ -48,6 +50,8 @@ export class UpdateParliamentarianUseCase {
         private readonly passwordHasher: PasswordHasher,
         @Inject(PARLIAMENTARIAN_MANDATE_REPOSITORY)
         private readonly mandateRepository: ParliamentarianMandateRepository,
+        @Inject(LEGISLATURE_REPOSITORY)
+        private readonly legislatureRepository: LegislatureRepository,
     ) {}
 
     async execute(tenantId: string, id: string, dto: UpdateParliamentarianDto) {
@@ -104,11 +108,12 @@ export class UpdateParliamentarianUseCase {
             status: p.status,
         });
 
-        if (dto.condicao !== undefined) {
-            await this.updateActiveMandateCondicao(
+        if (dto.condicao !== undefined || dto.legislatureId !== undefined) {
+            await this.updateActiveMandate(
                 tenantId,
                 id,
                 dto.condicao,
+                dto.legislatureId,
                 dto.titularAfastadoId,
             );
         }
@@ -121,10 +126,11 @@ export class UpdateParliamentarianUseCase {
         return ParliamentarianViewModel.toHttp(updated);
     }
 
-    private async updateActiveMandateCondicao(
+    private async updateActiveMandate(
         tenantId: string,
         parliamentarianId: string,
-        condicao: CondicaoMandato,
+        condicao?: CondicaoMandato,
+        legislatureId?: string,
         titularAfastadoId?: string | null,
     ) {
         const result = await this.mandateRepository.findMany(
@@ -135,19 +141,57 @@ export class UpdateParliamentarianUseCase {
         const active = result.data[0];
         if (!active) {
             throw new BadRequestException(
-                'Parlamentar sem mandato ativo para atualizar a condição',
+                'Parlamentar sem mandato ativo para atualizar',
             );
         }
 
-        active.entity.updateCondicao({
-            condicao,
-            titularAfastadoId,
-        });
-        const m = active.entity.toPrimitives();
-        await this.mandateRepository.update(tenantId, active.entity.id, {
-            condicao: m.condicao,
-            titularAfastadoId: m.titularAfastadoId,
-        });
+        if (legislatureId && legislatureId !== active.entity.legislatureId) {
+            const legislature = await this.legislatureRepository.findById(
+                tenantId,
+                legislatureId,
+            );
+            if (!legislature) {
+                throw new BadRequestException('Legislatura não encontrada');
+            }
+
+            const conflict =
+                await this.mandateRepository.findByParliamentarianAndLegislature(
+                    tenantId,
+                    parliamentarianId,
+                    legislatureId,
+                );
+            if (conflict && conflict.entity.id !== active.entity.id) {
+                throw new BadRequestException(
+                    'Já existe mandato deste parlamentar nesta legislatura',
+                );
+            }
+
+            const leg = legislature.toPrimitives();
+            await this.mandateRepository.update(tenantId, active.entity.id, {
+                legislatureId,
+                startedAt: leg.startDate,
+                ...(leg.endDate ? { endedAt: leg.endDate } : {}),
+            });
+        }
+
+        if (condicao !== undefined) {
+            const refreshed = await this.mandateRepository.findById(
+                tenantId,
+                active.entity.id,
+            );
+            if (!refreshed) {
+                throw new BadRequestException('Mandato não encontrado');
+            }
+            refreshed.entity.updateCondicao({
+                condicao,
+                titularAfastadoId,
+            });
+            const m = refreshed.entity.toPrimitives();
+            await this.mandateRepository.update(tenantId, refreshed.entity.id, {
+                condicao: m.condicao,
+                titularAfastadoId: m.titularAfastadoId,
+            });
+        }
     }
 
     private async assertPoliticalPartyForParliamentarian(

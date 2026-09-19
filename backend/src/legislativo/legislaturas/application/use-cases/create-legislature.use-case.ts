@@ -21,7 +21,7 @@ export class CreateLegislatureUseCase {
 
     async execute(tenantId: string, dto: CreateLegislatureDto) {
         const startDate = new Date(dto.startDate);
-        const endDate = dto.endDate ? new Date(dto.endDate) : null;
+        const endDate = new Date(dto.endDate);
 
         const numberExists = await this.legislatureRepository.existsByNumber(
             tenantId,
@@ -47,6 +47,8 @@ export class CreateLegislatureUseCase {
             throw error;
         }
 
+        // Regra de negócio: criar legislatura não apaga mesa diretora anterior.
+        // O repositório só atualiza isCurrent e, se necessário, religa mesas ACTIVE.
         const isCurrent = dto.isCurrent ?? false;
         const legislature = LegislatureEntity.create({
             tenantId,

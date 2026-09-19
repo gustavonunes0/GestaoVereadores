@@ -13,7 +13,14 @@ export type Legislature = {
 export type CreateLegislatureInput = {
     number: number;
     startDate: string;
-    endDate?: string;
+    endDate: string;
+    isCurrent?: boolean;
+};
+
+export type UpdateLegislatureInput = {
+    number?: number;
+    startDate?: string;
+    endDate?: string | null;
     isCurrent?: boolean;
 };
 
@@ -25,6 +32,17 @@ export const legislaturasApi = {
         api<Legislature>(API_PATHS.legislaturas, {
             method: 'POST',
             body: JSON.stringify(body),
+        }),
+
+    update: (id: string, body: UpdateLegislatureInput) =>
+        api<Legislature>(`${API_PATHS.legislaturas}/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+        }),
+
+    remove: (id: string) =>
+        api<{ success: boolean }>(`${API_PATHS.legislaturas}/${id}`, {
+            method: 'DELETE',
         }),
 };
 

@@ -96,6 +96,7 @@ export const STAFF_NAV_MENU: NavGroupDef[] = [
     {
         label: 'Legislativo',
         items: [
+            { label: 'Legislatura', route: ROUTES.camara.legislaturas, sidebarIcon: 'account_balance' },
             { label: 'Sessões Legislativas', route: ROUTES.sessoes, sidebarIcon: 'gavel' },
             { label: 'Matérias', route: ROUTES.materias, sidebarIcon: 'description' },
             { label: 'Normas Jurídicas', route: ROUTES.normasJuridicas, sidebarIcon: 'balance' },

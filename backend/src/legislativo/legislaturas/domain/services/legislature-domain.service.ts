@@ -34,7 +34,10 @@ export class LegislatureDomainService {
     }
 
     assertDateRange(startDate: Date, endDate: Date | null | undefined) {
-        if (endDate && endDate.getTime() < startDate.getTime()) {
+        if (!endDate) {
+            throw new Error('Data fim é obrigatória');
+        }
+        if (endDate.getTime() < startDate.getTime()) {
             throw new Error('Data fim não pode ser anterior à data início');
         }
     }
