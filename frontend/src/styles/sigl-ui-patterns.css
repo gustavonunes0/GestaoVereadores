@@ -5102,19 +5102,19 @@ body.sessao-painel-body {
     left: 50%;
     top: 48%;
     transform: translate(-50%, -50%);
-    width: min(58vw, 32rem);
+    width: min(78vw, 48rem);
     height: auto;
-    max-height: 62vh;
+    max-height: 78vh;
     object-fit: contain;
-    opacity: 0.12;
+    opacity: 0.14;
     pointer-events: none;
     user-select: none;
     z-index: 0;
 }
 
 .sessao-painel--votacao .sessao-painel-marca-dagua {
-    width: min(72vw, 40rem);
-    max-height: 70vh;
+    width: min(85vw, 52rem);
+    max-height: 82vh;
     opacity: 0.16;
 }
 
@@ -5167,16 +5167,21 @@ body.sessao-painel-body {
     border-bottom: 1px solid #e5e7eb;
 }
 
-/* Lista da pauta / início: ancora no topo para não cortar itens abaixo da dobra */
+/* Lista da pauta / início: ancora no topo; início alinhado à esquerda */
 .sessao-painel-main:has(.sessao-painel-pauta),
 .sessao-painel-main:has(.sessao-painel-inicio) {
     align-items: flex-start;
     justify-content: center;
 }
 
+.sessao-painel-main:has(.sessao-painel-inicio) {
+    justify-content: flex-start;
+    padding-left: clamp(0.75rem, 1.5vw, 1.25rem);
+}
+
 /* Tela inicial: mesa diretora + pauta lado a lado */
 .sessao-painel-inicio {
-    width: min(100%, 92rem);
+    width: 100%;
     display: grid;
     grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
     gap: clamp(1.25rem, 2.5vw, 2rem);
@@ -5210,19 +5215,39 @@ body.sessao-painel-body {
 .sessao-painel-inicio__mesa-card {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.85rem;
     width: 100%;
-    padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid rgba(37, 99, 235, 0.18);
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    padding: 0.85rem 1.05rem;
+    background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.97) 0%,
+        rgba(239, 246, 255, 0.9) 100%
+    );
+    border: 1px solid rgba(37, 99, 235, 0.28);
+    border-radius: 0.85rem;
+    box-shadow:
+        0 6px 18px rgba(37, 99, 235, 0.1),
+        0 2px 6px rgba(15, 23, 42, 0.06);
     text-align: left;
 }
 
+.sessao-painel-inicio__mesa-card--presidente {
+    padding: 1.15rem 1.25rem;
+    gap: 1.15rem;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.99) 0%,
+        rgba(191, 219, 254, 0.95) 100%
+    );
+    border: 2px solid #1d4ed8;
+    box-shadow:
+        0 12px 32px rgba(37, 99, 235, 0.22),
+        0 4px 10px rgba(15, 23, 42, 0.1);
+}
+
 .sessao-painel-inicio__mesa-avatar {
-    width: 3.25rem;
-    height: 3.25rem;
+    width: 4.5rem;
+    height: 4.5rem;
     border-radius: 999px;
     overflow: hidden;
     flex-shrink: 0;
@@ -5231,25 +5256,48 @@ body.sessao-painel-body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-weight: 700;
+    border: 2px solid rgba(37, 99, 235, 0.35);
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.2);
+}
+
+.sessao-painel-inicio__mesa-avatar--presidente {
+    width: 7rem;
+    height: 7rem;
+    font-size: 1.5rem;
+    border: 4px solid #1d4ed8;
+    box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.22),
+        0 8px 20px rgba(29, 78, 216, 0.25);
 }
 
 .sessao-painel-inicio__mesa-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center 18%;
 }
 
 .sessao-painel-inicio__mesa-texto {
     display: flex;
     flex-direction: column;
-    gap: 0.1rem;
+    gap: 0.15rem;
     min-width: 0;
 }
 
+.sessao-painel-inicio__mesa-card--presidente .sessao-painel-inicio__mesa-cargo {
+    font-size: 0.82rem;
+    color: #1d4ed8;
+}
+
+.sessao-painel-inicio__mesa-card--presidente .sessao-painel-inicio__mesa-nome {
+    font-size: 1.2rem;
+    color: #0f172a;
+}
+
 .sessao-painel-inicio__mesa-cargo {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -5257,7 +5305,7 @@ body.sessao-painel-body {
 }
 
 .sessao-painel-inicio__mesa-nome {
-    font-size: 0.95rem;
+    font-size: 0.98rem;
     font-weight: 700;
     color: #0f172a;
     line-height: 1.25;
@@ -5472,7 +5520,7 @@ body.sessao-painel-body {
     border-color: rgba(34, 197, 94, 0.45);
 }
 
-/* Pauta do dia (lista no telão) */
+/* Pauta do dia (lista no telão) — layout denso para caber mais itens */
 .sessao-painel-pauta {
     width: min(100%, 80rem);
     max-height: none;
@@ -5480,29 +5528,37 @@ body.sessao-painel-body {
 
 .sessao-painel-pauta__cabecalho {
     text-align: center;
-    margin-bottom: clamp(0.75rem, 2vw, 1.5rem);
+    margin-bottom: 0.55rem;
+}
+
+.sessao-painel-pauta__cabecalho .sessao-painel-etiqueta {
+    margin-bottom: 0.35rem;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
 }
 
 .sessao-painel-pauta__titulo {
-    margin: 0.5rem 0 0.25rem;
-    font-size: clamp(1.35rem, 3vw, 2.25rem);
+    margin: 0.2rem 0 0.1rem;
+    font-size: clamp(1.05rem, 2vw, 1.45rem);
     font-weight: 700;
     color: #0f172a;
+    line-height: 1.2;
 }
 
 .sessao-painel-pauta__resumo {
     margin: 0;
-    font-size: clamp(0.8125rem, 1.4vw, 1.05rem);
+    font-size: clamp(0.7rem, 1.1vw, 0.85rem);
     color: #64748b;
 }
 
 .sessao-painel-pauta__lista {
     list-style: none;
     margin: 0;
-    padding: 0 0 1.5rem;
+    padding: 0 0 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: 0.35rem;
     position: relative;
     z-index: 1;
 }
@@ -5510,13 +5566,13 @@ body.sessao-painel-body {
 .sessao-painel-pauta__item {
     display: flex;
     align-items: center;
-    gap: clamp(0.6rem, 1.5vw, 1.15rem);
-    padding: clamp(0.55rem, 1.2vw, 0.9rem) clamp(0.85rem, 1.8vw, 1.25rem);
-    border-radius: 0.65rem;
+    gap: 0.55rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.5rem;
     background: rgba(255, 255, 255, 0.92);
     border: 1px solid #cbd5e1;
     color: #0f172a;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 }
 
 .sessao-painel-pauta__item--destaque {
@@ -5532,13 +5588,13 @@ body.sessao-painel-body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: clamp(1.75rem, 3.2vw, 2.35rem);
-    height: clamp(1.75rem, 3.2vw, 2.35rem);
+    width: 1.65rem;
+    height: 1.65rem;
     border-radius: 50%;
     background: #1e3a8a;
     border: 1px solid #1d4ed8;
     color: #ffffff;
-    font-size: clamp(0.9rem, 1.7vw, 1.25rem);
+    font-size: 0.8rem;
     font-weight: 700;
 }
 
@@ -5547,20 +5603,63 @@ body.sessao-painel-body {
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 0.1rem;
+}
+
+.sessao-painel-pauta__placar {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.sessao-painel-pauta__placar .pauta-votacao-mini {
+    gap: 0.1rem;
+}
+
+.sessao-painel-pauta__placar .pauta-detalhe__meta-label {
+    display: none;
+}
+
+.sessao-painel-pauta__placar .pauta-votacao-mini__status {
+    font-size: 0.62rem;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.sessao-painel-pauta__placar .pauta-votacao-mini__placar {
+    max-width: none;
+    gap: 0.3rem;
+    min-width: 9.5rem;
+}
+
+.sessao-painel-pauta__placar .pauta-votacao-mini__item {
+    padding: 0.25rem 0.35rem;
+    min-width: 2.65rem;
+}
+
+.sessao-painel-pauta__placar .pauta-votacao-mini__valor {
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.sessao-painel-pauta__placar .pauta-votacao-mini__opcao {
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .sessao-painel-pauta__item-titulo {
-    font-size: clamp(0.95rem, 1.8vw, 1.35rem);
+    font-size: clamp(0.85rem, 1.3vw, 1.05rem);
     font-weight: 700;
     line-height: 1.2;
     color: #0f172a;
 }
 
 .sessao-painel-pauta__item-ementa {
-    font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+    font-size: clamp(0.7rem, 1vw, 0.8rem);
     color: #475569;
-    line-height: 1.35;
+    line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
@@ -5572,24 +5671,24 @@ body.sessao-painel-body {
 }
 
 .sessao-painel-pauta--compact .sessao-painel-pauta__lista {
-    gap: 0.4rem;
+    gap: 0.28rem;
 }
 
 .sessao-painel-pauta--compact .sessao-painel-pauta__item {
-    padding: 0.45rem 0.85rem;
+    padding: 0.32rem 0.6rem;
 }
 
 .sessao-painel-pauta__cat {
     flex-shrink: 0;
-    font-size: clamp(0.625rem, 1vw, 0.75rem);
+    font-size: 0.62rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     color: #1e3a8a;
     background: #dbeafe;
     border: 1px solid #93c5fd;
-    border-radius: 0.35rem;
-    padding: 0.25rem 0.45rem;
+    border-radius: 0.3rem;
+    padding: 0.15rem 0.35rem;
     white-space: nowrap;
 }
 
