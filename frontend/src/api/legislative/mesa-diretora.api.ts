@@ -41,6 +41,14 @@ export type CreateBoardInput = {
     notes?: string;
 };
 
+export type UpdateBoardInput = {
+    name?: string;
+    startDate?: string;
+    endDate?: string | null;
+    status?: string;
+    notes?: string;
+};
+
 export type MesaDiretoraFiltros = {
     legislatureId?: string;
     status?: string;
@@ -58,6 +66,12 @@ export const mesaDiretoraApi = {
     create: (body: CreateBoardInput) =>
         api<Board>(API_PATHS.mesaDiretora, {
             method: 'POST',
+            body: JSON.stringify(body),
+        }),
+
+    update: (id: string, body: UpdateBoardInput) =>
+        api<Board>(`${API_PATHS.mesaDiretora}/${id}`, {
+            method: 'PATCH',
             body: JSON.stringify(body),
         }),
 

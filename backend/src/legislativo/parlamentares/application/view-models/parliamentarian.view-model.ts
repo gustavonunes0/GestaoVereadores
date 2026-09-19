@@ -27,6 +27,7 @@ export type ParliamentarianHttp = {
         id: string;
         status: string;
         condicao?: string;
+        legislatureId?: string;
     };
     stats?: {
         authoredMattersCount: number;

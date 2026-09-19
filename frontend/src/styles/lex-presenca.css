@@ -187,9 +187,16 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-wrap: nowrap;
     gap: var(--presenca-gap-assento);
     position: relative;
-    width: 41.666667%;
+    flex: 1 1 0;
+    width: auto;
+    min-width: calc(
+        (var(--presenca-seat-w) * 7) + (var(--presenca-gap-assento) * 6)
+    );
+    max-width: 48%;
+    overflow: visible;
 }
 
 .presenca-desk-curve {
@@ -368,16 +375,19 @@
     opacity: 0.5;
 }
 
-/* Cadeira vazia — slot sem parlamentar (completa o layout fixo) */
+/* Cadeira vazia — slot decorativo (Estado/Cadeira), bem visível */
 .presenca-seat--vazia {
     background: var(--presenca-seat-institucional);
-    opacity: 0.5;
+    opacity: 0.85;
     pointer-events: none;
     cursor: default;
+    box-shadow:
+        0 4px 0 rgba(0, 0, 0, 0.22),
+        inset 0 2px 4px rgba(255, 255, 255, 0.25);
 }
 
 .presenca-seat--vazia::after {
-    opacity: 0.6;
+    opacity: 0.85;
 }
 
 /* ── Legenda ── */

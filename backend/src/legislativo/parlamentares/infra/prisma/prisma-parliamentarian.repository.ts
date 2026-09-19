@@ -48,7 +48,7 @@ const includeRelations = {
         where: { isRemoved: false, status: 'ACTIVE' },
         orderBy: { startedAt: 'desc' },
         take: 1,
-        select: { id: true, status: true, condicao: true },
+        select: { id: true, status: true, condicao: true, legislatureId: true },
     },
 } satisfies Prisma.ParliamentarianInclude;
 
@@ -89,7 +89,12 @@ type ParliamentarianRow = PrismaParliamentarian & {
         committeeMembers: number;
         votos: number;
     };
-    mandates: Array<{ id: string; status: string; condicao: string }>;
+    mandates: Array<{
+        id: string;
+        status: string;
+        condicao: string;
+        legislatureId?: string;
+    }>;
 };
 
 type ParliamentarianDetailRow = ParliamentarianRow & {
@@ -130,6 +135,15 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
                 politicalPartyId: query.politicalPartyId,
             };
         }
+        if (query.legislatureId) {
+            where.mandates = {
+                some: {
+                    isRemoved: false,
+                    status: 'ACTIVE',
+                    legislatureId: query.legislatureId,
+                },
+            };
+        }
         if (query.search?.trim()) {
             const term = query.search.trim();
             where.OR = [
@@ -165,13 +179,35 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
                 },
             ];
         }
+
+        const include = query.legislatureId
+            ? {
+                  ...includeRelations,
+                  mandates: {
+                      where: {
+                          isRemoved: false,
+                          status: 'ACTIVE' as const,
+                          legislatureId: query.legislatureId,
+                      },
+                      orderBy: { startedAt: 'desc' as const },
+                      take: 1,
+                      select: {
+                          id: true,
+                          status: true,
+                          condicao: true,
+                          legislatureId: true,
+                      },
+                  },
+              }
+            : includeRelations;
+
         return paginatedQuery(
             () => this.prisma.parliamentarian.count({ where }),
             (skip, take) =>
                 this.prisma.parliamentarian
                     .findMany({
                         where,
-                        include: includeRelations,
+                        include,
                         orderBy: { parliamentaryName: 'asc' },
                         skip,
                         take,
@@ -290,7 +326,17 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
     }
 
     private toWithRelations(row: ParliamentarianRow | ParliamentarianDetailRow): ParliamentarianWithRelations {
-        const activeMandate = row.mandates[0] ?? null;
+        const mandateRow = row.mandates[0] ?? null;
+        const activeMandate = mandateRow
+            ? {
+                  id: mandateRow.id,
+                  status: mandateRow.status,
+                  condicao: mandateRow.condicao,
+                  ...(mandateRow.legislatureId
+                      ? { legislatureId: mandateRow.legislatureId }
+                      : {}),
+              }
+            : null;
         const committees =
             'committeeMembers' in row
                 ? row.committeeMembers.map((m) => ({

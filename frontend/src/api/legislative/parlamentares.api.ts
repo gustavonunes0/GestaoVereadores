@@ -1,4 +1,4 @@
-import { api, apiList } from '../client';
+import { api, apiList, ApiError } from '../client';
 import { API_PATHS } from '../paths';
 import type {
     ParliamentarianFull,
@@ -41,7 +41,12 @@ export type Parliamentarian = {
         };
     };
     activeMandatesCount?: number;
-    activeMandate?: { id: string; status: string; condicao?: string };
+    activeMandate?: {
+        id: string;
+        status: string;
+        condicao?: string;
+        legislatureId?: string;
+    };
     stats?: {
         authoredMattersCount: number;
         coauthoredMattersCount: number;
@@ -132,22 +137,83 @@ export const parlamentaresApi = {
     list: (params?: Record<string, string | number | boolean | undefined>) =>
         apiList<Parliamentarian>(API_PATHS.parlamentares, params),
 
-    /** Busca todos os parlamentares ativos (paginação automática; API limita 100/página). */
-    listActiveAll: async (): Promise<Parliamentarian[]> => {
-        const all: Parliamentarian[] = [];
-        let page = 1;
-        let totalPages = 1;
-        do {
-            const res = await apiList<Parliamentarian>(API_PATHS.parlamentares, {
-                status: 'ACTIVE',
-                limit: 100,
-                page,
+    /**
+     * Parlamentares ACTIVE. Com `legislatureId`, prefere filtro no servidor;
+     * se a API ainda não aceitar o query param (400), faz fallback e filtra no cliente.
+     */
+    listActiveAll: async (params?: {
+        legislatureId?: string;
+    }): Promise<Parliamentarian[]> => {
+        const legislatureId = params?.legislatureId;
+
+        const fetchPages = async (queryLegislatureId?: string) => {
+            const all: Parliamentarian[] = [];
+            let page = 1;
+            let totalPages = 1;
+            do {
+                const res = await apiList<Parliamentarian>(API_PATHS.parlamentares, {
+                    status: 'ACTIVE',
+                    limit: 100,
+                    page,
+                    ...(queryLegislatureId
+                        ? { legislatureId: queryLegislatureId }
+                        : {}),
+                });
+                all.push(...res.data);
+                totalPages = res.meta.totalPages;
+                page += 1;
+            } while (page <= totalPages);
+            return all;
+        };
+
+        const filterByMandate = (items: Parliamentarian[]) =>
+            items.filter((p) => {
+                if (!p.activeMandate || p.activeMandate.status !== 'ACTIVE') {
+                    return false;
+                }
+                const mandateLeg = p.activeMandate.legislatureId;
+                if (legislatureId && mandateLeg) {
+                    return mandateLeg === legislatureId;
+                }
+                return true;
             });
-            all.push(...res.data);
-            totalPages = res.meta.totalPages;
-            page += 1;
-        } while (page <= totalPages);
-        return all;
+
+        if (legislatureId) {
+            try {
+                return await fetchPages(legislatureId);
+            } catch (err) {
+                // API antiga rejeita legislatureId (forbidNonWhitelisted) → fallback.
+                if (!(err instanceof ApiError) || err.status !== 400) {
+                    throw err;
+                }
+            }
+
+            const all = filterByMandate(await fetchPages());
+            const verified = await Promise.all(
+                all.map(async (p) => {
+                    if (p.activeMandate?.legislatureId === legislatureId) {
+                        return p;
+                    }
+                    try {
+                        const mandatos = await apiList<ParlamentarMandato>(
+                            API_PATHS.parlamentarMandatos(p.id),
+                            { limit: 50 },
+                        );
+                        const ok = mandatos.data.some(
+                            (m) =>
+                                m.status === 'ACTIVE' &&
+                                m.legislatureId === legislatureId,
+                        );
+                        return ok ? p : null;
+                    } catch {
+                        return null;
+                    }
+                }),
+            );
+            return verified.filter((p): p is Parliamentarian => p != null);
+        }
+
+        return filterByMandate(await fetchPages());
     },
 
     getById: (id: string) =>

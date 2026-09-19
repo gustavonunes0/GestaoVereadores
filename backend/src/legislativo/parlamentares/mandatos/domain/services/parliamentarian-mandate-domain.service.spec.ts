@@ -12,6 +12,8 @@ describe('ParliamentarianMandateDomainService', () => {
         legislatureId: 'l-1',
         partyAcronym: null,
         partyName: null,
+        condicao: 'TITULAR' as const,
+        titularAfastadoId: null,
         startedAt: new Date('2024-01-01'),
         endedAt: null,
         status: MandateStatus.ACTIVE,

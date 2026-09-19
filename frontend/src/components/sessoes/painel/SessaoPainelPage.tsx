@@ -21,10 +21,12 @@ import { resolveTenantLogoUrl } from '../../../utils/tenantLogo';
 import fallbackLogoSrc from '../../../../assets/logo.png';
 import {
     VotingPanel,
-    MesaApresentacaoPanel,
     resolvePanelVotes,
     usePainelElenco,
+    type Councilor,
 } from './voting';
+import { ROLE_LABEL_APRESENTACAO } from './voting/types';
+import { resolveMateriaTextoOriginalUrl } from '../../../utils/materiaDisplay';
 
 const FASE_LABEL: Partial<Record<FaseSessao, string>> = {
     EXPEDIENTE: 'Expediente',
@@ -34,7 +36,88 @@ const FASE_LABEL: Partial<Record<FaseSessao, string>> = {
 
 const RESULTADO_EXIBICAO_MS = 25_000;
 
-type ModoPainel = 'votacao' | 'resultado' | 'item' | 'pauta' | 'aguardando';
+type ModoPainel = 'votacao' | 'resultado' | 'item' | 'inicio';
+
+function cargoMesaLabel(m: Councilor): string {
+    if (m.role) return ROLE_LABEL_APRESENTACAO[m.role];
+    if (m.cargoLabel?.trim()) return m.cargoLabel.trim();
+    return 'Mesa';
+}
+
+function PainelMesaDiretora({
+    president,
+    mesa,
+    loading,
+}: {
+    president: Councilor | null;
+    mesa: Councilor[];
+    loading?: boolean;
+}) {
+    const membrosBrutos =
+        mesa.length > 0
+            ? mesa
+            : president
+              ? [president]
+              : [];
+    // Um card por cargo; em caso de duplicata, permanece o último da lista.
+    const byCargo = new Map<string, Councilor>();
+    for (const m of membrosBrutos) {
+        const key = m.role ?? m.cargoLabel?.trim().toLowerCase() ?? m.id;
+        byCargo.set(key, m);
+    }
+    const membros = [...byCargo.values()];
+
+    return (
+        <section className="sessao-painel-inicio__mesa" aria-label="Mesa diretora">
+            <div className="sessao-painel-etiqueta">Mesa diretora</div>
+            {loading && membros.length === 0 ? (
+                <div className="sessao-painel-inicio__mesa-loading">
+                    <ProgressSpinner style={{ width: '2.5rem', height: '2.5rem' }} />
+                </div>
+            ) : membros.length === 0 ? (
+                <p className="sessao-painel-sub-idle">Mesa diretora não cadastrada.</p>
+            ) : (
+                <ul className="sessao-painel-inicio__mesa-lista">
+                    {membros.map((m) => {
+                        const photo = m.photoUrl?.trim()
+                            ? resolveMateriaTextoOriginalUrl(m.photoUrl.trim())
+                            : null;
+                        const initials = m.name
+                            .split(/\s+/)
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .map((p) => p[0]?.toUpperCase() ?? '')
+                            .join('');
+                        return (
+                            <li key={m.id} className="sessao-painel-inicio__mesa-card">
+                                <div className="sessao-painel-inicio__mesa-avatar" aria-hidden>
+                                    {photo ? (
+                                        <img src={photo} alt="" />
+                                    ) : (
+                                        <span>{initials || '—'}</span>
+                                    )}
+                                </div>
+                                <div className="sessao-painel-inicio__mesa-texto">
+                                    <span className="sessao-painel-inicio__mesa-cargo">
+                                        {cargoMesaLabel(m)}
+                                    </span>
+                                    <strong className="sessao-painel-inicio__mesa-nome">
+                                        {m.name}
+                                    </strong>
+                                    {m.party ? (
+                                        <span className="sessao-painel-inicio__mesa-partido">
+                                            {m.party}
+                                        </span>
+                                    ) : null}
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </section>
+    );
+}
 
 function PainelPautaDoDia({
     sessaoLabel,
@@ -56,7 +139,7 @@ function PainelPautaDoDia({
             }`}
         >
             <div className="sessao-painel-pauta__cabecalho">
-                <div className="sessao-painel-etiqueta">Pauta do dia</div>
+                <div className="sessao-painel-etiqueta">Pauta da sessão</div>
                 <h1 className="sessao-painel-pauta__titulo">{sessaoLabel}</h1>
                 <p className="sessao-painel-pauta__resumo">
                     {itens.length} {itens.length === 1 ? 'item' : 'itens'} ·{' '}
@@ -95,6 +178,37 @@ function PainelPautaDoDia({
                     })}
                 </ol>
             )}
+        </div>
+    );
+}
+
+function PainelInicioSessao({
+    sessaoLabel,
+    itens,
+    itemDestacadoId,
+    president,
+    mesa,
+    elencoLoading,
+}: {
+    sessaoLabel: string;
+    itens: PautaItemDetalhe[];
+    itemDestacadoId?: string | null;
+    president: Councilor | null;
+    mesa: Councilor[];
+    elencoLoading?: boolean;
+}) {
+    return (
+        <div className="sessao-painel-inicio">
+            <PainelMesaDiretora
+                president={president}
+                mesa={mesa}
+                loading={elencoLoading}
+            />
+            <PainelPautaDoDia
+                sessaoLabel={sessaoLabel}
+                itens={itens}
+                itemDestacadoId={itemDestacadoId}
+            />
         </div>
     );
 }
@@ -257,14 +371,12 @@ export function SessaoPainelPage() {
     const placarAtual =
         placar?.votacaoId === votacaoAberta?.votacaoId ? placar : null;
 
-    let modo: ModoPainel = 'aguardando';
+    let modo: ModoPainel = 'inicio';
     if (votacaoAberta) modo = 'votacao';
     else if (votacaoEncerrada) modo = 'resultado';
     else if (itemExibido) modo = 'item';
-    else if (itens.length > 0) modo = 'pauta';
 
-    const modoLed =
-        modo === 'votacao' || modo === 'resultado' || modo === 'aguardando';
+    const modoLed = modo === 'votacao' || modo === 'resultado';
 
     const mesaMembros = useMemo(() => {
         const ids = new Set<string>();
@@ -411,20 +523,14 @@ export function SessaoPainelPage() {
                     />
                 ) : modo === 'item' && itemExibido ? (
                     <PainelPauta item={itemExibido} />
-                ) : modo === 'pauta' ? (
-                    <PainelPautaDoDia
+                ) : (
+                    <PainelInicioSessao
                         sessaoLabel={sessaoLabel}
                         itens={itens}
                         itemDestacadoId={itemExibido?.id}
-                    />
-                ) : (
-                    <MesaApresentacaoPanel
-                        sessaoLabel={sessaoLabel}
-                        logoSrc={logoSrc}
-                        institutionName={institutionName}
                         president={president}
                         mesa={mesaMembros}
-                        aoVivo={wsConectado}
+                        elencoLoading={elencoLoading}
                     />
                 )}
             </main>

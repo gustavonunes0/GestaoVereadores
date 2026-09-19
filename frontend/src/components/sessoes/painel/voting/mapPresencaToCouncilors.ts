@@ -73,7 +73,16 @@ export function mapPresencaToCouncilors(params: {
         photoUrl: p.fotoUrl ?? null,
     });
 
-    const mesa = params.presenca.mesaMembros;
+    const mesaRaw = params.presenca.mesaMembros;
+    // Um assento por cargo; se a API ainda mandar duplicata, fica o mais recente da lista.
+    const byRole = new Map<string, PresencaParlamentar>();
+    for (const m of mesaRaw) {
+        const role = mapCargoToRole(m.cargoMesa);
+        const key = role ?? `id:${m.parliamentarianId}`;
+        byRole.set(key, m);
+    }
+    const mesa = [...byRole.values()];
+
     const presidenteRaw =
         mesa.find((m) => isPresidenteMesa(m.cargoMesa)) ?? null;
 

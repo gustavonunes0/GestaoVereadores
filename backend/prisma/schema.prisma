@@ -181,7 +181,6 @@ model Tenant {
     tiposAutor          TipoAutor[]
     tiposSessao         TipoSessao[]
     cargosMesa          CargoMesa[]
-    mesasDiretoras      MesaDiretora[]
     agendasLegislativas AgendaLegislativa[]
     courses             Course[]
     politicalParties    PoliticalParty[]
@@ -896,11 +895,10 @@ model TipoAto {
 }
 
 model CargoMesa {
-    id       String               @id @default(uuid())
+    id       String @id @default(uuid())
     tenantId String
-    tenant   Tenant               @relation(fields: [tenantId], references: [id])
+    tenant   Tenant @relation(fields: [tenantId], references: [id])
     nome     String
-    membros  MesaDiretoraMembro[]
 
     @@unique([tenantId, nome])
     @@index([tenantId])
@@ -956,7 +954,6 @@ model Parlamentar {
     autores               Autor[]
     materiasRelator       Materia[]              @relation("RelatorMateria")
     materiasPrimeiroAutor Materia[]              @relation("PrimeiroAutorMateria")
-    membrosMesa           MesaDiretoraMembro[]
     membrosComissao       ComissaoMembro[]
     membrosFrente         FrenteMembro[]
     presencas             PresencaSessao[]
@@ -1088,7 +1085,6 @@ model Legislatura {
     createdAt             DateTime             @default(now())
     updatedAt             DateTime             @updatedAt
     sessoesLegislativas   SessaoLegislativa[]
-    mesasDiretoras        MesaDiretora[]
     mandatosParlamentares ParlamentarMandato[]
 
     @@unique([tenantId, numero])
@@ -1157,7 +1153,6 @@ model SessaoPlenaria {
     isRemoved             Boolean            @default(false)
     createdAt             DateTime           @default(now())
     updatedAt             DateTime           @updatedAt
-    mesasDiretoras        MesaDiretora[]
     pautaItens            PautaItem[]
     pautas                Pauta[]
     presencas             PresencaSessao[]
@@ -1171,35 +1166,6 @@ model SessaoPlenaria {
 
     @@index([tenantId])
     @@index([tenantId, statusSessao])
-}
-
-model MesaDiretora {
-    id            String               @id @default(uuid())
-    tenantId      String
-    tenant        Tenant               @relation(fields: [tenantId], references: [id])
-    legislaturaId String
-    legislatura   Legislatura          @relation(fields: [legislaturaId], references: [id])
-    sessaoId      String?
-    sessao        SessaoPlenaria?      @relation(fields: [sessaoId], references: [id])
-    mensagem      String?
-    isRemoved     Boolean              @default(false)
-    createdAt     DateTime             @default(now())
-    updatedAt     DateTime             @updatedAt
-    membros       MesaDiretoraMembro[]
-
-    @@index([tenantId])
-}
-
-model MesaDiretoraMembro {
-    id            String       @id @default(uuid())
-    mesaId        String
-    mesa          MesaDiretora @relation(fields: [mesaId], references: [id], onDelete: Cascade)
-    parlamentarId String
-    parlamentar   Parlamentar  @relation(fields: [parlamentarId], references: [id])
-    cargoId       String
-    cargo         CargoMesa    @relation(fields: [cargoId], references: [id])
-
-    @@unique([mesaId, cargoId])
 }
 
 // --- Processo legislativo ---

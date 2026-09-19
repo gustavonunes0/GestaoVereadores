@@ -101,7 +101,7 @@ function pegarPorCargo(
 
 /**
  * Disposição visual da mesa: presidente no centro quando possível.
- * Retorna apenas cadeiras ocupadas (sem assentos vazios decorativos).
+ * Slots vazios ficam como cadeiras decorativas (roxas).
  */
 export function ordenarAssentosMesaVisual(membros: PresencaParlamentar[]): AssentoPlenario[] {
     const total = PLENARIO_CAPACIDADE.mesaCadeiras;
@@ -142,17 +142,32 @@ export function ordenarAssentosMesaVisual(membros: PresencaParlamentar[]): Assen
         }
     }
 
-    return slots.filter((s): s is PresencaParlamentar => s != null);
+    return slots;
 }
 
-/** Preenche a mesa diretora com presidente no centro — só membros ativos. */
+/** Preenche a mesa diretora com presidente no centro — slots vazios decorativos. */
 export function preencherMesa(membros: PresencaParlamentar[]): AssentoPlenario[] {
     return ordenarAssentosMesaVisual(membros);
 }
 
+function padAssentos(
+    ocupados: PresencaParlamentar[],
+    tamanho: number,
+): AssentoPlenario[] {
+    if (ocupados.length >= tamanho) return ocupados.slice(0, tamanho);
+    const faltam = tamanho - ocupados.length;
+    const before = Math.floor(faltam / 2);
+    const after = faltam - before;
+    return [
+        ...Array.from({ length: before }, () => null),
+        ...ocupados,
+        ...Array.from({ length: after }, () => null),
+    ];
+}
+
 /**
- * Distribui vereadores em fileiras sem preencher com cadeiras vazias.
- * Cada lado usa só as fileiras necessárias para os membros ativos.
+ * Distribui vereadores em fileiras e completa com cadeiras vazias decorativas.
+ * Cada lado de cada fileira tem sempre `assentosPorFileira` slots.
  */
 export function calcularParesFileiras(vereadores: PresencaParlamentar[]): ParFileirasHtml[] {
     const { fileiras, assentosPorFileira } = PLENARIO_CAPACIDADE;
@@ -163,23 +178,25 @@ export function calcularParesFileiras(vereadores: PresencaParlamentar[]): ParFil
     const fileirasNecessarias = Math.ceil(
         Math.max(esquerda.length, direita.length, 1) / assentosPorFileira,
     );
-    const numFileiras = Math.min(fileiras, Math.max(1, fileirasNecessarias));
+    // Mantém pelo menos 2 fileiras para o hemiciclo mostrar slots decorativos.
+    const numFileiras = Math.min(
+        fileiras,
+        Math.max(2, fileirasNecessarias),
+    );
 
     const pares: ParFileirasHtml[] = [];
 
     for (let i = 0; i < numFileiras; i++) {
         const cfg = FILEIRA_VISUAL[Math.min(i, FILEIRA_VISUAL.length - 1)];
         const start = i * assentosPorFileira;
-        const esq = esquerda.slice(start, start + assentosPorFileira);
-        const dir = direita.slice(start, start + assentosPorFileira);
-
-        if (esq.length === 0 && dir.length === 0) continue;
+        const esqOcupados = esquerda.slice(start, start + assentosPorFileira);
+        const dirOcupados = direita.slice(start, start + assentosPorFileira);
 
         pares.push({
             indice: i,
             paddingPx: cfg.padding,
-            esquerda: esq,
-            direita: dir,
+            esquerda: padAssentos(esqOcupados, assentosPorFileira),
+            direita: padAssentos(dirOcupados, assentosPorFileira),
             rotacaoEsq: cfg.rotacao,
             rotacaoDir: -cfg.rotacao,
             deskRotEsq: -cfg.deskRot,

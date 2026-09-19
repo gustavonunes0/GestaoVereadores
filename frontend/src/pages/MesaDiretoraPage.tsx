@@ -7,6 +7,7 @@ import { DataTableLayout } from '../components/common/DataTableLayout';
 import { FiltroLayout } from '../components/common/FiltroLayout';
 import { PageHeader } from '../components/PageHeader';
 import { MesaCreateDialog } from '../components/mesa-diretora/MesaCreateDialog';
+import { MesaEditDialog } from '../components/mesa-diretora/MesaEditDialog';
 import { MesaListCard } from '../components/mesa-diretora/MesaListCard';
 import { Dropdown, withEmptyOption } from '../components/ui';
 import { useLegislatura } from '../contexts/LegislaturaContext';
@@ -39,6 +40,7 @@ export function MesaDiretoraPage() {
     const [filtrosApplied, setFiltrosApplied] = useState<MesaDiretoraFiltros>({ ...EMPTY_FILTROS });
 
     const [dialogCriar, setDialogCriar] = useState(false);
+    const [dialogEditar, setDialogEditar] = useState<Board | null>(null);
 
     const buscar = useCallback(async () => {
         setLoading(true);
@@ -79,6 +81,8 @@ export function MesaDiretoraPage() {
                 <MesaListCard
                     board={row}
                     legislaturaNumero={legislaturaAtiva?.numero}
+                    canEdit={canWrite}
+                    onEdit={() => setDialogEditar(row)}
                     onChanged={() => void buscar()}
                 />
             )}
@@ -154,6 +158,14 @@ export function MesaDiretoraPage() {
                     legislatureId={legislaturaId}
                     legislaturaNumero={legislaturaAtiva?.numero}
                     onClose={() => setDialogCriar(false)}
+                    onSaved={() => void buscar()}
+                />
+            )}
+
+            {dialogEditar && (
+                <MesaEditDialog
+                    board={dialogEditar}
+                    onClose={() => setDialogEditar(null)}
                     onSaved={() => void buscar()}
                 />
             )}

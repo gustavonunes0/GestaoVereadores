@@ -63,31 +63,7 @@ function mapParlamentar(
     };
 }
 
-function mapFromBoardMember(
-    membro: BoardMember,
-    registro: PresencaRegistroApi | undefined,
-): PresencaParlamentar {
-    const p = membro.parliamentarian;
-    const partido = p.politicalParty?.acronym ?? p.politicalParty?.name;
-
-    return {
-        parliamentarianId: p.id,
-        parlamentarianUserId: p.id,
-        presencaId: registro?.id,
-        parliamentaryName: p.parliamentaryName,
-        abreviacao: abreviarNome(p.parliamentaryName),
-        partidoSigla: partido,
-        gabinete: p.officeNumber ?? undefined,
-        cargoMesa: membro.boardRole.name,
-        fotoUrl: p.photoUrl ?? undefined,
-        presente: estaPresente(registro),
-        situacao: resolveSituacao(registro),
-        origem: origemFromRegistro(registro),
-        registradoEm: registro?.registradoEm ?? registro?.createdAt,
-    };
-}
-
-export function indexPresencasPorParliamentarian(
+function indexPresencasPorParliamentarian(
     registros: PresencaRegistroApi[],
 ): Map<string, PresencaRegistroApi> {
     const map = new Map<string, PresencaRegistroApi>();
@@ -113,19 +89,27 @@ export function buildPresencaSessao(params: {
         ordenarCargosMesa(a.boardRole.name, b.boardRole.name),
     );
 
-    const mesaIds = new Set(mesaOrdenada.map((m) => m.parliamentarian.id));
-
-    const mesaMembros = mesaOrdenada.map((membro) => {
-        const registro = porParl.get(membro.parliamentarian.id);
-        const parl = parlPorId.get(membro.parliamentarian.id);
-        if (parl) {
+    const mesaMembros = mesaOrdenada
+        .filter((membro) => {
+            const parl = parlPorId.get(membro.parliamentarian.id);
+            // Só quem está no elenco (ACTIVE + mandato ativo na legislatura da sessão).
+            return Boolean(parl?.activeMandate && parl.status === 'ACTIVE');
+        })
+        .map((membro) => {
+            const registro = porParl.get(membro.parliamentarian.id);
+            const parl = parlPorId.get(membro.parliamentarian.id)!;
             return mapParlamentar(parl, registro, membro.boardRole.name);
-        }
-        return mapFromBoardMember(membro, registro);
-    });
+        });
+
+    const mesaIds = new Set(mesaMembros.map((m) => m.parliamentarianId));
 
     const vereadores = params.parlamentares
-        .filter((p) => p.status === 'ACTIVE' && !mesaIds.has(p.id))
+        .filter(
+            (p) =>
+                p.status === 'ACTIVE' &&
+                Boolean(p.activeMandate) &&
+                !mesaIds.has(p.id),
+        )
         .map((p) => mapParlamentar(p, porParl.get(p.id)))
         .filter(
             (v) =>

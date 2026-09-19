@@ -17,6 +17,7 @@ import type { StatusSessao } from '../../../types/sessoes';
 import {
     buildPresencaSessao,
     fetchMesaMembrosAtivos,
+    resolveLegislatureIdEn,
     type PresencaRegistroApi,
 } from '../../../utils/presencaSessao';
 import { resolveSituacaoCadeira } from '../../../utils/presencaCadeira';
@@ -157,8 +158,15 @@ export function PresencaPanel({
 
     const carregar = useCallback(async () => {
         try {
+            const legislatureIdEn = await resolveLegislatureIdEn({
+                legislatureId: legislatureId ?? undefined,
+                legislaturaNumero: legislaturaNumero ?? undefined,
+            });
+
             const [parlamentares, registros, quorum, mesaMembros] = await Promise.all([
-                parlamentaresApi.listActiveAll(),
+                parlamentaresApi.listActiveAll({
+                    legislatureId: legislatureIdEn,
+                }),
                 api<PresencaRegistroApi[]>(API_PATHS.sessoesPresencas(sessaoId)),
                 sessoesApi.getQuorum(sessaoId),
                 fetchMesaMembrosAtivos({

@@ -16,6 +16,7 @@ export class ListParliamentariansUseCase {
             search: query.search,
             status: query.status,
             politicalPartyId: query.politicalPartyId,
+            legislatureId: query.legislatureId,
             page: query.page,
             limit: query.limit,
         });

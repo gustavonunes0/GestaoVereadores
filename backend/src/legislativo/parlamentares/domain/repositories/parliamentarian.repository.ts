@@ -41,6 +41,7 @@ export type ParliamentarianWithRelations = {
         id: string;
         status: string;
         condicao?: string;
+        legislatureId?: string;
     } | null;
     committees?: ParliamentarianCommitteeSummary[];
 };
@@ -65,6 +66,8 @@ export type ListParliamentariansRepositoryQuery = {
     search?: string;
     status?: ParliamentarianStatus;
     politicalPartyId?: string;
+    /** Filtra parlamentares com mandato ACTIVE nesta legislatura. */
+    legislatureId?: string;
     page?: number;
     limit?: number;
 };

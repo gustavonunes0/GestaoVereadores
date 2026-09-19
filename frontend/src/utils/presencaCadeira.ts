@@ -49,7 +49,7 @@ export function resolveSituacaoCadeira(p: PresencaParlamentar): SituacaoPresenca
     return 'PENDENTE';
 }
 
-/** Variante visual — sem registro = azul institucional (como no design). */
+/** Variante visual — sem registro = azul institucional (Estado/Cadeira). */
 export type VarianteCadeiraVisual =
     | 'institucional'
     | 'presente'

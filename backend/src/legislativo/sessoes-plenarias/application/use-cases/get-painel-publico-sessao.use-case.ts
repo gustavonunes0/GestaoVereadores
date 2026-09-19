@@ -235,30 +235,32 @@ export class GetPainelPublicoSessaoUseCase {
             }),
             this.prisma.board.findFirst({
                 where: boardWhere,
-                include: {
-                    members: {
-                        include: {
-                            boardRole: { select: { name: true } },
-                            parliamentarian: {
-                                select: parliamentarianSelect,
-                            },
-                        },
-                    },
-                },
+                select: { id: true },
                 orderBy: { createdAt: 'desc' },
             }),
         ]);
 
-        /** Só parlamentares ativos (status + mandato ACTIVE na legislatura). */
-        let parlamentares = activeMandates.map((m) => m.parliamentarian);
-        if (parlamentares.length === 0) {
-            parlamentares = await this.prisma.parliamentarian.findMany({
-                where: { tenantId, status: 'ACTIVE', isRemoved: false },
-                select: parliamentarianSelect,
-                orderBy: { parliamentaryName: 'asc' },
-            });
-        }
+        /** Só parlamentares com mandato ACTIVE na legislatura da sessão. */
+        const parlamentares = activeMandates.map((m) => m.parliamentarian);
         const activeIds = new Set(parlamentares.map((p) => p.id));
+
+        /** Mesa: apenas board_members com is_removed = false. */
+        const boardMembersRaw = board
+            ? await this.prisma.boardMember.findMany({
+                  where: {
+                      boardId: board.id,
+                      tenantId,
+                      isRemoved: false,
+                  },
+                  include: {
+                      boardRole: { select: { id: true, name: true } },
+                      parliamentarian: {
+                          select: parliamentarianSelect,
+                      },
+                  },
+                  orderBy: { createdAt: 'asc' },
+              })
+            : [];
 
         const presencaPorId = new Map(
             sessao.presencas
@@ -295,12 +297,25 @@ export class GetPainelPublicoSessaoUseCase {
             };
         };
 
-        const mesaMembros = (board?.members ?? [])
-            .filter(
-                (m) =>
-                    activeIds.has(m.parliamentarian.id) &&
-                    m.parliamentarian.status === 'ACTIVE',
-            )
+        // Um membro ativo por cargo (nome); se houver duplicata, fica o mais recente.
+        const byRoleKey = new Map<string, (typeof boardMembersRaw)[number]>();
+        for (const m of boardMembersRaw) {
+            if (m.isRemoved) continue;
+            if (
+                !activeIds.has(m.parliamentarian.id) ||
+                m.parliamentarian.status !== 'ACTIVE'
+            ) {
+                continue;
+            }
+            const roleKey = m.boardRole.name.trim().toLowerCase();
+            const prev = byRoleKey.get(roleKey);
+            if (!prev || m.createdAt >= prev.createdAt) {
+                byRoleKey.set(roleKey, m);
+            }
+        }
+
+        const mesaMembros = [...byRoleKey.values()]
+            .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
             .map((m) => {
                 const party =
                     m.parliamentarian.parliamentarianUser?.politicalParty

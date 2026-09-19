@@ -4278,6 +4278,13 @@ body.transmissao-fs-active {
     border-bottom: 1px solid var(--surface-border, #e2e8f0);
 }
 
+.mesa-list-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
 .mesa-list-card__name {
     margin: 0;
     font-size: 1.05rem;
@@ -5160,10 +5167,140 @@ body.sessao-painel-body {
     border-bottom: 1px solid #e5e7eb;
 }
 
-/* Lista da pauta: ancora no topo para não cortar itens abaixo da dobra */
-.sessao-painel-main:has(.sessao-painel-pauta) {
+/* Lista da pauta / início: ancora no topo para não cortar itens abaixo da dobra */
+.sessao-painel-main:has(.sessao-painel-pauta),
+.sessao-painel-main:has(.sessao-painel-inicio) {
     align-items: flex-start;
     justify-content: center;
+}
+
+/* Tela inicial: mesa diretora + pauta lado a lado */
+.sessao-painel-inicio {
+    width: min(100%, 92rem);
+    display: grid;
+    grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+    gap: clamp(1.25rem, 2.5vw, 2rem);
+    align-items: start;
+    position: relative;
+    z-index: 1;
+    padding-bottom: 1.5rem;
+}
+
+.sessao-painel-inicio__mesa {
+    text-align: center;
+    position: sticky;
+    top: 0.5rem;
+}
+
+.sessao-painel-inicio__mesa-loading {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.sessao-painel-inicio__mesa-lista {
+    list-style: none;
+    margin: 0.85rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.sessao-painel-inicio__mesa-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    text-align: left;
+}
+
+.sessao-painel-inicio__mesa-avatar {
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 999px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #1e3a8a;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.sessao-painel-inicio__mesa-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sessao-painel-inicio__mesa-texto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.sessao-painel-inicio__mesa-cargo {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #2563eb;
+}
+
+.sessao-painel-inicio__mesa-nome {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.25;
+}
+
+.sessao-painel-inicio__mesa-partido {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.sessao-painel-inicio .sessao-painel-pauta {
+    width: 100%;
+    min-width: 0;
+}
+
+.sessao-painel-inicio .sessao-painel-pauta__cabecalho {
+    text-align: left;
+}
+
+@media (max-width: 900px) {
+    .sessao-painel-inicio {
+        grid-template-columns: 1fr;
+    }
+
+    .sessao-painel-inicio__mesa {
+        position: static;
+    }
+
+    .sessao-painel-inicio__mesa-lista {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .sessao-painel-inicio__mesa-card {
+        width: auto;
+        min-width: min(100%, 14rem);
+        max-width: 18rem;
+    }
+
+    .sessao-painel-inicio .sessao-painel-pauta__cabecalho {
+        text-align: center;
+    }
 }
 
 .sessao-painel-centro {

@@ -18,4 +18,10 @@ export class ListParliamentariansQueryDto extends PaginationQueryDto {
     @IsOptional()
     @IsUUID()
     politicalPartyId?: string;
+
+    /** Quando informado, retorna só quem tem mandato ACTIVE nessa legislatura. */
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsUUID()
+    legislatureId?: string;
 }

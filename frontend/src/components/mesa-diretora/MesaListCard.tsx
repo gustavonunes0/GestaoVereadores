@@ -1,3 +1,4 @@
+import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import type { Board } from '../../api/legislative/mesa-diretora.api';
 import { formatDatePt } from '../../utils/formatDate';
@@ -12,10 +13,18 @@ const STATUS_LABEL: Record<string, string> = {
 type Props = {
     board: Board;
     legislaturaNumero?: number;
+    canEdit?: boolean;
+    onEdit?: () => void;
     onChanged: () => void;
 };
 
-export function MesaListCard({ board, legislaturaNumero, onChanged }: Props) {
+export function MesaListCard({
+    board,
+    legislaturaNumero,
+    canEdit,
+    onEdit,
+    onChanged,
+}: Props) {
     const legislatura =
         board.legislature?.number ?? legislaturaNumero ?? '—';
 
@@ -31,11 +40,23 @@ export function MesaListCard({ board, legislaturaNumero, onChanged }: Props) {
                             : ''}
                     </p>
                 </div>
-                <Tag
-                    value={STATUS_LABEL[board.status] ?? board.status}
-                    severity={board.status === 'ACTIVE' ? 'success' : 'secondary'}
-                    className="text-xs"
-                />
+                <div className="mesa-list-card__actions">
+                    {canEdit && onEdit ? (
+                        <Button
+                            type="button"
+                            icon="pi pi-pencil"
+                            rounded
+                            text
+                            aria-label="Editar nome da mesa"
+                            onClick={onEdit}
+                        />
+                    ) : null}
+                    <Tag
+                        value={STATUS_LABEL[board.status] ?? board.status}
+                        severity={board.status === 'ACTIVE' ? 'success' : 'secondary'}
+                        className="text-xs"
+                    />
+                </div>
             </header>
 
             <MesaComposicaoTable

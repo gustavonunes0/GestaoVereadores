@@ -49,7 +49,12 @@ export class GetResumoPublicoSessaoUseCase {
 
         const board = await this.prisma.board.findFirst({
             where: { tenantId: sessao.tenantId, status: 'ACTIVE', isRemoved: false },
-            include: { members: { include: { parliamentarian: true, boardRole: true } } },
+            include: {
+                members: {
+                    where: { isRemoved: false },
+                    include: { parliamentarian: true, boardRole: true },
+                },
+            },
         });
 
         const mesaDiretora = (board?.members ?? []).map((m) => ({
