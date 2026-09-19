@@ -387,19 +387,20 @@ export function SessaoPainelPage() {
                         <VotingPanel
                             mode="live"
                             institutionName={institutionName}
+                            logoSrc={logoSrc}
                             president={president}
                             left={left}
                             right={right}
                             all={all}
                             votes={votesLive}
                             materiaTitulo={votacaoAberta.titulo}
-                            materiaEmenta={votacaoAberta.ementa}
                         />
                     )
                 ) : modo === 'resultado' && votacaoEncerrada ? (
                     <VotingPanel
                         mode="result"
                         institutionName={institutionName}
+                        logoSrc={logoSrc}
                         president={president}
                         left={left}
                         right={right}

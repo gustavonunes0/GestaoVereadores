@@ -92,7 +92,42 @@ export class PrismaBoardRepository extends BoardRepository {
             ...tenantWhere(tenantId),
             isRemoved: false,
         };
-        if (query.legislatureId) where.legislatureId = query.legislatureId;
+
+        if (query.legislatureId) {
+            const legEn = await this.prisma.legislature.findFirst({
+                where: { id: query.legislatureId, tenantId },
+                select: { id: true, number: true },
+            });
+
+            if (legEn) {
+                // Aceita a FK direta ou qualquer Board da mesma legislatura (número),
+                // inclusive se a mesa foi criada sob um UUID antigo/recriado.
+                where.OR = [
+                    { legislatureId: legEn.id },
+                    {
+                        legislature: {
+                            tenantId,
+                            number: legEn.number,
+                        },
+                    },
+                ];
+            } else {
+                // Compat: frontend pode enviar id da Legislatura (PT legado).
+                const legPt = await this.prisma.legislatura.findFirst({
+                    where: { id: query.legislatureId, tenantId },
+                    select: { numero: true },
+                });
+                if (legPt) {
+                    where.legislature = {
+                        tenantId,
+                        number: legPt.numero,
+                    };
+                } else {
+                    where.legislatureId = query.legislatureId;
+                }
+            }
+        }
+
         if (query.status) where.status = query.status;
 
         return paginatedQuery(

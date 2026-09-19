@@ -1,6 +1,5 @@
 import { CouncilorColumn } from './CouncilorColumn';
 import { PanelHeader } from './PanelHeader';
-import { PresidentRow } from './PresidentRow';
 import { useClock } from './useClock';
 import { useVoteTally } from './useVoteTally';
 import { VoteFooter } from './VoteFooter';
@@ -16,6 +15,7 @@ const RESULTADO_LABEL: Record<string, string> = {
 
 export function VotingPanel({
     institutionName,
+    logoSrc,
     president,
     left,
     right,
@@ -23,10 +23,10 @@ export function VotingPanel({
     votes,
     mode = 'live',
     materiaTitulo,
-    materiaEmenta,
     resultado,
 }: {
     institutionName: string;
+    logoSrc?: string | null;
     president: Councilor | null;
     left: Councilor[];
     right: Councilor[];
@@ -34,7 +34,6 @@ export function VotingPanel({
     votes: VoteTotals;
     mode?: VotingPanelMode;
     materiaTitulo?: string;
-    materiaEmenta?: string;
     resultado?: string | null;
 }) {
     const { clock, dateLabel } = useClock();
@@ -47,15 +46,20 @@ export function VotingPanel({
         ? institutionName.toUpperCase()
         : `CÂMARA MUNICIPAL DE ${institutionName.toUpperCase()}`;
 
+    const leftColumn = president ? [president, ...left] : left;
+    const hasMateria = Boolean(materiaTitulo);
+
     return (
         <section
-            className={`voting-panel${mode === 'result' ? ' voting-panel--result' : ''}`}
+            className={`voting-panel voting-panel--dashboard voting-panel--compact${
+                hasMateria ? ' voting-panel--with-materia' : ''
+            }${mode === 'result' ? ' voting-panel--result' : ''}`}
             aria-label="Painel eletrônico de votação"
         >
-            <PanelHeader title={title} />
-            {materiaTitulo ? (
+            <PanelHeader title={title} logoSrc={logoSrc} />
+            {hasMateria ? (
                 <div
-                    className="vp-materia"
+                    className="vp-card vp-materia"
                     role="status"
                     aria-live="polite"
                     aria-label={
@@ -64,24 +68,39 @@ export function VotingPanel({
                             : `Resultado ${resultadoLabel ?? ''}: ${materiaTitulo}`
                     }
                 >
-                    <span className="vp-materia__badge" aria-hidden>
-                        {mode === 'live' ? 'VOTAÇÃO ABERTA' : resultadoLabel ?? 'RESULTADO'}
-                    </span>
-                    <strong className="vp-materia__titulo" aria-hidden>
-                        {materiaTitulo}
-                    </strong>
-                    {materiaEmenta ? (
-                        <span className="vp-materia__ementa" aria-hidden>
-                            {materiaEmenta}
+                    <span className="vp-card__label">Matéria em votação</span>
+                    <div className="vp-materia__grid">
+                        <span className="vp-materia__badge">
+                            {mode === 'live'
+                                ? 'VOTAÇÃO ABERTA'
+                                : resultadoLabel ?? 'RESULTADO'}
                         </span>
-                    ) : null}
+                        <strong className="vp-materia__titulo">
+                            {materiaTitulo}
+                        </strong>
+                    </div>
                 </div>
             ) : null}
-            <PresidentRow president={president} />
             <div className="vp-body">
-                <CouncilorColumn side="left" members={left} showRole />
-                <div className="vp-body__divider" aria-hidden />
-                <CouncilorColumn side="right" members={right} />
+                <article className="vp-card vp-card--mesa">
+                    <header className="vp-card__head">
+                        <h2 className="vp-card__label">Mesa diretora</h2>
+                    </header>
+                    <CouncilorColumn
+                        side="left"
+                        members={leftColumn}
+                        showRole
+                    />
+                </article>
+                <article className="vp-card vp-card--members">
+                    <header className="vp-card__head">
+                        <h2 className="vp-card__label">Parlamentares</h2>
+                        <span className="vp-card__meta">
+                            {right.length.toString().padStart(2, '0')}
+                        </span>
+                    </header>
+                    <CouncilorColumn side="right" members={right} />
+                </article>
             </div>
             <VoteFooter
                 clock={clock}

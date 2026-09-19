@@ -180,6 +180,19 @@ export class GetPainelPublicoSessaoUseCase {
         const tenantId = sessao.tenantId;
         const legislaturaNumero = sessao.sessaoLegislativa?.legislatura?.numero;
 
+        let legislatureId: string | undefined;
+        if (legislaturaNumero != null) {
+            const leg = await this.prisma.legislature.findFirst({
+                where: {
+                    tenantId,
+                    number: legislaturaNumero,
+                    isRemoved: false,
+                },
+                select: { id: true },
+            });
+            legislatureId = leg?.id;
+        }
+
         const boardWhere = {
             tenantId,
             status: 'ACTIVE' as const,
@@ -189,20 +202,36 @@ export class GetPainelPublicoSessaoUseCase {
                 : {}),
         };
 
-        const [parlamentares, board] = await Promise.all([
-            this.prisma.parliamentarian.findMany({
-                where: { tenantId, status: 'ACTIVE', isRemoved: false },
+        const parliamentarianSelect = {
+            id: true,
+            parliamentaryName: true,
+            photoUrl: true,
+            status: true,
+            parliamentarianUser: {
                 select: {
-                    id: true,
-                    parliamentaryName: true,
-                    photoUrl: true,
-                    parliamentarianUser: {
-                        select: {
-                            politicalParty: { select: { acronym: true, name: true } },
-                        },
+                    politicalParty: { select: { acronym: true, name: true } },
+                },
+            },
+        } as const;
+
+        const [activeMandates, board] = await Promise.all([
+            this.prisma.parliamentarianMandate.findMany({
+                where: {
+                    tenantId,
+                    isRemoved: false,
+                    status: 'ACTIVE',
+                    ...(legislatureId ? { legislatureId } : {}),
+                    parliamentarian: {
+                        status: 'ACTIVE',
+                        isRemoved: false,
                     },
                 },
-                orderBy: { parliamentaryName: 'asc' },
+                select: {
+                    parliamentarian: { select: parliamentarianSelect },
+                },
+                orderBy: {
+                    parliamentarian: { parliamentaryName: 'asc' },
+                },
             }),
             this.prisma.board.findFirst({
                 where: boardWhere,
@@ -211,18 +240,7 @@ export class GetPainelPublicoSessaoUseCase {
                         include: {
                             boardRole: { select: { name: true } },
                             parliamentarian: {
-                                select: {
-                                    id: true,
-                                    parliamentaryName: true,
-                                    photoUrl: true,
-                                    parliamentarianUser: {
-                                        select: {
-                                            politicalParty: {
-                                                select: { acronym: true, name: true },
-                                            },
-                                        },
-                                    },
-                                },
+                                select: parliamentarianSelect,
                             },
                         },
                     },
@@ -230,6 +248,17 @@ export class GetPainelPublicoSessaoUseCase {
                 orderBy: { createdAt: 'desc' },
             }),
         ]);
+
+        /** Só parlamentares ativos (status + mandato ACTIVE na legislatura). */
+        let parlamentares = activeMandates.map((m) => m.parliamentarian);
+        if (parlamentares.length === 0) {
+            parlamentares = await this.prisma.parliamentarian.findMany({
+                where: { tenantId, status: 'ACTIVE', isRemoved: false },
+                select: parliamentarianSelect,
+                orderBy: { parliamentaryName: 'asc' },
+            });
+        }
+        const activeIds = new Set(parlamentares.map((p) => p.id));
 
         const presencaPorId = new Map(
             sessao.presencas
@@ -266,18 +295,25 @@ export class GetPainelPublicoSessaoUseCase {
             };
         };
 
-        const mesaMembros = (board?.members ?? []).map((m) => {
-            const party =
-                m.parliamentarian.parliamentarianUser?.politicalParty?.acronym ??
-                m.parliamentarian.parliamentarianUser?.politicalParty?.name;
-            return toElenco(
-                m.parliamentarian.id,
-                m.parliamentarian.parliamentaryName,
-                party,
-                m.boardRole.name,
-                m.parliamentarian.photoUrl,
-            );
-        });
+        const mesaMembros = (board?.members ?? [])
+            .filter(
+                (m) =>
+                    activeIds.has(m.parliamentarian.id) &&
+                    m.parliamentarian.status === 'ACTIVE',
+            )
+            .map((m) => {
+                const party =
+                    m.parliamentarian.parliamentarianUser?.politicalParty
+                        ?.acronym ??
+                    m.parliamentarian.parliamentarianUser?.politicalParty?.name;
+                return toElenco(
+                    m.parliamentarian.id,
+                    m.parliamentarian.parliamentaryName,
+                    party,
+                    m.boardRole.name,
+                    m.parliamentarian.photoUrl,
+                );
+            });
 
         const mesaIds = new Set(mesaMembros.map((m) => m.parliamentarianId));
         const elencoAll = parlamentares.map((p) => {

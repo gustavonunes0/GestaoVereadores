@@ -16,19 +16,25 @@ export function VoteFooter({
 }) {
     return (
         <footer className="vp-footer">
-            <div className="vp-footer__strip" aria-hidden />
-            <div className="vp-footer__body">
+            <div className="vp-card vp-card--clock">
+                <span className="vp-card__label">Horário</span>
                 <ClockBlock clock={clock} date={date} />
-                <div
-                    className="vp-footer__counters"
-                    role="status"
-                    aria-live="polite"
-                    aria-atomic="true"
-                >
+            </div>
+            <div
+                className="vp-card vp-card--placar"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+            >
+                <span className="vp-card__label">Placar</span>
+                <div className="vp-footer__counters">
                     <VoteCounter label="SIM" value={votes.sim} tone="sim" />
                     <VoteCounter label="NÃO" value={votes.nao} tone="nao" />
                     <VoteCounter label="ABS" value={votes.abs} tone="abs" />
                 </div>
+            </div>
+            <div className="vp-card vp-card--stats">
+                <span className="vp-card__label">Presença</span>
                 <StatsBlock stats={stats} />
             </div>
         </footer>
