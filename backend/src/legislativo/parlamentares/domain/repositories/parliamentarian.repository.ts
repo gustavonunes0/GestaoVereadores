@@ -40,6 +40,7 @@ export type ParliamentarianWithRelations = {
     activeMandate?: {
         id: string;
         status: string;
+        condicao?: string;
     } | null;
     committees?: ParliamentarianCommitteeSummary[];
 };

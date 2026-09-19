@@ -1,0 +1,816 @@
+/**
+ * Painel eletrônico de votação (estilo LED / telão de plenário).
+ * Tokens alinhados a .cursor/spec-painel-votacao.md
+ */
+
+.voting-panel {
+    --panel-bg: #000000;
+    --panel-border: #2a2a2a;
+    --title-yellow: #f5e400;
+    --divider-white: #ffffff;
+    --name-red: #ff3b30;
+    --name-cyan: #4fd8ff;
+    --party-yellow: #f5e400;
+    --sim-green: #2ecc40;
+    --nao-orange: #ff8c1a;
+    --abs-yellow: #ffd400;
+    --footer-strip: #cdb9e8;
+    --clock-white: #ffffff;
+    --font-display: 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: min(62vh, 40rem);
+    max-height: calc(100vh - 7rem);
+    background: var(--panel-bg);
+    border: 2px solid var(--panel-border);
+    border-radius: 12px;
+    color: #fff;
+    overflow: hidden;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.voting-panel--result {
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--sim-green) 35%, transparent);
+}
+
+.vp-header {
+    flex: 0 0 auto;
+    padding: clamp(0.5rem, 1.2vh, 0.9rem) clamp(0.75rem, 2vw, 1.5rem);
+    text-align: center;
+    border-bottom: 1px solid #222;
+}
+
+.vp-header__title {
+    margin: 0;
+    color: var(--title-yellow);
+    font-size: clamp(1rem, 2.4vw, 2rem);
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.vp-materia {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.45rem clamp(0.75rem, 2vw, 1.25rem);
+    border-bottom: 1px solid #1f1f1f;
+    background: #0a0a0a;
+}
+
+.vp-materia__badge {
+    align-self: flex-start;
+    font-size: clamp(0.55rem, 1vw, 0.75rem);
+    color: var(--title-yellow);
+    letter-spacing: 0.08em;
+}
+
+.vp-materia__titulo {
+    font-size: clamp(0.7rem, 1.35vw, 1.05rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: Lato, 'Public Sans', sans-serif;
+}
+
+.vp-materia__ementa {
+    font-size: clamp(0.6rem, 1.1vw, 0.85rem);
+    color: #b0b0b0;
+    line-height: 1.3;
+    max-height: 2.6em;
+    overflow: hidden;
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: Lato, 'Public Sans', sans-serif;
+    font-weight: 400;
+}
+
+.vp-president {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 0.55rem 0.75rem;
+    padding: clamp(0.45rem, 1vh, 0.75rem) clamp(0.75rem, 2vw, 1.25rem);
+    border-bottom: 1px solid #222;
+}
+
+.vp-president--empty {
+    grid-template-columns: auto 1fr;
+}
+
+.vp-president__label {
+    font-size: clamp(0.55rem, 1vw, 0.75rem);
+    color: #9ca3af;
+}
+
+.vp-president__name {
+    color: var(--name-cyan);
+    font-size: clamp(0.85rem, 1.8vw, 1.35rem);
+    font-weight: 900;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vp-president__party {
+    color: var(--party-yellow);
+    font-size: clamp(0.7rem, 1.3vw, 1rem);
+}
+
+.vp-body {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: 1fr 2px 1fr;
+    gap: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.vp-body__divider {
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--divider-white) 12%,
+        var(--divider-white) 88%,
+        transparent
+    );
+    opacity: 0.35;
+}
+
+.vp-column {
+    list-style: none;
+    margin: 0;
+    padding: clamp(0.35rem, 1vh, 0.65rem) clamp(0.5rem, 1.5vw, 1rem);
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+}
+
+.vp-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 0.4rem 0.55rem;
+    min-height: clamp(1.35rem, 2.4vh, 1.85rem);
+}
+
+.vp-column--right .vp-row {
+    grid-template-columns: auto 1fr auto;
+}
+
+.vp-row--empty {
+    color: #555;
+    font-size: 0.85rem;
+}
+
+.vp-row__role {
+    font-size: clamp(0.45rem, 0.85vw, 0.65rem);
+    color: #94a3b8;
+    min-width: 3.2rem;
+}
+
+.vp-row__name {
+    color: var(--name-red);
+    font-size: clamp(0.65rem, 1.25vw, 1rem);
+    font-weight: 800;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vp-row__party {
+    color: var(--party-yellow);
+    font-size: clamp(0.55rem, 1.05vw, 0.85rem);
+    text-align: right;
+    min-width: 2.25rem;
+}
+
+.vp-row__party--empty {
+    min-width: 0;
+}
+
+.vp-dot {
+    width: clamp(0.7rem, 1.2vw, 0.95rem);
+    height: clamp(0.7rem, 1.2vw, 0.95rem);
+    border-radius: 50%;
+    border: 2px solid #555;
+    background: transparent;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.vp-dot--presente {
+    border-color: var(--name-cyan);
+    background: var(--name-cyan);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--name-cyan) 55%, transparent);
+}
+
+.vp-dot--votou {
+    border-color: #e5e7eb;
+    background: #e5e7eb;
+    box-shadow: 0 0 8px rgba(229, 231, 235, 0.45);
+}
+
+.vp-dot--sim {
+    border-color: var(--sim-green);
+    background: var(--sim-green);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--sim-green) 55%, transparent);
+}
+
+.vp-dot--nao {
+    border-color: var(--nao-orange);
+    background: var(--nao-orange);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--nao-orange) 55%, transparent);
+}
+
+.vp-dot--abstencao {
+    border-color: var(--abs-yellow);
+    background: var(--abs-yellow);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--abs-yellow) 55%, transparent);
+}
+
+.vp-dot--ausente {
+    border-color: #4b5563;
+    background: transparent;
+    opacity: 0.75;
+}
+
+.vp-footer {
+    flex: 0 0 auto;
+}
+
+.vp-footer__strip {
+    height: 0.45rem;
+    background: var(--footer-strip);
+}
+
+.vp-footer__body {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: stretch;
+    gap: clamp(0.5rem, 1.5vw, 1.25rem);
+    padding: clamp(0.45rem, 1.2vh, 0.85rem) clamp(0.65rem, 1.8vw, 1.25rem);
+    background: #050505;
+    border-top: 1px solid #1a1a1a;
+}
+
+.vp-clock {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.15rem;
+    min-width: 6.5rem;
+}
+
+.vp-clock__time {
+    color: var(--clock-white);
+    font-size: clamp(1rem, 2.2vw, 1.75rem);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.vp-clock__date {
+    color: #cbd5e1;
+    font-size: clamp(0.55rem, 1vw, 0.8rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.vp-footer__counters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(0.35rem, 1vw, 0.75rem);
+    align-items: center;
+}
+
+.vp-counter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    padding: 0.25rem 0.35rem;
+    border-radius: 6px;
+    background: #111;
+}
+
+.vp-counter__label {
+    font-size: clamp(0.55rem, 1vw, 0.75rem);
+    letter-spacing: 0.1em;
+}
+
+.vp-counter__value {
+    font-size: clamp(1.15rem, 2.8vw, 2.25rem);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.vp-counter--sim .vp-counter__label,
+.vp-counter--sim .vp-counter__value {
+    color: var(--sim-green);
+}
+
+.vp-counter--nao .vp-counter__label,
+.vp-counter--nao .vp-counter__value {
+    color: var(--nao-orange);
+}
+
+.vp-counter--abs .vp-counter__label,
+.vp-counter--abs .vp-counter__value {
+    color: var(--abs-yellow);
+}
+
+.vp-stats {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+    min-width: 9rem;
+}
+
+.vp-stats__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: clamp(0.55rem, 1vw, 0.75rem);
+    color: #e5e7eb;
+}
+
+.vp-stats__row strong {
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+}
+
+.vp-stats__row--presentes span,
+.vp-stats__row--presentes strong {
+    color: var(--name-cyan);
+}
+
+/* Telão: modo LED ocupa o main sem marca d'água clara */
+.sessao-painel--led {
+    background: #000;
+}
+
+.sessao-painel--led .sessao-painel-header {
+    display: none;
+}
+
+.sessao-painel--led .sessao-painel-main {
+    padding: 0.65rem;
+    background: #000;
+}
+
+.sessao-painel--led .sessao-painel-marca-dagua {
+    display: none;
+}
+
+.sessao-painel--led .sessao-painel-footer {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 5;
+    margin: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.sessao-painel--led .sessao-painel-fs-btn {
+    opacity: 0.55;
+    background: rgba(15, 23, 42, 0.75);
+    color: #e2e8f0;
+    border: 1px solid #334155;
+}
+
+.sessao-painel--led .sessao-painel-fs-btn:hover {
+    opacity: 1;
+}
+
+.sessao-painel.sessao-painel--led {
+    position: relative;
+    min-height: 100vh;
+}
+
+.sessao-painel--led .voting-panel {
+    max-height: none;
+    min-height: calc(100vh - 1.3rem);
+    border-radius: 10px;
+}
+
+/* TV plenário 1920×1080 — tipografia e densidade para leitura à distância */
+@media (min-width: 1600px) and (min-height: 900px) {
+    .sessao-painel--led .voting-panel {
+        min-height: calc(100vh - 1.2rem);
+    }
+
+    .vp-header__title {
+        font-size: clamp(1.6rem, 2.1vw, 2.4rem);
+    }
+
+    .vp-president__name {
+        font-size: clamp(1.15rem, 1.7vw, 1.65rem);
+    }
+
+    .vp-row__name {
+        font-size: clamp(0.95rem, 1.15vw, 1.2rem);
+    }
+
+    .vp-row {
+        min-height: clamp(1.6rem, 2.6vh, 2.1rem);
+        gap: 0.45rem 0.7rem;
+    }
+
+    .vp-dot {
+        width: clamp(0.9rem, 1.05vw, 1.15rem);
+        height: clamp(0.9rem, 1.05vw, 1.15rem);
+    }
+
+    .vp-clock__time {
+        font-size: clamp(1.5rem, 2vw, 2.1rem);
+    }
+
+    .vp-counter__value {
+        font-size: clamp(1.75rem, 2.6vw, 2.6rem);
+    }
+
+    .vp-stats__row {
+        font-size: clamp(0.7rem, 0.95vw, 0.95rem);
+    }
+
+    .vp-materia__titulo {
+        font-size: clamp(0.95rem, 1.25vw, 1.25rem);
+    }
+}
+
+@media (max-width: 900px) {
+    .vp-footer__body {
+        grid-template-columns: 1fr;
+    }
+
+    .vp-stats {
+        min-width: 0;
+    }
+
+    .vp-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+    }
+
+    .vp-body__divider {
+        height: 1px;
+        width: 100%;
+        background: #333;
+    }
+
+    .vp-president {
+        grid-template-columns: auto auto 1fr;
+    }
+
+    .vp-president__party {
+        grid-column: 2 / -1;
+    }
+}
+
+/* ── Tela de apresentação — Composição da Mesa ─────────────────────────── */
+
+.mesa-apresentacao {
+    --panel-bg: #000000;
+    --title-yellow: #f5e400;
+    --name-cyan: #4fd8ff;
+    --name-red: #ff3b30;
+    --party-yellow: #f5e400;
+    --sim-green: #2ecc40;
+    --font-display: 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
+
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: calc(100vh - 1.3rem);
+    background:
+        radial-gradient(ellipse at 20% 30%, rgba(79, 216, 255, 0.06), transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(245, 228, 0, 0.04), transparent 45%),
+        linear-gradient(145deg, #0a0a0a 0%, #000 40%, #05080c 100%);
+    border: 2px solid #2a2a2a;
+    border-radius: 10px;
+    color: #fff;
+    overflow: hidden;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+}
+
+.mesa-apresentacao__top {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: clamp(0.75rem, 2vw, 1.5rem);
+    padding: clamp(0.75rem, 1.8vh, 1.25rem) clamp(1rem, 2.5vw, 2rem);
+    border-bottom: 1px solid #1f1f1f;
+}
+
+.mesa-apresentacao__logo {
+    width: clamp(3rem, 5.5vw, 4.5rem);
+    height: clamp(3rem, 5.5vw, 4.5rem);
+    object-fit: contain;
+    border-radius: 50%;
+    background: #111;
+    border: 2px solid #333;
+}
+
+.mesa-apresentacao__top-center {
+    min-width: 0;
+    text-align: center;
+}
+
+.mesa-apresentacao__sessao {
+    margin: 0 0 0.35rem;
+    font-size: clamp(0.7rem, 1.35vw, 1.1rem);
+    font-weight: 700;
+    color: #e5e7eb;
+    letter-spacing: 0.04em;
+    line-height: 1.25;
+}
+
+.mesa-apresentacao__titulo {
+    margin: 0;
+    font-size: clamp(1.35rem, 3.2vw, 2.75rem);
+    font-weight: 900;
+    color: var(--title-yellow);
+    line-height: 1.1;
+    letter-spacing: 0.03em;
+}
+
+.mesa-apresentacao__live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sim-green) 18%, #0a0a0a);
+    border: 1px solid color-mix(in srgb, var(--sim-green) 55%, transparent);
+    color: var(--sim-green);
+    font-size: clamp(0.65rem, 1.1vw, 0.85rem);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+
+.mesa-apresentacao__live--off {
+    visibility: hidden;
+    min-width: 6rem;
+}
+
+.mesa-apresentacao__live-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--sim-green);
+    box-shadow: 0 0 8px var(--sim-green);
+    animation: mesa-live-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes mesa-live-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.35;
+    }
+}
+
+.mesa-apresentacao__body {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    padding: clamp(1.25rem, 4vh, 3rem) clamp(1.25rem, 4vw, 3.5rem);
+    min-height: 0;
+}
+
+.mesa-apresentacao__presidente {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.55rem;
+}
+
+.mesa-apresentacao__lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 2.8vh, 1.75rem);
+}
+
+.mesa-apresentacao__membro {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 1.5vw, 1.25rem);
+}
+
+.mesa-apresentacao__membro-texto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.mesa-avatar {
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #1a1a1a;
+    border: 3px solid #333;
+    display: grid;
+    place-items: center;
+}
+
+.mesa-avatar--lg {
+    width: clamp(9rem, 22vw, 16rem);
+    height: clamp(9rem, 22vw, 16rem);
+    border-color: color-mix(in srgb, var(--name-cyan) 55%, #333);
+    box-shadow: 0 0 28px color-mix(in srgb, var(--name-cyan) 25%, transparent);
+}
+
+.mesa-avatar--md {
+    width: clamp(3.5rem, 7vw, 5.5rem);
+    height: clamp(3.5rem, 7vw, 5.5rem);
+}
+
+.mesa-avatar__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mesa-avatar__fallback {
+    font-size: 0.35em;
+    font-weight: 900;
+    color: #94a3b8;
+}
+
+.mesa-avatar--lg .mesa-avatar__fallback {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.mesa-apresentacao__cargo {
+    font-size: clamp(0.6rem, 1.05vw, 0.85rem);
+    font-weight: 600;
+    color: #94a3b8;
+    letter-spacing: 0.1em;
+}
+
+.mesa-apresentacao__nome {
+    font-size: clamp(0.85rem, 1.6vw, 1.35rem);
+    font-weight: 900;
+    color: var(--name-red);
+    line-height: 1.15;
+    word-break: break-word;
+}
+
+.mesa-apresentacao__nome--presidente {
+    font-size: clamp(1.15rem, 2.4vw, 2rem);
+    color: var(--name-cyan);
+    max-width: 18ch;
+}
+
+.mesa-apresentacao__partido {
+    font-size: clamp(0.55rem, 1vw, 0.8rem);
+    color: var(--party-yellow);
+    letter-spacing: 0.06em;
+}
+
+.mesa-apresentacao__vazio {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.mesa-apresentacao__footer {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.65rem 1rem;
+    background: #050505;
+    border-top: 1px solid #1a1a1a;
+}
+
+.mesa-apresentacao__relogio {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.mesa-apresentacao__data-box {
+    display: grid;
+    place-items: center;
+    min-width: 3.4rem;
+    padding: 0.35rem 0.45rem;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    font-size: clamp(0.65rem, 1.1vw, 0.85rem);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+    text-align: center;
+}
+
+.mesa-apresentacao__hora-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+}
+
+.mesa-apresentacao__hora {
+    font-size: clamp(1.25rem, 2.4vw, 1.85rem);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.mesa-apresentacao__hora-label {
+    font-size: clamp(0.45rem, 0.8vw, 0.65rem);
+    color: #94a3b8;
+    letter-spacing: 0.08em;
+}
+
+.mesa-apresentacao__ticker {
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.mesa-apresentacao__ticker-track {
+    display: flex;
+    gap: 4rem;
+    width: max-content;
+    animation: mesa-ticker 40s linear infinite;
+    font-size: clamp(0.55rem, 1vw, 0.75rem);
+    color: #94a3b8;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+@keyframes mesa-ticker {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.mesa-apresentacao__data-full {
+    font-size: 0.65rem;
+    color: #475569;
+    font-variant-numeric: tabular-nums;
+}
+
+.sessao-painel--led .mesa-apresentacao {
+    max-height: none;
+}
+
+@media (max-width: 900px) {
+    .mesa-apresentacao__top {
+        grid-template-columns: auto 1fr;
+    }
+
+    .mesa-apresentacao__live {
+        grid-column: 1 / -1;
+        justify-self: center;
+    }
+
+    .mesa-apresentacao__body {
+        grid-template-columns: 1fr;
+        justify-items: center;
+    }
+
+    .mesa-apresentacao__lista {
+        width: 100%;
+        max-width: 28rem;
+    }
+
+    .mesa-apresentacao__footer {
+        grid-template-columns: 1fr;
+    }
+
+    .mesa-apresentacao__data-full {
+        display: none;
+    }
+}
+

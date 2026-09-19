@@ -116,6 +116,7 @@ const pautaItemInclude = {
             tipoVotacao: true,
             resultado: true,
             realizadaAt: true,
+            encerradaAt: true,
             votosSim: true,
             votosNao: true,
             abstencoes: true,

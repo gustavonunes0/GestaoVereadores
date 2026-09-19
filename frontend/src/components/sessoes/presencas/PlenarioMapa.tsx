@@ -3,7 +3,6 @@ import type { PresencaParlamentar, PresencaSessao } from '../../../types/presenc
 import { calcularParesFileiras, preencherMesa } from '../../../utils/plenarioLayout';
 import { resolveSituacaoCadeira } from '../../../utils/presencaCadeira';
 import { CadeiraParlamentar } from './CadeiraParlamentar';
-import { CadeiraVazia } from './CadeiraVazia';
 import { FileiraCurva } from './FileiraCurva';
 import { ParlamentarTooltip } from './ParlamentarTooltip';
 import { PresencaLegenda } from './PresencaLegenda';
@@ -75,7 +74,7 @@ export function PlenarioMapa({
 
                     <div className="presenca-mesa">
                         <div className="presenca-mesa__chairs">
-                            {assentosMesa.map((assento, i) =>
+                            {assentosMesa.map((assento) =>
                                 assento ? (
                                     <CadeiraParlamentar
                                         key={assento.parliamentarianId}
@@ -90,9 +89,7 @@ export function PlenarioMapa({
                                             idsQueVotaram,
                                         )}
                                     />
-                                ) : (
-                                    <CadeiraVazia key={`mesa-vazia-${i}`} size="md" />
-                                ),
+                                ) : null,
                             )}
                         </div>
                         <div className="presenca-mesa__bar">Mesa Diretora</div>

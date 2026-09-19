@@ -235,7 +235,6 @@ export function SessaoDetalhePage() {
                                 icon="pi pi-stop-circle"
                                 size="small"
                                 severity="danger"
-                                outlined
                                 onClick={() => setDialogFecharVotacao(true)}
                             />
                         )}

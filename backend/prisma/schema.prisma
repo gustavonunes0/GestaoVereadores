@@ -77,6 +77,11 @@ enum MandateStatus {
     LICENSED
 }
 
+enum CondicaoMandato {
+    TITULAR
+    SUPLENTE
+}
+
 enum BoardStatus {
     ACTIVE
     INACTIVE
@@ -331,6 +336,7 @@ model Parliamentarian {
     parliamentarianUser ParlamentarianUser?
 
     mandates ParliamentarianMandate[]
+    mandatesAsTitularAfastado ParliamentarianMandate[] @relation("MandateTitularAfastado")
     boardMembers BoardMember[]
     committeeMembers CommitteeMember[]
     parliamentaryFrontMembers ParliamentaryFrontMember[]
@@ -439,6 +445,11 @@ model ParliamentarianMandate {
     partyAcronym String?
     partyName    String?
 
+    /** Titular ou suplente no mandato. */
+    condicao          CondicaoMandato @default(TITULAR)
+    /** Quando suplente, referência ao titular afastado (opcional). */
+    titularAfastadoId String?
+
     startedAt DateTime
     endedAt   DateTime?
     status    MandateStatus @default(ACTIVE)
@@ -452,12 +463,14 @@ model ParliamentarianMandate {
     tenant          Tenant          @relation(fields: [tenantId], references: [id])
     parliamentarian Parliamentarian @relation(fields: [parliamentarianId], references: [id])
     legislature     Legislature     @relation(fields: [legislatureId], references: [id])
+    titularAfastado Parliamentarian? @relation("MandateTitularAfastado", fields: [titularAfastadoId], references: [id])
 
     @@unique([tenantId, parliamentarianId, legislatureId])
     @@index([tenantId, parliamentarianId])
     @@index([tenantId, legislatureId])
     @@index([tenantId, status])
     @@index([tenantId, isRemoved])
+    @@index([titularAfastadoId])
     @@map("parliamentarian_mandates")
 }
 

@@ -125,7 +125,7 @@ export function buildPresencaSessao(params: {
     });
 
     const vereadores = params.parlamentares
-        .filter((p) => !mesaIds.has(p.id))
+        .filter((p) => p.status === 'ACTIVE' && !mesaIds.has(p.id))
         .map((p) => mapParlamentar(p, porParl.get(p.id)))
         .filter(
             (v) =>

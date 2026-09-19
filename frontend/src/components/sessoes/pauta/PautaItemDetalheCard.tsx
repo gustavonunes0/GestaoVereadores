@@ -16,6 +16,7 @@ import {
 import { SIGL_TOOLTIP_BOTTOM } from '../../../utils/primeTooltip';
 import { MateriaAutorAvatar } from '../../materias/MateriaAutorAvatar';
 import type { MateriaAutorResumo } from '../../../utils/materiaDisplay';
+import { PautaVotacaoMiniDashboard } from './PautaVotacaoMiniDashboard';
 
 interface PautaItemDetalheCardProps {
     sessaoId: string;
@@ -76,10 +77,17 @@ export const PautaItemDetalheCard = forwardRef<HTMLElement, PautaItemDetalheCard
         const tipo = resolvePautaTipo(item.tipoPautaItem);
         const titulo = pautaItemRotuloCompleto(item);
         const publicada = item.status === 'PUBLICADA' || item.status === 'ENCERRADA';
+        // Mescla lista + detalhe fresco: após abrir, a lista pode atualizar antes do refetch do hook.
+        const itemAcoes: PautaItemDetalhe = {
+            ...item,
+            ...(conteudo.detalhe ?? {}),
+            votacao: conteudo.detalhe?.votacao ?? item.votacao,
+            materia: conteudo.detalhe?.materia ?? item.materia,
+        };
         const exibirAbrirVotacao =
-            podeDeliberar && podeAbrirVotacaoNoItem(item, statusSessao);
+            podeDeliberar && podeAbrirVotacaoNoItem(itemAcoes, statusSessao);
         const exibirFecharVotacao =
-            podeDeliberar && podeFecharVotacaoNoItem(item, statusSessao);
+            podeDeliberar && podeFecharVotacaoNoItem(itemAcoes, statusSessao);
         const exibirNoPainel = podeDeliberar && publicada && !!onExibirNoPainel;
 
         async function confirmarRemocao() {
@@ -96,7 +104,7 @@ export const PautaItemDetalheCard = forwardRef<HTMLElement, PautaItemDetalheCard
             conteudo.autorPrincipal ||
             conteudo.statusMateria ||
             conteudo.comissaoNome ||
-            conteudo.votacaoResumo;
+            conteudo.votacaoPlacar;
 
         return (
             <article
@@ -139,7 +147,11 @@ export const PautaItemDetalheCard = forwardRef<HTMLElement, PautaItemDetalheCard
                             {categoria === 'COMISSAO' && (
                                 <MetaCampo label="Comissão" valor={conteudo.comissaoNome} />
                             )}
-                            <MetaCampo label="Votação" valor={conteudo.votacaoResumo} />
+                            {conteudo.votacaoPlacar ? (
+                                <div className="pauta-detalhe__meta-campo pauta-detalhe__meta-campo--votacao">
+                                    <PautaVotacaoMiniDashboard placar={conteudo.votacaoPlacar} />
+                                </div>
+                            ) : null}
                         </div>
                     )}
 
@@ -163,7 +175,6 @@ export const PautaItemDetalheCard = forwardRef<HTMLElement, PautaItemDetalheCard
                                     icon="pi pi-stop-circle"
                                     size="small"
                                     severity="danger"
-                                    outlined
                                     onClick={onFecharVotacao}
                                 />
                             )}

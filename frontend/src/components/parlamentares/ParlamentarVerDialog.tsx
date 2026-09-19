@@ -193,6 +193,20 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
                                                     {m.legislature.isCurrent ? (
                                                         <Tag value="Atual" severity="success" />
                                                     ) : null}
+                                                    {m.condicao ? (
+                                                        <Tag
+                                                            value={
+                                                                m.condicao === 'SUPLENTE'
+                                                                    ? 'Suplente'
+                                                                    : 'Titular'
+                                                            }
+                                                            severity={
+                                                                m.condicao === 'SUPLENTE'
+                                                                    ? 'warning'
+                                                                    : 'info'
+                                                            }
+                                                        />
+                                                    ) : null}
                                                     <Tag value={m.status} severity="info" />
                                                 </div>
                                             </div>

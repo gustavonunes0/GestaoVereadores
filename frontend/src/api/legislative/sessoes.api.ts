@@ -45,6 +45,26 @@ export type ResumoPublicoSessao = {
     materias: { identificacao: string; ementa: string; resultado: string | null }[];
 };
 
+export type PainelPublicoSessao = {
+    sessao: SessaoPlenariaDetalhe;
+    tenant: { name: string; logo: string | null; city: string | null };
+    itens: PautaItemDetalhe[];
+    presenca: import('../../types/presenca').PresencaSessao;
+    votacaoAberta: {
+        sessaoId: string;
+        votacaoId: string;
+        pautaItemId: string;
+        tipoVotacao: string;
+        titulo: string;
+        ementa?: string;
+        votosSim: number;
+        votosNao: number;
+        abstencoes: number;
+        aceitaVotoIndividual: boolean;
+        parliamentarianIdsQueVotaram: string[];
+    } | null;
+};
+
 export interface SessaoPlenaria {
     id: string;
     numero: string;
@@ -335,4 +355,7 @@ export const sessoesApi = {
     // ── Portal Público ────────────────────────────────────────────────────
     getResumoPublico: (sessaoId: string) =>
         api<ResumoPublicoSessao>(API_PATHS.sessaoResumoPublico(sessaoId)),
+
+    getPainelPublico: (sessaoId: string) =>
+        api<PainelPublicoSessao>(API_PATHS.sessaoPainelPublico(sessaoId)),
 };

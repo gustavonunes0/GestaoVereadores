@@ -90,6 +90,50 @@ export function useSessaoRealtime(sessaoId: string) {
     const syncVotacaoFromPauta = useCallback(async () => {
         if (!sessaoId) return;
         try {
+            const token = localStorage.getItem('access_token');
+            const isPainelRoute =
+                typeof window !== 'undefined' &&
+                /\/sessoes\/[^/]+\/painel(?:\/|$|\?)/.test(window.location.pathname);
+
+            if (!token || isPainelRoute) {
+                const painel = await sessoesApi.getPainelPublico(sessaoId);
+                if (painel.votacaoAberta) {
+                    const v = painel.votacaoAberta;
+                    setVotacaoAberta({
+                        sessaoId: v.sessaoId,
+                        votacaoId: v.votacaoId,
+                        pautaItemId: v.pautaItemId,
+                        tipoVotacao:
+                            (v.tipoVotacao as VotacaoAbertaEvent['tipoVotacao']) ?? 'NOMINAL',
+                        titulo: v.titulo,
+                        ementa: v.ementa,
+                        votosSim: v.votosSim,
+                        votosNao: v.votosNao,
+                        abstencoes: v.abstencoes,
+                        aceitaVotoIndividual: v.aceitaVotoIndividual,
+                    });
+                    setPlacar({
+                        votacaoId: v.votacaoId,
+                        votosSim: v.votosSim,
+                        votosNao: v.votosNao,
+                        abstencoes: v.abstencoes,
+                        totalRegistrados: v.votosSim + v.votosNao + v.abstencoes,
+                        parliamentarianIdsQueVotaram: v.parliamentarianIdsQueVotaram ?? [],
+                    });
+                } else {
+                    setVotacaoAberta(null);
+                    setPlacar(null);
+                }
+                if (painel.sessao.faseAtual) {
+                    setFaseAtual(
+                        typeof painel.sessao.faseAtual === 'string'
+                            ? (painel.sessao.faseAtual as FaseSessao)
+                            : painel.sessao.faseAtual.value,
+                    );
+                }
+                return;
+            }
+
             const itens = await sessoesApi.getPauta(sessaoId);
             const itemAberto = (itens ?? []).find(
                 (item) => item.votacao && !votacaoJaEncerradaNoItem(item),
@@ -161,7 +205,7 @@ export function useSessaoRealtime(sessaoId: string) {
         const token = localStorage.getItem('access_token');
         const socketBase = resolveSocketBaseUrl();
         const socket = io(`${socketBase}/sessao`, {
-            auth: { token },
+            auth: token ? { token } : {},
             query: { sessaoId },
             path: '/socket.io',
             transports: ['websocket', 'polling'],

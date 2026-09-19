@@ -15,6 +15,10 @@ import {
 } from '../../../utils/materiaDisplay';
 import { STATUS_MATERIA_LABELS } from '../../../types/materias';
 import type { MateriaStatus } from '../../../types/legislative';
+import {
+    resolvePautaVotacaoPlacar,
+    type PautaVotacaoPlacar,
+} from './PautaVotacaoMiniDashboard';
 
 export interface PautaItemConteudo {
     carregando: boolean;
@@ -24,7 +28,9 @@ export interface PautaItemConteudo {
     statusMateria: string | null;
     textoPrincipal: string;
     textoUrl: string | null;
+    /** @deprecated Preferir `votacaoPlacar` */
     votacaoResumo: string | null;
+    votacaoPlacar: PautaVotacaoPlacar | null;
     comissaoNome: string | null;
 }
 
@@ -37,6 +43,7 @@ const VAZIO: PautaItemConteudo = {
     textoPrincipal: '',
     textoUrl: null,
     votacaoResumo: null,
+    votacaoPlacar: null,
     comissaoNome: null,
 };
 
@@ -92,7 +99,7 @@ export function usePautaItemConteudo(
         return () => {
             ativo = false;
         };
-    }, [sessaoId, item?.id, showApiError]);
+    }, [sessaoId, item?.id, item?.votacao?.id, item?.materia?.status, showApiError]);
 
     if (!item) return VAZIO;
 
@@ -106,10 +113,11 @@ export function usePautaItemConteudo(
         : null;
     const autorPrincipal = materia ? resolveMateriaAutorPrincipal(materia) : null;
     const statusMateria = materia ? resolveStatusMateria(materia.status) : null;
-    const votacaoResumo = base.votacao
-        ? base.votacao.finalizada
-            ? `Encerrada — Sim ${base.votacao.votosSim ?? 0} · Não ${base.votacao.votosNao ?? 0} · Abstenção ${base.votacao.abstencoes ?? 0}`
-            : 'Em andamento'
+    const votacaoPlacar = resolvePautaVotacaoPlacar(base.votacao);
+    const votacaoResumo = votacaoPlacar
+        ? votacaoPlacar.status === 'encerrada'
+            ? `${votacaoPlacar.statusLabel} — Sim ${votacaoPlacar.votosSim} · Não ${votacaoPlacar.votosNao} · Abstenção ${votacaoPlacar.abstencoes}`
+            : votacaoPlacar.statusLabel
         : null;
     const comissaoNome =
         base.comissao?.tipo?.nome ?? base.comissao?.titulo ?? null;
@@ -123,6 +131,7 @@ export function usePautaItemConteudo(
         textoPrincipal,
         textoUrl,
         votacaoResumo,
+        votacaoPlacar,
         comissaoNome,
     };
 }

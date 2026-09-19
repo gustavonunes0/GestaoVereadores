@@ -645,18 +645,18 @@
 }
 
 .lex-dialog-form-tab {
-    padding: 5px 10px;
+    padding: 8px 14px;
     margin-right: var(--lex-gap-sm);
     margin-bottom: 0;
     border: none;
     border-bottom: 2px solid transparent;
     background: transparent;
     cursor: pointer;
-    font: var(--lex-text-label-md);
+    font: 500 14px/20px var(--lex-dialog-font);
     color: var(--lex-secondary);
     white-space: nowrap;
     flex-shrink: 0;
-    line-height: 14px;
+    line-height: 20px;
     box-sizing: border-box;
     transition: color 0.15s, background 0.15s, border-color 0.15s;
     font-family: var(--lex-dialog-font);
@@ -842,8 +842,8 @@
 
 .materia-form-tab,
 .lex-dialog-form-tab {
-    padding: 5px 10px;
-    font: var(--lex-text-label-md);
+    padding: 8px 14px;
+    font: 500 14px/20px var(--lex-dialog-font);
     color: var(--lex-secondary);
     border: none;
     border-bottom: 2px solid transparent;
@@ -851,7 +851,7 @@
     cursor: pointer;
     margin-bottom: 0;
     flex-shrink: 0;
-    line-height: 14px;
+    line-height: 20px;
     box-sizing: border-box;
 }
 

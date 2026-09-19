@@ -13,6 +13,11 @@ export const appRouter = createBrowserRouter([
         path: ROUTES.login,
         element: page(Pages.login),
     },
+    /** Telão do plenário — público (TV/monitor sem login). */
+    {
+        path: 'sessoes/:id/painel',
+        element: page(Pages.sessaoPainel),
+    },
     publicRoutes,
     platformRoutes,
     staffRoutes,

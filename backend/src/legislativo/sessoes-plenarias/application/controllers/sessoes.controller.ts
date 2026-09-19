@@ -191,6 +191,7 @@ import { UpdateAtaDto } from '../../ata/application/dto/update-ata.dto';
 import { ListAtasDisponiveisUseCase } from '../../ata/application/use-cases/list-atas-disponiveis.use-case';
 import { ListAtasDisponiveisQueryDto } from '../../ata/application/dto/list-atas-disponiveis-query.dto';
 import { GetResumoPublicoSessaoUseCase } from '../use-cases/get-resumo-publico-sessao.use-case';
+import { GetPainelPublicoSessaoUseCase } from '../use-cases/get-painel-publico-sessao.use-case';
 import { GetListaPresencaPdfUseCase } from '../use-cases/get-lista-presenca-pdf.use-case';
 import { GetAtaPdfUseCase } from '../use-cases/get-ata-pdf.use-case';
 import { NotifySessaoAbertaUseCase } from '../../../../notifications/application/use-cases/notify-sessao-aberta.use-case';
@@ -262,6 +263,7 @@ export class SessoesController {
         private readonly aprovarAta: AprovarAtaUseCase,
         private readonly listAtasDisponiveis: ListAtasDisponiveisUseCase,
         private readonly getResumoPublicoSessao: GetResumoPublicoSessaoUseCase,
+        private readonly getPainelPublicoSessao: GetPainelPublicoSessaoUseCase,
         private readonly getListaPresencaPdf: GetListaPresencaPdfUseCase,
         private readonly getAtaPdf: GetAtaPdfUseCase,
         private readonly notifySessaoAberta: NotifySessaoAbertaUseCase,
@@ -613,6 +615,7 @@ export class SessoesController {
                             result.parliamentarianIdsQueVotaram ?? [],
                         totalRegistrados: result.totalRegistrados ?? 0,
                     }),
+                    id,
                 );
             }
             return result;
@@ -691,6 +694,7 @@ export class SessoesController {
                 this.realtimeGateway.emitVotacaoPlacar(
                     tenantId,
                     buildVotacaoPlacarPayload(votacao),
+                    id,
                 );
             }
             return result;
@@ -721,6 +725,7 @@ export class SessoesController {
                 this.realtimeGateway.emitVotacaoPlacar(
                     tenantId,
                     buildVotacaoPlacarPayload(votacao),
+                    id,
                 );
             }
             return result;
@@ -777,7 +782,7 @@ export class SessoesController {
                     votosNao: vm.totais?.votosNao ?? 0,
                     abstencoes: vm.totais?.abstencoes ?? 0,
                     votoQualidade: vm.votoQualidade ?? false,
-                });
+                }, id);
             }
             return result;
         } catch (error) {
@@ -994,6 +999,13 @@ export class SessoesController {
         return this.getResumoPublicoSessao.execute(id);
     }
 
+    /** Telão/painel LED ao vivo — snapshot sem JWT (UUID). Sem CPF/justificativa/opção de voto. */
+    @Public()
+    @Get(':id/painel-publico')
+    async painelPublicoHandler(@Param('id', ParseUUIDPipe) id: string) {
+        return this.getPainelPublicoSessao.execute(id);
+    }
+
     @Public()
     @Get(':id/lista-presenca/pdf')
     async listaPresencaPdfHandler(
@@ -1106,7 +1118,7 @@ export class SessoesController {
             votosNao: result.votosNao,
             abstencoes: result.abstencoes,
             votoQualidade: result.votoQualidade,
-        });
+        }, id);
         return result;
     }
 

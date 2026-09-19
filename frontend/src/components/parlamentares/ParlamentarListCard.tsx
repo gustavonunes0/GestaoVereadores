@@ -9,8 +9,13 @@ const STATUS_LABEL: Record<string, string> = {
     REMOVED: 'Removido',
 };
 
+const CONDICAO_LABEL: Record<string, string> = {
+    TITULAR: 'Titular',
+    SUPLENTE: 'Suplente',
+};
+
 const MANDATE_STATUS_LABEL: Record<string, string> = {
-    ACTIVE: 'Titular',
+    ACTIVE: 'Em exercício',
     FINISHED: 'Encerrado',
     INTERRUPTED: 'Interrompido',
     LICENSED: 'Licenciado',
@@ -32,6 +37,19 @@ function formatPartyLabel(acronym: string, name: string): string {
     return `${sigla} — ${nome}`;
 }
 
+function resolveMandateBadge(row: Parliamentarian): string | null {
+    if (row.activeMandate?.condicao) {
+        return CONDICAO_LABEL[row.activeMandate.condicao] ?? row.activeMandate.condicao;
+    }
+    if (row.activeMandate?.status) {
+        return (
+            MANDATE_STATUS_LABEL[row.activeMandate.status] ?? row.activeMandate.status
+        );
+    }
+    if (row.activeMandatesCount) return 'Com mandato';
+    return null;
+}
+
 /** Coluna principal — foto e identificação do parlamentar (listagem). */
 export function ParlamentarListCard({ row }: Props) {
     const displayName = row.parliamentaryName?.trim() || 'Sem nome';
@@ -40,12 +58,7 @@ export function ParlamentarListCard({ row }: Props) {
     const partyLabel = party
         ? formatPartyLabel(party.acronym, party.name)
         : null;
-    const mandateBadge = row.activeMandate?.status
-        ? MANDATE_STATUS_LABEL[row.activeMandate.status] ??
-          row.activeMandate.status
-        : row.activeMandatesCount
-          ? 'Com mandato'
-          : null;
+    const mandateBadge = resolveMandateBadge(row);
 
     return (
         <div className="parlamentar-list-card">
@@ -64,7 +77,11 @@ export function ParlamentarListCard({ row }: Props) {
                         {mandateBadge ? (
                             <Tag
                                 value={mandateBadge}
-                                severity="info"
+                                severity={
+                                    row.activeMandate?.condicao === 'SUPLENTE'
+                                        ? 'warning'
+                                        : 'info'
+                                }
                                 className="text-xs"
                             />
                         ) : null}
@@ -103,14 +120,23 @@ export function ParlamentarListCard({ row }: Props) {
     );
 }
 
-type StatCellProps = {
+type MiniDashboardItem = {
+    label: string;
     value: number;
 };
 
-export function ParlamentarTableStatCell({ value }: StatCellProps) {
+type MiniDashboardProps = {
+    title: string;
+    items: MiniDashboardItem[];
+};
+
+/** Resumo compacto no estilo MetaCampo da pauta (rótulo + opções · valores). */
+export function ParlamentarTableMiniDashboard({ title, items }: MiniDashboardProps) {
+    const valor = items.map((item) => `${item.label} ${item.value}`).join(' · ');
     return (
-        <div className="parlamentar-table-stat">
-            <strong className="parlamentar-table-stat__value">{value}</strong>
+        <div className="parlamentar-table-mini-dashboard">
+            <span className="parlamentar-table-mini-dashboard__label">{title}</span>
+            <span className="parlamentar-table-mini-dashboard__value">{valor}</span>
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import type { PresencaParlamentar } from '../types/presenca';
 
-/** Capacidade fixa do plenário conforme design (6 fileiras × 7 assentos por lado). */
+/** Capacidade máxima de referência do plenário (limites de layout). */
 export const PLENARIO_CAPACIDADE = {
     fileiras: 6,
     assentosPorFileira: 7,
@@ -100,8 +100,8 @@ function pegarPorCargo(
 }
 
 /**
- * Disposição visual da mesa (5 cadeiras): presidente sempre no centro.
- * [2º Sec | 1º Sec | Presidente | Vice | vago/extra]
+ * Disposição visual da mesa: presidente no centro quando possível.
+ * Retorna apenas cadeiras ocupadas (sem assentos vazios decorativos).
  */
 export function ordenarAssentosMesaVisual(membros: PresencaParlamentar[]): AssentoPlenario[] {
     const total = PLENARIO_CAPACIDADE.mesaCadeiras;
@@ -142,43 +142,44 @@ export function ordenarAssentosMesaVisual(membros: PresencaParlamentar[]): Assen
         }
     }
 
-    return slots;
+    return slots.filter((s): s is PresencaParlamentar => s != null);
 }
 
-/** Preenche a mesa diretora até 5 cadeiras com presidente no centro. */
+/** Preenche a mesa diretora com presidente no centro — só membros ativos. */
 export function preencherMesa(membros: PresencaParlamentar[]): AssentoPlenario[] {
     return ordenarAssentosMesaVisual(membros);
 }
 
-function preencherLado(membros: PresencaParlamentar[]): AssentoPlenario[] {
-    const { fileiras, assentosPorFileira } = PLENARIO_CAPACIDADE;
-    const capacidade = fileiras * assentosPorFileira;
-    const slots: AssentoPlenario[] = [...membros];
-    while (slots.length < capacidade) slots.push(null);
-    return slots.slice(0, capacidade);
-}
-
 /**
- * Agrupa vereadores em pares de fileiras curvas (esquerda/direita).
- * Completa com cadeiras vazias até 6×7 por lado.
+ * Distribui vereadores em fileiras sem preencher com cadeiras vazias.
+ * Cada lado usa só as fileiras necessárias para os membros ativos.
  */
 export function calcularParesFileiras(vereadores: PresencaParlamentar[]): ParFileirasHtml[] {
     const { fileiras, assentosPorFileira } = PLENARIO_CAPACIDADE;
     const metade = Math.ceil(vereadores.length / 2);
-    const slotsE = preencherLado(vereadores.slice(0, metade));
-    const slotsD = preencherLado(vereadores.slice(metade));
+    const esquerda = vereadores.slice(0, metade);
+    const direita = vereadores.slice(metade);
+
+    const fileirasNecessarias = Math.ceil(
+        Math.max(esquerda.length, direita.length, 1) / assentosPorFileira,
+    );
+    const numFileiras = Math.min(fileiras, Math.max(1, fileirasNecessarias));
 
     const pares: ParFileirasHtml[] = [];
 
-    for (let i = 0; i < fileiras; i++) {
+    for (let i = 0; i < numFileiras; i++) {
         const cfg = FILEIRA_VISUAL[Math.min(i, FILEIRA_VISUAL.length - 1)];
         const start = i * assentosPorFileira;
+        const esq = esquerda.slice(start, start + assentosPorFileira);
+        const dir = direita.slice(start, start + assentosPorFileira);
+
+        if (esq.length === 0 && dir.length === 0) continue;
 
         pares.push({
             indice: i,
             paddingPx: cfg.padding,
-            esquerda: slotsE.slice(start, start + assentosPorFileira),
-            direita: slotsD.slice(start, start + assentosPorFileira),
+            esquerda: esq,
+            direita: dir,
             rotacaoEsq: cfg.rotacao,
             rotacaoDir: -cfg.rotacao,
             deskRotEsq: -cfg.deskRot,

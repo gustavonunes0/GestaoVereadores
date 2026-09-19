@@ -22,6 +22,7 @@ import './styles/pwa-mobile.css';
 import './index.css';
 import './styles/lex-sessao.css';
 import './styles/lex-presenca.css';
+import './styles/voting-panel.css';
 
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';

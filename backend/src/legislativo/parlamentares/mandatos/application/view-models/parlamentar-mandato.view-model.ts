@@ -18,6 +18,10 @@ export class ParlamentarMandatoViewModel {
             },
             partyAcronym: p.partyAcronym,
             partyName: p.partyName,
+            condicao: p.condicao,
+            ...(p.titularAfastadoId
+                ? { titularAfastadoId: p.titularAfastadoId }
+                : {}),
             startedAt: p.startedAt,
             ...(p.endedAt ? { endedAt: p.endedAt } : {}),
             status: p.status,

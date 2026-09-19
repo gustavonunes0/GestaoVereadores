@@ -110,6 +110,7 @@ export const API_PATHS = {
 
     // ── Portal Público da Sessão ──────────────────────────────────────────
     sessaoResumoPublico:     (id: string) => `/legislative/sessoes-plenarias/${id}/resumo-publico`,
+    sessaoPainelPublico:     (id: string) => `/legislative/sessoes-plenarias/${id}/painel-publico`,
     sessaoListaPresencaPdf:  (id: string) => `/legislative/sessoes-plenarias/${id}/lista-presenca/pdf`,
 
     // ── Votações ──────────────────────────────────────────────────────────

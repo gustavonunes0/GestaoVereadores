@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { sessoesApi } from '../../../api/legislative/sessoes.api';
-import { tenantsApi } from '../../../api/tenants.api';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useSessaoRealtime } from '../../../hooks/useSessaoRealtime';
-import type { VotacaoEncerradaEvent } from '../../../types/legislative';
 import type { FaseSessao, PautaItemDetalhe, SessaoPlenariaDetalhe } from '../../../types/sessoes';
 import {
     PAUTA_CATEGORIA_LABELS,
@@ -21,13 +19,12 @@ import {
 import { criarPainelChannel, type PainelMensagem } from '../../../utils/sessaoPainelChannel';
 import { resolveTenantLogoUrl } from '../../../utils/tenantLogo';
 import fallbackLogoSrc from '../../../../assets/logo.png';
-
-const RESULTADO_LABEL: Record<string, string> = {
-    APROVADO: 'Aprovado',
-    REJEITADO: 'Rejeitado',
-    EMPATE: 'Empate',
-    ADIADO: 'Adiado',
-};
+import {
+    VotingPanel,
+    MesaApresentacaoPanel,
+    resolvePanelVotes,
+    usePainelElenco,
+} from './voting';
 
 const FASE_LABEL: Partial<Record<FaseSessao, string>> = {
     EXPEDIENTE: 'Expediente',
@@ -38,51 +35,6 @@ const FASE_LABEL: Partial<Record<FaseSessao, string>> = {
 const RESULTADO_EXIBICAO_MS = 25_000;
 
 type ModoPainel = 'votacao' | 'resultado' | 'item' | 'pauta' | 'aguardando';
-
-function PlacarGrande({
-    sim,
-    nao,
-    abst,
-    destaque,
-}: {
-    sim: number;
-    nao: number;
-    abst: number;
-    destaque?: boolean;
-}) {
-    return (
-        <div className={`sessao-painel-placar${destaque ? ' sessao-painel-placar--destaque' : ''}`}>
-            <div className="sessao-painel-placar__item sessao-painel-placar__item--sim">
-                <span className="sessao-painel-placar__valor">{sim}</span>
-                <span className="sessao-painel-placar__label">Sim</span>
-            </div>
-            <div className="sessao-painel-placar__item sessao-painel-placar__item--nao">
-                <span className="sessao-painel-placar__valor">{nao}</span>
-                <span className="sessao-painel-placar__label">Não</span>
-            </div>
-            <div className="sessao-painel-placar__item sessao-painel-placar__item--abst">
-                <span className="sessao-painel-placar__valor">{abst}</span>
-                <span className="sessao-painel-placar__label">Abstenção</span>
-            </div>
-        </div>
-    );
-}
-
-function PainelAguardando({
-    sessaoLabel,
-    logoSrc,
-}: {
-    sessaoLabel: string;
-    logoSrc: string;
-}) {
-    return (
-        <div className="sessao-painel-centro">
-            <img src={logoSrc} alt="" className="sessao-painel-logo-grande" />
-            <h2 className="sessao-painel-titulo-idle">{sessaoLabel}</h2>
-            <p className="sessao-painel-sub-idle">Sessão a iniciar</p>
-        </div>
-    );
-}
 
 function PainelPautaDoDia({
     sessaoLabel,
@@ -165,52 +117,9 @@ function PainelPauta({ item }: { item: PautaItemDetalhe }) {
                 <span>{tipo}</span>
             </div>
             <h1 className="sessao-painel-item-titulo">{rotulo}</h1>
-            <p className="sessao-painel-item-texto">{descricao || 'Sem texto disponível para exibição.'}</p>
-        </div>
-    );
-}
-
-function PainelVotacao({
-    titulo,
-    ementa,
-    sim,
-    nao,
-    abst,
-}: {
-    titulo: string;
-    ementa?: string;
-    sim: number;
-    nao: number;
-    abst: number;
-}) {
-    return (
-        <div className="sessao-painel-conteudo">
-            <div className={`sessao-painel-etiqueta sessao-painel-etiqueta--votacao`}>
-                <span className="sessao-painel-pulse" aria-hidden />
-                Votação Aberta
-            </div>
-            <h1 className="sessao-painel-item-titulo">{titulo}</h1>
-            {ementa && <p className="sessao-painel-item-texto">{ementa}</p>}
-            <PlacarGrande sim={sim} nao={nao} abst={abst} destaque />
-        </div>
-    );
-}
-
-function PainelResultado({ dados }: { dados: VotacaoEncerradaEvent }) {
-    const resultado = RESULTADO_LABEL[dados.resultado] ?? dados.resultado;
-    const aprovado = dados.resultado === 'APROVADO';
-
-    return (
-        <div className="sessao-painel-conteudo">
-            <div
-                className={`sessao-painel-resultado-badge${
-                    aprovado ? ' sessao-painel-resultado-badge--aprovado' : ''
-                }`}
-            >
-                {resultado}
-            </div>
-            {dados.titulo && <h1 className="sessao-painel-item-titulo">{dados.titulo}</h1>}
-            <PlacarGrande sim={dados.votosSim} nao={dados.votosNao} abst={dados.abstencoes} />
+            <p className="sessao-painel-item-texto">
+                {descricao || 'Sem texto disponível para exibição.'}
+            </p>
         </div>
     );
 }
@@ -228,6 +137,7 @@ export function SessaoPainelPage() {
     const [tenantBranding, setTenantBranding] = useState<{
         name: string;
         logo: string | null;
+        city?: string | null;
     } | null>(null);
 
     const {
@@ -237,39 +147,74 @@ export function SessaoPainelPage() {
         placar,
         wsConectado,
         limparVotacaoEncerrada,
+        presencaUpdate,
     } = useSessaoRealtime(sessaoId ?? '');
 
-    const carregarItem = useCallback(async (itemId: string) => {
-        if (!sessaoId) return;
-        setItemCarregando(true);
-        try {
-            const item = await sessoesApi.getPautaItem(sessaoId, itemId);
-            setItemExibido(item);
-        } catch {
-            setItemExibido(null);
-        } finally {
-            setItemCarregando(false);
-        }
-    }, [sessaoId]);
+    const idsQueVotaram = useMemo(() => {
+        const ids =
+            placar?.votacaoId === votacaoAberta?.votacaoId
+                ? placar?.parliamentarianIdsQueVotaram
+                : undefined;
+        return new Set(ids ?? []);
+    }, [placar, votacaoAberta?.votacaoId]);
 
-    const carregarPauta = useCallback(async () => {
+    const {
+        president,
+        left,
+        right,
+        all,
+        loading: elencoLoading,
+    } = usePainelElenco({
+        sessaoId: sessaoId ?? '',
+        presencaUpdate,
+        idsQueVotaram,
+        revealNominalVotes: votacaoAberta?.tipoVotacao === 'NOMINAL',
+    });
+
+    const carregarSnapshot = useCallback(async () => {
         if (!sessaoId) return;
         try {
-            const lista = await sessoesApi.getPauta(sessaoId);
-            setItens(lista ?? []);
+            const data = await sessoesApi.getPainelPublico(sessaoId);
+            setSessao(data.sessao);
+            setItens(data.itens ?? []);
+            setTenantBranding({
+                name: data.tenant.name,
+                logo: data.tenant.logo,
+                city: data.tenant.city,
+            });
         } catch {
+            setSessao(null);
             setItens([]);
         }
     }, [sessaoId]);
 
+    const carregarItem = useCallback(
+        async (itemId: string) => {
+            if (!sessaoId) return;
+            setItemCarregando(true);
+            try {
+                const local = itens.find((i) => i.id === itemId);
+                if (local) {
+                    setItemExibido(local);
+                    return;
+                }
+                const data = await sessoesApi.getPainelPublico(sessaoId);
+                setItens(data.itens ?? []);
+                setItemExibido(data.itens.find((i) => i.id === itemId) ?? null);
+            } catch {
+                setItemExibido(null);
+            } finally {
+                setItemCarregando(false);
+            }
+        },
+        [sessaoId, itens],
+    );
+
     useEffect(() => {
         if (!sessaoId) return;
         setCarregando(true);
-        Promise.all([
-            sessoesApi.getDetalhe(sessaoId).then(setSessao).catch(() => setSessao(null)),
-            carregarPauta(),
-        ]).finally(() => setCarregando(false));
-    }, [sessaoId, carregarPauta]);
+        void carregarSnapshot().finally(() => setCarregando(false));
+    }, [sessaoId, carregarSnapshot]);
 
     useEffect(() => {
         const itemId = searchParams.get('item');
@@ -285,16 +230,16 @@ export function SessaoPainelPage() {
             }
             if (ev.data.tipo === 'LIMPAR') {
                 setItemExibido(null);
-                void carregarPauta();
+                void carregarSnapshot();
             }
         };
         channel.addEventListener('message', onMessage);
         return () => channel.close();
-    }, [sessaoId, carregarItem, carregarPauta]);
+    }, [sessaoId, carregarItem, carregarSnapshot]);
 
     useEffect(() => {
-        if (votacaoEncerrada) void carregarPauta();
-    }, [votacaoEncerrada, carregarPauta]);
+        if (votacaoEncerrada) void carregarSnapshot();
+    }, [votacaoEncerrada, carregarSnapshot]);
 
     useEffect(() => {
         if (!votacaoEncerrada) return;
@@ -309,25 +254,6 @@ export function SessaoPainelPage() {
         return () => document.body.classList.remove('sessao-painel-body');
     }, []);
 
-    useEffect(() => {
-        let cancelled = false;
-        void tenantsApi
-            .current()
-            .then((res) => {
-                if (cancelled || res.kind !== 'tenant') return;
-                setTenantBranding({
-                    name: res.name,
-                    logo: res.logo ?? null,
-                });
-            })
-            .catch(() => {
-                /* mantém fallback do usuário autenticado */
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
     const placarAtual =
         placar?.votacaoId === votacaoAberta?.votacaoId ? placar : null;
 
@@ -336,6 +262,25 @@ export function SessaoPainelPage() {
     else if (votacaoEncerrada) modo = 'resultado';
     else if (itemExibido) modo = 'item';
     else if (itens.length > 0) modo = 'pauta';
+
+    const modoLed =
+        modo === 'votacao' || modo === 'resultado' || modo === 'aguardando';
+
+    const mesaMembros = useMemo(() => {
+        const ids = new Set<string>();
+        const list: typeof left = [];
+        if (president) {
+            ids.add(president.id);
+            list.push(president);
+        }
+        for (const m of left) {
+            if (!ids.has(m.id)) {
+                ids.add(m.id);
+                list.push(m);
+            }
+        }
+        return list;
+    }, [president, left]);
 
     const sessaoLabel = sessao ? sessaoDetalheLabel(sessao) : 'Sessão plenária';
     const faseExibida = faseAtual ?? (sessao ? resolveFaseSessao(sessao.faseAtual) : null);
@@ -348,9 +293,27 @@ export function SessaoPainelPage() {
         tenantBranding?.name?.trim() ||
         userTenantName?.trim() ||
         'Câmara Municipal';
+    const institutionName =
+        tenantBranding?.city?.trim() ||
+        tenantName.replace(/^c[âa]mara\s+municipal\s+(de\s+)?/i, '').trim() ||
+        tenantName;
     const logoSrc =
         resolveTenantLogoUrl(tenantBranding?.logo ?? userTenantLogo) ??
         fallbackLogoSrc;
+
+    const votesLive = resolvePanelVotes({
+        votosSim: placarAtual?.votosSim ?? votacaoAberta?.votosSim ?? 0,
+        votosNao: placarAtual?.votosNao ?? votacaoAberta?.votosNao ?? 0,
+        abstencoes: placarAtual?.abstencoes ?? votacaoAberta?.abstencoes ?? 0,
+    });
+
+    const votesResult = votacaoEncerrada
+        ? resolvePanelVotes({
+              votosSim: votacaoEncerrada.votosSim,
+              votosNao: votacaoEncerrada.votosNao,
+              abstencoes: votacaoEncerrada.abstencoes,
+          })
+        : votesLive;
 
     if (carregando) {
         return (
@@ -371,47 +334,80 @@ export function SessaoPainelPage() {
     }
 
     return (
-        <div className={`sessao-painel${modo === 'votacao' ? ' sessao-painel--votacao' : ''}`}>
-            <header className="sessao-painel-header">
-                <div className="sessao-painel-header__marca">
-                    <img src={logoSrc} alt="" className="sessao-painel-logo" />
-                    <span className="sessao-painel-header__camara">
-                        {tenantName}
-                    </span>
-                </div>
-                <div className="sessao-painel-header__sessao">{sessaoLabel}</div>
-                <div className="sessao-painel-header__status">
-                    {faseLabel && <span className="sessao-painel-fase">{faseLabel}</span>}
-                    {wsConectado && (
-                        <span className="sessao-painel-ao-vivo">
-                            <span className="sessao-painel-pulse" aria-hidden />
-                            Ao vivo
-                        </span>
-                    )}
-                </div>
-            </header>
+        <div
+            className={[
+                'sessao-painel',
+                modo === 'votacao' ? 'sessao-painel--votacao' : '',
+                modoLed ? 'sessao-painel--led' : '',
+            ]
+                .filter(Boolean)
+                .join(' ')}
+        >
+            {!modoLed ? (
+                <header className="sessao-painel-header">
+                    <div className="sessao-painel-header__marca">
+                        <img src={logoSrc} alt="" className="sessao-painel-logo" />
+                        <span className="sessao-painel-header__camara">{tenantName}</span>
+                    </div>
+                    <div className="sessao-painel-header__sessao">{sessaoLabel}</div>
+                    <div className="sessao-painel-header__status">
+                        {faseLabel && (
+                            <span className="sessao-painel-fase">{faseLabel}</span>
+                        )}
+                        {wsConectado && (
+                            <span className="sessao-painel-ao-vivo">
+                                <span className="sessao-painel-pulse" aria-hidden />
+                                Ao vivo
+                            </span>
+                        )}
+                    </div>
+                </header>
+            ) : null}
 
             <main className="sessao-painel-main">
-                <img
-                    src={logoSrc}
-                    alt=""
-                    className="sessao-painel-marca-dagua"
-                    aria-hidden
-                />
+                {!modoLed ? (
+                    <img
+                        src={logoSrc}
+                        alt=""
+                        className="sessao-painel-marca-dagua"
+                        aria-hidden
+                    />
+                ) : null}
+
                 {itemCarregando && modo === 'item' ? (
                     <div className="sessao-painel-centro">
                         <ProgressSpinner />
                     </div>
                 ) : modo === 'votacao' && votacaoAberta ? (
-                    <PainelVotacao
-                        titulo={votacaoAberta.titulo}
-                        ementa={votacaoAberta.ementa}
-                        sim={placarAtual?.votosSim ?? votacaoAberta.votosSim}
-                        nao={placarAtual?.votosNao ?? votacaoAberta.votosNao}
-                        abst={placarAtual?.abstencoes ?? votacaoAberta.abstencoes}
-                    />
+                    elencoLoading && all.length === 0 ? (
+                        <div className="sessao-painel-centro">
+                            <ProgressSpinner />
+                        </div>
+                    ) : (
+                        <VotingPanel
+                            mode="live"
+                            institutionName={institutionName}
+                            president={president}
+                            left={left}
+                            right={right}
+                            all={all}
+                            votes={votesLive}
+                            materiaTitulo={votacaoAberta.titulo}
+                            materiaEmenta={votacaoAberta.ementa}
+                        />
+                    )
                 ) : modo === 'resultado' && votacaoEncerrada ? (
-                    <PainelResultado dados={votacaoEncerrada} />
+                    <VotingPanel
+                        mode="result"
+                        institutionName={institutionName}
+                        president={president}
+                        left={left}
+                        right={right}
+                        all={all}
+                        votes={votesResult}
+                        materiaTitulo={votacaoEncerrada.titulo}
+                        resultado={votacaoEncerrada.resultado}
+                    />
                 ) : modo === 'item' && itemExibido ? (
                     <PainelPauta item={itemExibido} />
                 ) : modo === 'pauta' ? (
@@ -421,7 +417,14 @@ export function SessaoPainelPage() {
                         itemDestacadoId={itemExibido?.id}
                     />
                 ) : (
-                    <PainelAguardando sessaoLabel={sessaoLabel} logoSrc={logoSrc} />
+                    <MesaApresentacaoPanel
+                        sessaoLabel={sessaoLabel}
+                        logoSrc={logoSrc}
+                        institutionName={institutionName}
+                        president={president}
+                        mesa={mesaMembros}
+                        aoVivo={wsConectado}
+                    />
                 )}
             </main>
 

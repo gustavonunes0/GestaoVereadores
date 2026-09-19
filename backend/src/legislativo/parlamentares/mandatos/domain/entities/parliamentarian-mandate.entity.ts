@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { CondicaoMandato } from '../enums/condicao-mandato.enum';
 import { MandateStatus } from '../enums/mandate-status.enum';
 
 type ParliamentarianMandateProps = {
@@ -8,6 +9,8 @@ type ParliamentarianMandateProps = {
     legislatureId: string;
     partyAcronym: string | null;
     partyName: string | null;
+    condicao: CondicaoMandato;
+    titularAfastadoId: string | null;
     startedAt: Date;
     endedAt: Date | null;
     status: MandateStatus;
@@ -25,6 +28,8 @@ export type CreateParliamentarianMandateParams = {
     legislatureId: string;
     partyAcronym?: string | null;
     partyName?: string | null;
+    condicao?: CondicaoMandato;
+    titularAfastadoId?: string | null;
     startedAt: Date;
 };
 
@@ -38,6 +43,7 @@ export class ParliamentarianMandateEntity {
 
     static create(params: CreateParliamentarianMandateParams) {
         const now = new Date();
+        const condicao = params.condicao ?? CondicaoMandato.TITULAR;
         const entity = new ParliamentarianMandateEntity({
             id: randomUUID(),
             tenantId: params.tenantId,
@@ -49,6 +55,13 @@ export class ParliamentarianMandateEntity {
             partyName: ParliamentarianMandateEntity.normalizeOptional(
                 params.partyName,
             ),
+            condicao,
+            titularAfastadoId:
+                condicao === CondicaoMandato.SUPLENTE
+                    ? ParliamentarianMandateEntity.normalizeOptional(
+                          params.titularAfastadoId,
+                      )
+                    : null,
             startedAt: params.startedAt,
             endedAt: null,
             status: MandateStatus.ACTIVE,
@@ -65,6 +78,7 @@ export class ParliamentarianMandateEntity {
         return new ParliamentarianMandateEntity({
             ...props,
             status: props.status as MandateStatus,
+            condicao: (props.condicao as CondicaoMandato) ?? CondicaoMandato.TITULAR,
             startedAt: new Date(props.startedAt),
             endedAt: props.endedAt ? new Date(props.endedAt) : null,
             createdAt: new Date(props.createdAt),
@@ -93,6 +107,10 @@ export class ParliamentarianMandateEntity {
         return this.props.status;
     }
 
+    get condicao() {
+        return this.props.condicao;
+    }
+
     get isActive() {
         return (
             !this.props.isRemoved &&
@@ -111,8 +129,32 @@ export class ParliamentarianMandateEntity {
         this.props.partyName = ParliamentarianMandateEntity.normalizeOptional(
             params.partyName,
         );
+        if (params.condicao) {
+            this.props.condicao = params.condicao;
+            this.props.titularAfastadoId =
+                params.condicao === CondicaoMandato.SUPLENTE
+                    ? ParliamentarianMandateEntity.normalizeOptional(
+                          params.titularAfastadoId,
+                      )
+                    : null;
+        }
         this.props.isRemoved = false;
         this.props.removedAt = null;
+        this.props.updatedAt = new Date();
+        this.validate();
+    }
+
+    updateCondicao(params: {
+        condicao: CondicaoMandato;
+        titularAfastadoId?: string | null;
+    }) {
+        this.props.condicao = params.condicao;
+        this.props.titularAfastadoId =
+            params.condicao === CondicaoMandato.SUPLENTE
+                ? ParliamentarianMandateEntity.normalizeOptional(
+                      params.titularAfastadoId,
+                  )
+                : null;
         this.props.updatedAt = new Date();
         this.validate();
     }

@@ -78,6 +78,17 @@ export type PresencaAtualizadaPayload = {
     temQuorum: boolean;
 };
 
+const UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function resolveSessaoId(value: unknown): string | null {
+    if (typeof value === 'string' && UUID_RE.test(value)) return value;
+    if (Array.isArray(value) && typeof value[0] === 'string' && UUID_RE.test(value[0])) {
+        return value[0];
+    }
+    return null;
+}
+
 @Injectable()
 @WebSocketGateway({ namespace: '/sessao', cors: { origin: '*' } })
 export class SessaoRealtimeGateway
@@ -95,8 +106,15 @@ export class SessaoRealtimeGateway
         const token =
             (client.handshake.auth?.token as string | undefined) ??
             (client.handshake.headers?.authorization as string | undefined)?.replace('Bearer ', '');
+        const painelSessaoId = resolveSessaoId(client.handshake.query?.sessaoId);
 
         if (!token) {
+            // Telão público: só entra na sala do painel (leitura).
+            if (painelSessaoId) {
+                await client.join(`painel:${painelSessaoId}`);
+                client.data.painelSessaoId = painelSessaoId;
+                return;
+            }
             client.disconnect();
             return;
         }
@@ -116,6 +134,11 @@ export class SessaoRealtimeGateway
             await client.join(`tenant:${tenantId}`);
             client.data.tenantId = tenantId;
 
+            if (painelSessaoId) {
+                await client.join(`painel:${painelSessaoId}`);
+                client.data.painelSessaoId = painelSessaoId;
+            }
+
             if (isParlamentarianSession(payload)) {
                 const room = `parlamentar:${payload.parliamentarianId}`;
                 await client.join(room);
@@ -133,53 +156,80 @@ export class SessaoRealtimeGateway
         }
     }
 
+    private emitTenantAndPainel(
+        tenantId: string,
+        event: string,
+        payload: { sessaoId?: string },
+        sessaoIdFallback?: string,
+    ) {
+        this.server.to(`tenant:${tenantId}`).emit(event, payload);
+        const sessaoId = payload.sessaoId ?? sessaoIdFallback;
+        if (sessaoId) {
+            this.server.to(`painel:${sessaoId}`).emit(event, payload);
+        }
+    }
+
     emitVotacaoAberta(tenantId: string, payload: VotacaoAbertaPayload) {
-        this.server.to(`tenant:${tenantId}`).emit('votacao:aberta', payload);
+        this.emitTenantAndPainel(tenantId, 'votacao:aberta', payload);
     }
 
     /** Convoca parlamentares (app mobile / painel do vereador) a registrarem voto. */
     emitVotacaoConvocada(tenantId: string, payload: VotacaoAbertaPayload) {
-        this.server.to(`tenant:${tenantId}`).emit('votacao:convocada', payload);
+        this.emitTenantAndPainel(tenantId, 'votacao:convocada', payload);
     }
 
-    emitVotacaoPlacar(tenantId: string, payload: VotacaoPlacarPayload) {
+    emitVotacaoPlacar(
+        tenantId: string,
+        payload: VotacaoPlacarPayload,
+        sessaoId?: string,
+    ) {
         this.server.to(`tenant:${tenantId}`).emit('votacao:placar', payload);
+        if (sessaoId) {
+            this.server.to(`painel:${sessaoId}`).emit('votacao:placar', payload);
+        }
     }
 
-    emitVotacaoEncerrada(tenantId: string, payload: VotacaoEncerradaPayload) {
+    emitVotacaoEncerrada(
+        tenantId: string,
+        payload: VotacaoEncerradaPayload,
+        sessaoId?: string,
+    ) {
         this.server.to(`tenant:${tenantId}`).emit('votacao:encerrada', payload);
+        if (sessaoId) {
+            this.server.to(`painel:${sessaoId}`).emit('votacao:encerrada', payload);
+        }
     }
 
     emitSessaoFase(tenantId: string, payload: SessaoFasePayload) {
-        this.server.to(`tenant:${tenantId}`).emit('sessao:fase', payload);
+        this.emitTenantAndPainel(tenantId, 'sessao:fase', payload);
     }
 
     emitSessaoEncerrada(tenantId: string, payload: SessaoEncerradaPayload) {
-        this.server.to(`tenant:${tenantId}`).emit('sessao:encerrada', payload);
+        this.emitTenantAndPainel(tenantId, 'sessao:encerrada', payload);
     }
 
     emitSessaoCancelada(tenantId: string, payload: SessaoCanceladaPayload) {
-        this.server.to(`tenant:${tenantId}`).emit('sessao:cancelada', payload);
+        this.emitTenantAndPainel(tenantId, 'sessao:cancelada', payload);
     }
 
     emitSessaoSuspensa(tenantId: string, payload: SessaoSuspensaPayload) {
-        this.server.to(`tenant:${tenantId}`).emit('sessao:suspensa', payload);
+        this.emitTenantAndPainel(tenantId, 'sessao:suspensa', payload);
     }
 
     emitSessaoAberta(tenantId: string, payload: SessaoAbertaPayload) {
-        this.server.to(`tenant:${tenantId}`).emit('sessao:aberta', payload);
+        this.emitTenantAndPainel(tenantId, 'sessao:aberta', payload);
     }
 
     emitPresencaAtualizada(tenantId: string, payload: PresencaAtualizadaPayload) {
-        this.server.to(`tenant:${tenantId}`).emit('presenca:atualizada', payload);
+        this.emitTenantAndPainel(tenantId, 'presenca:atualizada', payload);
     }
 
     emitirPalavraPedida(tenantId: string, payload: { pedidoId: string; parlamentarNome: string; sessaoId: string; criadoEm: Date }) {
-        this.server.to(`tenant:${tenantId}`).emit('palavra:pedida', payload);
+        this.emitTenantAndPainel(tenantId, 'palavra:pedida', payload);
     }
 
     emitirPalavraConcedida(tenantId: string, payload: { pedidoId: string; parlamentarNome: string; sessaoId: string }) {
-        this.server.to(`tenant:${tenantId}`).emit('palavra:concedida', payload);
+        this.emitTenantAndPainel(tenantId, 'palavra:concedida', payload);
     }
 
     emitirPalavraNegada(parliamentarianId: string, payload: { pedidoId: string; sessaoId: string }) {
@@ -187,6 +237,6 @@ export class SessaoRealtimeGateway
     }
 
     emitirPalavraEncerrada(tenantId: string, payload: { pedidoId: string; parlamentarNome: string; sessaoId: string }) {
-        this.server.to(`tenant:${tenantId}`).emit('palavra:encerrada', payload);
+        this.emitTenantAndPainel(tenantId, 'palavra:encerrada', payload);
     }
 }

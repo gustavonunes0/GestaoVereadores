@@ -83,6 +83,7 @@ export type PautaItemPrismaPayload = {
         tipoVotacao: string;
         resultado: string | null;
         realizadaAt: Date | null;
+        encerradaAt?: Date | null;
         votosSim?: number;
         votosNao?: number;
         abstencoes?: number;
@@ -202,7 +203,13 @@ export class PautaItemViewModel {
                       tipoVotacao: data.votacao.tipoVotacao,
                       resultado: data.votacao.resultado,
                       realizadaAt: data.votacao.realizadaAt?.toISOString() ?? null,
-                      finalizada: data.votacao.realizadaAt !== null,
+                      encerradaAt: data.votacao.encerradaAt?.toISOString() ?? null,
+                      // Encerrada = resultado ou timestamps de fechamento (não confundir com abertura).
+                      finalizada: Boolean(
+                          data.votacao.resultado ||
+                              data.votacao.encerradaAt ||
+                              data.votacao.realizadaAt,
+                      ),
                       votosSim: data.votacao.votosSim,
                       votosNao: data.votacao.votosNao,
                       abstencoes: data.votacao.abstencoes,

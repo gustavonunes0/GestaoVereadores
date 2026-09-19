@@ -4,6 +4,7 @@ import { LegislatureRepository } from '../../../../legislaturas/domain/repositor
 import { PARLIAMENTARIAN_REPOSITORY } from '../../../parlamentares.tokens';
 import { ParliamentarianRepository } from '../../../domain/repositories/parliamentarian.repository';
 import { ParliamentarianMandateEntity } from '../../domain/entities/parliamentarian-mandate.entity';
+import { CondicaoMandato } from '../../domain/enums/condicao-mandato.enum';
 import { ParliamentarianMandateRepository } from '../../domain/repositories/parliamentarian-mandate.repository';
 import { ParliamentarianMandateDomainService } from '../../domain/services/parliamentarian-mandate-domain.service';
 import { PARLIAMENTARIAN_MANDATE_REPOSITORY } from '../../mandatos.tokens';
@@ -63,12 +64,18 @@ export class CreateParlamentarMandatoUseCase {
         }
 
         const startedAt = dto.startedAt ? new Date(dto.startedAt) : new Date();
+        const condicao = dto.condicao ?? CondicaoMandato.TITULAR;
         const payload = {
             tenantId,
             parliamentarianId,
             legislatureId: dto.legislatureId,
             partyAcronym: dto.partyAcronym ?? null,
             partyName: dto.partyName ?? null,
+            condicao,
+            titularAfastadoId:
+                condicao === CondicaoMandato.SUPLENTE
+                    ? (dto.titularAfastadoId ?? null)
+                    : null,
             startedAt,
         };
 
@@ -82,6 +89,8 @@ export class CreateParlamentarMandatoUseCase {
                 {
                     partyAcronym: p.partyAcronym,
                     partyName: p.partyName,
+                    condicao: p.condicao,
+                    titularAfastadoId: p.titularAfastadoId,
                     startedAt: p.startedAt,
                     endedAt: null,
                     status: p.status,
@@ -100,6 +109,8 @@ export class CreateParlamentarMandatoUseCase {
             legislatureId: p.legislatureId,
             partyAcronym: p.partyAcronym,
             partyName: p.partyName,
+            condicao: p.condicao,
+            titularAfastadoId: p.titularAfastadoId,
             startedAt: p.startedAt,
         });
         return ParlamentarMandatoViewModel.toHttp(created);

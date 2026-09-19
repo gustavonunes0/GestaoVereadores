@@ -8,6 +8,7 @@ import { assertTenantScopedUpdate } from '../../../../../common/prisma/tenant-sc
 import { tenantWhere } from '../../../../../common/prisma/tenant-scope';
 import { PrismaService } from '../../../../../prisma/prisma.service';
 import { ParliamentarianMandateEntity } from '../../domain/entities/parliamentarian-mandate.entity';
+import { CondicaoMandato } from '../../domain/enums/condicao-mandato.enum';
 import { MandateStatus } from '../../domain/enums/mandate-status.enum';
 import {
     CreateParliamentarianMandateRepositoryInput,
@@ -56,6 +57,8 @@ export class PrismaParliamentarianMandateRepository extends ParliamentarianManda
                 legislatureId: p.legislatureId,
                 partyAcronym: p.partyAcronym,
                 partyName: p.partyName,
+                condicao: p.condicao,
+                titularAfastadoId: p.titularAfastadoId,
                 startedAt: p.startedAt,
                 status: p.status,
             },
@@ -132,6 +135,12 @@ export class PrismaParliamentarianMandateRepository extends ParliamentarianManda
                 ...(data.partyName !== undefined
                     ? { partyName: data.partyName }
                     : {}),
+                ...(data.condicao !== undefined
+                    ? { condicao: data.condicao }
+                    : {}),
+                ...(data.titularAfastadoId !== undefined
+                    ? { titularAfastadoId: data.titularAfastadoId }
+                    : {}),
                 ...(data.startedAt !== undefined
                     ? { startedAt: data.startedAt }
                     : {}),
@@ -183,6 +192,9 @@ export class PrismaParliamentarianMandateRepository extends ParliamentarianManda
                 legislatureId: row.legislatureId,
                 partyAcronym: row.partyAcronym,
                 partyName: row.partyName,
+                condicao:
+                    (row.condicao as CondicaoMandato) ?? CondicaoMandato.TITULAR,
+                titularAfastadoId: row.titularAfastadoId ?? null,
                 startedAt: row.startedAt,
                 endedAt: row.endedAt,
                 status: row.status as MandateStatus,

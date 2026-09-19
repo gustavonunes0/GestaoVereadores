@@ -19,7 +19,7 @@ import { ParlamentarVerDialog } from '../components/parlamentares/ParlamentarVer
 import {
     ParlamentarListCard,
     ParlamentarTableLinkCell,
-    ParlamentarTableStatCell,
+    ParlamentarTableMiniDashboard,
 } from '../components/parlamentares/ParlamentarListCard';
 import { ParlamentarMandatosDialog } from '../components/parlamentares/ParlamentarMandatosDialog';
 import { Dropdown } from '../components/ui';
@@ -165,38 +165,28 @@ export function ParlamentaresPage() {
                                 )}
                             />
                             <Column
-                                field="stats.authoredMattersCount"
-                                header="Proposições própria autoria"
-                                headerClassName="parlamentar-table-col--stat"
-                                bodyClassName="parlamentar-table-col--stat"
-                                style={{ minWidth: '11rem' }}
+                                field="stats"
+                                header="Atividade"
+                                headerClassName="parlamentar-table-col--mini"
+                                bodyClassName="parlamentar-table-col--mini"
+                                style={{ minWidth: '16rem' }}
                                 body={(row: Parliamentarian) => (
-                                    <ParlamentarTableStatCell
-                                        value={row.stats?.authoredMattersCount ?? 0}
-                                    />
-                                )}
-                            />
-                            <Column
-                                field="stats.coauthoredMattersCount"
-                                header="Participação em proposições"
-                                headerClassName="parlamentar-table-col--stat"
-                                bodyClassName="parlamentar-table-col--stat"
-                                style={{ minWidth: '11rem' }}
-                                body={(row: Parliamentarian) => (
-                                    <ParlamentarTableStatCell
-                                        value={row.stats?.coauthoredMattersCount ?? 0}
-                                    />
-                                )}
-                            />
-                            <Column
-                                field="stats.sessionVotesCount"
-                                header="Participação em sessões"
-                                headerClassName="parlamentar-table-col--stat"
-                                bodyClassName="parlamentar-table-col--stat"
-                                style={{ minWidth: '10rem' }}
-                                body={(row: Parliamentarian) => (
-                                    <ParlamentarTableStatCell
-                                        value={row.stats?.sessionVotesCount ?? 0}
+                                    <ParlamentarTableMiniDashboard
+                                        title="Atividade"
+                                        items={[
+                                            {
+                                                label: 'Autoria',
+                                                value: row.stats?.authoredMattersCount ?? 0,
+                                            },
+                                            {
+                                                label: 'Coautoria',
+                                                value: row.stats?.coauthoredMattersCount ?? 0,
+                                            },
+                                            {
+                                                label: 'Sessões',
+                                                value: row.stats?.sessionVotesCount ?? 0,
+                                            },
+                                        ]}
                                     />
                                 )}
                             />

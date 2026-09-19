@@ -48,7 +48,7 @@ const includeRelations = {
         where: { isRemoved: false, status: 'ACTIVE' },
         orderBy: { startedAt: 'desc' },
         take: 1,
-        select: { id: true, status: true },
+        select: { id: true, status: true, condicao: true },
     },
 } satisfies Prisma.ParliamentarianInclude;
 
@@ -89,7 +89,7 @@ type ParliamentarianRow = PrismaParliamentarian & {
         committeeMembers: number;
         votos: number;
     };
-    mandates: Array<{ id: string; status: string }>;
+    mandates: Array<{ id: string; status: string; condicao: string }>;
 };
 
 type ParliamentarianDetailRow = ParliamentarianRow & {

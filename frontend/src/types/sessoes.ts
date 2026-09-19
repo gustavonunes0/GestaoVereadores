@@ -182,6 +182,8 @@ export interface PautaItemDetalhe {
         tipoVotacao?: string;
         resultado?: string | null;
         finalizada?: boolean;
+        realizadaAt?: string | null;
+        encerradaAt?: string | null;
         votosSim?: number;
         votosNao?: number;
         abstencoes?: number;
@@ -397,7 +399,10 @@ export function votacaoJaEncerradaNoItem(
     if (item.resultado) return true;
     const votacao = item.votacao;
     if (!votacao) return false;
-    return Boolean(votacao.finalizada || votacao.resultado);
+    if (votacao.resultado) return true;
+    if (votacao.encerradaAt) return true;
+    if (votacao.realizadaAt) return true;
+    return Boolean(votacao.finalizada);
 }
 
 /** Votação aberta no item — apenas categorias deliberáveis. */

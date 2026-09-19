@@ -2,7 +2,6 @@ import type { MouseEvent } from 'react';
 import type { AssentoPlenario } from '../../../utils/plenarioLayout';
 import { resolveSituacaoCadeira } from '../../../utils/presencaCadeira';
 import { CadeiraParlamentar } from './CadeiraParlamentar';
-import { CadeiraVazia } from './CadeiraVazia';
 import type { PresencaParlamentar } from '../../../types/presenca';
 
 interface FileiraCurvaProps {
@@ -20,7 +19,6 @@ interface FileiraCurvaProps {
 
 export function FileiraCurva({
     assentos,
-    rowKey,
     rotacaoGraus,
     deskRotacaoGraus,
     deskWidth,
@@ -30,6 +28,10 @@ export function FileiraCurva({
     idsQueVotaram = null,
     votacaoAberta = false,
 }: FileiraCurvaProps) {
+    const ocupados = assentos.filter((a): a is PresencaParlamentar => a != null);
+
+    if (ocupados.length === 0) return null;
+
     return (
         <div
             className="presenca-curved-row"
@@ -43,28 +45,24 @@ export function FileiraCurva({
                 }}
                 aria-hidden
             />
-            {assentos.map((assento, i) =>
-                assento ? (
-                    <CadeiraParlamentar
-                        key={assento.parliamentarianId}
-                        parlamentar={assento}
-                        podeRegistrar={podeRegistrar}
-                        onToggle={onToggle}
-                        onHover={onHover}
-                        situacaoVoto={
-                            votacaoAberta &&
-                            idsQueVotaram &&
-                            resolveSituacaoCadeira(assento) === 'PRESENTE'
-                                ? idsQueVotaram.has(assento.parliamentarianId)
-                                    ? 'votou'
-                                    : 'nao_votou'
-                                : null
-                        }
-                    />
-                ) : (
-                    <CadeiraVazia key={`${rowKey}-vazia-${i}`} />
-                ),
-            )}
+            {ocupados.map((assento) => (
+                <CadeiraParlamentar
+                    key={assento.parliamentarianId}
+                    parlamentar={assento}
+                    podeRegistrar={podeRegistrar}
+                    onToggle={onToggle}
+                    onHover={onHover}
+                    situacaoVoto={
+                        votacaoAberta &&
+                        idsQueVotaram &&
+                        resolveSituacaoCadeira(assento) === 'PRESENTE'
+                            ? idsQueVotaram.has(assento.parliamentarianId)
+                                ? 'votou'
+                                : 'nao_votou'
+                            : null
+                    }
+                />
+            ))}
         </div>
     );
 }

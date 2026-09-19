@@ -47,6 +47,7 @@ import { ChamarVereadoresUseCase } from './application/use-cases/chamar-vereador
 import { ReiniciarChamadaUseCase } from './application/use-cases/reiniciar-chamada.use-case';
 import { PdfModule } from '../../common/pdf/pdf.module';
 import { GetResumoPublicoSessaoUseCase } from './application/use-cases/get-resumo-publico-sessao.use-case';
+import { GetPainelPublicoSessaoUseCase } from './application/use-cases/get-painel-publico-sessao.use-case';
 import { GetListaPresencaPdfUseCase } from './application/use-cases/get-lista-presenca-pdf.use-case';
 import { GetAtaPdfUseCase } from './application/use-cases/get-ata-pdf.use-case';
 import { PrismaSessaoPlenariaRepository } from './infra/prisma/prisma-sessao-plenaria.repository';
@@ -133,6 +134,7 @@ import { PEDIDO_PALAVRA_REPOSITORY } from './sessoes-plenarias.tokens';
         AprovarAtaUseCase,
         ListAtasDisponiveisUseCase,
         GetResumoPublicoSessaoUseCase,
+        GetPainelPublicoSessaoUseCase,
         GetListaPresencaPdfUseCase,
         GetAtaPdfUseCase,
         PrismaAtaRepository,

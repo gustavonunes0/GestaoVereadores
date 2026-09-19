@@ -159,6 +159,10 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
 
             await parlamentaresApi.createMandato(created.id, {
                 legislatureId: legislaturaId,
+                condicao,
+                ...(condicao === 'SUPLENTE' && titularAfastadoId
+                    ? { titularAfastadoId }
+                    : {}),
                 ...(periodoMandato[0] ? { startedAt: periodoMandato[0].toISOString() } : {}),
             });
 
@@ -269,7 +273,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                                 filter
                             />
                             <small className="text-color-secondary">
-                                Referência interna — vínculo de suplente será persistido em versão futura da API.
+                                Referência ao titular afastado quando o mandato é de suplente.
                             </small>
                         </div>
                     )}

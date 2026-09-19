@@ -68,7 +68,12 @@ export async function api<T>(
 
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
-        if (!window.location.pathname.startsWith('/login')) {
+        const path = window.location.pathname;
+        const isPublicSurface =
+            path.startsWith('/login') ||
+            path.startsWith('/publico') ||
+            /\/sessoes\/[^/]+\/painel(?:\/|$)/.test(path);
+        if (!isPublicSurface) {
             window.location.href = '/login';
         }
         throw new ApiError(message, 401);

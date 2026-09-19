@@ -26,6 +26,7 @@ export type ParliamentarianHttp = {
     activeMandate?: {
         id: string;
         status: string;
+        condicao?: string;
     };
     stats?: {
         authoredMattersCount: number;

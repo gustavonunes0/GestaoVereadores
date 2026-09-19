@@ -41,7 +41,7 @@ export type Parliamentarian = {
         };
     };
     activeMandatesCount?: number;
-    activeMandate?: { id: string; status: string };
+    activeMandate?: { id: string; status: string; condicao?: string };
     stats?: {
         authoredMattersCount: number;
         coauthoredMattersCount: number;
@@ -64,6 +64,8 @@ export type ParlamentarMandato = {
     };
     partyAcronym?: string | null;
     partyName?: string | null;
+    condicao?: 'TITULAR' | 'SUPLENTE';
+    titularAfastadoId?: string;
     startedAt: string;
     endedAt?: string;
     status: string;
@@ -121,6 +123,8 @@ export type UpdateParliamentarianInput = {
     politicalPartyId?: string | null;
     status?: string;
     password?: string;
+    condicao?: 'TITULAR' | 'SUPLENTE';
+    titularAfastadoId?: string | null;
 };
 
 export const parlamentaresApi = {
@@ -173,7 +177,14 @@ export const parlamentaresApi = {
 
     createMandato: (
         parliamentarianId: string,
-        body: { legislatureId: string; startedAt?: string; partyAcronym?: string; partyName?: string },
+        body: {
+            legislatureId: string;
+            startedAt?: string;
+            partyAcronym?: string;
+            partyName?: string;
+            condicao?: 'TITULAR' | 'SUPLENTE';
+            titularAfastadoId?: string | null;
+        },
     ) =>
         api<unknown>(API_PATHS.parlamentarMandatos(parliamentarianId), {
             method: 'POST',

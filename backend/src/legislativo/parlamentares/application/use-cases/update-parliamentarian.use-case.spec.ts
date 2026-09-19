@@ -36,6 +36,7 @@ describe('UpdateParliamentarianUseCase', () => {
             buildPoliticalPartyRepositoryMock() as never,
             buildUserRepositoryMock() as never,
             buildPasswordHasherMock() as never,
+            { findMany: jest.fn(), update: jest.fn() } as never,
         );
         const result = await useCase.execute('tenant-1', 'parl-1', {
             parliamentaryName: 'Novo Nome',
@@ -55,6 +56,7 @@ describe('UpdateParliamentarianUseCase', () => {
             buildPoliticalPartyRepositoryMock() as never,
             buildUserRepositoryMock() as never,
             buildPasswordHasherMock() as never,
+            { findMany: jest.fn(), update: jest.fn() } as never,
         );
 
         await expect(

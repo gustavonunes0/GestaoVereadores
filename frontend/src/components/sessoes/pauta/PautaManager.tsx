@@ -263,7 +263,25 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
                     item={abrirVotacaoItem}
                     onClose={() => setAbrirVotacaoItem(null)}
                     onAberta={() => {
-                        void buscarPauta();
+                        // Atualização otimista: troca Abrir → Fechar imediatamente.
+                        setItens((prev) =>
+                            prev.map((it) =>
+                                it.id === abrirVotacaoItem.id
+                                    ? {
+                                          ...it,
+                                          votacao: it.votacao ?? {
+                                              id: 'pending',
+                                              finalizada: false,
+                                              resultado: null,
+                                          },
+                                          materia: it.materia
+                                              ? { ...it.materia, status: 'EM_VOTACAO' }
+                                              : it.materia,
+                                      }
+                                    : it,
+                            ),
+                        );
+                        void buscarPauta(false);
                     }}
                 />
             )}

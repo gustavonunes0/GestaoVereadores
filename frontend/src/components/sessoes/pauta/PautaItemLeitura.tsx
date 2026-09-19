@@ -14,6 +14,7 @@ import { API_PATHS } from '../../../api/paths';
 import { CategoriaPautaBadge, FasePautaBadge, TipoPautaBadge } from './PautaBadges';
 import { resolveMateriaTitulo } from '../../../utils/materiaDisplay';
 import { usePautaItemConteudo, type PautaItemConteudo } from './usePautaItemConteudo';
+import { PautaVotacaoMiniDashboard } from './PautaVotacaoMiniDashboard';
 
 interface Props {
     sessaoId: string;
@@ -85,7 +86,7 @@ export function PautaItemLeitura({
     const fase = resolvePautaFase(detalhe.fase);
     const tipo = resolvePautaTipo(detalhe.tipoPautaItem);
     const rotulo = pautaItemRotulo(detalhe);
-    const { carregando, textoPrincipal, textoUrl, materia, autorPrincipal, statusMateria, votacaoResumo, comissaoNome } =
+    const { carregando, textoPrincipal, textoUrl, materia, autorPrincipal, statusMateria, votacaoPlacar, comissaoNome } =
         conteudo;
 
     function abrirTextoIntegral() {
@@ -226,8 +227,10 @@ export function PautaItemLeitura({
                         {autorPrincipal && (
                             <MetaLinha label="Autor" valor={autorPrincipal.nome} />
                         )}
-                        {votacaoResumo && (
-                            <MetaLinha label="Votação" valor={votacaoResumo} />
+                        {votacaoPlacar && (
+                            <div className="pauta-leitura-meta pauta-leitura-meta--votacao">
+                                <PautaVotacaoMiniDashboard placar={votacaoPlacar} />
+                            </div>
                         )}
                     </div>
 

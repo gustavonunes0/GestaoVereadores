@@ -1,4 +1,5 @@
 import { PaginatedResult } from '../../../../../common/dto/pagination.dto';
+import { CondicaoMandato } from '../enums/condicao-mandato.enum';
 import { MandateStatus } from '../enums/mandate-status.enum';
 import { ParliamentarianMandateEntity } from '../entities/parliamentarian-mandate.entity';
 
@@ -21,12 +22,16 @@ export type CreateParliamentarianMandateRepositoryInput = {
     legislatureId: string;
     partyAcronym?: string | null;
     partyName?: string | null;
+    condicao?: CondicaoMandato;
+    titularAfastadoId?: string | null;
     startedAt: Date;
 };
 
 export type UpdateParliamentarianMandateRepositoryInput = {
     partyAcronym?: string | null;
     partyName?: string | null;
+    condicao?: CondicaoMandato;
+    titularAfastadoId?: string | null;
     startedAt?: Date;
     endedAt?: Date | null;
     status?: MandateStatus;
