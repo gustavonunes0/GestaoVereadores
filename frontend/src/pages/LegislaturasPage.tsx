@@ -316,7 +316,9 @@ export function LegislaturasPage() {
                     visible
                     title="Excluir legislatura"
                     message={`Deseja excluir a ${dialogDeletar.number}ª legislatura? Esta ação não pode ser desfeita.`}
-                    onConfirm={() => legislaturasApi.remove(dialogDeletar.id)}
+                    onConfirm={async () => {
+                        await legislaturasApi.remove(dialogDeletar.id);
+                    }}
                     onClose={() => {
                         setDialogDeletar(null);
                         void afterSave(false);
