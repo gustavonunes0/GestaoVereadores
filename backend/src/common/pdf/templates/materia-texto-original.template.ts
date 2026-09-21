@@ -193,10 +193,10 @@ ${chromeStyles}
 
   .capa-titulo { text-align: center; margin: 2px 0 12px; }
   .capa-titulo .bienio {
-    font-size: 13px; font-weight: 700; letter-spacing: 0.08em; margin: 0 0 6px;
+    font-size: 15px; font-weight: 700; letter-spacing: 0.08em; margin: 0 0 6px;
   }
   .capa-titulo .titulo {
-    font-size: 15px; font-weight: 700; letter-spacing: 0.1em; margin: 0;
+    font-size: 17px; font-weight: 700; letter-spacing: 0.1em; margin: 0;
   }
 
   .grid-2 { display: flex; gap: 12px; margin: 6px 0; }
@@ -205,7 +205,7 @@ ${chromeStyles}
   .campo { margin: 8px 0; }
   .campo .rotulo {
     text-align: center;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.05em;
     margin: 0 0 4px;
@@ -218,26 +218,28 @@ ${chromeStyles}
   }
   .campo .valor {
     text-align: center;
-    font-size: 12px;
+    font-size: 14px;
     margin: 0;
     line-height: 1.4;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .campo .valor.sub {
-    font-size: 10px;
+    font-size: 12px;
     color: #444;
     margin-top: 2px;
   }
   .campo.ementa .box .par {
     text-align: justify;
     text-indent: 0;
-    font-size: 11.5px;
+    font-size: 13.5px;
     margin: 2px 0;
   }
 
   .autuacao { margin-top: 16px; }
   .autuacao .rotulo {
     text-align: center;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.06em;
     margin-bottom: 8px;
@@ -248,37 +250,45 @@ ${chromeStyles}
     text-align: justify;
     margin: 8px 0;
     line-height: 1.45;
-    font-size: 12px;
+    font-size: 14px;
   }
   .local-centro {
     text-align: center;
     margin-top: 14px;
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .assinatura { margin-top: 28px; text-align: center; page-break-inside: avoid; }
-  .assinatura .nome { font-weight: 700; margin-top: 22px; font-size: 12px; text-transform: uppercase; }
-  .assinatura .cargo { font-size: 11px; margin-top: 2px; }
+  .assinatura .nome {
+    font-weight: 700;
+    margin-top: 22px;
+    font-size: 14px;
+    text-transform: uppercase;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  .assinatura .cargo { font-size: 13px; margin-top: 2px; }
 
   .termo h1 {
     text-align: center;
-    font-size: 15px;
+    font-size: 17px;
     letter-spacing: 0.08em;
     margin: 8px 0 16px;
   }
 
   .prop-cab { text-align: center; margin-bottom: 14px; }
   .prop-cab .orgao {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.06em;
     margin-bottom: 6px;
   }
-  .prop-cab .meta { font-size: 11px; margin: 3px 0; }
+  .prop-cab .meta { font-size: 13px; margin: 3px 0; }
 
   .prop-titulo {
     text-align: center;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     margin: 16px 0 12px;
     letter-spacing: 0.03em;
@@ -289,13 +299,13 @@ ${chromeStyles}
     font-weight: 700;
     margin: 18px 0 14px;
     text-transform: uppercase;
-    font-size: 15px;
+    font-size: 17px;
     line-height: 1.45;
     letter-spacing: 0.01em;
   }
 
   .sec {
-    font-size: 12px;
+    font-size: 14px;
     margin: 16px 0 8px;
     text-align: center;
     letter-spacing: 0.06em;
@@ -309,7 +319,7 @@ ${chromeStyles}
   .local-data {
     margin-top: 14px;
     text-align: justify;
-    font-size: 12px;
+    font-size: 14px;
   }
 </style>
 
@@ -321,6 +331,6 @@ ${wrapPage(propInner)}
     return pageWrapper(`Texto original — ${dados.tituloProposicao}`, corpo, {
         omitDefaultFooter: true,
         fontFamily: 'Arial, Helvetica, sans-serif',
-        fontSize: '12px',
+        fontSize: '14px',
     });
 }

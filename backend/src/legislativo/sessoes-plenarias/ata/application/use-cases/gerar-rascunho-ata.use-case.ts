@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { resolveNomeParlamentarDocumento } from '../../../../../common/pdf/templates/materia-texto-original.helpers';
 import { PrismaService } from '../../../../../prisma/prisma.service';
 import { ATA_REPOSITORY, SESSAO_PLENARIA_REPOSITORY } from '../../../sessoes-plenarias.tokens';
 import { SessaoPlenariaRepository } from '../../../domain/repositories/sessao-plenaria.repository';
@@ -57,7 +58,17 @@ export class GerarRascunhoAtaUseCase {
                     include: {
                         parliamentarian: {
                             include: {
-                                parliamentarianUser: { include: { politicalParty: true } },
+                                parliamentarianUser: {
+                                    include: {
+                                        politicalParty: true,
+                                        user: {
+                                            select: {
+                                                firstName: true,
+                                                lastName: true,
+                                            },
+                                        },
+                                    },
+                                },
                             },
                         },
                     },
@@ -75,7 +86,19 @@ export class GerarRascunhoAtaUseCase {
                                 votos: {
                                     include: {
                                         parliamentarian: {
-                                            select: { parliamentaryName: true },
+                                            select: {
+                                                parliamentaryName: true,
+                                                parliamentarianUser: {
+                                                    select: {
+                                                        user: {
+                                                            select: {
+                                                                firstName: true,
+                                                                lastName: true,
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            },
                                         },
                                         parlamentar: {
                                             select: {
@@ -91,7 +114,21 @@ export class GerarRascunhoAtaUseCase {
                 pedidosPalavra: {
                     orderBy: { criadoEm: 'asc' },
                     include: {
-                        parliamentarian: { select: { parliamentaryName: true } },
+                        parliamentarian: {
+                            select: {
+                                parliamentaryName: true,
+                                parliamentarianUser: {
+                                    select: {
+                                        user: {
+                                            select: {
+                                                firstName: true,
+                                                lastName: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             },
@@ -104,7 +141,21 @@ export class GerarRascunhoAtaUseCase {
                 members: {
                     where: { isRemoved: false },
                     include: {
-                        parliamentarian: { select: { parliamentaryName: true } },
+                        parliamentarian: {
+                            select: {
+                                parliamentaryName: true,
+                                parliamentarianUser: {
+                                    select: {
+                                        user: {
+                                            select: {
+                                                firstName: true,
+                                                lastName: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
                         boardRole: { select: { name: true } },
                     },
                 },
@@ -112,12 +163,19 @@ export class GerarRascunhoAtaUseCase {
         });
 
         const mesaDiretora = (board?.members ?? []).map((m) => ({
-            nome: m.parliamentarian.parliamentaryName,
+            nome: resolveNomeParlamentarDocumento({
+                parliamentaryName: m.parliamentarian.parliamentaryName,
+                user: m.parliamentarian.parliamentarianUser?.user,
+            }) || 'Parlamentar',
             cargo: m.boardRole.name,
         }));
 
         const presencas = dadosSessao.presencas.map((p) => {
-            const nomeParlamentar = p.parliamentarian?.parliamentaryName ?? 'Parlamentar';
+            const nomeParlamentar =
+                resolveNomeParlamentarDocumento({
+                    parliamentaryName: p.parliamentarian?.parliamentaryName,
+                    user: p.parliamentarian?.parliamentarianUser?.user,
+                }) || 'Parlamentar';
             const partido =
                 p.parliamentarian?.parliamentarianUser?.politicalParty?.acronym ?? null;
             return { nome: nomeParlamentar, partido, situacao: p.situacao };
@@ -166,9 +224,14 @@ export class GerarRascunhoAtaUseCase {
                               ? []
                               : item.votacao.votos.map((v) => ({
                                     nome:
-                                        v.parliamentarian?.parliamentaryName ??
-                                        v.parlamentar?.pessoa?.nome ??
-                                        'Parlamentar',
+                                        resolveNomeParlamentarDocumento({
+                                            parliamentaryName:
+                                                v.parliamentarian?.parliamentaryName,
+                                            user: v.parliamentarian
+                                                ?.parliamentarianUser?.user,
+                                            pessoaNome:
+                                                v.parlamentar?.pessoa?.nome,
+                                        }) || 'Parlamentar',
                                     voto: v.voto,
                                 })),
                   }
@@ -187,7 +250,11 @@ export class GerarRascunhoAtaUseCase {
         });
 
         const pedidosPalavra = dadosSessao.pedidosPalavra.map((p) => ({
-            nome: p.parliamentarian?.parliamentaryName ?? 'Parlamentar',
+            nome:
+                resolveNomeParlamentarDocumento({
+                    parliamentaryName: p.parliamentarian?.parliamentaryName,
+                    user: p.parliamentarian?.parliamentarianUser?.user,
+                }) || 'Parlamentar',
             tema: p.tema,
             status: p.status,
             duracaoSegundos: p.duracaoSegundos,

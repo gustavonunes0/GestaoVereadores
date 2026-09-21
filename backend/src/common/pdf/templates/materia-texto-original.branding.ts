@@ -159,7 +159,7 @@ export function buildMateriaPdfChromeStyles(): string {
   }
   .doc-rodape .contato {
     color: #2a6bb5;
-    font-size: 9.5px;
+    font-size: 11.5px;
     line-height: 1.35;
     padding: 8px 16mm 4px;
   }

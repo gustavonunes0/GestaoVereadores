@@ -1,5 +1,67 @@
 /** Helpers de texto do PDF de matéria — compartilhados entre use-case e testes. */
 
+type NomeParlamentarDocumentoInput = {
+    parliamentaryName?: string | null;
+    user?: { firstName?: string | null; lastName?: string | null } | null;
+    autorNome?: string | null;
+    pessoaNome?: string | null;
+};
+
+/** Detecta sobrenome truncado (ex.: "ANDRADE DE A."). */
+export function nomePareceAbreviado(nome: string): boolean {
+    const tokens = nome.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return false;
+
+    const last = tokens[tokens.length - 1];
+    if (/^[A-Za-zÀ-ÿ]\.$/.test(last)) return true;
+
+    if (tokens.length >= 2) {
+        const penult = tokens[tokens.length - 2].toLowerCase();
+        if (['de', 'da', 'dos', 'das', 'do'].includes(penult)) {
+            const stem = last.replace(/\.$/, '');
+            return stem.length <= 2;
+        }
+    }
+
+    return false;
+}
+
+/** Nome completo para documentos oficiais — evita usar nome abreviado do plenário. */
+export function resolveNomeParlamentarDocumento(
+    input: NomeParlamentarDocumentoInput,
+): string {
+    const candidates = [
+        input.user
+            ? `${input.user.firstName ?? ''} ${input.user.lastName ?? ''}`.trim()
+            : '',
+        input.autorNome?.trim(),
+        input.pessoaNome?.trim(),
+        input.parliamentaryName?.trim(),
+    ].filter((nome): nome is string => Boolean(nome));
+
+    if (candidates.length === 0) return '';
+
+    const completos = candidates.filter((nome) => !nomePareceAbreviado(nome));
+    const pool = completos.length > 0 ? completos : candidates;
+
+    return pool.reduce((melhor, atual) =>
+        atual.length > melhor.length ? atual : melhor,
+    );
+}
+
+export function formatCargoPartidoVereador(party: {
+    acronym: string;
+    name: string;
+}): string {
+    const sigla = party.acronym.trim();
+    const nome = party.name.trim();
+    if (!sigla) return 'Vereador(a)';
+    if (!nome || sigla.toUpperCase() === nome.toUpperCase()) {
+        return `Vereador(a) do ${sigla}`;
+    }
+    return `Vereador(a) do ${sigla} - ${nome}`;
+}
+
 export function escHtml(value: string): string {
     return value
         .replace(/&/g, '&amp;')

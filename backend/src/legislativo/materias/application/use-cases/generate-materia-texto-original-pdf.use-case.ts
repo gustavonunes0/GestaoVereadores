@@ -10,6 +10,8 @@ import {
 import {
     buildProcessoNumero,
     buildProtocoloLabel,
+    formatCargoPartidoVereador,
+    resolveNomeParlamentarDocumento,
     tituloProposicao,
     verboPorSigla,
 } from '../../../../common/pdf/templates/materia-texto-original.helpers';
@@ -73,9 +75,17 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
                 ano: true,
                 authorParliamentarian: {
                     select: {
+                        id: true,
                         parliamentaryName: true,
                         parliamentarianUser: {
                             select: {
+                                user: {
+                                    select: {
+                                        firstName: true,
+                                        lastName: true,
+                                        cpf: true,
+                                    },
+                                },
                                 politicalParty: {
                                     select: { name: true, acronym: true },
                                 },
@@ -90,6 +100,11 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
                                 nome: true,
                                 cargo: true,
                                 instituicao: true,
+                            },
+                        },
+                        parlamentar: {
+                            select: {
+                                pessoa: { select: { nome: true } },
                             },
                         },
                     },
@@ -130,7 +145,20 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
                     where: { isRemoved: false },
                     include: {
                         parliamentarian: {
-                            select: { parliamentaryName: true },
+                            select: {
+                                parliamentaryName: true,
+                                parliamentarianUser: {
+                                    select: {
+                                        user: {
+                                            select: {
+                                                firstName: true,
+                                                lastName: true,
+                                                cpf: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
                         },
                         boardRole: { select: { name: true } },
                     },
@@ -178,8 +206,50 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
 
         const autorParlamentar = materia.authorParliamentarian;
         const partner = materia.autor?.tenantPartner;
+        const autorUser = autorParlamentar?.parliamentarianUser?.user;
+
+        let autorNomeExtra: string | null = null;
+        let pessoaNomeExtra: string | null = null;
+
+        if (autorParlamentar?.id) {
+            const cpf = autorUser?.cpf?.replace(/\D/g, '');
+            if (cpf) {
+                const pessoa = await this.prisma.pessoa.findFirst({
+                    where: { cpf },
+                    select: { nome: true },
+                });
+                pessoaNomeExtra = pessoa?.nome?.trim() ?? null;
+            }
+
+            const autorRegistro = await this.prisma.autor.findFirst({
+                where: {
+                    tenantId,
+                    parliamentarianId: autorParlamentar.id,
+                    isRemoved: false,
+                },
+                select: {
+                    nome: true,
+                    parlamentar: {
+                        select: { pessoa: { select: { nome: true } } },
+                    },
+                },
+                orderBy: { updatedAt: 'desc' },
+            });
+            autorNomeExtra = autorRegistro?.nome?.trim() ?? null;
+            if (!pessoaNomeExtra) {
+                pessoaNomeExtra =
+                    autorRegistro?.parlamentar?.pessoa?.nome?.trim() ?? null;
+            }
+        }
+
         const autorNome =
-            autorParlamentar?.parliamentaryName?.trim() ||
+            resolveNomeParlamentarDocumento({
+                parliamentaryName: autorParlamentar?.parliamentaryName,
+                user: autorUser,
+                autorNome: materia.autor?.nome ?? autorNomeExtra,
+                pessoaNome:
+                    materia.autor?.parlamentar?.pessoa?.nome ?? pessoaNomeExtra,
+            }) ||
             partner?.nome?.trim() ||
             'Autor não informado';
 
@@ -187,7 +257,7 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
             autorParlamentar?.parliamentarianUser?.politicalParty ?? null;
         const autorCargoPartido = autorParlamentar
             ? party
-                ? `Vereador(a) do ${party.acronym} - ${party.name}`
+                ? formatCargoPartidoVereador(party)
                 : 'Vereador(a)'
             : [partner?.cargo, partner?.instituicao]
                   .filter(Boolean)
@@ -198,8 +268,11 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
                 /presid/i.test(m.boardRole.name),
             ) ?? board?.members[0];
         const presidenteNome =
-            presidente?.parliamentarian.parliamentaryName?.trim() ||
-            'PRESIDENTE DA CÂMARA MUNICIPAL';
+            resolveNomeParlamentarDocumento({
+                parliamentaryName:
+                    presidente?.parliamentarian.parliamentaryName,
+                user: presidente?.parliamentarian.parliamentarianUser?.user,
+            }) || 'PRESIDENTE DA CÂMARA MUNICIPAL';
 
         const secretariaNome = secretaria
             ? `${secretaria.user.firstName} ${secretaria.user.lastName}`.trim()

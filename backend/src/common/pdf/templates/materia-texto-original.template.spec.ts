@@ -3,6 +3,8 @@ import {
     MODELO_MATERIA_PDF_CHECKLIST,
     buildProcessoNumero,
     buildProtocoloLabel,
+    formatCargoPartidoVereador,
+    resolveNomeParlamentarDocumento,
     tituloProposicao,
     verboPorSigla,
 } from './materia-texto-original.helpers';
@@ -195,5 +197,39 @@ describe('materiaTextoOriginalTemplate — conformidade com .cursor/modelos', ()
         expect(tituloProposicao('Requerimento Legislativo', 'REQ', '107/2026')).toBe(
             'REQUERIMENTO LEGISLATIVO Nº 107/2026',
         );
+    });
+
+    it('prioriza nome completo do usuário em documentos oficiais', () => {
+        expect(
+            resolveNomeParlamentarDocumento({
+                parliamentaryName: 'MARIA ROSENILDA ANDRADE DE A.',
+                user: {
+                    firstName: 'Maria Rosenilda',
+                    lastName: 'Andrade de Almeida',
+                },
+            }),
+        ).toBe('Maria Rosenilda Andrade de Almeida');
+    });
+
+    it('prefere pessoa.nome quando user foi criado a partir de nome abreviado', () => {
+        expect(
+            resolveNomeParlamentarDocumento({
+                parliamentaryName: 'MARIA ROSENILDA ANDRADE DE A.',
+                user: {
+                    firstName: 'MARIA',
+                    lastName: 'ROSENILDA ANDRADE DE A.',
+                },
+                pessoaNome: 'Maria Rosenilda Andrade de Almeida',
+            }),
+        ).toBe('Maria Rosenilda Andrade de Almeida');
+    });
+
+    it('evita repetir sigla e nome iguais do partido', () => {
+        expect(
+            formatCargoPartidoVereador({
+                acronym: 'REPUBLICANOS',
+                name: 'REPUBLICANOS',
+            }),
+        ).toBe('Vereador(a) do REPUBLICANOS');
     });
 });
