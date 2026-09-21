@@ -248,6 +248,7 @@ export function MateriasPage() {
                 <MateriaVerDialog
                     materiaId={dialogVerId}
                     onClose={() => setDialogVerId(null)}
+                    canRegeneratePdf={canEdit}
                 />
             )}
             {dialogEditar && (

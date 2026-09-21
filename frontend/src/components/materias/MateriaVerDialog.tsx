@@ -22,6 +22,8 @@ interface Props {
     materiaId: string;
     onClose: () => void;
     onEditar?: () => void;
+    /** Secretaria/admin — permite regenerar PDF mesmo após tramitação. */
+    canRegeneratePdf?: boolean;
 }
 
 function MetaItem({ label, value }: { label: string; value?: string | null }) {
@@ -103,11 +105,31 @@ function AutorLinha({
     );
 }
 
-export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
-    const { showApiError } = useAppToast();
+export function MateriaVerDialog({
+    materiaId,
+    onClose,
+    onEditar,
+    canRegeneratePdf = false,
+}: Props) {
+    const { showApiError, showSuccess } = useAppToast();
     const [materia, setMateria] = useState<Materia | null>(null);
     const [loading, setLoading] = useState(true);
+    const [regeneratingPdf, setRegeneratingPdf] = useState(false);
     const [historicoExpandido, setHistoricoExpandido] = useState(false);
+
+    async function handleRegenerarPdf() {
+        if (!materia) return;
+        setRegeneratingPdf(true);
+        try {
+            const updated = await materiasApi.gerarTextoOriginal(materia.id);
+            setMateria(updated);
+            showSuccess('PDF do texto original atualizado.');
+        } catch (err) {
+            showApiError(err);
+        } finally {
+            setRegeneratingPdf(false);
+        }
+    }
 
     useEffect(() => {
         setLoading(true);
@@ -280,7 +302,7 @@ export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
 
                     <Divider className="my-2" />
 
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex gap-2 flex-wrap align-items-center">
                         {materia.textoOriginalUrl && (
                             <Button
                                 label="Baixar texto"
@@ -298,6 +320,17 @@ export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
                                         'noopener,noreferrer',
                                     )
                                 }
+                            />
+                        )}
+                        {canRegeneratePdf && (
+                            <Button
+                                label="Atualizar PDF"
+                                icon="pi pi-refresh"
+                                severity="secondary"
+                                outlined
+                                size="small"
+                                loading={regeneratingPdf}
+                                onClick={() => void handleRegenerarPdf()}
                             />
                         )}
                         {onEditar && (
