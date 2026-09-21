@@ -224,6 +224,18 @@ describe('materiaTextoOriginalTemplate — conformidade com .cursor/modelos', ()
         ).toBe('Maria Rosenilda Andrade de Almeida');
     });
 
+    it('usa parliamentaryName do cadastro quando user ainda está abreviado', () => {
+        expect(
+            resolveNomeParlamentarDocumento({
+                parliamentaryName: 'Maria Rosenilda Andrade de Paula',
+                user: {
+                    firstName: 'MARIA',
+                    lastName: 'ROSENILDA ANDRADE DE A.',
+                },
+            }),
+        ).toBe('Maria Rosenilda Andrade de Paula');
+    });
+
     it('evita repetir sigla e nome iguais do partido', () => {
         expect(
             formatCargoPartidoVereador({

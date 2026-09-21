@@ -290,7 +290,10 @@ export function MateriaVerDialog({ materiaId, onClose, onEditar }: Props) {
                                 size="small"
                                 onClick={() =>
                                     window.open(
-                                        resolveMateriaTextoOriginalUrl(materia.textoOriginalUrl!),
+                                        resolveMateriaTextoOriginalUrl(
+                                            materia.textoOriginalUrl!,
+                                            Date.now(),
+                                        ),
                                         '_blank',
                                         'noopener,noreferrer',
                                     )

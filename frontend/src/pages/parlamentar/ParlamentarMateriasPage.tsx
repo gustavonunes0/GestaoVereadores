@@ -38,7 +38,7 @@ export function ParlamentarMateriasPage() {
     function handleTextoOriginal(materia: Materia) {
         const url = materia.textoOriginalUrl?.trim();
         if (!url) return;
-        const resolved = resolveMateriaTextoOriginalUrl(url);
+        const resolved = resolveMateriaTextoOriginalUrl(url, Date.now());
         const isPdf = resolved.toLowerCase().includes('.pdf');
         setPreviewTextoOriginal({
             src: resolved,

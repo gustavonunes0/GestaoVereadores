@@ -16,6 +16,7 @@ import { PoliticalPartyRepository } from '../../../partidos-politicos/domain/rep
 import { ParliamentarianRepository } from '../../domain/repositories/parliamentarian.repository';
 import { ParlamentarianUserRepository } from '../../domain/repositories/parlamentarian-user.repository';
 import { ParliamentarianDomainService } from '../../domain/services/parliamentarian-domain.service';
+import { ParliamentarianProvisioningDomainService } from '../../domain/services/parliamentarian-provisioning.domain-service';
 import { CondicaoMandato } from '../../mandatos/domain/enums/condicao-mandato.enum';
 import { MandateStatus } from '../../mandatos/domain/enums/mandate-status.enum';
 import { ParliamentarianMandateRepository } from '../../mandatos/domain/repositories/parliamentarian-mandate.repository';
@@ -36,6 +37,8 @@ import { ParliamentarianViewModel } from '../view-models/parliamentarian.view-mo
 @Injectable()
 export class UpdateParliamentarianUseCase {
     private readonly domainService = new ParliamentarianDomainService();
+    private readonly provisioningService =
+        new ParliamentarianProvisioningDomainService();
 
     constructor(
         @Inject(PARLIAMENTARIAN_REPOSITORY)
@@ -107,6 +110,18 @@ export class UpdateParliamentarianUseCase {
             biography: p.biography,
             status: p.status,
         });
+
+        if (dto.parliamentaryName !== undefined && existing.user) {
+            const user = await this.userRepository.findById(existing.user.id);
+            if (user) {
+                const { firstName, lastName } =
+                    this.provisioningService.splitParliamentaryName(
+                        p.parliamentaryName,
+                    );
+                user.update({ firstName, lastName });
+                await this.userRepository.update(user);
+            }
+        }
 
         if (dto.condicao !== undefined || dto.legislatureId !== undefined) {
             await this.updateActiveMandate(

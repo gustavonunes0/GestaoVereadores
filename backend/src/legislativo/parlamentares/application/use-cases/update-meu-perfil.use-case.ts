@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { ParliamentarianProvisioningDomainService } from '../../domain/services/parliamentarian-provisioning.domain-service';
 import { UpdateMeuPerfilDto } from '../dto/update-meu-perfil.dto';
 
 @Injectable()
 export class UpdateMeuPerfilUseCase {
+    private readonly provisioningService =
+        new ParliamentarianProvisioningDomainService();
+
     constructor(private readonly prisma: PrismaService) {}
 
     async execute(parliamentarianId: string, tenantId: string, dto: UpdateMeuPerfilDto) {
@@ -21,16 +25,26 @@ export class UpdateMeuPerfilUseCase {
             },
         });
 
-        if (dto.email) {
-            const parlUser = await this.prisma.parlamentarianUser.findFirst({
-                where: { parliamentarianId, isRemoved: false },
+        const parlUser = await this.prisma.parlamentarianUser.findFirst({
+            where: { parliamentarianId, isRemoved: false },
+        });
+
+        if (parlUser && dto.parliamentaryName !== undefined) {
+            const { firstName, lastName } =
+                this.provisioningService.splitParliamentaryName(
+                    atualizado.parliamentaryName,
+                );
+            await this.prisma.user.update({
+                where: { id: parlUser.userId },
+                data: { firstName, lastName },
             });
-            if (parlUser) {
-                await this.prisma.user.update({
-                    where: { id: parlUser.userId },
-                    data: { email: dto.email },
-                });
-            }
+        }
+
+        if (dto.email && parlUser) {
+            await this.prisma.user.update({
+                where: { id: parlUser.userId },
+                data: { email: dto.email },
+            });
         }
 
         return {

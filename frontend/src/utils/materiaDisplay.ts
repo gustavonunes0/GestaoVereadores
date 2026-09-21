@@ -51,34 +51,44 @@ export function resolveMateriaNumeroAno(materia: Materia): string {
 }
 
 /** URL absoluta ou relativa para abrir o arquivo do texto original no navegador. */
-export function resolveMateriaTextoOriginalUrl(url: string): string {
+export function resolveMateriaTextoOriginalUrl(
+    url: string,
+    cacheBust?: string | number,
+): string {
     const trimmed = url.trim();
     if (!trimmed) return trimmed;
+
+    let resolved = trimmed;
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-        return trimmed;
+        resolved = trimmed;
+    } else {
+        // Paths da API: /uploads/... (com ou sem /api prefix legado)
+        const path = trimmed.replace(/^\/api\/uploads\//, '/uploads/');
+        if (!path.startsWith('/uploads/')) {
+            resolved = path;
+        } else {
+            const apiBase = (import.meta.env.VITE_API_URL as string | undefined)?.replace(
+                /\/$/,
+                '',
+            );
+            // Docker/nginx: VITE_API_URL=/api → mesma origem; nginx faz proxy de /uploads/
+            if (!apiBase || apiBase === '/api') {
+                resolved = path;
+            } else if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
+                const origin = apiBase.replace(/\/api$/, '');
+                resolved = `${origin}${path}`;
+            } else {
+                resolved = path;
+            }
+        }
     }
 
-    // Paths da API: /uploads/... (com ou sem /api prefix legado)
-    const path = trimmed.replace(/^\/api\/uploads\//, '/uploads/');
-    if (!path.startsWith('/uploads/')) {
-        return path;
+    if (cacheBust == null || cacheBust === '') {
+        return resolved;
     }
 
-    const apiBase = (import.meta.env.VITE_API_URL as string | undefined)?.replace(
-        /\/$/,
-        '',
-    );
-    // Docker/nginx: VITE_API_URL=/api → mesma origem; nginx faz proxy de /uploads/
-    if (!apiBase || apiBase === '/api') {
-        return path;
-    }
-    // API em outro host (ex.: https://apibaturite.../api)
-    if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
-        const origin = apiBase.replace(/\/api$/, '');
-        return `${origin}${path}`;
-    }
-
-    return path;
+    const sep = resolved.includes('?') ? '&' : '?';
+    return `${resolved}${sep}v=${encodeURIComponent(String(cacheBust))}`;
 }
 
 export function resolveMateriaAutorNome(materia: Materia): string {

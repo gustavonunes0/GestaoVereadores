@@ -109,7 +109,7 @@ export function usePautaItemConteudo(
     const textoPrincipal =
         materia?.ementa ?? (textoAta || pautaItemDescricao(base));
     const textoUrl = materia?.textoOriginalUrl
-        ? resolveMateriaTextoOriginalUrl(materia.textoOriginalUrl)
+        ? resolveMateriaTextoOriginalUrl(materia.textoOriginalUrl, Date.now())
         : null;
     const autorPrincipal = materia ? resolveMateriaAutorPrincipal(materia) : null;
     const statusMateria = materia ? resolveStatusMateria(materia.status) : null;

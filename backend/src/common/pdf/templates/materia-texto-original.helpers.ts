@@ -30,13 +30,19 @@ export function nomePareceAbreviado(nome: string): boolean {
 export function resolveNomeParlamentarDocumento(
     input: NomeParlamentarDocumentoInput,
 ): string {
+    const parl = input.parliamentaryName?.trim();
+    // Mesma fonte exibida no cadastro da matéria (Autoria → parliamentaryName).
+    if (parl && !nomePareceAbreviado(parl)) {
+        return parl;
+    }
+
     const candidates = [
         input.user
             ? `${input.user.firstName ?? ''} ${input.user.lastName ?? ''}`.trim()
             : '',
         input.autorNome?.trim(),
         input.pessoaNome?.trim(),
-        input.parliamentaryName?.trim(),
+        parl ?? '',
     ].filter((nome): nome is string => Boolean(nome));
 
     if (candidates.length === 0) return '';
