@@ -3,7 +3,7 @@ import { SessaoPlenariaRepository } from '../../domain/repositories/sessao-plena
 import { SESSAO_PLENARIA_REPOSITORY } from '../../sessoes-plenarias.tokens';
 import { FilterSessaoPlenariaDto } from '../dto/sessao.dto';
 import {
-    SessaoPlenariaPrismaPayload,
+    SessaoPlenariaListPrismaPayload,
     SessaoPlenariaViewModel,
 } from '../view-models/sessao-plenaria.view-model';
 
@@ -17,13 +17,13 @@ export class ListSessoesPlenariasUseCase {
     async execute(tenantId: string, filters: FilterSessaoPlenariaDto) {
         const result = await this.repository.findAll(tenantId, filters);
         const paginated = result as {
-            data: SessaoPlenariaPrismaPayload[];
+            data: SessaoPlenariaListPrismaPayload[];
             meta: unknown;
         };
         return {
             ...paginated,
             data: paginated.data.map((item) =>
-                SessaoPlenariaViewModel.toHttp(item),
+                SessaoPlenariaViewModel.toListHttp(item),
             ),
         };
     }

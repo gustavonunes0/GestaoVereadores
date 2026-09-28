@@ -119,3 +119,54 @@ export const sessaoPlenariaInclude = {
         },
     },
 } as const;
+
+/** Include leve para listagem — sem pauta/votação/presenças completas. */
+export const sessaoPlenariaListSelect = {
+    id: true,
+    dataInicio: true,
+    dataFim: true,
+    nome: true,
+    mensagem: true,
+    statusSessao: true,
+    dataAbertura: true,
+    dataEncerramento: true,
+    dataSuspensao: true,
+    quorumMinimo: true,
+    quorumPresente: true,
+    modoTeste: true,
+    sessaoLegislativaId: true,
+    faseAtual: true,
+    linkJitsi: true,
+    linkYoutube: true,
+    createdAt: true,
+    updatedAt: true,
+    tipoSessao: {
+        select: {
+            id: true,
+            nome: true,
+            codigo: true,
+            requerQuorum: true,
+        },
+    },
+    situacao: {
+        select: {
+            id: true,
+            nome: true,
+            codigo: true,
+        },
+    },
+    sessaoLegislativa: {
+        select: {
+            id: true,
+            numero: true,
+            legislatura: {
+                select: { id: true, numero: true },
+            },
+        },
+    },
+    _count: {
+        select: {
+            pautaItens: { where: { isRemoved: false } },
+        },
+    },
+} as const;

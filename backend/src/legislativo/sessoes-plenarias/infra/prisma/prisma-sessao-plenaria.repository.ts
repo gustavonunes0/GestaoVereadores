@@ -26,6 +26,7 @@ import { buildDateRangeFilter } from '../../../../common/prisma/date-fields';
 import { paginatedQuery } from '../../../../common/prisma/paginate';
 import {
     sessaoPlenariaInclude,
+    sessaoPlenariaListSelect,
 } from '../../../../common/prisma/prisma-includes';
 import { tenantWhere } from '../../../../common/prisma/tenant-scope';
 import { PrismaService } from '../../../../prisma/prisma.service';
@@ -256,7 +257,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             (skip, take) =>
                 this.prisma.sessaoPlenaria.findMany({
                     where,
-                    include: sessaoPlenariaInclude,
+                    select: sessaoPlenariaListSelect,
                     orderBy: { dataInicio: 'desc' },
                     skip,
                     take,

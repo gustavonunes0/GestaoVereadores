@@ -92,26 +92,27 @@ export function SessoesPage() {
     const [dialogEditar, setDialogEditar] = useState<Sessao | null>(null);
     const [dialogDeletar, setDialogDeletar] = useState<Sessao | null>(null);
 
-    const carregarContexto = useCallback(async () => {
+    const carregarContexto = useCallback(async (opts?: { applyDefaults?: boolean }) => {
         const ctx = await sessoesApi.getContextoLegislatura();
         setLegislaturasList(ctx.legislaturas);
         setContextoVigente(ctx.vigente);
         setNomeSugerido(ctx.nomeSugerido);
-        const defaults = buildDefaultFiltros(ctx.vigente ?? undefined);
-        setDefaultFiltros(defaults);
-        setFiltros(defaults);
-        setFiltrosApplied(defaults);
+        if (opts?.applyDefaults !== false) {
+            const defaults = buildDefaultFiltros(ctx.vigente ?? undefined);
+            setDefaultFiltros(defaults);
+            setFiltros(defaults);
+            setFiltrosApplied(defaults);
+        }
         return ctx;
     }, []);
 
     useEffect(() => {
-        void carregarContexto()
+        void carregarContexto({ applyDefaults: true })
             .catch(showApiError)
             .finally(() => setContextReady(true));
     }, [carregarContexto, showApiError]);
 
     const buscar = useCallback(async () => {
-        if (!contextReady) return;
         setLoading(true);
         try {
             const r = await sessoesApi.list(filtrosToQuery(filtrosApplied, page));
@@ -122,11 +123,12 @@ export function SessoesPage() {
         } finally {
             setLoading(false);
         }
-    }, [contextReady, filtrosApplied, page, showApiError]);
+    }, [filtrosApplied, page, showApiError]);
 
     useEffect(() => {
+        if (!contextReady) return;
         void buscar();
-    }, [buscar]);
+    }, [buscar, contextReady]);
 
     function aplicarFiltros() {
         setPage(1);
@@ -193,7 +195,7 @@ export function SessoesPage() {
             <Column
                 header="Pauta"
                 style={{ width: '5rem' }}
-                body={(s: Sessao) => s.pautaItens?.length ?? 0}
+                body={(s: Sessao) => s.pautaItensCount ?? s.pautaItens?.length ?? 0}
             />
         </>
     );
@@ -214,7 +216,7 @@ export function SessoesPage() {
                             label="Nova sessão"
                             icon="pi pi-plus"
                             onClick={() => {
-                                void carregarContexto()
+                                void carregarContexto({ applyDefaults: false })
                                     .catch(showApiError)
                                     .finally(() => setDialogCriar(true));
                             }}
@@ -273,7 +275,7 @@ export function SessoesPage() {
                     onClose={() => setDialogCriar(false)}
                     onSaved={() => {
                         void buscar();
-                        void carregarContexto().catch(showApiError);
+                        void carregarContexto({ applyDefaults: false }).catch(showApiError);
                     }}
                 />
             )}
@@ -294,7 +296,9 @@ export function SessoesPage() {
                     onConfirm={async () => {
                         await sessoesApi.remove(dialogDeletar.id);
                         void buscar();
-                        void carregarContexto().catch(showApiError);
+                        void carregarContexto({ applyDefaults: false }).catch(
+                            showApiError,
+                        );
                     }}
                     onClose={() => setDialogDeletar(null)}
                 />
