@@ -213,7 +213,11 @@ export function SessoesPage() {
                         <Button
                             label="Nova sessão"
                             icon="pi pi-plus"
-                            onClick={() => setDialogCriar(true)}
+                            onClick={() => {
+                                void carregarContexto()
+                                    .catch(showApiError)
+                                    .finally(() => setDialogCriar(true));
+                            }}
                         />
                     ) : undefined
                 }
@@ -290,6 +294,7 @@ export function SessoesPage() {
                     onConfirm={async () => {
                         await sessoesApi.remove(dialogDeletar.id);
                         void buscar();
+                        void carregarContexto().catch(showApiError);
                     }}
                     onClose={() => setDialogDeletar(null)}
                 />

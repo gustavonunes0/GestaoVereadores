@@ -1356,26 +1356,32 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         return sessao?.id ?? null;
     }
 
-    /** Sugere o nome da próxima sessão com base na última cadastrada ou na contagem. */
+    /** Sugere o nome da próxima sessão com base no maior número entre sessões ativas. */
     private async resolveNomeSugeridoNovaSessao(tenantId: string): Promise<string | null> {
-        const ultima = await this.prisma.sessaoPlenaria.findFirst({
+        const sessoes = await this.prisma.sessaoPlenaria.findMany({
             where: { tenantId, isRemoved: false },
-            orderBy: { dataInicio: 'desc' },
             select: { nome: true },
         });
 
-        if (ultima?.nome?.trim()) {
-            const match = ultima.nome.trim().match(/^(\d+)/);
-            if (match) {
-                const proximo = Number.parseInt(match[1], 10) + 1;
-                return ultima.nome.replace(/^\d+/, String(proximo));
-            }
+        let maxNumero = 0;
+        let templateNome: string | null = null;
+
+        for (const sessao of sessoes) {
+            const nome = sessao.nome?.trim();
+            if (!nome) continue;
+            const match = nome.match(/^(\d+)/);
+            if (!match) continue;
+            const numero = Number.parseInt(match[1], 10);
+            if (Number.isNaN(numero) || numero <= maxNumero) continue;
+            maxNumero = numero;
+            templateNome = nome;
         }
 
-        const total = await this.prisma.sessaoPlenaria.count({
-            where: { tenantId, isRemoved: false },
-        });
-        return `${total + 1}ª Sessão`;
+        if (templateNome) {
+            return templateNome.replace(/^\d+/, String(maxNumero + 1));
+        }
+
+        return `${sessoes.length + 1}ª Sessão`;
     }
 
     async getLegislaturaContexto(tenantId: string) {
