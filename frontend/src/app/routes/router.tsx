@@ -6,24 +6,30 @@ import { page } from './page-loader';
 import { parlamentarRoutes } from './parlamentar.routes';
 import { platformRoutes } from './platform.routes';
 import { publicRoutes } from './public.routes';
+import { RouteErrorPage } from './route-error';
 import { staffRoutes } from './staff.routes';
 
 export const appRouter = createBrowserRouter([
     {
-        path: ROUTES.login,
-        element: page(Pages.login),
-    },
-    /** Telão do plenário — público (TV/monitor sem login). */
-    {
-        path: 'sessoes/:id/painel',
-        element: page(Pages.sessaoPainel),
-    },
-    publicRoutes,
-    platformRoutes,
-    staffRoutes,
-    parlamentarRoutes,
-    {
-        path: '*',
-        element: <CatchAllRoute />,
+        errorElement: <RouteErrorPage />,
+        children: [
+            {
+                path: ROUTES.login,
+                element: page(Pages.login),
+            },
+            /** Telão do plenário — público (TV/monitor sem login). */
+            {
+                path: 'sessoes/:id/painel',
+                element: page(Pages.sessaoPainel),
+            },
+            publicRoutes,
+            platformRoutes,
+            staffRoutes,
+            parlamentarRoutes,
+            {
+                path: '*',
+                element: <CatchAllRoute />,
+            },
+        ],
     },
 ]);

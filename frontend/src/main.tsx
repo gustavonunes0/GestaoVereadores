@@ -25,12 +25,18 @@ import './styles/lex-presenca.css';
 import './styles/voting-panel.css';
 
 import App from './App';
+import { reloadForStaleChunk } from './app/routes/chunk-reload';
 import { AuthProvider } from './contexts/AuthContext';
 import { listenForInstallPrompt } from './pwa/installPrompt';
 import { registerPwa } from './pwa/registerPwa';
 
 addLocale('pt', PRIME_LOCALE_PT);
 locale('pt');
+
+window.addEventListener('vite:preloadError', (event) => {
+    if (reloadForStaleChunk()) event.preventDefault();
+});
+
 registerPwa();
 listenForInstallPrompt();
 

@@ -6,8 +6,6 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useSessaoRealtime } from '../../../hooks/useSessaoRealtime';
 import type { FaseSessao, PautaItemDetalhe, SessaoPlenariaDetalhe } from '../../../types/sessoes';
 import {
-    PAUTA_CATEGORIA_LABELS,
-    categoriaDeliberavel,
     pautaItemRotulo,
     resolveFaseSessao,
     resolvePautaCategoria,
@@ -23,10 +21,6 @@ import {
     type Councilor,
 } from './voting';
 import { ROLE_LABEL_APRESENTACAO } from './voting/types';
-import {
-    PautaVotacaoMiniDashboard,
-    resolvePautaVotacaoPlacar,
-} from '../pauta/PautaVotacaoMiniDashboard';
 import { resolveMateriaTextoOriginalUrl } from '../../../utils/materiaDisplay';
 
 const FASE_LABEL: Partial<Record<FaseSessao, string>> = {
@@ -73,8 +67,13 @@ function PainelMesaDiretora({
     });
 
     return (
-        <section className="sessao-painel-inicio__mesa" aria-label="Mesa diretora">
-            <div className="sessao-painel-etiqueta">Mesa diretora</div>
+        <section
+            className="sessao-painel-card sessao-painel-inicio__mesa"
+            aria-label="Mesa diretora"
+        >
+            <header className="sessao-painel-card__cabecalho">
+                <div className="sessao-painel-etiqueta">Mesa diretora</div>
+            </header>
             {loading && membros.length === 0 ? (
                 <div className="sessao-painel-inicio__mesa-loading">
                     <ProgressSpinner style={{ width: '2.5rem', height: '2.5rem' }} />
@@ -145,97 +144,200 @@ function PainelMesaDiretora({
     );
 }
 
-function PainelPautaDoDia({
+function iniciaisDe(nome: string): string {
+    return nome
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((p) => p[0]?.toUpperCase() ?? '')
+        .join('');
+}
+
+function PainelPresencaVereadores({
+    vereadores,
+    loading,
+}: {
+    vereadores: Councilor[];
+    loading?: boolean;
+}) {
+    const ordenados = useMemo(
+        () => [...vereadores].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+        [vereadores],
+    );
+    const presentes = ordenados.filter((v) => v.status !== 'ausente').length;
+    const ausentes = ordenados.length - presentes;
+
+    return (
+        <section
+            className="sessao-painel-card sessao-painel-presenca"
+            aria-label="Presença dos vereadores"
+        >
+            <header className="sessao-painel-card__cabecalho">
+                <div className="sessao-painel-etiqueta">Presença dos vereadores</div>
+                <div className="sessao-painel-presenca__totais">
+                    <span className="sessao-painel-presenca__total sessao-painel-presenca__total--presente">
+                        <strong>{presentes}</strong> presentes
+                    </span>
+                    <span className="sessao-painel-presenca__total sessao-painel-presenca__total--ausente">
+                        <strong>{ausentes}</strong> ausentes
+                    </span>
+                </div>
+            </header>
+
+            {loading && ordenados.length === 0 ? (
+                <div className="sessao-painel-inicio__mesa-loading">
+                    <ProgressSpinner style={{ width: '2.5rem', height: '2.5rem' }} />
+                </div>
+            ) : ordenados.length === 0 ? (
+                <p className="sessao-painel-sub-idle">Nenhum vereador na lista de presença.</p>
+            ) : (
+                <ul className="sessao-painel-presenca__grade">
+                    {ordenados.map((v) => {
+                        const presente = v.status !== 'ausente';
+                        const photo = v.photoUrl?.trim()
+                            ? resolveMateriaTextoOriginalUrl(v.photoUrl.trim())
+                            : null;
+                        return (
+                            <li
+                                key={v.id}
+                                className={`sessao-painel-presenca__item sessao-painel-presenca__item--${
+                                    presente ? 'presente' : 'ausente'
+                                }`}
+                            >
+                                <div className="sessao-painel-presenca__avatar" aria-hidden>
+                                    {photo ? (
+                                        <img src={photo} alt="" />
+                                    ) : (
+                                        <span>{iniciaisDe(v.name) || '—'}</span>
+                                    )}
+                                </div>
+                                <div className="sessao-painel-presenca__texto">
+                                    <strong className="sessao-painel-presenca__nome">{v.name}</strong>
+                                    <span className="sessao-painel-presenca__linha">
+                                        {v.party ? (
+                                            <span className="sessao-painel-presenca__partido">
+                                                {v.party}
+                                            </span>
+                                        ) : null}
+                                        <span className="sessao-painel-presenca__status">
+                                            {presente ? 'Presente' : 'Ausente'}
+                                        </span>
+                                    </span>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </section>
+    );
+}
+
+const PAUTA_CARROSSEL_INTERVALO_MS = 8_000;
+const PAUTA_CARROSSEL_POR_PAGINA = 3;
+
+function PainelPautaCarrossel({
     sessaoLabel,
-    itens,
+    itens: itensPauta,
     itemDestacadoId,
-    votacaoLive,
 }: {
     sessaoLabel: string;
     itens: PautaItemDetalhe[];
     itemDestacadoId?: string | null;
-    votacaoLive?: {
-        pautaItemId: string;
-        votosSim: number;
-        votosNao: number;
-        abstencoes: number;
-    } | null;
 }) {
-    const deliberaveis = itens.filter((i) =>
-        categoriaDeliberavel(resolvePautaCategoria(i)),
-    ).length;
+    const itens = useMemo(
+        () => itensPauta.filter((i) => resolvePautaCategoria(i) === 'MATERIA'),
+        [itensPauta],
+    );
+    const [pagina, setPagina] = useState(0);
+    const total = itens.length;
+    const totalPaginas = Math.ceil(total / PAUTA_CARROSSEL_POR_PAGINA);
+
+    useEffect(() => {
+        if (!itemDestacadoId) return;
+        const idx = itens.findIndex((i) => i.id === itemDestacadoId);
+        if (idx >= 0) setPagina(Math.floor(idx / PAUTA_CARROSSEL_POR_PAGINA));
+    }, [itemDestacadoId, itens]);
+
+    useEffect(() => {
+        if (totalPaginas <= 1) return;
+        const timer = window.setInterval(() => {
+            setPagina((atual) => (atual + 1) % totalPaginas);
+        }, PAUTA_CARROSSEL_INTERVALO_MS);
+        return () => window.clearInterval(timer);
+    }, [totalPaginas, pagina]);
+
+    const paginaAtual = totalPaginas > 0 ? Math.min(pagina, totalPaginas - 1) : 0;
+    const inicio = paginaAtual * PAUTA_CARROSSEL_POR_PAGINA;
+    const itensPagina = itens.slice(inicio, inicio + PAUTA_CARROSSEL_POR_PAGINA);
 
     return (
-        <div className="sessao-painel-pauta sessao-painel-pauta--compact">
-            <div className="sessao-painel-pauta__cabecalho">
+        <section
+            className="sessao-painel-card sessao-painel-carrossel"
+            aria-label="Pauta da sessão"
+            aria-roledescription="carrossel"
+        >
+            <header className="sessao-painel-card__cabecalho">
                 <div className="sessao-painel-etiqueta">Pauta da sessão</div>
-                <h1 className="sessao-painel-pauta__titulo">{sessaoLabel}</h1>
-                <p className="sessao-painel-pauta__resumo">
-                    {itens.length} {itens.length === 1 ? 'item' : 'itens'} ·{' '}
-                    {deliberaveis} em deliberação
+                <p className="sessao-painel-carrossel__sessao">{sessaoLabel}</p>
+                <p className="sessao-painel-carrossel__resumo">
+                    {total} {total === 1 ? 'matéria' : 'matérias'}
                 </p>
-            </div>
+            </header>
 
-            {itens.length === 0 ? (
-                <p className="sessao-painel-sub-idle">Nenhum item publicado na pauta.</p>
+            {total === 0 ? (
+                <p className="sessao-painel-sub-idle">Nenhuma matéria na pauta.</p>
             ) : (
-                <ol className="sessao-painel-pauta__lista">
-                    {itens.map((item, idx) => {
-                        const categoria = resolvePautaCategoria(item);
-                        const destacado = item.id === itemDestacadoId;
-                        const live =
-                            votacaoLive && votacaoLive.pautaItemId === item.id
-                                ? votacaoLive
-                                : null;
-                        const placar = resolvePautaVotacaoPlacar(
-                            live
-                                ? {
-                                      ...(item.votacao ?? { id: live.pautaItemId }),
-                                      finalizada: false,
-                                      votosSim: live.votosSim,
-                                      votosNao: live.votosNao,
-                                      abstencoes: live.abstencoes,
-                                  }
-                                : item.votacao,
-                        ) ??
-                            (categoriaDeliberavel(categoria)
-                                ? {
-                                      status: 'em_andamento' as const,
-                                      statusLabel: 'Aguardando',
-                                      votosSim: 0,
-                                      votosNao: 0,
-                                      abstencoes: 0,
-                                      resultado: null,
-                                  }
-                                : null);
-
-                        return (
+                <>
+                    <ol
+                        key={paginaAtual}
+                        className="sessao-painel-carrossel__pagina"
+                        aria-live="polite"
+                    >
+                        {itensPagina.map((item, idx) => (
                             <li
                                 key={item.id}
-                                className={`sessao-painel-pauta__item${
-                                    destacado ? ' sessao-painel-pauta__item--destaque' : ''
+                                className={`sessao-painel-carrossel__slide${
+                                    item.id === itemDestacadoId
+                                        ? ' sessao-painel-carrossel__slide--destaque'
+                                        : ''
                                 }`}
                             >
-                                <span className="sessao-painel-pauta__ordem">{idx + 1}</span>
-                                <div className="sessao-painel-pauta__info">
-                                    <span className="sessao-painel-pauta__item-titulo">
-                                        {pautaItemRotulo(item)}
-                                    </span>
-                                </div>
-                                {placar ? (
-                                    <div className="sessao-painel-pauta__placar">
-                                        <PautaVotacaoMiniDashboard placar={placar} />
-                                    </div>
-                                ) : null}
-                                <span className="sessao-painel-pauta__cat">
-                                    {PAUTA_CATEGORIA_LABELS[categoria]}
+                                <span className="sessao-painel-pauta__ordem">
+                                    {inicio + idx + 1}
                                 </span>
+                                <h2 className="sessao-painel-carrossel__titulo">
+                                    {pautaItemRotulo(item)}
+                                </h2>
                             </li>
-                        );
-                    })}
-                </ol>
+                        ))}
+                    </ol>
+
+                    {totalPaginas > 1 ? (
+                        <div className="sessao-painel-carrossel__nav">
+                            <span className="sessao-painel-carrossel__contador">
+                                {inicio + 1}–{inicio + itensPagina.length} de {total}
+                            </span>
+                            <div className="sessao-painel-carrossel__dots" aria-hidden>
+                                {Array.from({ length: totalPaginas }, (_, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        tabIndex={-1}
+                                        className={`sessao-painel-carrossel__dot${
+                                            idx === paginaAtual
+                                                ? ' sessao-painel-carrossel__dot--ativo'
+                                                : ''
+                                        }`}
+                                        onClick={() => setPagina(idx)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ) : null}
+                </>
             )}
-        </div>
+        </section>
     );
 }
 
@@ -245,21 +347,16 @@ function PainelInicioSessao({
     itemDestacadoId,
     president,
     mesa,
+    vereadores,
     elencoLoading,
-    votacaoLive,
 }: {
     sessaoLabel: string;
     itens: PautaItemDetalhe[];
     itemDestacadoId?: string | null;
     president: Councilor | null;
     mesa: Councilor[];
+    vereadores: Councilor[];
     elencoLoading?: boolean;
-    votacaoLive?: {
-        pautaItemId: string;
-        votosSim: number;
-        votosNao: number;
-        abstencoes: number;
-    } | null;
 }) {
     return (
         <div className="sessao-painel-inicio">
@@ -268,11 +365,11 @@ function PainelInicioSessao({
                 mesa={mesa}
                 loading={elencoLoading}
             />
-            <PainelPautaDoDia
+            <PainelPresencaVereadores vereadores={vereadores} loading={elencoLoading} />
+            <PainelPautaCarrossel
                 sessaoLabel={sessaoLabel}
                 itens={itens}
                 itemDestacadoId={itemDestacadoId}
-                votacaoLive={votacaoLive}
             />
         </div>
     );
@@ -560,8 +657,8 @@ export function SessaoPainelPage() {
                         itemDestacadoId={itemExibido?.id}
                         president={president}
                         mesa={mesaMembros}
+                        vereadores={all}
                         elencoLoading={elencoLoading}
-                        votacaoLive={null}
                     />
                 )}
             </main>
