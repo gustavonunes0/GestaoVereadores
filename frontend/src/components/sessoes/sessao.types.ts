@@ -16,6 +16,8 @@ export type Sessao = {
         legislatura?: { numero: number };
     };
     pautaItens?: PautaItemDeliberacao[];
+    /** Contagem enxuta vinda da listagem (sem carregar itens). */
+    pautaItensCount?: number;
     presencas?: {
         parlamentarId?: string;
         presente: boolean;

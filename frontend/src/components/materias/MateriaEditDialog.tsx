@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { materiasApi } from '../../api/legislative/materias.api';
@@ -53,6 +54,7 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     const { showSuccess, showApiError } = useAppToast();
     const { anos } = useDominios();
     const [saving, setSaving] = useState(false);
+    const [regeneratingPdf, setRegeneratingPdf] = useState(false);
     const [loadingAutoria, setLoadingAutoria] = useState(true);
     const [activeTab, setActiveTab] = useState<MateriaFormTab>('identificacao');
 
@@ -173,6 +175,18 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
             if (dto) {
                 await materiasApi.addCoautor(materia.id, dto);
             }
+        }
+    }
+
+    async function handleRegenerarPdf() {
+        setRegeneratingPdf(true);
+        try {
+            await materiasApi.gerarTextoOriginal(materia.id);
+            showSuccess('PDF do texto original atualizado.');
+        } catch (err) {
+            showApiError(err);
+        } finally {
+            setRegeneratingPdf(false);
         }
     }
 
@@ -456,15 +470,26 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                         />
                     </div>
                     {canEditConteudo ? (
-                        <p className="text-sm text-color-secondary m-0">
+                        <p className="text-sm text-color-secondary m-0 mb-2">
                             O texto original em PDF será regenerado automaticamente ao
                             salvar, com base na ementa e demais dados da matéria.
                         </p>
-                    ) : materia.textoOriginalUrl ? (
-                        <p className="text-sm text-color-secondary m-0">
-                            Texto original disponível (gerado automaticamente).
+                    ) : (
+                        <p className="text-sm text-color-secondary m-0 mb-2">
+                            Matéria já tramitada: o PDF não é atualizado ao salvar.
+                            Use o botão abaixo para regenerar com os dados atuais do autor.
                         </p>
-                    ) : null}
+                    )}
+                    <Button
+                        type="button"
+                        label="Atualizar PDF agora"
+                        icon="pi pi-refresh"
+                        severity="secondary"
+                        outlined
+                        size="small"
+                        loading={regeneratingPdf}
+                        onClick={() => void handleRegenerarPdf()}
+                    />
                 </div>
             )}
 

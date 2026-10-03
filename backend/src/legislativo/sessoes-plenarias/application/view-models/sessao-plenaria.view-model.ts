@@ -95,7 +95,100 @@ function mapPresencas(items: unknown[] | undefined) {
     );
 }
 
+export type SessaoPlenariaListPrismaPayload = {
+    id: string;
+    dataInicio: Date;
+    dataFim: Date | null;
+    nome: string | null;
+    mensagem: string | null;
+    statusSessao?: PrismaStatusSessao;
+    dataAbertura?: Date | null;
+    dataEncerramento?: Date | null;
+    dataSuspensao?: Date | null;
+    quorumMinimo?: number | null;
+    quorumPresente?: number | null;
+    modoTeste?: boolean;
+    sessaoLegislativaId?: string | null;
+    faseAtual?: PrismaFaseSessao;
+    linkJitsi?: string | null;
+    linkYoutube?: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    tipoSessao: SessaoPlenariaPrismaPayload['tipoSessao'];
+    situacao: SessaoPlenariaPrismaPayload['situacao'];
+    sessaoLegislativa?: SessaoPlenariaPrismaPayload['sessaoLegislativa'];
+    _count?: { pautaItens: number };
+};
+
 export class SessaoPlenariaViewModel {
+    /** Resposta enxuta para a tabela de sessões (sem pauta/presenças/ciclo de vida). */
+    static toListHttp(data: SessaoPlenariaListPrismaPayload) {
+        const statusLegado = resolveSessionStatus(data.situacao);
+        const statusSessao = (data.statusSessao ??
+            statusLegado) as StatusSessao | null;
+
+        return {
+            id: data.id,
+            dataInicio: data.dataInicio.toISOString(),
+            dataFim: data.dataFim?.toISOString() ?? null,
+            nome: data.nome ?? null,
+            mensagem: data.mensagem,
+            statusSessao,
+            statusSessaoLabel: statusSessao
+                ? STATUS_SESSAO_LABELS[statusSessao]
+                : null,
+            dataAbertura: data.dataAbertura?.toISOString() ?? null,
+            dataEncerramento: data.dataEncerramento?.toISOString() ?? null,
+            dataSuspensao: data.dataSuspensao?.toISOString() ?? null,
+            quorumMinimo: data.quorumMinimo ?? null,
+            quorumPresente: data.quorumPresente ?? null,
+            modoTeste: data.modoTeste ?? false,
+            sessaoLegislativaId: data.sessaoLegislativaId ?? null,
+            tipo: {
+                id: data.tipoSessao.id,
+                nome: data.tipoSessao.nome,
+                codigo: data.tipoSessao.codigo,
+                label: data.tipoSessao.codigo
+                    ? SESSION_TYPE_LABELS[data.tipoSessao.codigo as SessionType]
+                    : data.tipoSessao.nome,
+                requerQuorum: data.tipoSessao.requerQuorum,
+            },
+            situacao: {
+                id: data.situacao.id,
+                nome: data.situacao.nome,
+                codigo: statusSessao
+                    ? statusSessaoToCodigoSituacao(statusSessao)
+                    : data.situacao.codigo,
+                label: statusSessao
+                    ? STATUS_SESSAO_LABELS[statusSessao]
+                    : statusLegado
+                      ? SESSION_STATUS_LABELS[statusLegado]
+                      : data.situacao.nome,
+            },
+            faseAtual: data.faseAtual
+                ? {
+                      value: data.faseAtual,
+                      label:
+                          FASE_SESSAO_LABELS[
+                              data.faseAtual as unknown as FaseSessao
+                          ] ?? data.faseAtual,
+                  }
+                : null,
+            linkJitsi: data.linkJitsi ?? null,
+            linkYoutube: data.linkYoutube ?? null,
+            sessaoLegislativa: data.sessaoLegislativa
+                ? {
+                      id: data.sessaoLegislativa.id,
+                      numero: data.sessaoLegislativa.numero,
+                      legislatura: data.sessaoLegislativa.legislatura ?? null,
+                  }
+                : null,
+            pautaItensCount: data._count?.pautaItens ?? 0,
+            createdAt: data.createdAt.toISOString(),
+            updatedAt: data.updatedAt.toISOString(),
+        };
+    }
+
     static toHttp(data: SessaoPlenariaPrismaPayload) {
         const statusLegado = resolveSessionStatus(data.situacao);
         const statusSessao = (data.statusSessao ??
