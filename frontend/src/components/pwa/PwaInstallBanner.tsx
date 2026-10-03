@@ -8,6 +8,7 @@ import {
 } from '../../pwa/installPrompt';
 import { isIosDevice, isStandaloneDisplay } from '../../pwa/device';
 import { InstallAppPopup } from './InstallAppGuide';
+import { isPainelTelaoPath, useRouterPathname } from './useRouterPathname';
 
 const DISMISS_KEY = 'sigl.pwa.install.dismissed';
 const DISMISS_AT_KEY = 'sigl.pwa.install.dismissedAt';
@@ -36,12 +37,6 @@ function wasDismissedRecently(): boolean {
     return Date.now() - at < IOS_REDISMISS_MS;
 }
 
-function isLoginPath(): boolean {
-    if (typeof window === 'undefined') return false;
-    const path = window.location.pathname;
-    return path === '/login' || path.startsWith('/login');
-}
-
 /**
  * Android: botão Instalar nativo.
  * iPhone: “Ver como” abre o guia de 3 passos (única forma viável na Apple).
@@ -56,7 +51,8 @@ export function PwaInstallBanner() {
     const [graceElapsed, setGraceElapsed] = useState(false);
     const [forceManual, setForceManual] = useState(false);
     const [iosSheetOpen, setIosSheetOpen] = useState(false);
-    const [onLogin, setOnLogin] = useState(() => isLoginPath());
+    const pathname = useRouterPathname();
+    const onLogin = pathname.startsWith('/login');
 
     useEffect(() => {
         const timeout = window.setTimeout(
@@ -66,28 +62,8 @@ export function PwaInstallBanner() {
         return () => window.clearTimeout(timeout);
     }, []);
 
-    useEffect(() => {
-        const syncPath = () => setOnLogin(isLoginPath());
-        syncPath();
-        window.addEventListener('popstate', syncPath);
-        const origPush = history.pushState.bind(history);
-        const origReplace = history.replaceState.bind(history);
-        history.pushState = (...args: Parameters<History['pushState']>) => {
-            origPush(...args);
-            syncPath();
-        };
-        history.replaceState = (...args: Parameters<History['replaceState']>) => {
-            origReplace(...args);
-            syncPath();
-        };
-        return () => {
-            window.removeEventListener('popstate', syncPath);
-            history.pushState = origPush;
-            history.replaceState = origReplace;
-        };
-    }, []);
-
     const mode: Mode = (() => {
+        if (isPainelTelaoPath(pathname)) return 'hidden';
         // Login iOS já tem o guia embutido — evita dois avisos na mesma tela.
         if (onLogin && isIosDevice()) return 'hidden';
         if (dismissed || installed || isStandaloneDisplay()) return 'hidden';
