@@ -1,6 +1,14 @@
-import { NotFoundException } from '@nestjs/common';
+import {
+    BadRequestException,
+    ForbiddenException,
+    NotFoundException,
+} from '@nestjs/common';
 import { StatusMateria } from '@prisma/client';
 import { MatterTramitationAction } from '../../domain/enums/matter-tramitation-action.enum';
+import {
+    MSG_PARLAMENTAR_INATIVO_AUTORIA,
+    MSG_PARLAMENTAR_INATIVO_CRIAR_MATERIA,
+} from '../../domain/services/autoria-parlamentar-ativo';
 import { CreateMateriaUseCase } from './create-materia.use-case';
 import { ExecuteMatterTramitationUseCase } from './execute-matter-tramitation.use-case';
 import {
@@ -8,6 +16,10 @@ import {
     MatterNotFoundError,
     MatterTramitationActionNotAllowedError,
 } from '../errors/matter.errors';
+
+jest.mock('./generate-materia-texto-original-pdf.use-case', () => ({
+    GenerateMateriaTextoOriginalPdfUseCase: class {},
+}));
 
 function buildMateriaRepositoryMock() {
     return {
@@ -24,6 +36,7 @@ function buildMateriaRepositoryMock() {
         setAutorParlamentar: jest.fn(),
         setTenantPartner: jest.fn(),
         replaceCoautores: jest.fn(),
+        listParlamentaresInativos: jest.fn().mockResolvedValue([]),
     };
 }
 
@@ -147,7 +160,7 @@ describe('CreateMateriaUseCase', () => {
         const result = await useCase.execute('tenant-1', dto);
 
         expect(result.status.value).toBe(StatusMateria.DRAFT);
-        expect(result.workflow.capabilities.canTramitate).toBe(false);
+        expect(result.workflow.capabilities.canTramitate).toBe(true);
         expect(repository.create).toHaveBeenCalledWith(
             'tenant-1',
             expect.objectContaining({
@@ -170,6 +183,44 @@ describe('CreateMateriaUseCase', () => {
         await expect(
             useCase.execute('tenant-1', { ...dto, ementa: '  ' }),
         ).rejects.toBeInstanceOf(MatterEmentaRequiredError);
+    });
+
+    it('vereador inativo não cria matéria', async () => {
+        const repository = buildMateriaRepositoryMock();
+        repository.listParlamentaresInativos.mockResolvedValue(['parl-9']);
+        const useCase = new CreateMateriaUseCase(
+            repository as never,
+            generatePdf as never,
+        );
+
+        await expect(
+            useCase.execute('tenant-1', dto, {
+                authType: 'camara',
+                sessionType: 'parliamentarian',
+                parliamentarianId: 'parl-9',
+            } as never),
+        ).rejects.toThrow(
+            new ForbiddenException(MSG_PARLAMENTAR_INATIVO_CRIAR_MATERIA),
+        );
+        expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it('staff não atribui autoria ou coautoria a parlamentar inativo', async () => {
+        const repository = buildMateriaRepositoryMock();
+        repository.listParlamentaresInativos.mockResolvedValue(['parl-2']);
+        const useCase = new CreateMateriaUseCase(
+            repository as never,
+            generatePdf as never,
+        );
+
+        await expect(
+            useCase.execute('tenant-1', { ...dto, coautorIds: ['parl-2'] }),
+        ).rejects.toThrow(new BadRequestException(MSG_PARLAMENTAR_INATIVO_AUTORIA));
+        expect(repository.listParlamentaresInativos).toHaveBeenCalledWith(
+            'tenant-1',
+            ['parl-1', 'parl-2'],
+        );
+        expect(repository.create).not.toHaveBeenCalled();
     });
 });
 

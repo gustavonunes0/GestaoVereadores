@@ -1,4 +1,4 @@
-import { CodigoSituacaoSessao } from '@prisma/client';
+import { CodigoSituacaoSessao, StatusSessao } from '@prisma/client';
 import { SessionLifecycleAction } from '../../domain/enums/session-lifecycle-action.enum';
 import { SessionStatus } from '../../domain/enums/session-status.enum';
 import { CreateSessaoPlenariaUseCase } from './create-sessao-plenaria.use-case';
@@ -26,6 +26,7 @@ const sessaoBase = {
     dataInicio: new Date('2026-06-01T19:00:00'),
     dataFim: null,
     mensagem: null,
+    statusSessao: StatusSessao.AGENDADA,
     cicloVidaJson: [],
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -78,6 +79,7 @@ describe('ExecuteSessionLifecycleUseCase', () => {
         repository.findOne.mockResolvedValue(sessaoBase);
         repository.executarCicloVida.mockResolvedValue({
             ...sessaoBase,
+            statusSessao: StatusSessao.ABERTA,
             situacao: {
                 ...sessaoBase.situacao,
                 codigo: CodigoSituacaoSessao.EM_ANDAMENTO,

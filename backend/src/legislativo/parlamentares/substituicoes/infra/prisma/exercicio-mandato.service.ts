@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../../../prisma/prisma.service';
+import { ParliamentarianStatus } from '../../../domain/enums/parliamentarian-status.enum';
 import { CondicaoMandato } from '../../../mandatos/domain/enums/condicao-mandato.enum';
 import { StatusSubstituicao } from '../../domain/enums/substituicao.enums';
 import {
+    assertParlamentarAtivo,
     assertPodeExercerMandato,
     colunaDeDataCivil,
     DataCivil,
@@ -67,7 +69,7 @@ export class ExercicioMandatoService {
             }),
         ]);
 
-        return resolverVagas(
+        const vagas = resolverVagas(
             titulares.map((t) => t.parliamentarianId),
             substituicoes.map((s) => ({
                 id: s.id,
@@ -79,6 +81,26 @@ export class ExercicioMandatoService {
             })),
             data,
         );
+        return this.semOcupantesInativos(tenantId, vagas);
+    }
+
+    /** Parlamentar inativo não exerce: sua vaga sai da chamada e do quórum. */
+    private async semOcupantesInativos(
+        tenantId: string,
+        vagas: VagaEmExercicio[],
+    ): Promise<VagaEmExercicio[]> {
+        if (vagas.length === 0) return vagas;
+        const inativos = await this.prisma.parliamentarian.findMany({
+            where: {
+                tenantId,
+                id: { in: vagas.map((v) => v.emExercicioId) },
+                status: ParliamentarianStatus.INACTIVE,
+            },
+            select: { id: true },
+        });
+        if (inativos.length === 0) return vagas;
+        const idsInativos = new Set(inativos.map((p) => p.id));
+        return vagas.filter((v) => !idsInativos.has(v.emExercicioId));
     }
 
     async elencoDaSessao(tenantId: string, sessaoId: string): Promise<ElencoExercicioSessao> {
@@ -136,6 +158,12 @@ export class ExercicioMandatoService {
         sessaoId: string,
         parliamentarianId: string,
     ): Promise<void> {
+        const parlamentar = await this.prisma.parliamentarian.findFirst({
+            where: { id: parliamentarianId, tenantId },
+            select: { status: true },
+        });
+        assertParlamentarAtivo(parlamentar?.status);
+
         const { legislatureId, vagas } = await this.elencoDaSessao(tenantId, sessaoId);
         if (vagas.some((v) => v.emExercicioId === parliamentarianId)) return;
 

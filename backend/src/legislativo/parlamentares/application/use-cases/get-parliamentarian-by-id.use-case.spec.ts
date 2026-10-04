@@ -18,6 +18,7 @@ describe('GetParliamentarianByIdUseCase', () => {
             firstName: 'João',
             lastName: 'Silva',
             email: 'parlamentar.52998224725@interno.sigl.local',
+            cpf: '52998224725',
             politicalParty: {
                 id: 'party-1',
                 name: 'Partido Teste',

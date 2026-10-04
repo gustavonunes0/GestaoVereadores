@@ -5,6 +5,7 @@ import { MateriaRepository } from '../../domain/repositories/materia.repository'
 import { MATERIA_REPOSITORY } from '../../materias.tokens';
 import { PrismaService } from '../../../../prisma/prisma.service';
 import { tenantWhere } from '../../../../common/prisma/tenant-scope';
+import { ParliamentarianStatus } from '../../../parlamentares/domain/enums/parliamentarian-status.enum';
 
 export type MatterAuthorOptionKind = 'parliamentarian' | 'tenant_partner';
 
@@ -43,6 +44,7 @@ export class ListMatterAuthorOptionsUseCase {
                 where: {
                     ...tenantWhere(tenantId),
                     isRemoved: false,
+                    status: { not: ParliamentarianStatus.INACTIVE },
                     parliamentarianUser: { isRemoved: false },
                 },
                 orderBy: { parliamentaryName: 'asc' },

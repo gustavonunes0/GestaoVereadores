@@ -1,13 +1,18 @@
 import 'reflect-metadata';
-import { TenantMaintainerGuard } from '../guards/tenant-maintainer.guard';
+import { TENANT_ROLES_KEY } from '../decorators/tenant-roles.decorator';
+import {
+    PARLIAMENTARIAN_SESSION,
+    STAFF_AND_ABOVE,
+} from '../../auth/guards/guard-combos';
 import { NormasController } from '../../controle-juridico/normas/application/controllers/normas.controller';
 
 describe('NormasController maintainer policy', () => {
-    it('usa TenantMaintainerGuard nos endpoints de escrita', () => {
-        const createGuards = Reflect.getMetadata('__guards__', NormasController.prototype.create);
-        const guardNames = (createGuards ?? []).map(
-            (guard: { name?: string }) => guard?.name ?? '',
-        );
-        expect(guardNames).toContain(TenantMaintainerGuard.name);
+    it('restringe a criação à equipe da câmara (sem sessão de parlamentar)', () => {
+        const roles = Reflect.getMetadata(
+            TENANT_ROLES_KEY,
+            NormasController.prototype.create,
+        ) as string[];
+        expect(roles).toEqual(STAFF_AND_ABOVE);
+        expect(roles).not.toContain(PARLIAMENTARIAN_SESSION);
     });
 });

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { parlamentaresApi } from '../api/legislative/parlamentares.api';
 import { sessoesApi } from '../api/legislative/sessoes.api';
 import { substituicoesApi } from '../api/legislative/substituicoes.api';
 import type { ElencoExercicioSessao } from '../types/substituicoes';
@@ -10,6 +11,7 @@ export const MSG_TITULAR_SUBSTITUIDO =
     'Parlamentar substituído por suplente no período — presença/voto não permitido.';
 export const MSG_SUPLENTE_SEM_EXERCICIO =
     'Suplente sem substituição ativa no período — presença/voto não permitido.';
+export const MSG_PARLAMENTAR_INATIVO = 'Parlamentar inativo — presença/voto não permitido.';
 
 export interface MeuExercicio {
     emExercicio: boolean;
@@ -24,7 +26,11 @@ const EXERCICIO_LIVRE: MeuExercicio = { emExercicio: true, bloqueio: null, subst
 function resolverMeuExercicio(
     elenco: ElencoExercicioSessao | null,
     parliamentarianId: string | undefined,
+    meuStatus: string | null,
 ): MeuExercicio {
+    if (meuStatus === 'INACTIVE') {
+        return { emExercicio: false, bloqueio: MSG_PARLAMENTAR_INATIVO, substituindo: null };
+    }
     if (!elenco || elenco.vagas.length === 0 || !parliamentarianId) return EXERCICIO_LIVRE;
     const minhaVaga = elenco.vagas.find((v) => v.emExercicio.id === parliamentarianId);
     if (minhaVaga) {
@@ -54,12 +60,17 @@ export function useMinhaPresenca(sessaoId: string) {
         if (!sessaoId) return;
         setLoading(true);
         try {
-            const [registros, elenco] = await Promise.all([
+            const [registros, elenco, meuCadastro] = await Promise.all([
                 sessoesApi.getPresencas(sessaoId),
                 substituicoesApi.elencoDaSessao(sessaoId).catch(() => null),
+                parliamentarianId
+                    ? parlamentaresApi.getById(parliamentarianId).catch(() => null)
+                    : Promise.resolve(null),
             ]);
             setHasConfirmed(hasMinhaPresenca(registros, parliamentarianId));
-            setExercicio(resolverMeuExercicio(elenco, parliamentarianId));
+            setExercicio(
+                resolverMeuExercicio(elenco, parliamentarianId, meuCadastro?.status ?? null),
+            );
         } catch (err) {
             showApiError(err);
         } finally {

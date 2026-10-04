@@ -1,3 +1,4 @@
+import { CondicaoMandato } from '../enums/condicao-mandato.enum';
 import { MandateStatus } from '../enums/mandate-status.enum';
 import { ParliamentarianMandateEntity } from '../entities/parliamentarian-mandate.entity';
 import { ParliamentarianMandateDomainService } from './parliamentarian-mandate-domain.service';
@@ -12,7 +13,7 @@ describe('ParliamentarianMandateDomainService', () => {
         legislatureId: 'l-1',
         partyAcronym: null,
         partyName: null,
-        condicao: 'TITULAR' as const,
+        condicao: CondicaoMandato.TITULAR,
         titularAfastadoId: null,
         startedAt: new Date('2024-01-01'),
         endedAt: null,

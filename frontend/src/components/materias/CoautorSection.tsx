@@ -44,7 +44,7 @@ function AddCoautorDialog({ materiaId, onClose, onSaved }: AddCoautorDialogProps
         if (query.length < 2) { setParlSugestoes([]); return; }
         try {
             const res = await parlamentaresApi.list({ busca: query, limit: 20 });
-            setParlSugestoes(res.data);
+            setParlSugestoes(res.data.filter((p) => p.status !== 'INACTIVE'));
         } catch {
             setParlSugestoes([]);
         }

@@ -5,6 +5,10 @@ import {
 } from '../../../../common/types/authenticated-request';
 import { MateriaRepository, MatterCoauthorInput } from '../../domain/repositories/materia.repository';
 import { LegislativeMatterDomainService } from '../../domain/services/legislative-matter-domain.service';
+import {
+    assertSemAutoresInativos,
+    assertVereadorPodeCriarMateria,
+} from '../../domain/services/autoria-parlamentar-ativo';
 import { MATERIA_REPOSITORY } from '../../materias.tokens';
 import { CreateMateriaDto } from '../dto/materia.dto';
 import {
@@ -65,6 +69,22 @@ export class CreateMateriaUseCase {
             );
         }
 
+        const coautoresResolved: MatterCoauthorInput[] = coautores?.length
+            ? coautores.map((item) => ({
+                  parliamentarianId: item.parliamentarianId,
+                  tenantPartnerId: item.tenantPartnerId,
+              }))
+            : (coautorIds ?? []).map((parliamentarianId) => ({
+                  parliamentarianId,
+              }));
+
+        await this.assertAutoresAtivos(
+            tenantId,
+            authorParliamentarianId,
+            coautoresResolved,
+            Boolean(user && isParlamentarianUser(user)),
+        );
+
         const created = (await this.repository.create(tenantId, {
             ...createDto,
             status:
@@ -81,15 +101,6 @@ export class CreateMateriaUseCase {
                 tenantPartnerId,
             });
         }
-
-        const coautoresResolved: MatterCoauthorInput[] = coautores?.length
-            ? coautores.map((item) => ({
-                  parliamentarianId: item.parliamentarianId,
-                  tenantPartnerId: item.tenantPartnerId,
-              }))
-            : (coautorIds ?? []).map((parliamentarianId) => ({
-                  parliamentarianId,
-              }));
 
         if (coautoresResolved.length) {
             await this.repository.replaceCoautores(
@@ -114,5 +125,30 @@ export class CreateMateriaUseCase {
             const full = await this.repository.findOne(tenantId, created.id);
             return MatterViewModel.toHttp(full as MateriaPrismaPayload);
         }
+    }
+
+    private async assertAutoresAtivos(
+        tenantId: string,
+        authorParliamentarianId: string | undefined,
+        coautores: MatterCoauthorInput[],
+        sessaoDoVereador: boolean,
+    ) {
+        const coautorIds = coautores
+            .map((c) => c.parliamentarianId)
+            .filter((id): id is string => Boolean(id));
+        const ids = [
+            ...(authorParliamentarianId ? [authorParliamentarianId] : []),
+            ...coautorIds,
+        ];
+        const inativos = await this.repository.listParlamentaresInativos(
+            tenantId,
+            ids,
+        );
+        if (sessaoDoVereador && authorParliamentarianId) {
+            assertVereadorPodeCriarMateria(
+                inativos.includes(authorParliamentarianId),
+            );
+        }
+        assertSemAutoresInativos(inativos);
     }
 }

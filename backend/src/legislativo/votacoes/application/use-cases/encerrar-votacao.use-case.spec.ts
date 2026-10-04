@@ -82,7 +82,7 @@ describe('EncerrarVotacaoUseCase', () => {
         const result = await useCase.execute('t1', 'sessao-1', 'pauta-1', {}, 'user-1');
 
         expect(repo.calcularContagem).toHaveBeenCalledWith('vot-1');
-        expect(repo.encerrar).toHaveBeenCalledWith('vot-1', 'pauta-1', 't1', 'mat-1',
+        expect(repo.encerrar).toHaveBeenCalledWith('vot-1', 'pauta-1', 't1', 'mat-1', undefined,
             expect.objectContaining({ votosSim: 5, votosNao: 2, resultado: 'APROVADO' }));
         expect(result.resultado).toBe('APROVADO');
     });

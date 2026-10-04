@@ -116,6 +116,11 @@ export abstract class MateriaRepository {
         matterId: string,
         coautores: MatterCoauthorInput[],
     ): Promise<MatterAuthorshipPayload>;
+    /** Subconjunto de `parliamentarianIds` com status legislativo INACTIVE. */
+    abstract listParlamentaresInativos(
+        tenantId: string,
+        parliamentarianIds: string[],
+    ): Promise<string[]>;
 
     // ── Métodos novos (clean DDD) ──────────────────────────────────────────
 

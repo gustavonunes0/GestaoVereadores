@@ -1,5 +1,9 @@
 import { UnprocessableEntityException } from '@nestjs/common';
-import { MSG_SUPLENTE_SEM_EXERCICIO, MSG_TITULAR_SUBSTITUIDO } from '../../domain/services/exercicio-mandato';
+import {
+    MSG_PARLAMENTAR_INATIVO,
+    MSG_SUPLENTE_SEM_EXERCICIO,
+    MSG_TITULAR_SUBSTITUIDO,
+} from '../../domain/services/exercicio-mandato';
 import { ExercicioMandatoService } from './exercicio-mandato.service';
 
 type Sessao = {
@@ -22,7 +26,9 @@ function buildPrisma(opts: {
         status: string;
     }>;
     condicoes?: Record<string, 'TITULAR' | 'SUPLENTE'>;
+    inativos?: string[];
 }) {
+    const inativos = new Set(opts.inativos ?? []);
     const createMany = jest.fn().mockImplementation(({ data }) => {
         opts.sessao.elencoExercicio = data.map(
             ({ sessaoId: _sessaoId, ...vaga }: { sessaoId: string }) => vaga,
@@ -40,6 +46,16 @@ function buildPrisma(opts: {
             ),
         },
         legislature: { findFirst: jest.fn().mockResolvedValue({ id: 'leg-1' }) },
+        parliamentarian: {
+            findFirst: jest.fn().mockImplementation(({ where }) =>
+                Promise.resolve({ status: inativos.has(where.id) ? 'INACTIVE' : 'ACTIVE' }),
+            ),
+            findMany: jest.fn().mockImplementation(({ where }) =>
+                Promise.resolve(
+                    (where.id.in as string[]).filter((id) => inativos.has(id)).map((id) => ({ id })),
+                ),
+            ),
+        },
         parliamentarianMandate: {
             findMany: jest
                 .fn()
@@ -178,5 +194,42 @@ describe('ExercicioMandatoService', () => {
 
         const ids = await service.idsEmExercicioDaSessao('tenant-1', 'sessao-1');
         expect([...ids].sort()).toEqual(['titular-1', 'titular-2']);
+    });
+
+    it('parlamentar inativo não registra presença/voto e sai do quórum', async () => {
+        const { prisma } = buildPrisma({
+            sessao: { dataInicio: DIA_SESSAO, statusSessao: 'AGENDADA', elencoExercicio: [] },
+            titulares: ['titular-1', 'titular-2'],
+            substituicoes: [],
+            condicoes: { 'titular-1': 'TITULAR', 'titular-2': 'TITULAR' },
+            inativos: ['titular-2'],
+        });
+        const service = new ExercicioMandatoService(prisma as never);
+
+        await expect(
+            service.assertPodeExercerNaSessao('tenant-1', 'sessao-1', 'titular-2'),
+        ).rejects.toThrow(new UnprocessableEntityException(MSG_PARLAMENTAR_INATIVO));
+        await expect(
+            service.assertPodeExercerNaSessao('tenant-1', 'sessao-1', 'titular-1'),
+        ).resolves.toBeUndefined();
+        const ids = await service.idsEmExercicioDaSessao('tenant-1', 'sessao-1');
+        expect([...ids]).toEqual(['titular-1']);
+    });
+
+    it('titular inativo substituído mantém a vaga com o suplente ativo', async () => {
+        const { prisma } = buildPrisma({
+            sessao: { dataInicio: DIA_SESSAO, statusSessao: 'AGENDADA', elencoExercicio: [] },
+            titulares: ['titular-1'],
+            substituicoes: [substituicaoAtiva],
+            condicoes: { 'titular-1': 'TITULAR', 'suplente-1': 'SUPLENTE' },
+            inativos: ['titular-1'],
+        });
+        const service = new ExercicioMandatoService(prisma as never);
+
+        const ids = await service.idsEmExercicioDaSessao('tenant-1', 'sessao-1');
+        expect([...ids]).toEqual(['suplente-1']);
+        await expect(
+            service.assertPodeExercerNaSessao('tenant-1', 'sessao-1', 'suplente-1'),
+        ).resolves.toBeUndefined();
     });
 });

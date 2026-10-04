@@ -1,6 +1,7 @@
 import { UnprocessableEntityException } from '@nestjs/common';
 import { CondicaoMandato } from '../../../mandatos/domain/enums/condicao-mandato.enum';
 import { assertParliamentarianHasActiveMandate } from '../../../mandatos/domain/services/mandate-workflow';
+import { ParliamentarianStatus } from '../../../domain/enums/parliamentarian-status.enum';
 import { StatusSubstituicao } from '../enums/substituicao.enums';
 
 /** Data civil no formato YYYY-MM-DD. */
@@ -25,6 +26,17 @@ export const MSG_TITULAR_SUBSTITUIDO =
     'Parlamentar substituído por suplente no período — presença/voto não permitido.';
 export const MSG_SUPLENTE_SEM_EXERCICIO =
     'Suplente sem substituição ativa no período — presença/voto não permitido.';
+export const MSG_PARLAMENTAR_INATIVO = 'Parlamentar inativo — presença/voto não permitido.';
+
+export function parlamentarInativo(status: string | null | undefined): boolean {
+    return status === ParliamentarianStatus.INACTIVE;
+}
+
+export function assertParlamentarAtivo(status: string | null | undefined): void {
+    if (parlamentarInativo(status)) {
+        throw new UnprocessableEntityException(MSG_PARLAMENTAR_INATIVO);
+    }
+}
 
 const FUSO_CAMARA = 'America/Fortaleza';
 const SEM_FIM: DataCivil = '9999-12-31';

@@ -34,6 +34,8 @@ import {
     assertTransicaoStatusPermitida,
     syncEmTramitacaoFromStatus,
 } from '../../domain/services/materia-workflow';
+import { assertSemAutoresInativos } from '../../domain/services/autoria-parlamentar-ativo';
+import { ParliamentarianStatus } from '../../../parlamentares/domain/enums/parliamentarian-status.enum';
 
 type TramitacaoEntry = {
     status: StatusMateria;
@@ -115,6 +117,31 @@ export class PrismaMateriaRepository implements MateriaRepository {
         }
     }
 
+    async listParlamentaresInativos(
+        tenantId: string,
+        parliamentarianIds: string[],
+    ): Promise<string[]> {
+        if (parliamentarianIds.length === 0) return [];
+        const rows = await this.prisma.parliamentarian.findMany({
+            where: {
+                id: { in: parliamentarianIds },
+                ...tenantWhere(tenantId),
+                status: ParliamentarianStatus.INACTIVE,
+            },
+            select: { id: true },
+        });
+        return rows.map((row) => row.id);
+    }
+
+    private async assertParlamentaresAtivos(
+        tenantId: string,
+        parliamentarianIds: string[],
+    ) {
+        assertSemAutoresInativos(
+            await this.listParlamentaresInativos(tenantId, parliamentarianIds),
+        );
+    }
+
     private async assertTenantPartnerAuthorEligible(
         tenantId: string,
         tenantPartnerId: string,
@@ -143,15 +170,25 @@ export class PrismaMateriaRepository implements MateriaRepository {
         authorTenantPartnerId?: string | null,
     ) {
         if (coautores === undefined) return;
-        await this.prisma.matterCoauthor.deleteMany({ where: { matterId } });
-        if (!coautores.length) return;
 
         const parliamentarianIds = coautores
             .map((c) => c.parliamentarianId)
             .filter((id): id is string => Boolean(id));
         if (parliamentarianIds.length) {
             await this.assertParliamentariansWithUser(tenantId, parliamentarianIds);
+            const atuais = await this.prisma.matterCoauthor.findMany({
+                where: { matterId, parliamentarianId: { not: null } },
+                select: { parliamentarianId: true },
+            });
+            const jaCoautores = new Set(atuais.map((c) => c.parliamentarianId));
+            await this.assertParlamentaresAtivos(
+                tenantId,
+                parliamentarianIds.filter((id) => !jaCoautores.has(id)),
+            );
         }
+
+        await this.prisma.matterCoauthor.deleteMany({ where: { matterId } });
+        if (!coautores.length) return;
 
         const ordemRows: Prisma.MatterCoauthorCreateManyInput[] = [];
 
@@ -643,11 +680,14 @@ export class PrismaMateriaRepository implements MateriaRepository {
         matterId: string,
         dto: SetAutorParlamentarDto,
     ) {
-        await this.findAutoriaOrThrow(tenantId, matterId);
+        const matter = await this.findAutoriaOrThrow(tenantId, matterId);
         await this.assertParliamentarianAuthorEligible(
             tenantId,
             dto.parliamentarianId,
         );
+        if (matter.authorParliamentarianId !== dto.parliamentarianId) {
+            await this.assertParlamentaresAtivos(tenantId, [dto.parliamentarianId]);
+        }
 
         await this.prisma.materia.update({
             where: { id: matterId },
@@ -725,6 +765,7 @@ export class PrismaMateriaRepository implements MateriaRepository {
                 tenantId,
                 parliamentarianId,
             );
+            await this.assertParlamentaresAtivos(tenantId, [parliamentarianId]);
 
             if (matter.authorParliamentarianId === parliamentarianId) {
                 throw new BadRequestException(

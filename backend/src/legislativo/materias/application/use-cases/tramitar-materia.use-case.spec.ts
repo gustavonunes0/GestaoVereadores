@@ -4,6 +4,7 @@ import { MatterStatus } from '../../domain/enums/matter-status.enum';
 import { MateriaRepository } from '../../domain/repositories/materia.repository';
 import { MATERIA_REPOSITORY } from '../../materias.tokens';
 import { TramitarMateriaUseCase } from './tramitar-materia.use-case';
+import { MatterNotFoundError } from '../errors/matter.errors';
 import { MateriaPrismaPayload } from '../view-models/matter.view-model';
 
 function makeMateria(status: MatterStatus): MateriaPrismaPayload {
@@ -49,6 +50,7 @@ describe('TramitarMateriaUseCase', () => {
             removeCoautor: jest.fn(),
             setRelator: jest.fn(),
             replaceCoautores: jest.fn(),
+            listParlamentaresInativos: jest.fn(),
             proximoNumero: jest.fn(),
             listTenantPartners: jest.fn(),
             addPublicacao: jest.fn(),
@@ -64,13 +66,13 @@ describe('TramitarMateriaUseCase', () => {
         useCase = module.get(TramitarMateriaUseCase);
     });
 
-    it('lança NotFoundException quando matéria não existe', async () => {
+    it('lança MatterNotFoundError quando matéria não existe', async () => {
         repo.findOne.mockRejectedValue(new NotFoundException());
         await expect(
             useCase.execute('tenant-1', 'mat-1', {
                 novoStatus: MatterStatus.PROTOCOLADA,
             }),
-        ).rejects.toThrow(NotFoundException);
+        ).rejects.toThrow(MatterNotFoundError);
     });
 
     it('lança BadRequestException com mensagem PT para transição inválida', async () => {
