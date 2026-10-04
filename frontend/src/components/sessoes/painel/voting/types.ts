@@ -15,6 +15,8 @@ export interface Councilor {
     role?: CouncilorRole;
     /** Cargo original da mesa (quando disponível). */
     cargoLabel?: string;
+    /** Suplente em exercício: nome do titular substituído. */
+    substituindo?: string;
     status: CouncilorStatus;
     side: 'left' | 'right';
     photoUrl?: string | null;

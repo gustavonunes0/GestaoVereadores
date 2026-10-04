@@ -4,6 +4,7 @@ import { SessaoPlenariaRepository } from '../../domain/repositories/sessao-plena
 import { StatusSessao } from '../../domain/enums/status-sessao.enum';
 import { ParlamentarianJwtPayload } from '../../../../auth/domain/types/jwt-payload.type';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { ExercicioMandatoService } from '../../../parlamentares/substituicoes/infra/prisma/exercicio-mandato.service';
 
 @Injectable()
 export class RegistrarMinhaPresencaUseCase {
@@ -11,6 +12,7 @@ export class RegistrarMinhaPresencaUseCase {
         @Inject(SESSAO_PLENARIA_REPOSITORY)
         private readonly repository: SessaoPlenariaRepository,
         private readonly prisma: PrismaService,
+        private readonly exercicioMandato: ExercicioMandatoService,
     ) {}
 
     async execute(sessaoId: string, user: ParlamentarianJwtPayload) {
@@ -25,6 +27,12 @@ export class RegistrarMinhaPresencaUseCase {
                 'Registro de presença permitido apenas em sessão agendada ou aberta',
             );
         }
+
+        await this.exercicioMandato.assertPodeExercerNaSessao(
+            user.tenantId,
+            sessaoId,
+            user.parliamentarianId,
+        );
 
         return this.prisma.presencaSessao.upsert({
             where: {

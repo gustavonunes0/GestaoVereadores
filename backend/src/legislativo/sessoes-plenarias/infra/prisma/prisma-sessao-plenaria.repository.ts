@@ -51,6 +51,7 @@ import { UpdateSessaoPlenariaDto } from '../../application/dto/update-sessao.dto
 import { ActiveParliamentarianMandateChecker } from '../../../parlamentares/mandatos/domain/contracts/active-parliamentarian-mandate-checker';
 import { assertParliamentarianHasActiveMandate } from '../../../parlamentares/mandatos/domain/services/mandate-workflow';
 import { ACTIVE_PARLIAMENTARIAN_MANDATE_CHECKER } from '../../../parlamentares/mandatos/mandatos.tokens';
+import { ExercicioMandatoService } from '../../../parlamentares/substituicoes/infra/prisma/exercicio-mandato.service';
 import {
     assertMateriaNaoDuplicadaNaPauta,
     assertMateriaSemPautaAtivaEmOutraSessao,
@@ -152,6 +153,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         private readonly mandateChecker: ActiveParliamentarianMandateChecker,
         @Inject(MATERIA_REPOSITORY)
         private readonly materiaRepository: MateriaRepository,
+        private readonly exercicioMandato: ExercicioMandatoService,
     ) {}
 
     private mapResultadoParaAcao(
@@ -355,7 +357,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
                 ? (sessao.dataFim ?? new Date())
                 : undefined;
 
-        return this.prisma.sessaoPlenaria.update({
+        const updated = await this.prisma.sessaoPlenaria.update({
             where: { id },
             data: {
                 situacaoId,
@@ -369,6 +371,11 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             },
             include: sessaoPlenariaInclude,
         });
+
+        if (updated.statusSessao === PrismaStatusSessao.ABERTA) {
+            await this.exercicioMandato.congelarElencoDaSessao(tenantId, id);
+        }
+        return updated;
     }
 
     async listLifecycleActions(tenantId: string, id: string) {
@@ -1017,6 +1024,13 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             sessaoId,
             presencaId,
         );
+        if (existing.parliamentarianId) {
+            await this.exercicioMandato.assertPodeExercerNaSessao(
+                tenantId,
+                sessaoId,
+                existing.parliamentarianId,
+            );
+        }
 
         const campos = resolveCamposPresencaUpdate(existing, dto);
 
@@ -1083,6 +1097,11 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             legislatureId,
         );
         await this.assertMandateIfProvided(tenantId, actor);
+        await this.exercicioMandato.assertPodeExercerNaSessao(
+            tenantId,
+            sessaoId,
+            parliamentarianId,
+        );
 
         const existing = await this.prisma.presencaSessao.findUnique({
             where: {
@@ -1213,6 +1232,9 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             },
         });
 
+        if (dados.novoStatus === StatusSessao.ABERTA) {
+            await this.exercicioMandato.congelarElencoDaSessao(tenantId, id);
+        }
         if (dados.novoStatus === StatusSessao.ENCERRADA) {
             await this.encerrarPautaDaSessao(id, tenantId);
         }
@@ -1238,23 +1260,14 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             };
         }
 
-        const legislatureId = await this.resolveLegislatureIdForSessao(
-            tenantId,
-            sessao.sessaoLegislativa?.legislatura?.numero ?? null,
-        );
-
-        const totalParlamentares = await this.prisma.parliamentarianMandate.count({
-            where: {
-                tenantId,
-                isRemoved: false,
-                status: MandateStatus.ACTIVE,
-                parliamentarian: { isRemoved: false },
-                ...(legislatureId ? { legislatureId } : {}),
-            },
-        });
+        const { vagas } = await this.exercicioMandato.elencoDaSessao(tenantId, sessaoId);
+        const emExercicio = new Set(vagas.map((v) => v.emExercicioId));
+        const totalParlamentares = vagas.length;
 
         const quorumMinimo = Math.ceil(totalParlamentares / 2) + 1;
-        const quorumPresente = sessao.presencas.length;
+        const quorumPresente = sessao.presencas.filter(
+            (p) => !p.parliamentarianId || emExercicio.has(p.parliamentarianId),
+        ).length;
 
         return {
             quorumMinimo,

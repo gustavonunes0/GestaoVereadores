@@ -9,11 +9,13 @@ import { API_PATHS } from '../../../api/paths';
 import { parlamentaresApi, type Parliamentarian } from '../../../api/legislative/parlamentares.api';
 import type { BoardMember } from '../../../api/legislative/mesa-diretora.api';
 import { sessoesApi } from '../../../api/legislative/sessoes.api';
+import { substituicoesApi } from '../../../api/legislative/substituicoes.api';
 import { useAuth } from '../../../contexts/AuthContext';
 import type { PresencaUpdate } from '../../../hooks/useSessaoRealtime';
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { OrigemPresenca, PresencaSessao } from '../../../types/presenca';
 import type { StatusSessao } from '../../../types/sessoes';
+import type { ElencoExercicioSessao } from '../../../types/substituicoes';
 import {
     buildPresencaSessao,
     fetchMesaMembrosAtivos,
@@ -154,6 +156,7 @@ export function PresencaPanel({
     const elencoRef = useRef<{
         parlamentares: Parliamentarian[];
         mesaMembros: BoardMember[];
+        elenco: ElencoExercicioSessao | null;
     } | null>(null);
 
     const carregar = useCallback(async () => {
@@ -163,7 +166,7 @@ export function PresencaPanel({
                 legislaturaNumero: legislaturaNumero ?? undefined,
             });
 
-            const [parlamentares, registros, quorum, mesaMembros] = await Promise.all([
+            const [parlamentares, registros, quorum, mesaMembros, elenco] = await Promise.all([
                 parlamentaresApi.listActiveAll({
                     legislatureId: legislatureIdEn,
                 }),
@@ -173,9 +176,10 @@ export function PresencaPanel({
                     legislatureId: legislatureId ?? undefined,
                     legislaturaNumero: legislaturaNumero ?? undefined,
                 }),
+                substituicoesApi.elencoDaSessao(sessaoId).catch(() => null),
             ]);
 
-            elencoRef.current = { parlamentares, mesaMembros };
+            elencoRef.current = { parlamentares, mesaMembros, elenco };
             setPresenca(
                 buildPresencaSessao({
                     sessaoId,
@@ -183,6 +187,7 @@ export function PresencaPanel({
                     mesaMembros,
                     registros,
                     quorumMinimo: quorum.minimo,
+                    elenco,
                 }),
             );
         } catch (err) {
@@ -216,6 +221,7 @@ export function PresencaPanel({
                     mesaMembros: elenco.mesaMembros,
                     registros,
                     quorumMinimo: quorum.minimo,
+                    elenco: elenco.elenco,
                 }),
             );
         } catch {
@@ -379,6 +385,18 @@ export function PresencaPanel({
                 votacaoAberta={votacaoAberta}
                 idsQueVotaram={idsQueVotaram}
             />
+            {presenca.parlamentares.some((p) => p.substituindo) && (
+                <ul className="presenca-readonly-hint m-0 pl-3">
+                    {presenca.parlamentares
+                        .filter((p) => p.substituindo)
+                        .map((p) => (
+                            <li key={p.parliamentarianId}>
+                                Em exercício: Suplente {p.parliamentaryName} (substituindo Titular{' '}
+                                {p.substituindo})
+                            </li>
+                        ))}
+                </ul>
+            )}
 
             <Dialog
                 header="Reiniciar chamada"

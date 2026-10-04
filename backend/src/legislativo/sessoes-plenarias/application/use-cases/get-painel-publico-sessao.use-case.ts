@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { ExercicioMandatoService } from '../../../parlamentares/substituicoes/infra/prisma/exercicio-mandato.service';
 
 export type PainelPublicoParlamentar = {
     parliamentarianId: string;
@@ -12,6 +13,8 @@ export type PainelPublicoParlamentar = {
     presente: boolean;
     situacao?: 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO';
     origem: 'APP' | 'STAFF' | null;
+    /** Suplente em exercício: nome do titular substituído. */
+    substituindo?: string;
 };
 
 export type PainelPublicoResult = {
@@ -116,7 +119,10 @@ function faseLabel(fase: string): string {
  */
 @Injectable()
 export class GetPainelPublicoSessaoUseCase {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly exercicioMandato: ExercicioMandatoService,
+    ) {}
 
     async execute(sessaoId: string): Promise<PainelPublicoResult> {
         const sessao = await this.prisma.sessaoPlenaria.findFirst({
@@ -180,19 +186,6 @@ export class GetPainelPublicoSessaoUseCase {
         const tenantId = sessao.tenantId;
         const legislaturaNumero = sessao.sessaoLegislativa?.legislatura?.numero;
 
-        let legislatureId: string | undefined;
-        if (legislaturaNumero != null) {
-            const leg = await this.prisma.legislature.findFirst({
-                where: {
-                    tenantId,
-                    number: legislaturaNumero,
-                    isRemoved: false,
-                },
-                select: { id: true },
-            });
-            legislatureId = leg?.id;
-        }
-
         const boardWhere = {
             tenantId,
             status: 'ACTIVE' as const,
@@ -214,24 +207,28 @@ export class GetPainelPublicoSessaoUseCase {
             },
         } as const;
 
-        const [activeMandates, board] = await Promise.all([
-            this.prisma.parliamentarianMandate.findMany({
+        const { vagas } = await this.exercicioMandato.elencoDaSessao(tenantId, sessao.id);
+        const [parlamentares, titularesSubstituidos, board] = await Promise.all([
+            this.prisma.parliamentarian.findMany({
                 where: {
+                    id: { in: vagas.map((v) => v.emExercicioId) },
                     tenantId,
-                    isRemoved: false,
                     status: 'ACTIVE',
-                    ...(legislatureId ? { legislatureId } : {}),
-                    parliamentarian: {
-                        status: 'ACTIVE',
-                        isRemoved: false,
+                    isRemoved: false,
+                },
+                select: parliamentarianSelect,
+                orderBy: { parliamentaryName: 'asc' },
+            }),
+            this.prisma.parliamentarian.findMany({
+                where: {
+                    id: {
+                        in: vagas
+                            .filter((v) => v.emExercicioId !== v.titularId)
+                            .map((v) => v.titularId),
                     },
+                    tenantId,
                 },
-                select: {
-                    parliamentarian: { select: parliamentarianSelect },
-                },
-                orderBy: {
-                    parliamentarian: { parliamentaryName: 'asc' },
-                },
+                select: { id: true, parliamentaryName: true },
             }),
             this.prisma.board.findFirst({
                 where: boardWhere,
@@ -240,9 +237,16 @@ export class GetPainelPublicoSessaoUseCase {
             }),
         ]);
 
-        /** Só parlamentares com mandato ACTIVE na legislatura da sessão. */
-        const parlamentares = activeMandates.map((m) => m.parliamentarian);
+        /** Uma entrada por vaga: quem está em exercício na sessão (titular ou suplente). */
         const activeIds = new Set(parlamentares.map((p) => p.id));
+        const nomeTitular = new Map(
+            titularesSubstituidos.map((t) => [t.id, t.parliamentaryName]),
+        );
+        const substituindoPorSuplente = new Map(
+            vagas
+                .filter((v) => v.emExercicioId !== v.titularId)
+                .map((v) => [v.emExercicioId, nomeTitular.get(v.titularId) ?? '']),
+        );
 
         /** Mesa: apenas board_members com is_removed = false. */
         const boardMembersRaw = board
@@ -283,6 +287,7 @@ export class GetPainelPublicoSessaoUseCase {
                     ? reg.situacao
                     : undefined;
             const presente = Boolean(reg?.presente && situacao === 'PRESENTE');
+            const substituindo = substituindoPorSuplente.get(id);
             return {
                 parliamentarianId: id,
                 parlamentarianUserId: id,
@@ -294,6 +299,7 @@ export class GetPainelPublicoSessaoUseCase {
                 presente,
                 situacao,
                 origem: presente ? (reg?.autoRegistrado ? 'APP' : 'STAFF') : null,
+                ...(substituindo ? { substituindo } : {}),
             };
         };
 

@@ -223,6 +223,14 @@ function PainelPresencaVereadores({
                                             {presente ? 'Presente' : 'Ausente'}
                                         </span>
                                     </span>
+                                    {v.substituindo ? (
+                                        <span
+                                            className="sessao-painel-presenca__linha"
+                                            title={`Suplente substituindo ${v.substituindo}`}
+                                        >
+                                            Suplente · subst. {v.substituindo}
+                                        </span>
+                                    ) : null}
                                 </div>
                             </li>
                         );

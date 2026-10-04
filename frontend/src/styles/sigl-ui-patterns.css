@@ -6816,3 +6816,30 @@ body.sessao-painel-body #root {
     position: relative;
     z-index: 1;
 }
+
+/* Suplente — bloco "Em exercício no lugar de um titular" nos formulários de parlamentar */
+.suplente-exercicio-box {
+    grid-column: 1 / -1;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--surface-border, #e2e8f0);
+    border-left: 3px solid var(--primary-color, #2563eb);
+    border-radius: 8px;
+    background: var(--surface-ground, #f8fafc);
+}
+
+.suplente-exercicio-box__head,
+.suplente-exercicio-box__full {
+    grid-column: 1 / -1;
+}
+
+.suplente-exercicio-box__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--text-color, #0f172a);
+}
+
+.suplente-exercicio-box__head .pi {
+    color: var(--primary-color, #2563eb);
+}

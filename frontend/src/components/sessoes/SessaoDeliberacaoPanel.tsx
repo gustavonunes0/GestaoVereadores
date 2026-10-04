@@ -2,7 +2,9 @@ import { FormEvent, useEffect, useState } from 'react';
 import { SiglButton } from '../common/SiglButton';
 import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
 import { sessoesApi } from '../../api/legislative/sessoes.api';
+import { substituicoesApi } from '../../api/legislative/substituicoes.api';
 import { useAppToast } from '../../hooks/useAppToast';
+import { indexarElencoExercicio } from '../../utils/presencaSessao';
 import { usePermissions } from '../../hooks/usePermissions';
 import { Modal } from '../Modal';
 import { RegistrarVotoDialog } from './RegistrarVotoDialog';
@@ -121,29 +123,44 @@ export function SessaoDeliberacaoPanel({
     const [registrarVotoItem, setRegistrarVotoItem] = useState<string | null>(null);
 
     const podeDeliberar = (canManageSessao ?? canWrite) && sessaoEmAndamento;
-    const podeVotar = (canVotar ?? false) && sessaoEmAndamento && !!parliamentarianId;
+    const [idsEmExercicio, setIdsEmExercicio] = useState<Set<string> | null>(null);
+    const podeVotar =
+        (canVotar ?? false) &&
+        sessaoEmAndamento &&
+        !!parliamentarianId &&
+        (!idsEmExercicio || idsEmExercicio.has(parliamentarianId));
 
     useEffect(() => {
-        parlamentaresApi.list({ limit: 200 })
-            .then((r) =>
+        Promise.all([
+            parlamentaresApi.list({ limit: 200 }),
+            substituicoesApi.elencoDaSessao(sessaoId).catch(() => null),
+        ])
+            .then(([r, elenco]) => {
+                const emExercicio = indexarElencoExercicio(elenco);
+                setIdsEmExercicio(emExercicio ? new Set(emExercicio.keys()) : null);
                 setParlamentares(
                     r.data
                         .filter((p) => p.status === 'ACTIVE')
-                        .map((p) => ({
-                            id: p.id,
-                            ativo: p.status === 'ACTIVE',
-                            pessoa: {
-                                nome:
-                                    p.parliamentaryName ||
-                                    (p.user
-                                        ? `${p.user.firstName} ${p.user.lastName}`.trim()
-                                        : ''),
-                            },
-                        })),
-                ),
-            )
+                        .filter((p) => !emExercicio || emExercicio.has(p.id))
+                        .map((p) => {
+                            const nome =
+                                p.parliamentaryName ||
+                                (p.user
+                                    ? `${p.user.firstName} ${p.user.lastName}`.trim()
+                                    : '');
+                            const titular = emExercicio?.get(p.id);
+                            return {
+                                id: p.id,
+                                ativo: p.status === 'ACTIVE',
+                                pessoa: {
+                                    nome: titular ? `${nome} (substituindo ${titular})` : nome,
+                                },
+                            };
+                        }),
+                );
+            })
             .catch(() => setParlamentares([]));
-    }, []);
+    }, [sessaoId]);
 
     useEffect(() => {
         if (parlamentares[0] && !parlamentarPresencaId) {

@@ -82,6 +82,26 @@ enum CondicaoMandato {
     SUPLENTE
 }
 
+enum MotivoSubstituicao {
+    LICENCA
+    AFASTAMENTO
+    CARGO_EXECUTIVO
+    OUTRO
+}
+
+enum StatusSubstituicao {
+    ATIVA
+    ENCERRADA
+    CANCELADA
+}
+
+enum AcaoSubstituicaoHistorico {
+    CRIADA
+    DATAS_ALTERADAS
+    ENCERRADA
+    CANCELADA
+}
+
 enum BoardStatus {
     ACTIVE
     INACTIVE
@@ -287,6 +307,9 @@ model TenantUser {
     votacoesEncerradas         Votacao[]            @relation("VotacaoEncerradaPor")
     sessaoHistoricoRegistros   SessaoHistorico[]
     atasAprovadas              Ata[]
+    substituicoesCriadas       SubstituicaoMandato[]   @relation("SubstituicaoCriadaPor")
+    substituicoesEncerradas    SubstituicaoMandato[]   @relation("SubstituicaoEncerradaPor")
+    substituicaoHistorico      SubstituicaoHistorico[]
 }
 
 model PoliticalParty {
@@ -336,6 +359,8 @@ model Parliamentarian {
 
     mandates ParliamentarianMandate[]
     mandatesAsTitularAfastado ParliamentarianMandate[] @relation("MandateTitularAfastado")
+    substituicoesComoTitular  SubstituicaoMandato[]    @relation("SubstituicaoTitular")
+    substituicoesComoSuplente SubstituicaoMandato[]    @relation("SubstituicaoSuplente")
     boardMembers BoardMember[]
     committeeMembers CommitteeMember[]
     parliamentaryFrontMembers ParliamentaryFrontMember[]
@@ -424,9 +449,10 @@ model Legislature {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    tenant   Tenant                   @relation(fields: [tenantId], references: [id])
-    mandates ParliamentarianMandate[]
-    boards   Board[]
+    tenant        Tenant                   @relation(fields: [tenantId], references: [id])
+    mandates      ParliamentarianMandate[]
+    boards        Board[]
+    substituicoes SubstituicaoMandato[]
 
     @@unique([tenantId, number])
     @@index([tenantId])
@@ -471,6 +497,57 @@ model ParliamentarianMandate {
     @@index([tenantId, isRemoved])
     @@index([titularAfastadoId])
     @@map("parliamentarian_mandates")
+}
+
+/** Suplente em exercício no lugar de um titular durante um período (datas inclusivas). */
+model SubstituicaoMandato {
+    id            String @id @default(uuid())
+    tenantId      String
+    legislatureId String
+    titularId     String
+    suplenteId    String
+
+    motivo     MotivoSubstituicao
+    dataInicio DateTime           @db.Date
+    /** Último dia de exercício do suplente; nulo = sem prazo. */
+    dataFim    DateTime?          @db.Date
+    observacao String?
+    status     StatusSubstituicao @default(ATIVA)
+
+    criadoPorId    String?
+    encerradoPorId String?
+    encerradaEm    DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    legislature  Legislature            @relation(fields: [legislatureId], references: [id])
+    titular      Parliamentarian        @relation("SubstituicaoTitular", fields: [titularId], references: [id])
+    suplente     Parliamentarian        @relation("SubstituicaoSuplente", fields: [suplenteId], references: [id])
+    criadoPor    TenantUser?            @relation("SubstituicaoCriadaPor", fields: [criadoPorId], references: [id])
+    encerradoPor TenantUser?            @relation("SubstituicaoEncerradaPor", fields: [encerradoPorId], references: [id])
+    historico    SubstituicaoHistorico[]
+
+    @@index([tenantId, titularId])
+    @@index([tenantId, suplenteId])
+    @@index([tenantId, legislatureId, status])
+    @@map("substituicoes_mandato")
+}
+
+model SubstituicaoHistorico {
+    id             String                    @id @default(uuid())
+    substituicaoId String
+    acao           AcaoSubstituicaoHistorico
+    dataHora       DateTime                  @default(now())
+    responsavelId  String?
+    /** Valores antes/depois dos campos alterados. */
+    alteracoesJson Json?
+
+    substituicao SubstituicaoMandato @relation(fields: [substituicaoId], references: [id], onDelete: Cascade)
+    responsavel  TenantUser?         @relation(fields: [responsavelId], references: [id])
+
+    @@index([substituicaoId, dataHora])
+    @@map("substituicao_historico")
 }
 
 model Board {
@@ -1163,9 +1240,25 @@ model SessaoPlenaria {
     ata                   Ata?
     // TASK-008 — trilha de auditoria estruturada
     historico             SessaoHistorico[]
+    elencoExercicio       SessaoElencoExercicio[]
 
     @@index([tenantId])
     @@index([tenantId, statusSessao])
+}
+
+/** Quem ocupa cada vaga na sessão, congelado na abertura; mudanças de substituição valem da próxima sessão em diante. */
+model SessaoElencoExercicio {
+    id             String         @id @default(uuid())
+    sessaoId       String
+    titularId      String
+    emExercicioId  String
+    substituicaoId String?
+    createdAt      DateTime       @default(now())
+    sessao         SessaoPlenaria @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+
+    @@unique([sessaoId, titularId])
+    @@index([sessaoId])
+    @@map("sessao_elenco_exercicio")
 }
 
 // --- Processo legislativo ---

@@ -23,6 +23,7 @@ import { MATERIA_REPOSITORY } from '../../../materias/materias.tokens';
 import { ActiveParliamentarianMandateChecker } from '../../../parlamentares/mandatos/domain/contracts/active-parliamentarian-mandate-checker';
 import { assertParliamentarianHasActiveMandate } from '../../../parlamentares/mandatos/domain/services/mandate-workflow';
 import { ACTIVE_PARLIAMENTARIAN_MANDATE_CHECKER } from '../../../parlamentares/mandatos/mandatos.tokens';
+import { ExercicioMandatoService } from '../../../parlamentares/substituicoes/infra/prisma/exercicio-mandato.service';
 import { assertMateriaNaPautaParaVotacao } from '../../../sessoes-plenarias/domain/services/pauta-workflow';
 import { contaPresencaParaQuorum } from '../../../sessoes-plenarias/domain/services/presenca-workflow';
 import { assertSessaoAceitaPauta } from '../../../sessoes-plenarias/domain/services/sessao-workflow';
@@ -85,6 +86,7 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         private readonly mandateChecker: ActiveParliamentarianMandateChecker,
         @Inject(MATERIA_REPOSITORY)
         private readonly materiaRepository: MateriaRepository,
+        private readonly exercicioMandato: ExercicioMandatoService,
     ) {}
 
     private mapResultadoParaAcao(
@@ -108,21 +110,18 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             return;
         }
 
-        const [presencas, totalParlamentares] = await Promise.all([
+        const [presencas, emExercicio] = await Promise.all([
             this.prisma.presencaSessao.findMany({
                 where: { sessaoId },
-                select: { presente: true, situacao: true },
+                select: { presente: true, situacao: true, parliamentarianId: true },
             }),
-            this.prisma.parliamentarian.count({
-                where: {
-                    tenantId,
-                    isRemoved: false,
-                    status: 'ACTIVE',
-                },
-            }),
+            this.exercicioMandato.idsEmExercicioDaSessao(tenantId, sessaoId),
         ]);
-        const presentes = presencas.filter((presenca) =>
-            contaPresencaParaQuorum(presenca.situacao, presenca.presente),
+        const totalParlamentares = emExercicio.size;
+        const presentes = presencas.filter(
+            (presenca) =>
+                (!presenca.parliamentarianId || emExercicio.has(presenca.parliamentarianId)) &&
+                contaPresencaParaQuorum(presenca.situacao, presenca.presente),
         ).length;
         assertQuorumAtingido(presentes, totalParlamentares, requerQuorum);
     }
@@ -272,6 +271,11 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
                 actor.parliamentarianId,
             );
             await this.assertMandateIfProvided(tenantId, actor);
+            await this.exercicioMandato.assertPodeExercerNaSessao(
+                tenantId,
+                sessaoId,
+                actor.parliamentarianId,
+            );
 
             const presenca = await this.prisma.presencaSessao.findUnique({
                 where: {
@@ -362,13 +366,9 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
             : null;
         const tipoQuorum = (materiaComTipo?.tipo?.tipoQuorum ?? 'MAIORIA_SIMPLES') as any;
 
-        const totalMembros = await this.prisma.parliamentarian.count({
-            where: {
-                tenantId,
-                isRemoved: false,
-                status: 'ACTIVE',
-            },
-        });
+        const totalMembros = (
+            await this.exercicioMandato.idsEmExercicioDaSessao(tenantId, sessaoId)
+        ).size;
 
         const votacao = await this.prisma.votacao.create({
             data: {
@@ -552,6 +552,13 @@ export class PrismaVotacaoRepository implements VotacaoRepository {
         const votacao = pautaItem.votacao!;
         assertVotacaoAberta(votacao.realizadaAt);
         assertTipoAceitaVotoIndividual(votacao.tipoVotacao);
+        if (existing.parliamentarianId) {
+            await this.exercicioMandato.assertPodeExercerNaSessao(
+                tenantId,
+                sessaoId,
+                existing.parliamentarianId,
+            );
+        }
 
         const voto = await this.prisma.votoParlamentar.update({
             where: { id: existing.id },

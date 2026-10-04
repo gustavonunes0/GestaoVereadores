@@ -60,6 +60,9 @@ export function ParlamentarTooltip({
                 <div className="ptt-info">
                     <div className="ptt-nome">{p.parliamentaryName}</div>
                     {p.cargoMesa && <div className="ptt-cargo">{p.cargoMesa}</div>}
+                    {p.substituindo && (
+                        <div className="ptt-cargo">Suplente — substituindo {p.substituindo}</div>
+                    )}
                     {p.partidoSigla && (
                         <div className="ptt-partido">{p.partidoSigla}</div>
                     )}

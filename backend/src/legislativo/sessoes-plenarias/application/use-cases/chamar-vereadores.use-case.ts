@@ -6,6 +6,7 @@ import { SessaoPlenariaRepository } from '../../domain/repositories/sessao-plena
 import { StatusSessao } from '../../domain/enums/status-sessao.enum';
 import { SessaoHistoricoRepository } from '../../../sessao-historico/domain/repositories/sessao-historico.repository';
 import { TipoEventoSessaoHistorico } from '../../../sessao-historico/domain/enums/tipo-evento-sessao-historico.enum';
+import { ExercicioMandatoService } from '../../../parlamentares/substituicoes/infra/prisma/exercicio-mandato.service';
 
 @Injectable()
 export class ChamarVereadoresUseCase {
@@ -14,6 +15,7 @@ export class ChamarVereadoresUseCase {
         private readonly repository: SessaoPlenariaRepository,
         private readonly prisma: PrismaService,
         private readonly historicoRepository: SessaoHistoricoRepository,
+        private readonly exercicioMandato: ExercicioMandatoService,
     ) {}
 
     async execute(tenantId: string, sessaoId: string, responsavelId?: string) {
@@ -26,10 +28,11 @@ export class ChamarVereadoresUseCase {
             );
         }
 
-        const parlamentares = await this.prisma.parliamentarian.findMany({
-            where: { tenantId, status: 'ACTIVE', isRemoved: false },
-            select: { id: true },
-        });
+        const emExercicio = await this.exercicioMandato.idsEmExercicioDaSessao(
+            tenantId,
+            sessaoId,
+        );
+        const parlamentares = [...emExercicio].map((id) => ({ id }));
 
         const existentes = await this.prisma.presencaSessao.findMany({
             where: { sessaoId, parliamentarianId: { not: null } },
@@ -52,7 +55,11 @@ export class ChamarVereadoresUseCase {
         }
 
         const totalPresentes = await this.prisma.presencaSessao.count({
-            where: { sessaoId, situacao: SituacaoPresenca.PRESENTE },
+            where: {
+                sessaoId,
+                situacao: SituacaoPresenca.PRESENTE,
+                parliamentarianId: { in: [...emExercicio] },
+            },
         });
         const totalAusentes = parlamentares.length - totalPresentes;
 

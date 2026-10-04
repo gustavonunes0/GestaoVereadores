@@ -9,7 +9,7 @@ import { RadioButton } from 'primereact/radiobutton';
 import { Tag } from 'primereact/tag';
 import { apiList } from '../../api/client';
 import { API_PATHS } from '../../api/paths';
-import { parlamentaresApi, type Parliamentarian } from '../../api/legislative/parlamentares.api';
+import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
 import type {
     ParlamentarianUser,
     UserResumo,
@@ -18,6 +18,13 @@ import type {
 } from '../../types/parlamentares';
 import { useAppToast } from '../../hooks/useAppToast';
 import { UserSearchField } from './UserSearchField';
+import {
+    registrarExercicioSuplente,
+    SuplenteExercicioFields,
+    suplenteExercicioInicial,
+    suplenteExercicioValido,
+    type SuplenteExercicioValue,
+} from './substituicoes/SuplenteExercicioFields';
 
 type Partido = { id: string; name: string; acronym: string };
 type Legislatura = { id: string; number: number; isCurrent: boolean };
@@ -51,9 +58,8 @@ export function ParlamentarVincularDialog({
     const [legislaturas, setLegislaturas] = useState<Legislatura[]>([]);
     const [legislaturaId, setLegislaturaId] = useState('');
     const [condicao, setCondicao] = useState<CondicaoMandato>('TITULAR');
-    const [titulares, setTitulares] = useState<Parliamentarian[]>([]);
-    const [titularAfastadoId, setTitularAfastadoId] = useState('');
     const [dataPosse, setDataPosse] = useState<Date | null>(null);
+    const [exercicio, setExercicio] = useState<SuplenteExercicioValue>(suplenteExercicioInicial);
 
     useEffect(() => {
         apiList<Legislatura>(API_PATHS.legislaturas, { limit: 50 })
@@ -68,18 +74,6 @@ export function ParlamentarVincularDialog({
             .then((r) => setPartidos(r.data))
             .catch(() => setPartidos([]));
     }, []);
-
-    useEffect(() => {
-        if (condicao !== 'SUPLENTE' || !legislaturaId) {
-            setTitulares([]);
-            setTitularAfastadoId('');
-            return;
-        }
-        parlamentaresApi
-            .list({ legislaturaId, condicao: 'TITULAR', status: 'ACTIVE', limit: 100 })
-            .then((r) => setTitulares(r.data))
-            .catch(() => setTitulares([]));
-    }, [condicao, legislaturaId]);
 
     const handleSelectUser = (u: UserResumo | null) => {
         setUser(u);
@@ -99,17 +93,12 @@ export function ParlamentarVincularDialog({
         [partidos],
     );
 
-    const titularesOptions = useMemo(
-        () => titulares.map((p) => ({ label: p.parliamentaryName, value: p.id })),
-        [titulares],
-    );
-
     const canSubmit =
         !!user &&
         parliamentaryName.trim().length >= 3 &&
         !!legislaturaId &&
         !!condicao &&
-        (condicao === 'TITULAR' || !!titularAfastadoId);
+        (condicao !== 'SUPLENTE' || suplenteExercicioValido(exercicio));
 
     async function handleSubmit() {
         if (!canSubmit || !user) return;
@@ -122,11 +111,19 @@ export function ParlamentarVincularDialog({
                 condicao,
                 ...(officeNumber.trim() ? { officeNumber: officeNumber.trim() } : {}),
                 ...(politicalPartyId ? { politicalPartyId } : {}),
-                ...(condicao === 'SUPLENTE' && titularAfastadoId ? { titularAfastadoId } : {}),
                 ...(dataPosse ? { dataPosse: dataPosse.toISOString().slice(0, 10) } : {}),
             };
             await parlamentaresApi.createUser(parlamentarianId, dto);
             showSuccess('Vínculo adicionado com sucesso.');
+            if (condicao === 'SUPLENTE') {
+                try {
+                    if (await registrarExercicioSuplente(parlamentarianId, exercicio)) {
+                        showSuccess('Suplente vinculado ao titular.');
+                    }
+                } catch (err) {
+                    showApiError(err);
+                }
+            }
             onSaved();
             onClose();
         } catch (err) {
@@ -262,10 +259,7 @@ export function ParlamentarVincularDialog({
                                         name="pv-condicao"
                                         value="TITULAR"
                                         checked={condicao === 'TITULAR'}
-                                        onChange={(e) => {
-                                            setCondicao(e.value as CondicaoMandato);
-                                            setTitularAfastadoId('');
-                                        }}
+                                        onChange={(e) => setCondicao(e.value as CondicaoMandato)}
                                     />
                                     <label htmlFor="pv-titular" className="cursor-pointer">Titular</label>
                                 </div>
@@ -284,19 +278,14 @@ export function ParlamentarVincularDialog({
                     </div>
 
                     {condicao === 'SUPLENTE' && (
-                        <div className="sigl-filtro-campo mt-3">
-                            <label htmlFor="pv-titular-afastado">Titular afastado *</label>
-                            <PrDropdown
-                                id="pv-titular-afastado"
-                                value={titularAfastadoId}
-                                options={titularesOptions}
-                                onChange={(e) => setTitularAfastadoId(String(e.value))}
-                                placeholder={!legislaturaId ? 'Selecione a legislatura primeiro' : 'Selecione o titular'}
-                                className="w-full"
-                                disabled={!legislaturaId}
-                                filter
-                            />
-                        </div>
+                        <SuplenteExercicioFields
+                            idPrefix="pv-exercicio"
+                            legislatureId={legislaturaId}
+                            value={exercicio}
+                            onChange={setExercicio}
+                            partidoId={politicalPartyId || undefined}
+                            suplenteId={parlamentarianId}
+                        />
                     )}
 
                     <div className="sigl-filtro-campo mt-3">

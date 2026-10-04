@@ -6,6 +6,10 @@ interface Props {
     loading: boolean;
     confirming: boolean;
     onConfirm: () => void;
+    /** Fora de exercício na sessão: oculta a ação e mostra o motivo. */
+    bloqueio?: string | null;
+    /** Suplente em exercício: nome do titular substituído. */
+    substituindo?: string | null;
 }
 
 export function MinhaPresencaPanel({
@@ -13,6 +17,8 @@ export function MinhaPresencaPanel({
     loading,
     confirming,
     onConfirm,
+    bloqueio = null,
+    substituindo = null,
 }: Props) {
     return (
         <section className="parl-sessao-panel">
@@ -20,11 +26,21 @@ export function MinhaPresencaPanel({
             <p className="parl-sessao-panel__hint">
                 Confirme sua presença na sessão para poder votar.
             </p>
+            {substituindo ? (
+                <p className="parl-sessao-panel__hint">
+                    Em exercício como suplente, substituindo {substituindo}.
+                </p>
+            ) : null}
 
             {loading ? (
                 <div className="flex justify-content-center py-3">
                     <ProgressSpinner style={{ width: '32px', height: '32px' }} />
                 </div>
+            ) : bloqueio ? (
+                <p className="parl-sessao-panel__hint m-0">
+                    <i className="pi pi-lock mr-1" aria-hidden />
+                    {bloqueio}
+                </p>
             ) : hasConfirmed ? (
                 <div className="parl-sessao-presenca-ok">
                     <i className="pi pi-check-circle" aria-hidden />

@@ -54,7 +54,9 @@ export function ParlamentarSessaoDetalhePage() {
         loading: loadingPresenca,
         confirming,
         confirmPresence,
+        exercicio,
     } = useMinhaPresenca(id);
+    const podeAtuar = hasConfirmed && exercicio.emExercicio;
 
     const {
         votacaoAberta,
@@ -96,7 +98,7 @@ export function ParlamentarSessaoDetalhePage() {
     }, [id, syncVotacaoFromPauta]);
 
     useEffect(() => {
-        if (!votacaoAberta || !hasConfirmed) return;
+        if (!votacaoAberta || !podeAtuar) return;
         if (ultimaVotacaoNotificada.current === votacaoAberta.votacaoId) return;
         ultimaVotacaoNotificada.current = votacaoAberta.votacaoId;
 
@@ -124,7 +126,7 @@ export function ParlamentarSessaoDetalhePage() {
                 'O resultado é registrado pela mesa. Não há voto individual no aplicativo.',
             );
         }
-    }, [votacaoAberta, hasConfirmed, showToast, isPresidente]);
+    }, [votacaoAberta, podeAtuar, showToast, isPresidente]);
 
     useEffect(() => {
         if (!votacaoAberta) {
@@ -219,6 +221,8 @@ export function ParlamentarSessaoDetalhePage() {
                     loading={loadingPresenca}
                     confirming={confirming}
                     onConfirm={() => void confirmPresence()}
+                    bloqueio={exercicio.bloqueio}
+                    substituindo={exercicio.substituindo}
                 />
                 {isPresidente ? (
                     <PedidosPalavraPanel
@@ -242,6 +246,7 @@ export function ParlamentarSessaoDetalhePage() {
                     statusSessao={sessao.statusSessao}
                     votoOpcional={isPresidente}
                     onAbrirDialogVoto={() => setDialogVoto(true)}
+                    bloqueio={exercicio.bloqueio}
                 />
                 <ParlamentarHistoricoVotosPanel sessaoId={id} statusSessao={sessao.statusSessao} />
                 <ParlamentarPautaPanel sessaoId={id} />
@@ -250,7 +255,7 @@ export function ParlamentarSessaoDetalhePage() {
             {dialogVoto &&
             votacaoAberta &&
             parliamentarianId &&
-            hasConfirmed ? (
+            podeAtuar ? (
                 <RegistrarVotoDialog
                     sessaoId={id}
                     pautaItemId={votacaoAberta.pautaItemId}

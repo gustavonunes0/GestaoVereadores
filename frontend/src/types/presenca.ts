@@ -18,6 +18,8 @@ export interface PresencaParlamentar {
     situacao?: SituacaoPresencaValor;
     origem: OrigemPresenca;
     registradoEm?: string;
+    /** Suplente em exercício: nome do titular substituído. */
+    substituindo?: string;
 }
 
 export interface PresencaSessao {

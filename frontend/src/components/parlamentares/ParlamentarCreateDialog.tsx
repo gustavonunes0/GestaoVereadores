@@ -6,7 +6,7 @@ import { InputText } from 'primereact/inputtext';
 import { RadioButton } from 'primereact/radiobutton';
 import { apiList } from '../../api/client';
 import { API_PATHS } from '../../api/paths';
-import { parlamentaresApi, type Parliamentarian } from '../../api/legislative/parlamentares.api';
+import { parlamentaresApi } from '../../api/legislative/parlamentares.api';
 import type { CondicaoMandato, ParliamentarianUserStatus } from '../../types/parlamentares';
 import { useAppToast } from '../../hooks/useAppToast';
 import { DateRangePicker, Dropdown, FileUpload } from '../ui';
@@ -15,6 +15,13 @@ import {
     PARLAMENTAR_PHOTO_ACCEPT,
     resolveParlamentarPhotoUrl,
 } from './parlamentar-photo';
+import {
+    registrarExercicioSuplente,
+    SuplenteExercicioFields,
+    suplenteExercicioInicial,
+    suplenteExercicioValido,
+    type SuplenteExercicioValue,
+} from './substituicoes/SuplenteExercicioFields';
 
 type Partido = { id: string; name: string; acronym: string };
 type Legislatura = {
@@ -49,11 +56,10 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
     const [legislaturas, setLegislaturas] = useState<Legislatura[]>([]);
     const [legislaturaId, setLegislaturaId] = useState('');
     const [condicao, setCondicao] = useState<CondicaoMandato>('TITULAR');
-    const [titulares, setTitulares] = useState<Parliamentarian[]>([]);
-    const [titularAfastadoId, setTitularAfastadoId] = useState('');
     const [periodoMandato, setPeriodoMandato] = useState<[Date | null, Date | null]>([null, null]);
     const [statusAcesso, setStatusAcesso] = useState<ParliamentarianUserStatus>('ACTIVE');
     const [photoValue, setPhotoValue] = useState<File | string | null>(null);
+    const [exercicio, setExercicio] = useState<SuplenteExercicioValue>(suplenteExercicioInicial);
 
     useEffect(() => {
         apiList<Legislatura>(API_PATHS.legislaturas, { limit: 50 })
@@ -68,18 +74,6 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
             .then((r) => setPartidos(r.data))
             .catch(() => setPartidos([]));
     }, []);
-
-    useEffect(() => {
-        if (condicao !== 'SUPLENTE' || !legislaturaId) {
-            setTitulares([]);
-            setTitularAfastadoId('');
-            return;
-        }
-        parlamentaresApi
-            .list({ search: '', status: 'ACTIVE', limit: 100 })
-            .then((r) => setTitulares(r.data))
-            .catch(() => setTitulares([]));
-    }, [condicao, legislaturaId]);
 
     const legislaturaSelecionada = useMemo(
         () => legislaturas.find((l) => l.id === legislaturaId),
@@ -127,11 +121,6 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
         [partidos],
     );
 
-    const titularesOptions = useMemo(
-        () => titulares.map((p) => ({ label: p.parliamentaryName, value: p.id })),
-        [titulares],
-    );
-
     const canSubmit =
         cpfValido &&
         senhaValida &&
@@ -139,7 +128,8 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
         emailValido &&
         nomeValido &&
         !!legislaturaId &&
-        periodoMandatoValido;
+        periodoMandatoValido &&
+        (condicao !== 'SUPLENTE' || suplenteExercicioValido(exercicio));
 
     async function handleSubmit() {
         if (!canSubmit) return;
@@ -160,9 +150,6 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
             await parlamentaresApi.createMandato(created.id, {
                 legislatureId: legislaturaId,
                 condicao,
-                ...(condicao === 'SUPLENTE' && titularAfastadoId
-                    ? { titularAfastadoId }
-                    : {}),
                 ...(periodoMandato[0] ? { startedAt: periodoMandato[0].toISOString() } : {}),
             });
 
@@ -175,6 +162,16 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                     ? `Parlamentar ${parliamentaryName.trim()} criado com acesso ao sistema.`
                     : `Parlamentar ${parliamentaryName.trim()} criado sem acesso ao sistema.`,
             );
+
+            if (condicao === 'SUPLENTE') {
+                try {
+                    if (await registrarExercicioSuplente(created.id, exercicio)) {
+                        showSuccess('Suplente vinculado ao titular.');
+                    }
+                } catch (err) {
+                    showApiError(err);
+                }
+            }
             onSaved();
             onClose();
         } catch (err) {
@@ -234,10 +231,7 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                                         name="pc-condicao"
                                         value="TITULAR"
                                         checked={condicao === 'TITULAR'}
-                                        onChange={(e) => {
-                                            setCondicao(e.value as CondicaoMandato);
-                                            setTitularAfastadoId('');
-                                        }}
+                                        onChange={(e) => setCondicao(e.value as CondicaoMandato)}
                                     />
                                     <label htmlFor="pc-titular" className="sigl-radio-option-label">Titular</label>
                                 </div>
@@ -256,26 +250,13 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                     </div>
 
                     {condicao === 'SUPLENTE' && (
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="pc-titular-afastado">Titular afastado</label>
-                            <Dropdown
-                                id="pc-titular-afastado"
-                                options={titularesOptions}
-                                value={titularAfastadoId || null}
-                                onChange={(v) => setTitularAfastadoId(String(v))}
-                                placeholder={
-                                    titularesOptions.length === 0
-                                        ? 'Nenhum titular ativo encontrado'
-                                        : 'Selecione o titular'
-                                }
-                                disabled={titularesOptions.length === 0}
-                                className="w-full"
-                                filter
-                            />
-                            <small className="text-color-secondary">
-                                Referência ao titular afastado quando o mandato é de suplente.
-                            </small>
-                        </div>
+                        <SuplenteExercicioFields
+                            idPrefix="pc-exercicio"
+                            legislatureId={legislaturaId}
+                            value={exercicio}
+                            onChange={setExercicio}
+                            partidoId={politicalPartyId || undefined}
+                        />
                     )}
 
                     <div className="sigl-dialog-grid sigl-dialog-grid-2">

@@ -27,6 +27,8 @@ interface Props {
     /** Presidente: voto não obrigatório — CTA opcional em vez de popup automático. */
     votoOpcional?: boolean;
     onAbrirDialogVoto?: () => void;
+    /** Fora de exercício na sessão: voto não permitido. */
+    bloqueio?: string | null;
 }
 
 function findMyVote(
@@ -57,6 +59,7 @@ export function ParlamentarVotacaoPanel({
     statusSessao,
     votoOpcional = false,
     onAbrirDialogVoto,
+    bloqueio = null,
 }: Props) {
     const { parliamentarianId } = usePermissions();
     const { showSuccess, showApiError } = useAppToast();
@@ -89,6 +92,7 @@ export function ParlamentarVotacaoPanel({
     }, [refreshMyVote]);
 
     const podeVotar =
+        !bloqueio &&
         hasConfirmed &&
         !!parliamentarianId &&
         !!votacaoAberta?.aceitaVotoIndividual &&
@@ -153,6 +157,11 @@ export function ParlamentarVotacaoPanel({
                     {!votacaoAberta.aceitaVotoIndividual ? (
                         <p className="parl-sessao-panel__hint m-0">
                             {mensagemVotacaoSemVotoIndividual(votacaoAberta.tipoVotacao)}
+                        </p>
+                    ) : bloqueio ? (
+                        <p className="parl-sessao-panel__hint m-0">
+                            <i className="pi pi-lock mr-1" aria-hidden />
+                            {bloqueio}
                         </p>
                     ) : !hasConfirmed ? (
                         <p className="parl-sessao-panel__hint m-0">

@@ -12,6 +12,7 @@ import { useAppToast } from '../../hooks/useAppToast';
 import { formatCpf } from '../../utils/cpf';
 import { formatDatePt } from '../../utils/formatDate';
 import { ParlamentarEditDialog } from './ParlamentarEditDialog';
+import { ParlamentarSubstituicoesSection } from './substituicoes/ParlamentarSubstituicoesSection';
 
 interface Props {
     parlamentarianId: string;
@@ -245,6 +246,14 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
                                 </ul>
                             )}
                         </div>
+
+                        <ParlamentarSubstituicoesSection
+                            parlamentar={parlamentar}
+                            podeTerSuplente={mandatos.some(
+                                (m) => m.status === 'ACTIVE' && m.condicao !== 'SUPLENTE',
+                            )}
+                            onChanged={onChanged}
+                        />
                     </div>
                 )}
             </Dialog>

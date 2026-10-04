@@ -40,6 +40,7 @@ import { EncerrarSessaoUseCase } from './application/use-cases/encerrar-sessao.u
 import { CancelarSessaoUseCase } from './application/use-cases/cancelar-sessao.use-case';
 import { PublicarPautaUseCase } from './application/use-cases/publicar-pauta.use-case';
 import { CalcularQuorumUseCase } from './application/use-cases/calcular-quorum.use-case';
+import { GetElencoExercicioUseCase } from './application/use-cases/get-elenco-exercicio.use-case';
 import { SetFaseSessaoUseCase } from './application/use-cases/set-fase-sessao.use-case';
 import { RegistrarMinhaPresencaUseCase } from './application/use-cases/registrar-minha-presenca.use-case';
 import { GetSessaoAtivaUseCase } from './application/use-cases/get-sessao-ativa.use-case';
@@ -123,6 +124,7 @@ import { PEDIDO_PALAVRA_REPOSITORY } from './sessoes-plenarias.tokens';
         CancelarSessaoUseCase,
         PublicarPautaUseCase,
         CalcularQuorumUseCase,
+        GetElencoExercicioUseCase,
         SetFaseSessaoUseCase,
         RegistrarMinhaPresencaUseCase,
         GetSessaoAtivaUseCase,

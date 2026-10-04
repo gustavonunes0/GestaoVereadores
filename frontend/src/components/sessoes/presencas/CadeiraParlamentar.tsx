@@ -53,7 +53,12 @@ export function CadeiraParlamentar({
                 .filter(Boolean)
                 .join(' ')}
             disabled={!podeRegistrar}
-            aria-label={[parlamentar.parliamentaryName, situacaoLabel, votoLabel]
+            aria-label={[
+                parlamentar.parliamentaryName,
+                parlamentar.substituindo ? `substituindo ${parlamentar.substituindo}` : null,
+                situacaoLabel,
+                votoLabel,
+            ]
                 .filter(Boolean)
                 .join(' — ')}
             onClick={handleClick}

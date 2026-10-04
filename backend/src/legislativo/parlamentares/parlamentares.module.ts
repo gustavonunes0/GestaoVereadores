@@ -31,11 +31,39 @@ import {
     PARLIAMENTARIAN_REPOSITORY,
     PARLIAMENTARIAN_USER_REPOSITORY,
 } from './parlamentares.tokens';
+import { SubstituicoesController } from './substituicoes/application/controllers/substituicoes.controller';
+import { CreateSubstituicaoUseCase } from './substituicoes/application/use-cases/create-substituicao.use-case';
+import { EncerrarSubstituicaoUseCase } from './substituicoes/application/use-cases/encerrar-substituicao.use-case';
+import {
+    ListSubstituicaoHistoricoUseCase,
+    ListSubstituicoesUseCase,
+    ListSuplentesElegiveisUseCase,
+} from './substituicoes/application/use-cases/list-substituicoes.use-case';
+import { UpdateSubstituicaoUseCase } from './substituicoes/application/use-cases/update-substituicao.use-case';
+import { ExercicioMandatoService } from './substituicoes/infra/prisma/exercicio-mandato.service';
+import { PrismaSubstituicaoRepository } from './substituicoes/infra/prisma/prisma-substituicao.repository';
+import { SUBSTITUICAO_REPOSITORY } from './substituicoes/substituicoes.tokens';
 
 @Module({
     imports: [IdentidadeModule, PartidosPoliticosModule, LegislaturasModule],
-    controllers: [ParliamentariansController, ParlamentarMandatosController],
+    controllers: [
+        ParliamentariansController,
+        ParlamentarMandatosController,
+        SubstituicoesController,
+    ],
     providers: [
+        CreateSubstituicaoUseCase,
+        UpdateSubstituicaoUseCase,
+        EncerrarSubstituicaoUseCase,
+        ListSubstituicoesUseCase,
+        ListSubstituicaoHistoricoUseCase,
+        ListSuplentesElegiveisUseCase,
+        PrismaSubstituicaoRepository,
+        {
+            provide: SUBSTITUICAO_REPOSITORY,
+            useExisting: PrismaSubstituicaoRepository,
+        },
+        ExercicioMandatoService,
         ParlamentarianGuard,
         CreateParliamentarianUseCase,
         GrantParliamentarianAccessUseCase,
@@ -76,6 +104,7 @@ import {
         PARLIAMENTARIAN_REPOSITORY,
         PARLIAMENTARIAN_MANDATE_REPOSITORY,
         ACTIVE_PARLIAMENTARIAN_MANDATE_CHECKER,
+        ExercicioMandatoService,
     ],
 })
 export class ParlamentaresModule {}

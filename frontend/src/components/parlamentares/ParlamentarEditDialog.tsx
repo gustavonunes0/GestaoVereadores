@@ -19,6 +19,13 @@ import {
     PARLAMENTAR_PHOTO_ACCEPT,
     resolveParlamentarPhotoUrl,
 } from './parlamentar-photo';
+import {
+    registrarExercicioSuplente,
+    SuplenteExercicioFields,
+    suplenteExercicioInicial,
+    suplenteExercicioValido,
+    type SuplenteExercicioValue,
+} from './substituicoes/SuplenteExercicioFields';
 
 const MIN_SENHA = 8;
 
@@ -71,11 +78,8 @@ export function ParlamentarEditDialog({
     const [condicao, setCondicao] = useState<CondicaoMandato>(
         mandatoAtivo?.condicao === 'SUPLENTE' ? 'SUPLENTE' : 'TITULAR',
     );
-    const [titulares, setTitulares] = useState<Parliamentarian[]>([]);
-    const [titularAfastadoId, setTitularAfastadoId] = useState(
-        mandatoAtivo?.titularAfastadoId ?? '',
-    );
     const [periodoMandato, setPeriodoMandato] = useState<[Date | null, Date | null]>([null, null]);
+    const [exercicio, setExercicio] = useState<SuplenteExercicioValue>(suplenteExercicioInicial);
 
     useEffect(() => {
         if (!mandatoAtivo) {
@@ -126,19 +130,6 @@ export function ParlamentarEditDialog({
             .catch(() => setPartidos([]));
     }, []);
 
-    useEffect(() => {
-        if (condicao !== 'SUPLENTE' || !legislaturaId) {
-            setTitulares([]);
-            return;
-        }
-        parlamentaresApi
-            .list({ legislaturaId, status: 'ACTIVE', limit: 100 })
-            .then((r) =>
-                setTitulares(r.data.filter((p) => p.id !== parlamentarianId)),
-            )
-            .catch(() => setTitulares([]));
-    }, [condicao, legislaturaId, parlamentarianId]);
-
     const nomeValido = parliamentaryName.trim().length >= 3;
     const passwordFilled = password.length > 0;
     const passwordValid = !passwordFilled || password.length >= MIN_SENHA;
@@ -158,11 +149,6 @@ export function ParlamentarEditDialog({
         [partidos],
     );
 
-    const titularesOptions = useMemo(
-        () => titulares.map((p) => ({ label: p.parliamentaryName, value: p.id })),
-        [titulares],
-    );
-
     const handleStatusAcessoChange = (value: ParliamentarianUserStatus) => {
         if (value === 'INACTIVE' && wasAccessActive) {
             confirmDestructive(
@@ -175,8 +161,11 @@ export function ParlamentarEditDialog({
         setStatusAcesso(value);
     };
 
+    const exercicioValido = condicao !== 'SUPLENTE' || suplenteExercicioValido(exercicio);
+    const canSubmit = nomeValido && passwordValid && passwordsMatch && exercicioValido;
+
     async function handleSubmit() {
-        if (!nomeValido || !passwordValid || !passwordsMatch) return;
+        if (!canSubmit) return;
         setSaving(true);
         try {
             const photoUrl = await resolveParlamentarPhotoUrl(
@@ -198,10 +187,6 @@ export function ParlamentarEditDialog({
                     ? {
                           legislatureId: legislaturaId || undefined,
                           condicao,
-                          titularAfastadoId:
-                              condicao === 'SUPLENTE'
-                                  ? titularAfastadoId || null
-                                  : null,
                       }
                     : {}),
             });
@@ -217,6 +202,17 @@ export function ParlamentarEditDialog({
             }
 
             showSuccess('Parlamentar atualizado com sucesso.');
+
+            if (mandatoAtivo && condicao === 'SUPLENTE') {
+                try {
+                    if (await registrarExercicioSuplente(parlamentarianId, exercicio)) {
+                        showSuccess('Suplente vinculado ao titular.');
+                    }
+                } catch (err) {
+                    showApiError(err);
+                }
+            }
+
             onSaved();
         } catch (err) {
             showApiError(err);
@@ -232,7 +228,7 @@ export function ParlamentarEditDialog({
                 label="Salvar"
                 icon="pi pi-check"
                 loading={saving}
-                disabled={!nomeValido || !passwordValid || !passwordsMatch}
+                disabled={!canSubmit}
                 onClick={() => void handleSubmit()}
             />
         </div>
@@ -403,10 +399,9 @@ export function ParlamentarEditDialog({
                                             name="pe-condicao"
                                             value="TITULAR"
                                             checked={condicao === 'TITULAR'}
-                                            onChange={(e) => {
-                                                setCondicao(e.value as CondicaoMandato);
-                                                setTitularAfastadoId('');
-                                            }}
+                                            onChange={(e) =>
+                                                setCondicao(e.value as CondicaoMandato)
+                                            }
                                         />
                                         <label htmlFor="pe-titular" className="sigl-radio-option-label">
                                             Titular
@@ -431,23 +426,14 @@ export function ParlamentarEditDialog({
                         </div>
 
                         {condicao === 'SUPLENTE' && (
-                            <div className="sigl-filtro-campo">
-                                <label htmlFor="pe-titular-afastado">Titular afastado</label>
-                                <Dropdown
-                                    id="pe-titular-afastado"
-                                    options={titularesOptions}
-                                    value={titularAfastadoId || null}
-                                    onChange={(v) => setTitularAfastadoId(String(v))}
-                                    placeholder={
-                                        titularesOptions.length === 0
-                                            ? 'Nenhum titular ativo encontrado'
-                                            : 'Selecione o titular (opcional)'
-                                    }
-                                    disabled={titularesOptions.length === 0}
-                                    className="w-full"
-                                    filter
-                                />
-                            </div>
+                            <SuplenteExercicioFields
+                                idPrefix="pe-exercicio"
+                                legislatureId={legislaturaId}
+                                value={exercicio}
+                                onChange={setExercicio}
+                                partidoId={politicalPartyId || undefined}
+                                suplenteId={parlamentarianId}
+                            />
                         )}
 
                         <div className="sigl-dialog-grid sigl-dialog-grid-2">

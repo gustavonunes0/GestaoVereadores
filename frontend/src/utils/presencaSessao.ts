@@ -1,6 +1,7 @@
 import type { Parliamentarian } from '../api/legislative/parlamentares.api';
 import type { BoardMember } from '../api/legislative/mesa-diretora.api';
 import type { PresencaParlamentar, PresencaSessao, SituacaoPresencaValor } from '../types/presenca';
+import type { ElencoExercicioSessao } from '../types/substituicoes';
 import { abreviarNome, ordenarCargosMesa } from './plenarioLayout';
 
 export interface PresencaRegistroApi {
@@ -75,15 +76,38 @@ function indexPresencasPorParliamentarian(
     return map;
 }
 
+/** Quem está em exercício em cada vaga e, se suplente, o titular substituído. */
+export function indexarElencoExercicio(
+    elenco: ElencoExercicioSessao | null | undefined,
+): Map<string, string | undefined> | null {
+    if (!elenco) return null;
+    return new Map(
+        elenco.vagas.map((v) => [
+            v.emExercicio.id,
+            v.substituicaoId ? v.titular.parliamentaryName : undefined,
+        ]),
+    );
+}
+
 export function buildPresencaSessao(params: {
     sessaoId: string;
     parlamentares: Parliamentarian[];
     mesaMembros: BoardMember[];
     registros: PresencaRegistroApi[];
     quorumMinimo?: number;
+    /** Vagas da sessão; sem ele, mantém o elenco por mandato ativo. */
+    elenco?: ElencoExercicioSessao | null;
 }): PresencaSessao {
     const porParl = indexPresencasPorParliamentarian(params.registros);
-    const parlPorId = new Map(params.parlamentares.map((p) => [p.id, p]));
+    const emExercicio = indexarElencoExercicio(params.elenco);
+    const parlamentaresElenco = emExercicio
+        ? params.parlamentares.filter((p) => emExercicio.has(p.id))
+        : params.parlamentares;
+    const parlPorId = new Map(parlamentaresElenco.map((p) => [p.id, p]));
+    const comSubstituicao = (p: PresencaParlamentar): PresencaParlamentar => {
+        const titular = emExercicio?.get(p.parliamentarianId);
+        return titular ? { ...p, substituindo: titular } : p;
+    };
 
     const mesaOrdenada = [...params.mesaMembros].sort((a, b) =>
         ordenarCargosMesa(a.boardRole.name, b.boardRole.name),
@@ -98,19 +122,19 @@ export function buildPresencaSessao(params: {
         .map((membro) => {
             const registro = porParl.get(membro.parliamentarian.id);
             const parl = parlPorId.get(membro.parliamentarian.id)!;
-            return mapParlamentar(parl, registro, membro.boardRole.name);
+            return comSubstituicao(mapParlamentar(parl, registro, membro.boardRole.name));
         });
 
     const mesaIds = new Set(mesaMembros.map((m) => m.parliamentarianId));
 
-    const vereadores = params.parlamentares
+    const vereadores = parlamentaresElenco
         .filter(
             (p) =>
                 p.status === 'ACTIVE' &&
                 Boolean(p.activeMandate) &&
                 !mesaIds.has(p.id),
         )
-        .map((p) => mapParlamentar(p, porParl.get(p.id)))
+        .map((p) => comSubstituicao(mapParlamentar(p, porParl.get(p.id))))
         .filter(
             (v) =>
                 !mesaMembros.some(

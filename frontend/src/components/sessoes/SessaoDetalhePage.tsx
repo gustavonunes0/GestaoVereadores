@@ -4,6 +4,7 @@ import { TabView, TabPanel } from 'primereact/tabview';
 import { Button } from 'primereact/button';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { sessoesApi } from '../../api/legislative/sessoes.api';
+import { substituicoesApi } from '../../api/legislative/substituicoes.api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppToast } from '../../hooks/useAppToast';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -85,13 +86,27 @@ export function SessaoDetalhePage() {
 
     useEffect(() => { void buscar(); }, [buscar]);
 
+    const [foraDeExercicio, setForaDeExercicio] = useState(false);
+    useEffect(() => {
+        if (!id || !canVotar || !parliamentarianId) return;
+        substituicoesApi
+            .elencoDaSessao(id)
+            .then((elenco) =>
+                setForaDeExercicio(
+                    !elenco.vagas.some((v) => v.emExercicio.id === parliamentarianId),
+                ),
+            )
+            .catch(() => setForaDeExercicio(false));
+    }, [id, canVotar, parliamentarianId]);
+    const podeVotarNaSessao = canVotar && !foraDeExercicio;
+
     useEffect(() => {
         if (!encerrarTransmissao) return;
         void buscar();
     }, [encerrarTransmissao, buscar]);
 
     useEffect(() => {
-        if (!votacaoAberta || !canVotar) return;
+        if (!votacaoAberta || !podeVotarNaSessao) return;
         if (ultimaVotacaoNotificada.current === votacaoAberta.votacaoId) return;
         ultimaVotacaoNotificada.current = votacaoAberta.votacaoId;
 
@@ -99,7 +114,7 @@ export function SessaoDetalhePage() {
         if (votacaoAberta.aceitaVotoIndividual) {
             setDialogVoto(true);
         }
-    }, [votacaoAberta, canVotar, showToast]);
+    }, [votacaoAberta, podeVotarNaSessao, showToast]);
 
     useEffect(() => {
         if (!votacaoAberta) {
@@ -138,7 +153,7 @@ export function SessaoDetalhePage() {
     const placarAtual =
         placar?.votacaoId === votacaoAberta?.votacaoId ? placar : null;
     const podeRegistrarVoto =
-        canVotar &&
+        podeVotarNaSessao &&
         !!parliamentarianId &&
         !!votacaoAberta?.aceitaVotoIndividual &&
         sessao.statusSessao === 'ABERTA';

@@ -150,6 +150,7 @@ import { EncerrarSessaoUseCase } from '../use-cases/encerrar-sessao.use-case';
 import { CancelarSessaoUseCase } from '../use-cases/cancelar-sessao.use-case';
 import { PublicarPautaUseCase } from '../use-cases/publicar-pauta.use-case';
 import { CalcularQuorumUseCase } from '../use-cases/calcular-quorum.use-case';
+import { GetElencoExercicioUseCase } from '../use-cases/get-elenco-exercicio.use-case';
 import { AbrirSessaoDto } from '../dto/abrir-sessao.dto';
 import { SuspenderSessaoDto } from '../dto/suspender-sessao.dto';
 import { EncerrarSessaoDto } from '../dto/encerrar-sessao.dto';
@@ -267,6 +268,7 @@ export class SessoesController {
         private readonly getListaPresencaPdf: GetListaPresencaPdfUseCase,
         private readonly getAtaPdf: GetAtaPdfUseCase,
         private readonly notifySessaoAberta: NotifySessaoAbertaUseCase,
+        private readonly getElencoExercicio: GetElencoExercicioUseCase,
     ) {}
 
     @Get('pauta/fases')
@@ -908,6 +910,14 @@ export class SessoesController {
         @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.calcularQuorum.execute(tenantId, id);
+    }
+
+    @Get(':id/elenco-exercicio')
+    getElencoExercicioHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+    ) {
+        return this.getElencoExercicio.execute(tenantId, id);
     }
 
     @TenantRoles(...STAFF_AND_ABOVE)

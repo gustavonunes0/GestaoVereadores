@@ -68,6 +68,7 @@ export function mapPresencaToCouncilors(params: {
         party: (p.partidoSigla ?? '').toUpperCase(),
         role: role ?? mapCargoToRole(p.cargoMesa),
         cargoLabel: p.cargoMesa,
+        substituindo: p.substituindo,
         status: resolveStatus(p, idsQueVotaram, revealNominal),
         side,
         photoUrl: p.fotoUrl ?? null,
