@@ -11,6 +11,8 @@ type Sessao = {
 function buildPrisma(opts: {
     sessao: Sessao;
     titulares: string[];
+    /** Titulares devolvidos quando a consulta não filtra por legislatura. */
+    titularesSemFiltro?: string[];
     substituicoes: Array<{
         id: string;
         titularId: string;
@@ -41,8 +43,13 @@ function buildPrisma(opts: {
         parliamentarianMandate: {
             findMany: jest
                 .fn()
-                .mockImplementation(() =>
-                    Promise.resolve(opts.titulares.map((parliamentarianId) => ({ parliamentarianId }))),
+                .mockImplementation(({ where }) =>
+                    Promise.resolve(
+                        (where.legislatureId
+                            ? opts.titulares
+                            : (opts.titularesSemFiltro ?? opts.titulares)
+                        ).map((parliamentarianId) => ({ parliamentarianId })),
+                    ),
                 ),
             findFirst: jest.fn().mockImplementation(({ where }) => {
                 const condicao = opts.condicoes?.[where.parliamentarianId];
@@ -158,5 +165,18 @@ describe('ExercicioMandatoService', () => {
         expect(elenco.congelado).toBe(false);
         expect(elenco.vagas[0].emExercicioId).toBe('suplente-1');
         expect(createMany).not.toHaveBeenCalled();
+    });
+
+    it('legislatura da sessão sem titulares usa todos os titulares ativos', async () => {
+        const { prisma } = buildPrisma({
+            sessao: { dataInicio: DIA_SESSAO, statusSessao: 'AGENDADA', elencoExercicio: [] },
+            titulares: [],
+            titularesSemFiltro: ['titular-1', 'titular-2'],
+            substituicoes: [],
+        });
+        const service = new ExercicioMandatoService(prisma as never);
+
+        const ids = await service.idsEmExercicioDaSessao('tenant-1', 'sessao-1');
+        expect([...ids].sort()).toEqual(['titular-1', 'titular-2']);
     });
 });

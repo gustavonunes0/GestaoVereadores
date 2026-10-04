@@ -80,7 +80,7 @@ function indexPresencasPorParliamentarian(
 export function indexarElencoExercicio(
     elenco: ElencoExercicioSessao | null | undefined,
 ): Map<string, string | undefined> | null {
-    if (!elenco) return null;
+    if (!elenco || elenco.vagas.length === 0) return null;
     return new Map(
         elenco.vagas.map((v) => [
             v.emExercicio.id,

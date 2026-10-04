@@ -106,11 +106,13 @@ export class ExercicioMandatoService {
             return { legislatureId, congelado: true, vagas: sessao.elencoExercicio };
         }
 
-        const vagas = await this.vagasNaData(
-            tenantId,
-            legislatureId,
-            dataCivilDoInstante(sessao.dataInicio),
-        );
+        const dataSessao = dataCivilDoInstante(sessao.dataInicio);
+        let vagas = await this.vagasNaData(tenantId, legislatureId, dataSessao);
+        // Sessão ligada a uma legislatura sem titulares (cadastro PT/EN divergente):
+        // conta todos os titulares ativos, como o quórum fazia antes das vagas.
+        if (vagas.length === 0 && legislatureId) {
+            vagas = await this.vagasNaData(tenantId, null, dataSessao);
+        }
 
         if (STATUS_QUE_CONGELAM.has(sessao.statusSessao) && vagas.length > 0) {
             await this.persistirElenco(sessaoId, vagas);

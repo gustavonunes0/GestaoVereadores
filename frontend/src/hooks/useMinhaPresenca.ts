@@ -25,7 +25,7 @@ function resolverMeuExercicio(
     elenco: ElencoExercicioSessao | null,
     parliamentarianId: string | undefined,
 ): MeuExercicio {
-    if (!elenco || !parliamentarianId) return EXERCICIO_LIVRE;
+    if (!elenco || elenco.vagas.length === 0 || !parliamentarianId) return EXERCICIO_LIVRE;
     const minhaVaga = elenco.vagas.find((v) => v.emExercicio.id === parliamentarianId);
     if (minhaVaga) {
         return {

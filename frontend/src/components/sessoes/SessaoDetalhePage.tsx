@@ -93,7 +93,8 @@ export function SessaoDetalhePage() {
             .elencoDaSessao(id)
             .then((elenco) =>
                 setForaDeExercicio(
-                    !elenco.vagas.some((v) => v.emExercicio.id === parliamentarianId),
+                    elenco.vagas.length > 0 &&
+                        !elenco.vagas.some((v) => v.emExercicio.id === parliamentarianId),
                 ),
             )
             .catch(() => setForaDeExercicio(false));
