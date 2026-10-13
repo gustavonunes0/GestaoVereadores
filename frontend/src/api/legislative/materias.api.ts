@@ -79,6 +79,7 @@ export interface Materia {
     numeroProtocolo?: number | string | null;
     ano: number | { id: string; valor: number } | null;
     ementa: string;
+    justificativa?: string | null;
     status: MateriaStatus | { value: MateriaStatus; label: string };
     dataProtocolo?: string | null;
     textoOriginalUrl?: string | null;

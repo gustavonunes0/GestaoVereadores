@@ -153,6 +153,7 @@ export type MateriaPrismaPayload = {
     tenantId: string;
     tipoId: string;
     ementa: string;
+    justificativa?: string | null;
     numero: number | null;
     numeroProtocolo?: number | null;
     anoId: string | null;
@@ -227,6 +228,7 @@ export class MatterViewModel {
                   ? { id: data.anoId }
                   : null,
             ementa: data.ementa,
+            justificativa: data.justificativa ?? null,
             status: {
                 value: status,
                 label: MATTER_STATUS_LABELS[status] ?? String(status),

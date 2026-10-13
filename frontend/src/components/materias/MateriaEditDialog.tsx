@@ -72,7 +72,9 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
         return ano != null ? String(ano) : '';
     });
     const [ementa, setEmenta] = useState(materia.ementa);
-    const [justificativa, setJustificativa] = useState('');
+    const [justificativa, setJustificativa] = useState(
+        materia.justificativa ?? '',
+    );
     const [dataProtocolo, setDataProtocolo] = useState<Date | null>(
         materia.dataProtocolo ? new Date(materia.dataProtocolo) : null,
     );

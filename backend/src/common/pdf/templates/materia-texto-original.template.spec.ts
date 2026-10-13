@@ -236,6 +236,23 @@ describe('materiaTextoOriginalTemplate — conformidade com .cursor/modelos', ()
         ).toBe('Maria Rosenilda Andrade de Paula');
     });
 
+    it('inclui coautor na capa e nas assinaturas da proposição', () => {
+        const dados = fixtureReq107();
+        dados.coautores = [
+            {
+                nome: 'João da Silva',
+                cargoPartido: 'Vereador(a) do PT',
+            },
+        ];
+        const html = materiaTextoOriginalTemplate(dados);
+        const text = stripHtml(html);
+
+        expect(text).toContain('João da Silva');
+        expect(text).toContain('Coautor');
+        expect(text).toContain('Os(As) Vereadores(as) abaixo signatários');
+        expect(text).toContain('JUSTIFICATIVA');
+    });
+
     it('evita repetir sigla e nome iguais do partido', () => {
         expect(
             formatCargoPartidoVereador({

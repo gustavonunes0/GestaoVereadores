@@ -109,6 +109,40 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
                         },
                     },
                 },
+                matterCoauthors: {
+                    orderBy: { ordem: 'asc' },
+                    include: {
+                        parliamentarian: {
+                            select: {
+                                id: true,
+                                parliamentaryName: true,
+                                parliamentarianUser: {
+                                    select: {
+                                        user: {
+                                            select: {
+                                                firstName: true,
+                                                lastName: true,
+                                            },
+                                        },
+                                        politicalParty: {
+                                            select: {
+                                                name: true,
+                                                acronym: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        tenantPartner: {
+                            select: {
+                                nome: true,
+                                cargo: true,
+                                instituicao: true,
+                            },
+                        },
+                    },
+                },
             },
         });
 
@@ -263,6 +297,42 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
                   .filter(Boolean)
                   .join(' — ') || 'Autor';
 
+        const coautores = (materia.matterCoauthors ?? [])
+            .map((item) => {
+                if (item.parliamentarian) {
+                    const nome =
+                        resolveNomeParlamentarDocumento({
+                            parliamentaryName:
+                                item.parliamentarian.parliamentaryName,
+                            user: item.parliamentarian.parliamentarianUser
+                                ?.user,
+                        }) || 'Coautor';
+                    const coParty =
+                        item.parliamentarian.parliamentarianUser
+                            ?.politicalParty ?? null;
+                    return {
+                        nome,
+                        cargoPartido: coParty
+                            ? formatCargoPartidoVereador(coParty)
+                            : 'Vereador(a)',
+                    };
+                }
+                if (item.tenantPartner) {
+                    return {
+                        nome: item.tenantPartner.nome.trim() || 'Coautor',
+                        cargoPartido:
+                            [item.tenantPartner.cargo, item.tenantPartner.instituicao]
+                                .filter(Boolean)
+                                .join(' — ') || 'Coautor',
+                    };
+                }
+                return null;
+            })
+            .filter(
+                (item): item is { nome: string; cargoPartido: string } =>
+                    item != null,
+            );
+
         const presidente =
             board?.members.find((m) =>
                 /presid/i.test(m.boardRole.name),
@@ -332,8 +402,9 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
             horaProtocolo: dataParts.hora,
             autorNome,
             autorCargoPartido,
+            coautores,
             ementa: materia.ementa,
-            justificativa: materia.justificativa,
+            justificativa: materia.justificativa?.trim() || null,
             observacoes: `${tipoNome.toUpperCase()} Nº ${numeroLabel}`,
             tipoNome,
             tipoNomeUpper: tipoNome.toUpperCase(),

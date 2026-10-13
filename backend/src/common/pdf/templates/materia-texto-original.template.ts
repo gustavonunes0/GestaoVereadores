@@ -23,6 +23,7 @@ export type MateriaTextoOriginalPdfInput = {
     horaProtocolo: string;
     autorNome: string;
     autorCargoPartido: string | null;
+    coautores?: Array<{ nome: string; cargoPartido: string | null }>;
     ementa: string;
     justificativa: string | null;
     observacoes: string;
@@ -50,6 +51,7 @@ export function materiaTextoOriginalTemplate(
     const camaraCurta = `CÂMARA DE ${dados.municipio}`.toUpperCase();
     const camaraFull = `CÂMARA MUNICIPAL DE ${dados.municipio}`.toUpperCase();
 
+    const coautores = (dados.coautores ?? []).filter((c) => c.nome.trim());
     const ementaCapa = textToParagraphsHtml(
         ementaResumoParaCapa(dados.ementa),
         'par',
@@ -59,6 +61,34 @@ export function materiaTextoOriginalTemplate(
         ? `<h3 class="sec">JUSTIFICATIVA</h3>
 ${textToParagraphsHtml(dados.justificativa.trim(), 'par')}`
         : '';
+    const capaCoautoresHtml = coautores
+        .map(
+            (c) => `
+      <div class="valor" style="margin-top:10px">${escHtml(c.nome)}</div>
+      <div class="valor sub">Coautor</div>`,
+        )
+        .join('');
+    const signatarioIntro = coautores.length
+        ? 'Os(As) Vereadores(as) abaixo signatários'
+        : 'O(A) Vereador(a) abaixo signatário';
+    const assinaturasHtml = `
+  <div class="assinaturas">
+    <div class="assinatura">
+      <div class="nome">${escHtml(dados.autorNome)}</div>
+      <div class="cargo">${escHtml(dados.autorCargoPartido ?? 'Autor')}</div>
+      <div class="cargo">Autor</div>
+    </div>
+    ${coautores
+        .map(
+            (c) => `
+    <div class="assinatura">
+      <div class="nome">${escHtml(c.nome)}</div>
+      <div class="cargo">${escHtml(c.cargoPartido ?? 'Coautor')}</div>
+      <div class="cargo">Coautor</div>
+    </div>`,
+        )
+        .join('')}
+  </div>`;
 
     const chromeStyles = branding ? buildMateriaPdfChromeStyles() : '';
     const cabecalho = branding ? buildMateriaPdfCabecalhoHtml(branding) : '';
@@ -93,6 +123,7 @@ ${textToParagraphsHtml(dados.justificativa.trim(), 'par')}`
     <div class="box">
       <div class="valor">${escHtml(dados.autorNome)}</div>
       <div class="valor sub">Autor</div>
+      ${capaCoautoresHtml}
     </div>
   </div>
 
@@ -149,7 +180,7 @@ ${textToParagraphsHtml(dados.justificativa.trim(), 'par')}`
   </div>
 
   <p class="par">
-    O(A) Vereador(a) abaixo signatário, no uso de suas atribuições legais e na
+    ${escHtml(signatarioIntro)}, no uso de suas atribuições legais e na
     forma regimental, vem respeitosamente, à presença de Vossa Excelência,
     após ouvido o Plenário desta Casa, ${escHtml(dados.verboAcao)}
   </p>
@@ -167,11 +198,7 @@ ${textToParagraphsHtml(dados.justificativa.trim(), 'par')}`
     aos ${escHtml(dados.dataProtocoloExtenso)}.
   </p>
 
-  <div class="assinatura">
-    <div class="nome">${escHtml(dados.autorNome)}</div>
-    <div class="cargo">${escHtml(dados.autorCargoPartido ?? 'Autor')}</div>
-    <div class="cargo">Autor</div>
-  </div>`;
+  ${assinaturasHtml}`;
 
     const corpo = `
 <style>
@@ -258,6 +285,14 @@ ${chromeStyles}
     font-size: 14px;
   }
 
+  .assinaturas {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 12px 24px;
+    margin-top: 20px;
+  }
+  .assinaturas .assinatura { flex: 1 1 220px; margin-top: 8px; }
   .assinatura { margin-top: 28px; text-align: center; page-break-inside: avoid; }
   .assinatura .nome {
     font-weight: 700;
