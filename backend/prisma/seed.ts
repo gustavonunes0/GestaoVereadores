@@ -737,32 +737,35 @@ async function main() {
     ];
 
     for (const v of vereadoresDemo) {
-        let parliamentarian = await prisma.parliamentarian.findFirst({
+        // Inclui soft-deleted: se o operador excluiu o demo, o seed NÃO recria.
+        const existing = await prisma.parliamentarian.findFirst({
             where: {
                 tenantId: DEMO_TENANT_ID,
                 parliamentaryName: v.parliamentaryName,
-                isRemoved: false,
             },
+            orderBy: { createdAt: 'asc' },
         });
 
-        if (!parliamentarian) {
-            parliamentarian = await prisma.parliamentarian.create({
-                data: {
-                    tenantId: DEMO_TENANT_ID,
-                    parliamentaryName: v.parliamentaryName,
-                    officeNumber: v.officeNumber,
-                    status: v.status,
-                },
-            });
-        } else {
-            parliamentarian = await prisma.parliamentarian.update({
-                where: { id: parliamentarian.id },
-                data: {
-                    officeNumber: v.officeNumber,
-                    status: v.status,
-                },
-            });
+        if (existing?.isRemoved) {
+            continue;
         }
+
+        const parliamentarian = existing
+            ? await prisma.parliamentarian.update({
+                  where: { id: existing.id },
+                  data: {
+                      officeNumber: v.officeNumber,
+                      status: v.status,
+                  },
+              })
+            : await prisma.parliamentarian.create({
+                  data: {
+                      tenantId: DEMO_TENANT_ID,
+                      parliamentaryName: v.parliamentaryName,
+                      officeNumber: v.officeNumber,
+                      status: v.status,
+                  },
+              });
 
         await prisma.parliamentarianMandate.upsert({
             where: {

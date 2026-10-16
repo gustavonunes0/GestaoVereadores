@@ -509,6 +509,13 @@
     grid-column: 1 / -1;
 }
 
+/* Cabeçalhos flex / blocos sem span — linha inteira (evita botão 1/12 esticado) */
+.p-dialog .sigl-dialog-secao > .flex,
+.p-dialog .lex-dialog-section > .flex {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
 .p-dialog .sigl-dialog-secao > .sigl-dialog-grid,
 .p-dialog .sigl-dialog-secao > .lex-dialog-grid,
 .p-dialog .sigl-dialog-secao > .lex-dialog-grid-2,

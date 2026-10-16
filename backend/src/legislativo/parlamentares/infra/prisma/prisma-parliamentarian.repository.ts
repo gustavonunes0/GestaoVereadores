@@ -124,6 +124,9 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
     }
 
     async findMany(tenantId: string, query: ListParliamentariansRepositoryQuery) {
+        // Opção A / BUG-11: corrige drift conta ↔ status legislativo (ex.: Lindomar).
+        await this.syncStatusWithAccess(tenantId);
+
         const where: Prisma.ParliamentarianWhereInput = {
             tenantId,
             isRemoved: false,
@@ -218,11 +221,41 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
     }
 
     async findById(tenantId: string, id: string) {
+        await this.syncStatusWithAccess(tenantId);
+
         const row = await this.prisma.parliamentarian.findFirst({
             where: { id, tenantId, isRemoved: false },
             include: includeDetailRelations,
         });
         return row ? this.toWithRelations(row as ParliamentarianDetailRow) : null;
+    }
+
+    /** Alinha Parliamentarian.status com ParlamentarianUser (ACTIVE/INACTIVE). */
+    private async syncStatusWithAccess(tenantId: string) {
+        await this.prisma.parliamentarian.updateMany({
+            where: {
+                tenantId,
+                isRemoved: false,
+                status: ParliamentarianStatus.ACTIVE,
+                parliamentarianUser: {
+                    isRemoved: false,
+                    status: 'INACTIVE',
+                },
+            },
+            data: { status: ParliamentarianStatus.INACTIVE },
+        });
+        await this.prisma.parliamentarian.updateMany({
+            where: {
+                tenantId,
+                isRemoved: false,
+                status: ParliamentarianStatus.INACTIVE,
+                parliamentarianUser: {
+                    isRemoved: false,
+                    status: 'ACTIVE',
+                },
+            },
+            data: { status: ParliamentarianStatus.ACTIVE },
+        });
     }
 
     async findProfileById(tenantId: string, id: string) {
@@ -315,12 +348,29 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
     }
 
     async softDelete(tenantId: string, id: string) {
-        await this.prisma.parliamentarian.updateMany({
+        const now = new Date();
+        const result = await this.prisma.parliamentarian.updateMany({
             where: { id, tenantId, isRemoved: false },
             data: {
                 isRemoved: true,
-                removedAt: new Date(),
+                removedAt: now,
                 status: ParliamentarianStatus.REMOVED,
+            },
+        });
+        if (result.count === 0) {
+            throw new Error('Parlamentar não encontrado');
+        }
+        // Encerra mandatos ativos para não reaparecerem em listagens por legislatura.
+        await this.prisma.parliamentarianMandate.updateMany({
+            where: {
+                tenantId,
+                parliamentarianId: id,
+                isRemoved: false,
+                status: 'ACTIVE',
+            },
+            data: {
+                status: 'FINISHED',
+                endedAt: now,
             },
         });
     }

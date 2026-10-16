@@ -38,12 +38,9 @@ function formatPartyLabel(acronym: string, name: string): string {
 }
 
 function resolveMandateBadge(row: Parliamentarian): string | null {
-    // Afastado / inativo: não mostrar "Em exercício" (P-02 / 011).
+    // Afastado / inativo: não sugerir exercício (P-02 / 011).
     if (row.status !== 'ACTIVE') {
-        if (row.activeMandate?.condicao) {
-            return CONDICAO_LABEL[row.activeMandate.condicao] ?? row.activeMandate.condicao;
-        }
-        return null;
+        return row.activeMandate ? 'Afastado' : null;
     }
     if (row.activeMandate?.condicao) {
         return CONDICAO_LABEL[row.activeMandate.condicao] ?? row.activeMandate.condicao;
@@ -85,9 +82,11 @@ export function ParlamentarListCard({ row }: Props) {
                             <Tag
                                 value={mandateBadge}
                                 severity={
-                                    row.activeMandate?.condicao === 'SUPLENTE'
-                                        ? 'warning'
-                                        : 'info'
+                                    row.status !== 'ACTIVE'
+                                        ? 'secondary'
+                                        : row.activeMandate?.condicao === 'SUPLENTE'
+                                          ? 'warning'
+                                          : 'info'
                                 }
                                 className="text-xs"
                             />

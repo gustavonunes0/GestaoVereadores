@@ -4236,6 +4236,48 @@ body.transmissao-fs-active {
     min-width: 0;
 }
 
+/* Cabeçalho da seção Substituições — evita botão esmagado na grid 12 cols */
+.parlamentar-substituicoes-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    width: 100%;
+    min-width: 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.parlamentar-substituicoes-head .sigl-dialog-secao-titulo {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.parlamentar-substituicoes-head .parlamentar-substituicoes-add.p-button {
+    flex: 0 0 auto;
+    align-self: center;
+    width: auto;
+    height: auto;
+    min-height: var(--sigl-action-hit-min);
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .parlamentar-substituicoes-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .parlamentar-substituicoes-head .parlamentar-substituicoes-add.p-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 .parlamentar-ver-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6849,6 +6891,11 @@ body.sessao-painel-body {
 
 .p-dialog .sigl-dialog-secao > .sigl-dialog-secao-titulo {
     grid-column: 1 / -1;
+}
+
+.p-dialog .sigl-dialog-secao > .flex {
+    grid-column: 1 / -1;
+    min-width: 0;
 }
 
 .p-dialog .sigl-dialog-secao > .sigl-dialog-grid,

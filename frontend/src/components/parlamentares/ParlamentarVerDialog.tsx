@@ -213,7 +213,13 @@ export function ParlamentarVerDialog({ parlamentarianId, onClose, onChanged }: P
                                         Conta de acesso
                                     </span>
                                     {parlamentar.user ? (
-                                        <div className="parlamentar-vinculo-card ativo parlamentar-ver-full">
+                                        <div
+                                            className={`parlamentar-vinculo-card ${
+                                                accessStatus === 'ACTIVE'
+                                                    ? 'ativo'
+                                                    : 'inativo'
+                                            } parlamentar-ver-full`}
+                                        >
                                             <div className="parlamentar-ver-acesso">
                                                 <div className="parlamentar-ver-acesso__main">
                                                     <strong className="parlamentar-ver-value">

@@ -126,16 +126,17 @@ export function ParlamentarSubstituicoesSection({ parlamentar, podeTerSuplente, 
 
     return (
         <div className="sigl-dialog-secao">
-            <div className="flex align-items-center justify-content-between gap-2">
+            <div className="parlamentar-substituicoes-head parlamentar-ver-full">
                 <span className="sigl-dialog-secao-titulo">
                     <i className="pi pi-sync" aria-hidden />
                     Substituições
                 </span>
                 {canWrite && podeTerSuplente ? (
                     <Button
-                        label="+ Nova substituição"
+                        label="Nova substituição"
                         icon="pi pi-plus"
                         size="small"
+                        className="parlamentar-substituicoes-add"
                         onClick={() => setForm({})}
                     />
                 ) : null}

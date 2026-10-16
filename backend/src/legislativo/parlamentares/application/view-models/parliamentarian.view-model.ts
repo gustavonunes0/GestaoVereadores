@@ -49,10 +49,17 @@ export class ParliamentarianViewModel {
         const p = data.entity.toPrimitives();
         const party = data.user?.politicalParty;
         const accessActive = data.accessStatus === 'ACTIVE';
+        // Opção A: selo legislativo não diverge da conta (BUG-11).
+        const status =
+            data.accessStatus === 'INACTIVE' && p.status === 'ACTIVE'
+                ? 'INACTIVE'
+                : data.accessStatus === 'ACTIVE' && p.status === 'INACTIVE'
+                  ? 'ACTIVE'
+                  : p.status;
         return {
             id: p.id,
             parliamentaryName: p.parliamentaryName,
-            status: p.status,
+            status,
             hasAccess: accessActive && !!data.user,
             ...(data.accessStatus ? { accessStatus: data.accessStatus } : {}),
             ...(data.user

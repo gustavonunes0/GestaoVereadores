@@ -61,8 +61,7 @@ export function ParlamentarEditDialog({
         [mandatos],
     );
 
-    const wasAccessActive =
-        parlamentar.accessStatus === 'ACTIVE' || parlamentar.hasAccess;
+    const wasAccessActive = parlamentar.accessStatus === 'ACTIVE';
 
     const [parliamentaryName, setParliamentaryName] = useState(parlamentar.parliamentaryName);
     const [officeNumber, setOfficeNumber] = useState(parlamentar.officeNumber ?? '');
