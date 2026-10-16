@@ -1163,6 +1163,8 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         entity.dataFim = raw.dataFim;
         entity.statusSessao = raw.statusSessao as unknown as StatusSessao;
         entity.faseAtual = raw.faseAtual as unknown as FaseSessao;
+        entity.dataInicioChamada =
+            (raw as { dataInicioChamada?: Date | null }).dataInicioChamada ?? null;
         entity.dataAbertura = raw.dataAbertura;
         entity.dataSuspensao = raw.dataSuspensao;
         entity.dataEncerramento = raw.dataEncerramento;
@@ -1184,6 +1186,7 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
     ): Promise<void> {
         const agora = new Date();
         const dataFields: Partial<{
+            dataInicioChamada: Date;
             dataAbertura: Date;
             dataSuspensao: Date;
             dataEncerramento: Date;
@@ -1194,7 +1197,9 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
             observacoes: string;
         }> = {};
 
-        if (dados.novoStatus === StatusSessao.ABERTA) {
+        if (dados.novoStatus === StatusSessao.CHAMADA) {
+            dataFields.dataInicioChamada = agora;
+        } else if (dados.novoStatus === StatusSessao.ABERTA) {
             dataFields.dataAbertura = agora;
             if (dados.responsavelId) {
                 dataFields.responsavelAberturaId = dados.responsavelId;
@@ -1324,6 +1329,32 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         });
     }
 
+    async setPautaItemAtual(
+        id: string,
+        tenantId: string,
+        pautaItemId: string | null,
+    ): Promise<{ pautaItemAtualId: string | null }> {
+        if (pautaItemId) {
+            const item = await this.prisma.pautaItem.findFirst({
+                where: {
+                    id: pautaItemId,
+                    sessaoId: id,
+                    isRemoved: false,
+                },
+            });
+            if (!item) {
+                throw new Error('Item de pauta não encontrado nesta sessão');
+            }
+        }
+
+        await this.prisma.sessaoPlenaria.update({
+            where: { id, tenantId, isRemoved: false },
+            data: { pautaItemAtualId: pautaItemId },
+        });
+
+        return { pautaItemAtualId: pautaItemId };
+    }
+
     // M13 — buscar sessão ativa (ABERTA ou SUSPENSA) para o parlamentar
     async findAtiva(tenantId: string): Promise<SessaoPlenariaEntity | null> {
         const raw = await this.prisma.sessaoPlenaria.findFirst({
@@ -1347,6 +1378,8 @@ export class PrismaSessaoPlenariaRepository implements SessaoPlenariaRepository 
         entity.dataFim = raw.dataFim;
         entity.statusSessao = raw.statusSessao as unknown as StatusSessao;
         entity.faseAtual = raw.faseAtual as unknown as FaseSessao;
+        entity.dataInicioChamada =
+            (raw as { dataInicioChamada?: Date | null }).dataInicioChamada ?? null;
         entity.dataAbertura = raw.dataAbertura;
         entity.dataSuspensao = raw.dataSuspensao;
         entity.dataEncerramento = raw.dataEncerramento;

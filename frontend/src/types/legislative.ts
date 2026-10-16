@@ -29,6 +29,7 @@ export const MATERIA_STATUS_LABELS: Record<MateriaStatus, string> = {
 
 export const SESSAO_STATUS = {
     AGENDADA: 'Agendada',
+    CHAMADA: 'Chamada',
     ABERTA: 'Aberta',
     SUSPENSA: 'Suspensa',
     ENCERRADA: 'Encerrada',

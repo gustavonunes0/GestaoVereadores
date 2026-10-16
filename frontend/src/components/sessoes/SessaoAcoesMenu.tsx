@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from 'primereact/button';
 import { sessoesApi } from '../../api/legislative/sessoes.api';
+import type { QuorumInfo } from '../../api/legislative/sessoes.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import type { StatusSessao } from '../../types/sessoes';
 import { AbrirSessaoDialog } from './AbrirSessaoDialog';
@@ -11,7 +12,7 @@ interface Props {
     onUpdated: () => void;
 }
 
-type AcaoPath = 'abrir' | 'suspender' | 'encerrar' | 'cancelar';
+type AcaoPath = 'iniciar-chamada' | 'abrir' | 'suspender' | 'encerrar' | 'cancelar';
 
 type AcaoDef = {
     label: string;
@@ -21,6 +22,10 @@ type AcaoDef = {
 
 const ACOES: Record<StatusSessao, AcaoDef[]> = {
     AGENDADA: [
+        { label: 'Iniciar chamada', path: 'iniciar-chamada' },
+        { label: 'Cancelar sessão', path: 'cancelar', destrutiva: true },
+    ],
+    CHAMADA: [
         { label: 'Abrir sessão', path: 'abrir' },
         { label: 'Cancelar sessão', path: 'cancelar', destrutiva: true },
     ],
@@ -36,13 +41,17 @@ const ACOES: Record<StatusSessao, AcaoDef[]> = {
     CANCELADA: [],
 };
 
-const ACAO_API: Record<Exclude<AcaoPath, 'abrir'>, (id: string) => Promise<unknown>> = {
+const ACAO_API: Record<
+    Exclude<AcaoPath, 'abrir' | 'iniciar-chamada'>,
+    (id: string) => Promise<unknown>
+> = {
     suspender: (id) => sessoesApi.suspender(id),
     encerrar: (id) => sessoesApi.encerrar(id),
     cancelar: (id) => sessoesApi.cancelar(id),
 };
 
 function acaoIcon(path: AcaoPath): string {
+    if (path === 'iniciar-chamada') return 'pi pi-users';
     if (path === 'abrir') return 'pi pi-play';
     if (path === 'suspender') return 'pi pi-pause';
     if (path === 'cancelar') return 'pi pi-times';
@@ -53,11 +62,43 @@ export function SessaoAcoesMenu({ sessaoId, status, onUpdated }: Props) {
     const { showSuccess, showApiError, confirmDestructive } = useAppToast();
     const [loading, setLoading] = useState(false);
     const [dialogAbrir, setDialogAbrir] = useState(false);
+    const [quorum, setQuorum] = useState<QuorumInfo | null>(null);
+
+    useEffect(() => {
+        if (status !== 'CHAMADA') {
+            setQuorum(null);
+            return;
+        }
+        let cancelled = false;
+        const load = () => {
+            void sessoesApi
+                .getQuorum(sessaoId)
+                .then((q) => {
+                    if (!cancelled) setQuorum(q);
+                })
+                .catch(() => {
+                    if (!cancelled) setQuorum(null);
+                });
+        };
+        load();
+        const timer = window.setInterval(load, 2000);
+        return () => {
+            cancelled = true;
+            window.clearInterval(timer);
+        };
+    }, [sessaoId, status]);
 
     const acoes = ACOES[status] ?? [];
     if (acoes.length === 0) return null;
 
-    async function executar(path: Exclude<AcaoPath, 'abrir'>) {
+    const faltam =
+        quorum && !quorum.temQuorum
+            ? Math.max(0, quorum.minimo - quorum.presente)
+            : 0;
+    const abrirDesabilitado =
+        status === 'CHAMADA' && quorum != null && !quorum.temQuorum;
+
+    async function executar(path: Exclude<AcaoPath, 'abrir' | 'iniciar-chamada'>) {
         setLoading(true);
         try {
             await ACAO_API[path](sessaoId);
@@ -70,10 +111,29 @@ export function SessaoAcoesMenu({ sessaoId, status, onUpdated }: Props) {
         }
     }
 
+    async function executarIniciarChamada() {
+        setLoading(true);
+        try {
+            await sessoesApi.iniciarChamada(sessaoId);
+            showSuccess('Chamada iniciada.');
+            onUpdated();
+        } catch (err) {
+            showApiError(err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     function handleAcao(acao: AcaoDef) {
         const path = acao.path;
 
+        if (path === 'iniciar-chamada') {
+            void executarIniciarChamada();
+            return;
+        }
+
         if (path === 'abrir') {
+            if (abrirDesabilitado) return;
             setDialogAbrir(true);
             return;
         }
@@ -97,18 +157,36 @@ export function SessaoAcoesMenu({ sessaoId, status, onUpdated }: Props) {
     return (
         <>
             <div className="sessao-acoes-buttons">
-                {acoes.map((acao) => (
-                    <Button
-                        key={acao.path}
-                        label={acao.label}
-                        icon={acaoIcon(acao.path)}
-                        size="small"
-                        outlined={acao.destrutiva || acao.path === 'suspender'}
-                        severity={acao.destrutiva ? 'danger' : acao.path === 'suspender' ? 'secondary' : undefined}
-                        loading={loading}
-                        onClick={() => handleAcao(acao)}
-                    />
-                ))}
+                {acoes.map((acao) => {
+                    const isAbrir = acao.path === 'abrir';
+                    const disabled = isAbrir && abrirDesabilitado;
+                    const title =
+                        disabled && faltam > 0
+                            ? `Faltam ${faltam} presença${faltam === 1 ? '' : 's'} para o quórum`
+                            : undefined;
+                    return (
+                        <Button
+                            key={acao.path}
+                            label={acao.label}
+                            icon={acaoIcon(acao.path)}
+                            size="small"
+                            outlined={acao.destrutiva || acao.path === 'suspender'}
+                            severity={
+                                acao.destrutiva
+                                    ? 'danger'
+                                    : acao.path === 'suspender'
+                                      ? 'secondary'
+                                      : undefined
+                            }
+                            loading={loading}
+                            disabled={disabled}
+                            title={title}
+                            tooltip={title}
+                            tooltipOptions={title ? { position: 'bottom' } : undefined}
+                            onClick={() => handleAcao(acao)}
+                        />
+                    );
+                })}
             </div>
 
             {dialogAbrir && (

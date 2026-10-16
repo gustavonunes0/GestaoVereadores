@@ -4,6 +4,11 @@ import { MatterAuthorType } from '../../domain/enums/matter-author-type.enum';
 import { MatterAuthorshipDomainService } from '../../domain/services/matter-authorship-domain.service';
 import { SetMatterAutorParlamentarUseCase } from './set-matter-autor-parlamentar.use-case';
 import { SetMatterTenantPartnerUseCase } from './set-matter-autor-externo.use-case';
+
+jest.mock('./generate-materia-texto-original-pdf.use-case', () => ({
+    GenerateMateriaTextoOriginalPdfUseCase: class {},
+}));
+
 import {
     AddMatterCoauthorUseCase,
     RemoveMatterCoauthorUseCase,
@@ -153,12 +158,17 @@ describe('AddMatterCoauthorUseCase', () => {
             ],
         });
 
-        const useCase = new AddMatterCoauthorUseCase(repository as never);
+        const pdf = { execute: jest.fn().mockResolvedValue({}) };
+        const useCase = new AddMatterCoauthorUseCase(
+            repository as never,
+            pdf as never,
+        );
         const result = await useCase.execute('tenant-1', 'matter-1', {
             parliamentarianId: 'parl-2',
         });
 
         expect(result.coauthors).toHaveLength(1);
+        expect(pdf.execute).toHaveBeenCalledWith('tenant-1', 'matter-1');
     });
 
     it('bloqueia coautor duplicado', async () => {
@@ -167,7 +177,10 @@ describe('AddMatterCoauthorUseCase', () => {
             new ConflictException('Este autor já é coautor desta matéria'),
         );
 
-        const useCase = new AddMatterCoauthorUseCase(repository as never);
+        const useCase = new AddMatterCoauthorUseCase(
+            repository as never,
+            { execute: jest.fn() } as never,
+        );
 
         await expect(
             useCase.execute('tenant-1', 'matter-1', {
@@ -230,7 +243,10 @@ describe('RemoveMatterCoauthorUseCase', () => {
             new NotFoundException('Matéria não encontrada'),
         );
 
-        const useCase = new RemoveMatterCoauthorUseCase(repository as never);
+        const useCase = new RemoveMatterCoauthorUseCase(
+            repository as never,
+            { execute: jest.fn() } as never,
+        );
 
         await expect(
             useCase.execute('tenant-1', 'matter-x', 'co-1'),

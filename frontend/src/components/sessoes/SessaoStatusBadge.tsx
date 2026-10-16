@@ -6,6 +6,7 @@ type Severity = 'info' | 'success' | 'warning' | 'danger' | 'secondary';
 
 const CFG: Record<string, { severity: Severity; icon: string; label: string }> = {
     AGENDADA:  { severity: 'info',      icon: 'pi pi-calendar',      label: 'Agendada'  },
+    CHAMADA:   { severity: 'warning',   icon: 'pi pi-users',         label: 'Chamada'   },
     ABERTA:    { severity: 'success',   icon: 'pi pi-circle-fill',   label: 'Aberta'    },
     SUSPENSA:  { severity: 'warning',   icon: 'pi pi-pause',         label: 'Suspensa'  },
     ENCERRADA: { severity: 'secondary', icon: 'pi pi-check-circle',  label: 'Encerrada' },

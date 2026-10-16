@@ -184,6 +184,18 @@ export const sessoesApi = {
             body: JSON.stringify(body ?? {}),
         }),
 
+    iniciarChamada: (id: string) =>
+        api<{ statusSessao: string; dataInicioChamada: string }>(
+            API_PATHS.sessoesIniciarChamada(id),
+            { method: 'POST' },
+        ),
+
+    setPautaItemAtual: (id: string, pautaItemId: string | null) =>
+        api<{ pautaItemAtualId: string | null }>(API_PATHS.sessoesPautaItemAtual(id), {
+            method: 'POST',
+            body: JSON.stringify({ pautaItemId }),
+        }),
+
     suspender: (id: string) =>
         api<SessaoPlenaria>(API_PATHS.sessoesSuspender(id), { method: 'POST' }),
 

@@ -2,20 +2,22 @@ import { resolveStatusAtaLabel, type StatusAta } from './ata';
 
 export type StatusSessao =
     | 'AGENDADA'
+    | 'CHAMADA'
     | 'ABERTA'
     | 'SUSPENSA'
     | 'ENCERRADA'
     | 'CANCELADA';
 
-/** Transmissão Jitsi/OBS: libera em AGENDADA (antes da abertura) e ABERTA. Fecha em SUSPENSA/CANCELADA. */
+/** Transmissão Jitsi/OBS: libera em AGENDADA/CHAMADA (antes da abertura) e ABERTA. Fecha em SUSPENSA/CANCELADA. */
 export function sessaoPermiteTransmissao(status: StatusSessao | null | undefined): boolean {
-    return status === 'AGENDADA' || status === 'ABERTA';
+    return status === 'AGENDADA' || status === 'CHAMADA' || status === 'ABERTA';
 }
 
 /** Aba de transmissão ainda visível (ex.: suspensa mostra sala fechada até retomar). */
 export function sessaoMostraAbaTransmissao(status: StatusSessao | null | undefined): boolean {
     return (
         status === 'AGENDADA' ||
+        status === 'CHAMADA' ||
         status === 'ABERTA' ||
         status === 'SUSPENSA'
     );
@@ -50,6 +52,8 @@ export interface SessaoPlenariaDetalhe {
     dataSuspensao?: string | null;
     quorumMinimo?: number | null;
     quorumPresente?: number | null;
+    /** Spec 018 — item destacado no painel público */
+    pautaItemAtualId?: string | null;
     modoTeste?: boolean;
     sessaoLegislativaId?: string | null;
     /** Resposta da API (`SessaoPlenariaViewModel`) */
@@ -106,14 +110,8 @@ export function sessaoDetalheLabel(
 export function sessaoDetalheSubtitulo(
     sessao: Pick<SessaoPlenariaDetalhe, 'dataInicio' | 'mensagem'>,
 ): string {
-    const hora = new Date(sessao.dataInicio).toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-    const partes = [hora];
-    const msg = sessao.mensagem?.trim();
-    if (msg) partes.push(msg);
-    return partes.join(' · ');
+    // Spec 015: cabeçalho da gestão não exibe horário; dataInicio segue no cadastro/docs.
+    return sessao.mensagem?.trim() ?? '';
 }
 
 /** Natureza do item de pauta — define o tratamento visual na tela. */

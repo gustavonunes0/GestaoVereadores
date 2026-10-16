@@ -747,6 +747,7 @@ enum CodigoSituacaoSessao {
 
 enum StatusSessao {
     AGENDADA
+    CHAMADA
     ABERTA
     SUSPENSA
     ENCERRADA
@@ -1214,6 +1215,7 @@ model SessaoPlenaria {
     cicloVidaJson         Json?
     // Campos novos M4 — não usar cicloVidaJson em código novo
     statusSessao          StatusSessao       @default(AGENDADA)
+    dataInicioChamada     DateTime?
     dataAbertura          DateTime?
     dataEncerramento      DateTime?
     dataSuspensao         DateTime?
@@ -1224,13 +1226,16 @@ model SessaoPlenaria {
     observacoes           String?
     // M11 — fase atual como indicador (não trava)
     faseAtual             FaseSessao         @default(NAO_INICIADA)
+    // Spec 018 — item da pauta exibido no painel público
+    pautaItemAtualId      String?            @unique
+    pautaItemAtual        PautaItem?         @relation("SessaoPautaItemAtual", fields: [pautaItemAtualId], references: [id], onDelete: SetNull)
     // M13 — links de transmissão
     linkJitsi             String?
     linkYoutube           String?
     isRemoved             Boolean            @default(false)
     createdAt             DateTime           @default(now())
     updatedAt             DateTime           @updatedAt
-    pautaItens            PautaItem[]
+    pautaItens            PautaItem[]        @relation("SessaoPautaItens")
     pautas                Pauta[]
     presencas             PresencaSessao[]
     pedidosPalavra        PedidoPalavra[]
@@ -1639,7 +1644,8 @@ model PautaItem {
     pautaId     String
     pauta       Pauta            @relation(fields: [pautaId], references: [id], onDelete: Cascade)
     sessaoId    String
-    sessao      SessaoPlenaria   @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+    sessao      SessaoPlenaria   @relation("SessaoPautaItens", fields: [sessaoId], references: [id], onDelete: Cascade)
+    sessaoComoItemAtual SessaoPlenaria? @relation("SessaoPautaItemAtual")
     // M13 — item polimórfico (matéria, ato, norma, aviso ou parecer de comissão)
     categoria   CategoriaPautaItem @default(MATERIA)
     // matéria: obrigatória para MATERIA; também usada como objeto do parecer (COMISSAO)
@@ -1817,6 +1823,7 @@ enum TipoEventoSessaoHistorico {
     SESSAO_ENCERRADA
     SESSAO_CANCELADA
     FASE_ALTERADA
+    CHAMADA_INICIADA
     CHAMADA_REALIZADA
     CHAMADA_REINICIADA
     PRESENCA_REGISTRADA

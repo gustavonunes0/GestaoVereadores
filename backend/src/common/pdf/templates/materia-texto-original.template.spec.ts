@@ -5,6 +5,7 @@ import {
     buildProtocoloLabel,
     formatCargoPartidoVereador,
     resolveNomeParlamentarDocumento,
+    stripFechoDoTexto,
     tituloProposicao,
     verboPorSigla,
 } from './materia-texto-original.helpers';
@@ -108,6 +109,13 @@ describe('materiaTextoOriginalTemplate — conformidade com .cursor/modelos', ()
         expect(text).toContain('BIÊNIO 2025/2026');
         expect(text).toContain('0000000.00002415/2026-13');
         expect(text).toContain('I - 08091153/2026');
+        // Capa: DATA DO PROTOCOLO = data curta (não o label I - …)
+        expect(html).toMatch(
+            /DATA DO PROTOCOLO[\s\S]*?<div class="valor">08\/09\/2026<\/div>/,
+        );
+        expect(html).not.toMatch(
+            /DATA DO PROTOCOLO[\s\S]*?<div class="valor">I - 08091153\/2026<\/div>/,
+        );
         expect(text).toContain('SONIRA GOMES');
         expect(text).toContain('ANTONIO LEANDRO DE BARROS RAMOS');
         expect(text).toContain('Secretário Legislativo'); // capa (gênero masculino no modelo)
@@ -178,6 +186,26 @@ describe('materiaTextoOriginalTemplate — conformidade com .cursor/modelos', ()
         const html = materiaTextoOriginalTemplate(fixtureReq107());
         const pages = html.match(/class="page(?:\s|")/g) ?? [];
         expect(pages.length).toBe(3);
+    });
+
+    it('não duplica fecho quando o texto digitado já contém a frase', () => {
+        expect(
+            stripFechoDoTexto(
+                'Pedido de ofício.\n\nNestes Termos.\nPede e Aguarda Deferimento.',
+            ),
+        ).toBe('Pedido de ofício.');
+
+        const dados = fixtureReq107();
+        dados.ementa = `${dados.ementa}\n\nNestes termos\npede e aguarda deferimento.`;
+        dados.justificativa = `${dados.justificativa}\nPede e Aguarda Deferimento`;
+
+        const html = materiaTextoOriginalTemplate(dados);
+        const text = stripHtml(html);
+        const nestes = (text.match(/Nestes Termos/gi) ?? []).length;
+        const pede = (text.match(/Pede e Aguarda Deferimento/gi) ?? []).length;
+        expect(nestes).toBe(1);
+        expect(pede).toBe(1);
+        expect(html).toContain('class="fecho"');
     });
 
     it('helpers de protocolo/processo seguem o formato dos modelos', () => {

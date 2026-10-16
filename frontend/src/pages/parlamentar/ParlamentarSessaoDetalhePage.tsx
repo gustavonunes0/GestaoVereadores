@@ -31,6 +31,7 @@ const STATUS_BADGE: Record<
     { className: string; icon: string; label: string }
 > = {
     AGENDADA: { className: 'badge--info', icon: 'pi pi-calendar', label: 'Agendada' },
+    CHAMADA: { className: 'badge--warning', icon: 'pi pi-users', label: 'Chamada' },
     ABERTA: { className: 'badge--success', icon: 'pi pi-circle-fill', label: 'Aberta' },
     SUSPENSA: { className: 'badge--warning', icon: 'pi pi-pause', label: 'Suspensa' },
     ENCERRADA: { className: 'badge--neutral', icon: 'pi pi-check-circle', label: 'Encerrada' },
@@ -181,7 +182,11 @@ export function ParlamentarSessaoDetalhePage() {
 
                 <div className="parl-sessao-detalhe-topbar__info">
                     <h2 className="m-0">{sessaoDetalheLabel(sessao)}</h2>
-                    <p className="m-0 text-color-secondary">{sessaoDetalheSubtitulo(sessao)}</p>
+                    {sessaoDetalheSubtitulo(sessao) ? (
+                        <p className="m-0 text-color-secondary">
+                            {sessaoDetalheSubtitulo(sessao)}
+                        </p>
+                    ) : null}
                 </div>
 
                 <div className="parl-sessao-detalhe-topbar__badges">

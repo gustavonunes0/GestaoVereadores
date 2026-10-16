@@ -2,7 +2,8 @@ import { StatusSessao } from '../enums/status-sessao.enum';
 import { FaseSessao } from '../enums/fase-sessao.enum';
 
 const TRANSICOES: Record<StatusSessao, StatusSessao[]> = {
-    [StatusSessao.AGENDADA]:  [StatusSessao.ABERTA, StatusSessao.CANCELADA],
+    [StatusSessao.AGENDADA]:  [StatusSessao.CHAMADA, StatusSessao.CANCELADA],
+    [StatusSessao.CHAMADA]:   [StatusSessao.ABERTA, StatusSessao.CANCELADA],
     [StatusSessao.ABERTA]:    [StatusSessao.SUSPENSA, StatusSessao.ENCERRADA],
     [StatusSessao.SUSPENSA]:  [StatusSessao.ABERTA, StatusSessao.ENCERRADA],
     [StatusSessao.ENCERRADA]: [],
@@ -18,6 +19,7 @@ export class SessaoPlenariaEntity {
     dataFim: Date | null;
     statusSessao: StatusSessao;
     faseAtual: FaseSessao;
+    dataInicioChamada: Date | null;
     dataAbertura: Date | null;
     dataSuspensao: Date | null;
     dataEncerramento: Date | null;

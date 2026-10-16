@@ -35,11 +35,6 @@ export function CouncilorRow({
                 {member.party ? (
                     <span className="vp-row__party">{member.party}</span>
                 ) : null}
-                {member.substituindo ? (
-                    <span className="vp-row__party">
-                        SUPLENTE · SUBST. {member.substituindo.toUpperCase()}
-                    </span>
-                ) : null}
             </div>
         </li>
     );

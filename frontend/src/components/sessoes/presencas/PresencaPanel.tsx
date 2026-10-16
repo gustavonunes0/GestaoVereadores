@@ -148,7 +148,9 @@ export function PresencaPanel({
     const [dialogReiniciar, setDialogReiniciar] = useState(false);
     const [justificativa, setJustificativa] = useState('');
     const [reiniciando, setReiniciando] = useState(false);
-    const sessaoAceitaPresenca = ['AGENDADA', 'ABERTA', 'SUSPENSA'].includes(statusSessao ?? '');
+    const sessaoAceitaPresenca = ['AGENDADA', 'CHAMADA', 'ABERTA', 'SUSPENSA'].includes(
+        statusSessao ?? '',
+    );
     const podeRegistrar = canWrite && sessaoAceitaPresenca;
     const podeChamar = canWrite && statusSessao === 'ABERTA';
 

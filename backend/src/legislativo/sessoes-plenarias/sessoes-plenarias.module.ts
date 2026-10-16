@@ -35,6 +35,8 @@ import {
 import { RemoveSessaoPlenariaUseCase } from './application/use-cases/remove-sessao-plenaria.use-case';
 import { UpdateSessaoPlenariaUseCase } from './application/use-cases/update-sessao-plenaria.use-case';
 import { AbrirSessaoUseCase } from './application/use-cases/abrir-sessao.use-case';
+import { IniciarChamadaUseCase } from './application/use-cases/iniciar-chamada.use-case';
+import { SetPautaItemAtualUseCase } from './application/use-cases/set-pauta-item-atual.use-case';
 import { SuspenderSessaoUseCase } from './application/use-cases/suspender-sessao.use-case';
 import { EncerrarSessaoUseCase } from './application/use-cases/encerrar-sessao.use-case';
 import { CancelarSessaoUseCase } from './application/use-cases/cancelar-sessao.use-case';
@@ -119,6 +121,8 @@ import { PEDIDO_PALAVRA_REPOSITORY } from './sessoes-plenarias.tokens';
         RegistrarPresencaUseCase,
         UpdatePresencaUseCase,
         AbrirSessaoUseCase,
+        IniciarChamadaUseCase,
+        SetPautaItemAtualUseCase,
         SuspenderSessaoUseCase,
         EncerrarSessaoUseCase,
         CancelarSessaoUseCase,

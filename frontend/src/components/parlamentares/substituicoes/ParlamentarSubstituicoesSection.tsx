@@ -133,10 +133,9 @@ export function ParlamentarSubstituicoesSection({ parlamentar, podeTerSuplente, 
                 </span>
                 {canWrite && podeTerSuplente ? (
                     <Button
-                        label="Vincular suplente"
-                        icon="pi pi-user-plus"
+                        label="+ Nova substituição"
+                        icon="pi pi-plus"
                         size="small"
-                        outlined
                         onClick={() => setForm({})}
                     />
                 ) : null}
@@ -154,7 +153,14 @@ export function ParlamentarSubstituicoesSection({ parlamentar, podeTerSuplente, 
                         const comoTitular = s.titular.id === parlamentar.id;
                         const editavel = canWrite && s.status === 'ATIVA';
                         return (
-                            <li key={s.id} className="parlamentar-ver-mandato">
+                            <li
+                                key={s.id}
+                                className={
+                                    s.situacao === 'EM_EXERCICIO'
+                                        ? 'parlamentar-ver-mandato parlamentar-ver-mandato--destaque'
+                                        : 'parlamentar-ver-mandato'
+                                }
+                            >
                                 <div className="parlamentar-ver-mandato__head">
                                     <strong>
                                         {comoTitular

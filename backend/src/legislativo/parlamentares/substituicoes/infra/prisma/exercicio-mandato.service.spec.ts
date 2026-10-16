@@ -232,4 +232,44 @@ describe('ExercicioMandatoService', () => {
             service.assertPodeExercerNaSessao('tenant-1', 'sessao-1', 'suplente-1'),
         ).resolves.toBeUndefined();
     });
+
+    it('elenco congelado ao vivo omite ocupante inativado depois da abertura', async () => {
+        const { prisma } = buildPrisma({
+            sessao: {
+                dataInicio: DIA_SESSAO,
+                statusSessao: 'ABERTA',
+                elencoExercicio: [
+                    { titularId: 'titular-1', emExercicioId: 'titular-1', substituicaoId: null },
+                    { titularId: 'titular-2', emExercicioId: 'titular-2', substituicaoId: null },
+                ],
+            },
+            titulares: ['titular-1', 'titular-2'],
+            substituicoes: [],
+            inativos: ['titular-2'],
+        });
+        const service = new ExercicioMandatoService(prisma as never);
+
+        const ids = await service.idsEmExercicioDaSessao('tenant-1', 'sessao-1');
+        expect([...ids]).toEqual(['titular-1']);
+    });
+
+    it('elenco congelado de sessão encerrada preserva ocupante agora inativo', async () => {
+        const { prisma } = buildPrisma({
+            sessao: {
+                dataInicio: DIA_SESSAO,
+                statusSessao: 'ENCERRADA',
+                elencoExercicio: [
+                    { titularId: 'titular-1', emExercicioId: 'titular-1', substituicaoId: null },
+                    { titularId: 'titular-2', emExercicioId: 'titular-2', substituicaoId: null },
+                ],
+            },
+            titulares: ['titular-1', 'titular-2'],
+            substituicoes: [],
+            inativos: ['titular-2'],
+        });
+        const service = new ExercicioMandatoService(prisma as never);
+
+        const ids = await service.idsEmExercicioDaSessao('tenant-1', 'sessao-1');
+        expect([...ids].sort()).toEqual(['titular-1', 'titular-2']);
+    });
 });

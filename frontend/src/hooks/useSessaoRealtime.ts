@@ -86,6 +86,8 @@ export function useSessaoRealtime(sessaoId: string) {
         useState<MotivoEncerrarTransmissao | null>(null);
     const [pedidoPalavraUpdate, setPedidoPalavraUpdate] =
         useState<PedidoPalavraUpdate | null>(null);
+    const [pautaItemAtualId, setPautaItemAtualId] = useState<string | null>(null);
+    const [sessaoAbertaTick, setSessaoAbertaTick] = useState(0);
 
     const syncVotacaoFromPauta = useCallback(async () => {
         if (!sessaoId) return;
@@ -131,6 +133,7 @@ export function useSessaoRealtime(sessaoId: string) {
                             : painel.sessao.faseAtual.value,
                     );
                 }
+                setPautaItemAtualId(painel.sessao.pautaItemAtualId ?? null);
                 return;
             }
 
@@ -234,6 +237,18 @@ export function useSessaoRealtime(sessaoId: string) {
         socket.on('connect', () => setWsConectado(true));
         socket.on('disconnect', () => setWsConectado(false));
         socket.on('sessao:fase', (data: { faseAtual: FaseSessao }) => setFaseAtual(data.faseAtual));
+        socket.on(
+            'sessao:item-painel',
+            (data: { sessaoId?: string; pautaItemAtualId: string | null }) => {
+                if (!matchSessao(data)) return;
+                setPautaItemAtualId(data.pautaItemAtualId);
+            },
+        );
+        socket.on('sessao:aberta', (data: { sessaoId?: string }) => {
+            if (!matchSessao(data)) return;
+            setSessaoAbertaTick((n) => n + 1);
+            void syncRef.current();
+        });
         socket.on('votacao:aberta', handleVotacaoAberta);
         socket.on('votacao:convocada', handleVotacaoAberta);
         socket.on('votacao:placar', (data: VotacaoPlacarEvent) => setPlacar(data));
@@ -323,6 +338,8 @@ export function useSessaoRealtime(sessaoId: string) {
         presencaUpdate,
         encerrarTransmissao,
         pedidoPalavraUpdate,
+        pautaItemAtualId,
+        sessaoAbertaTick,
         syncVotacaoFromPauta,
         limparVotacaoEncerrada: () => setVotacaoEncerrada(null),
         limparEncerrarTransmissao: () => setEncerrarTransmissao(null),

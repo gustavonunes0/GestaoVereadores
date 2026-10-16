@@ -13,9 +13,10 @@ import type { StatusSessao } from '../../types/sessoes';
 const STATUS_ORDER: Record<StatusSessao, number> = {
     ABERTA: 0,
     SUSPENSA: 1,
-    AGENDADA: 2,
-    ENCERRADA: 3,
-    CANCELADA: 4,
+    CHAMADA: 2,
+    AGENDADA: 3,
+    ENCERRADA: 4,
+    CANCELADA: 5,
 };
 
 function sortSessoes(items: Sessao[]): Sessao[] {

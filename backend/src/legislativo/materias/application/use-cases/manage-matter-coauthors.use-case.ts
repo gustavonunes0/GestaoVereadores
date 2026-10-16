@@ -17,6 +17,7 @@ import {
     ParliamentarianNotFoundForMatterError,
 } from '../errors/matter.errors';
 import { MatterAuthorshipViewModel } from '../view-models/matter-authorship.view-model';
+import { GenerateMateriaTextoOriginalPdfUseCase } from './generate-materia-texto-original-pdf.use-case';
 
 @Injectable()
 export class AddMatterCoauthorUseCase {
@@ -25,6 +26,7 @@ export class AddMatterCoauthorUseCase {
     constructor(
         @Inject(MATERIA_REPOSITORY)
         private readonly repository: MateriaRepository,
+        private readonly generateTextoOriginalPdf: GenerateMateriaTextoOriginalPdfUseCase,
     ) {}
 
     async execute(
@@ -48,6 +50,11 @@ export class AddMatterCoauthorUseCase {
                 matterId,
                 dto,
             );
+            try {
+                await this.generateTextoOriginalPdf.execute(tenantId, matterId);
+            } catch {
+                // Autoria já persistida; PDF pode ser regerado depois.
+            }
             return MatterAuthorshipViewModel.toHttp(data);
         } catch (error) {
             if (error instanceof NotFoundException) {
@@ -76,6 +83,7 @@ export class RemoveMatterCoauthorUseCase {
     constructor(
         @Inject(MATERIA_REPOSITORY)
         private readonly repository: MateriaRepository,
+        private readonly generateTextoOriginalPdf: GenerateMateriaTextoOriginalPdfUseCase,
     ) {}
 
     async execute(tenantId: string, matterId: string, coauthorId: string) {
@@ -85,6 +93,11 @@ export class RemoveMatterCoauthorUseCase {
                 matterId,
                 coauthorId,
             );
+            try {
+                await this.generateTextoOriginalPdf.execute(tenantId, matterId);
+            } catch {
+                // Remoção já persistida; PDF pode ser regerado depois.
+            }
             return MatterAuthorshipViewModel.toHttp(data);
         } catch (error) {
             if (error instanceof NotFoundException) {

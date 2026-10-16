@@ -30,6 +30,7 @@ import { FecharVotacaoDialog } from './pauta/FecharVotacaoDialog';
 
 const STATUS_BADGE: Record<StatusSessao, { className: string; icon: string; label: string }> = {
     AGENDADA:  { className: 'badge--info',    icon: 'pi pi-calendar',    label: 'Agendada'  },
+    CHAMADA:   { className: 'badge--warning', icon: 'pi pi-users',       label: 'Chamada'   },
     ABERTA:    { className: 'badge--success', icon: 'pi pi-circle-fill', label: 'Aberta'    },
     SUSPENSA:  { className: 'badge--warning', icon: 'pi pi-pause',       label: 'Suspensa'  },
     ENCERRADA: { className: 'badge--neutral', icon: 'pi pi-check-circle', label: 'Encerrada' },
@@ -177,7 +178,9 @@ export function SessaoDetalhePage() {
 
                     <div className="lex-sessao-header__info">
                         <h1 className="lex-sessao-header__title">{nomeLabel}</h1>
-                        <p className="lex-sessao-header__sub">{subtitulo}</p>
+                        {subtitulo ? (
+                            <p className="lex-sessao-header__sub">{subtitulo}</p>
+                        ) : null}
                     </div>
 
                     <div className="lex-sessao-header__status">

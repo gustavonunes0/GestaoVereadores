@@ -31,7 +31,48 @@ const FASE_LABEL: Partial<Record<FaseSessao, string>> = {
 
 const RESULTADO_EXIBICAO_MS = 25_000;
 
-type ModoPainel = 'votacao' | 'resultado' | 'inicio';
+type ModoPainel = 'votacao' | 'resultado' | 'inicio' | 'materia' | 'espera';
+
+function PainelMateriaAtual({
+    item,
+    posicao,
+    total,
+}: {
+    item: PautaItemDetalhe;
+    posicao: number;
+    total: number;
+}) {
+    const categoria = resolvePautaCategoria(item);
+    const isMateria = categoria === 'MATERIA';
+    const titulo = pautaItemRotulo(item);
+    const ementa =
+        item.materia?.ementa?.trim() ||
+        item.aviso?.descricao?.trim() ||
+        item.ato?.descricao?.trim() ||
+        item.norma?.descricao?.trim();
+
+    return (
+        <section className="sessao-painel-materia" aria-label="Matéria em discussão">
+            <div className="sessao-painel-materia__posicao">
+                Item {posicao} de {total}
+            </div>
+            <h2 className="sessao-painel-materia__titulo">{titulo}</h2>
+            {ementa ? <p className="sessao-painel-materia__ementa">{ementa}</p> : null}
+            {!isMateria ? (
+                <p className="sessao-painel-materia__tipo">{categoria}</p>
+            ) : null}
+        </section>
+    );
+}
+
+function PainelEsperaSessao() {
+    return (
+        <section className="sessao-painel-espera" aria-label="Sessão aberta">
+            <h2 className="sessao-painel-espera__titulo">Sessão aberta</h2>
+            <p className="sessao-painel-espera__sub">Aguardando pauta</p>
+        </section>
+    );
+}
 
 function cargoMesaLabel(m: Councilor): string {
     if (m.role) return ROLE_LABEL_APRESENTACAO[m.role];
@@ -101,6 +142,9 @@ function PainelMesaDiretora({
                                     isPresidente
                                         ? 'sessao-painel-inicio__mesa-card--presidente'
                                         : '',
+                                    m.status === 'ausente'
+                                        ? 'sessao-painel-inicio__mesa-card--ausente'
+                                        : 'sessao-painel-inicio__mesa-card--presente',
                                 ]
                                     .filter(Boolean)
                                     .join(' ')}
@@ -129,11 +173,16 @@ function PainelMesaDiretora({
                                     <strong className="sessao-painel-inicio__mesa-nome">
                                         {m.name}
                                     </strong>
-                                    {m.party ? (
-                                        <span className="sessao-painel-inicio__mesa-partido">
-                                            {m.party}
+                                    <span className="sessao-painel-inicio__mesa-linha">
+                                        {m.party ? (
+                                            <span className="sessao-painel-inicio__mesa-partido">
+                                                {m.party}
+                                            </span>
+                                        ) : null}
+                                        <span className="sessao-painel-inicio__mesa-status">
+                                            {m.status === 'ausente' ? 'Ausente' : 'Presente'}
                                         </span>
-                                    ) : null}
+                                    </span>
                                 </div>
                             </li>
                         );
@@ -155,17 +204,21 @@ function iniciaisDe(nome: string): string {
 
 function PainelPresencaVereadores({
     vereadores,
+    elencoTotais,
     loading,
 }: {
     vereadores: Councilor[];
+    /** Base dos contadores (inclui Mesa — FR-006). Default: mesma lista da grade. */
+    elencoTotais?: Councilor[];
     loading?: boolean;
 }) {
     const ordenados = useMemo(
         () => [...vereadores].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
         [vereadores],
     );
-    const presentes = ordenados.filter((v) => v.status !== 'ausente').length;
-    const ausentes = ordenados.length - presentes;
+    const baseTotais = elencoTotais ?? vereadores;
+    const presentes = baseTotais.filter((v) => v.status !== 'ausente').length;
+    const ausentes = baseTotais.length - presentes;
 
     return (
         <section
@@ -223,14 +276,6 @@ function PainelPresencaVereadores({
                                             {presente ? 'Presente' : 'Ausente'}
                                         </span>
                                     </span>
-                                    {v.substituindo ? (
-                                        <span
-                                            className="sessao-painel-presenca__linha"
-                                            title={`Suplente substituindo ${v.substituindo}`}
-                                        >
-                                            Suplente · subst. {v.substituindo}
-                                        </span>
-                                    ) : null}
                                 </div>
                             </li>
                         );
@@ -242,7 +287,8 @@ function PainelPresencaVereadores({
 }
 
 const PAUTA_CARROSSEL_INTERVALO_MS = 8_000;
-const PAUTA_CARROSSEL_POR_PAGINA = 3;
+/** Até 6 itens na faixa inferior sem paginação (spec 001 FR-006). */
+const PAUTA_CARROSSEL_POR_PAGINA = 6;
 
 function PainelPautaCarrossel({
     sessaoLabel,
@@ -281,11 +327,11 @@ function PainelPautaCarrossel({
 
     return (
         <section
-            className="sessao-painel-card sessao-painel-carrossel"
+            className="sessao-painel-card sessao-painel-carrossel sessao-painel-pauta-faixa"
             aria-label="Pauta da sessão"
             aria-roledescription="carrossel"
         >
-            <header className="sessao-painel-card__cabecalho">
+            <header className="sessao-painel-card__cabecalho sessao-painel-pauta-faixa__cabecalho">
                 <div className="sessao-painel-etiqueta">Pauta da sessão</div>
                 <p className="sessao-painel-carrossel__sessao">{sessaoLabel}</p>
                 <p className="sessao-painel-carrossel__resumo">
@@ -366,6 +412,12 @@ function PainelInicioSessao({
     vereadores: Councilor[];
     elencoLoading?: boolean;
 }) {
+    const mesaIds = useMemo(() => new Set(mesa.map((m) => m.id)), [mesa]);
+    const vereadoresForaDaMesa = useMemo(
+        () => vereadores.filter((v) => !mesaIds.has(v.id)),
+        [vereadores, mesaIds],
+    );
+
     return (
         <div className="sessao-painel-inicio">
             <PainelMesaDiretora
@@ -373,7 +425,11 @@ function PainelInicioSessao({
                 mesa={mesa}
                 loading={elencoLoading}
             />
-            <PainelPresencaVereadores vereadores={vereadores} loading={elencoLoading} />
+            <PainelPresencaVereadores
+                vereadores={vereadoresForaDaMesa}
+                elencoTotais={vereadores}
+                loading={elencoLoading}
+            />
             <PainelPautaCarrossel
                 sessaoLabel={sessaoLabel}
                 itens={itens}
@@ -391,6 +447,11 @@ export function SessaoPainelPage() {
     const [sessao, setSessao] = useState<SessaoPlenariaDetalhe | null>(null);
     const [itens, setItens] = useState<PautaItemDetalhe[]>([]);
     const [itemExibido, setItemExibido] = useState<PautaItemDetalhe | null>(null);
+    const [quorumPainel, setQuorumPainel] = useState<{
+        minimo: number;
+        presentes: number;
+        temQuorum: boolean;
+    } | null>(null);
     const [carregando, setCarregando] = useState(true);
     const [tenantBranding, setTenantBranding] = useState<{
         name: string;
@@ -406,6 +467,8 @@ export function SessaoPainelPage() {
         wsConectado,
         limparVotacaoEncerrada,
         presencaUpdate,
+        pautaItemAtualId,
+        sessaoAbertaTick,
     } = useSessaoRealtime(sessaoId ?? '');
 
     const idsQueVotaram = useMemo(() => {
@@ -435,6 +498,15 @@ export function SessaoPainelPage() {
             const data = await sessoesApi.getPainelPublico(sessaoId);
             setSessao(data.sessao);
             setItens(data.itens ?? []);
+            setQuorumPainel(
+                data.presenca
+                    ? {
+                          minimo: data.presenca.quorumMinimo,
+                          presentes: data.presenca.presentes,
+                          temQuorum: data.presenca.temQuorum,
+                      }
+                    : null,
+            );
             setTenantBranding({
                 name: data.tenant.name,
                 logo: data.tenant.logo,
@@ -443,6 +515,7 @@ export function SessaoPainelPage() {
         } catch {
             setSessao(null);
             setItens([]);
+            setQuorumPainel(null);
         }
     }, [sessaoId]);
 
@@ -497,6 +570,26 @@ export function SessaoPainelPage() {
     }, [votacaoEncerrada, carregarSnapshot]);
 
     useEffect(() => {
+        if (faseAtual === ('CHAMADA' as FaseSessao) || presencaUpdate || sessaoAbertaTick) {
+            void carregarSnapshot();
+        }
+    }, [faseAtual, presencaUpdate, sessaoAbertaTick, carregarSnapshot]);
+
+    useEffect(() => {
+        const id = pautaItemAtualId ?? sessao?.pautaItemAtualId ?? null;
+        if (!id) {
+            setItemExibido(null);
+            return;
+        }
+        const local = itens.find((i) => i.id === id);
+        if (local) {
+            setItemExibido(local);
+            return;
+        }
+        void carregarItem(id);
+    }, [pautaItemAtualId, sessao?.pautaItemAtualId, itens, carregarItem]);
+
+    useEffect(() => {
         if (!votacaoEncerrada) return;
         const timer = window.setTimeout(() => {
             limparVotacaoEncerrada();
@@ -512,12 +605,33 @@ export function SessaoPainelPage() {
     const placarAtual =
         placar?.votacaoId === votacaoAberta?.votacaoId ? placar : null;
 
-    /** Início (mesa + pauta) é o padrão; só sai com votação aberta ou resultado breve. */
+    /**
+     * Spec 017/018: Chamada → presença (inicio);
+     * Aberta sem item → espera; com item → matéria;
+     * votação/resultado têm prioridade.
+     */
     let modo: ModoPainel = 'inicio';
     if (votacaoAberta) modo = 'votacao';
     else if (votacaoEncerrada) modo = 'resultado';
+    else if (sessao?.statusSessao === 'ABERTA' || sessao?.statusSessao === 'SUSPENSA') {
+        const itemId = itemExibido?.id ?? pautaItemAtualId ?? sessao.pautaItemAtualId;
+        modo = itemId ? 'materia' : 'espera';
+    } else if (sessao?.statusSessao === 'CHAMADA') {
+        modo = 'inicio';
+    }
 
     const modoLed = modo === 'votacao' || modo === 'resultado';
+    const itemMateria =
+        itemExibido ??
+        itens.find(
+            (i) =>
+                i.id ===
+                (pautaItemAtualId ?? sessao?.pautaItemAtualId ?? undefined),
+        ) ??
+        null;
+    const posicaoMateria = itemMateria
+        ? itens.findIndex((i) => i.id === itemMateria.id) + 1
+        : 0;
 
     const mesaMembros = useMemo(() => {
         const ids = new Set<string>();
@@ -536,8 +650,15 @@ export function SessaoPainelPage() {
     }, [president, left]);
 
     const sessaoLabel = sessao ? sessaoDetalheLabel(sessao) : 'Sessão plenária';
+    const emChamada =
+        sessao?.statusSessao === 'CHAMADA' || faseAtual === ('CHAMADA' as FaseSessao);
     const faseExibida = faseAtual ?? (sessao ? resolveFaseSessao(sessao.faseAtual) : null);
-    const faseLabel = faseExibida ? FASE_LABEL[faseExibida] ?? faseExibida : null;
+    const faseLabel = emChamada
+        ? 'Chamada'
+        : faseExibida
+          ? (FASE_LABEL[faseExibida] ?? faseExibida)
+          : null;
+    const mostrarAoVivo = wsConectado && sessao?.statusSessao !== 'AGENDADA';
     const userTenantName =
         user && 'tenantName' in user ? user.tenantName : undefined;
     const userTenantLogo =
@@ -605,9 +726,25 @@ export function SessaoPainelPage() {
                     <div className="sessao-painel-header__sessao">{sessaoLabel}</div>
                     <div className="sessao-painel-header__status">
                         {faseLabel && (
-                            <span className="sessao-painel-fase">{faseLabel}</span>
+                            <span
+                                className={[
+                                    'sessao-painel-fase',
+                                    emChamada ? 'sessao-painel-fase--chamada' : '',
+                                ]
+                                    .filter(Boolean)
+                                    .join(' ')}
+                            >
+                                {faseLabel}
+                            </span>
                         )}
-                        {wsConectado && (
+                        {emChamada && quorumPainel ? (
+                            <span className="sessao-painel-quorum" role="status">
+                                Quórum mínimo: {quorumPainel.minimo}
+                                {` · ${quorumPainel.presentes} presentes`}
+                                {quorumPainel.temQuorum ? ' ✓ Atingido' : ''}
+                            </span>
+                        ) : null}
+                        {mostrarAoVivo && (
                             <span className="sessao-painel-ao-vivo">
                                 <span className="sessao-painel-pulse" aria-hidden />
                                 Ao vivo
@@ -658,6 +795,14 @@ export function SessaoPainelPage() {
                         materiaTitulo={votacaoEncerrada.titulo}
                         resultado={votacaoEncerrada.resultado}
                     />
+                ) : modo === 'materia' && itemMateria ? (
+                    <PainelMateriaAtual
+                        item={itemMateria}
+                        posicao={posicaoMateria > 0 ? posicaoMateria : 1}
+                        total={Math.max(itens.length, 1)}
+                    />
+                ) : modo === 'espera' ? (
+                    <PainelEsperaSessao />
                 ) : (
                     <PainelInicioSessao
                         sessaoLabel={sessaoLabel}

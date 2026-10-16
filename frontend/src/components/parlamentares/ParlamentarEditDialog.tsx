@@ -239,271 +239,293 @@ export function ParlamentarEditDialog({
             header={`Editar — ${parlamentar.parliamentaryName}`}
             visible
             onHide={() => !saving && onClose()}
-            style={{ width: 'min(95vw, 680px)' }}
+            style={{ width: 'min(96vw, 1100px)' }}
             footer={footer}
             modal
-            className="sigl-dialog-parlamentar-create"
+            className="sigl-dialog-parlamentar-create parlamentar-edit-dialog"
         >
-            <div className="sigl-dialog-body sigl-dialog-body--dense">
-                <div className="sigl-dialog-secao">
-                    <span className="sigl-dialog-secao-titulo">
-                        <i className="pi pi-user" aria-hidden />
-                        Conta de acesso
-                    </span>
-                    {parlamentar.user ? (
-                        <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                            <div className="sigl-filtro-campo">
-                                <label htmlFor="pe-cpf">CPF</label>
-                                <InputText
-                                    id="pe-cpf"
-                                    value={formatCpf(parlamentar.user.cpf)}
-                                    disabled
-                                    className="w-full"
-                                />
-                            </div>
-                            <div className="sigl-filtro-campo">
-                                <label htmlFor="pe-email">E-mail</label>
-                                <InputText
-                                    id="pe-email"
-                                    value={parlamentar.user.email}
-                                    disabled
-                                    className="w-full"
-                                />
-                                <small className="text-color-secondary">
-                                    CPF e e-mail não podem ser alterados nesta tela.
-                                </small>
-                            </div>
-                            <div className="sigl-filtro-campo">
-                                <label htmlFor="pe-senha-nova">Nova senha</label>
-                                <Password
-                                    id="pe-senha-nova"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    toggleMask
-                                    feedback={false}
-                                    className={`w-full${passwordFilled && !passwordValid ? ' p-invalid' : ''}`}
-                                    inputClassName="w-full"
-                                    autoComplete="new-password"
-                                />
-                                <small className="text-color-secondary">
-                                    Deixe em branco para manter a senha atual.
-                                </small>
-                                {passwordFilled && !passwordValid ? (
-                                    <small className="p-error">
-                                        Mínimo de {MIN_SENHA} caracteres
-                                    </small>
-                                ) : null}
-                            </div>
-                            <div className="sigl-filtro-campo">
-                                <label htmlFor="pe-senha-confirm">Confirmar nova senha</label>
-                                <Password
-                                    id="pe-senha-confirm"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    toggleMask
-                                    feedback={false}
-                                    className={`w-full${confirmPassword && !passwordsMatch ? ' p-invalid' : ''}`}
-                                    inputClassName="w-full"
-                                    autoComplete="new-password"
-                                />
-                                {confirmPassword && !passwordsMatch ? (
-                                    <small className="p-error">As senhas não coincidem</small>
-                                ) : null}
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="text-color-secondary m-0">
-                            Nenhum usuário vinculado. O acesso ao CâmaraGest não está configurado.
-                        </p>
-                    )}
-                </div>
-
-                <div className="sigl-dialog-secao">
-                    <span className="sigl-dialog-secao-titulo">
-                        <i className="pi pi-id-card" aria-hidden />
-                        Identificação parlamentar
-                    </span>
-                    <div className="sigl-filtro-campo">
-                        <label htmlFor="pe-nome">Nome Parlamentar *</label>
-                        <InputText
-                            id="pe-nome"
-                            value={parliamentaryName}
-                            onChange={(e) => setParliamentaryName(e.target.value)}
-                            placeholder="Nome de urna"
-                            className={`w-full${parliamentaryName && !nomeValido ? ' p-invalid' : ''}`}
-                        />
-                        <small className="text-color-secondary">
-                            Nome de urna usado nas proposições e documentos oficiais.
-                        </small>
-                    </div>
-                    <div className="sigl-filtro-campo">
-                        <FileUpload
-                            id="pe-foto"
-                            label="Foto do parlamentar"
-                            accept={PARLAMENTAR_PHOTO_ACCEPT}
-                            value={photoValue}
-                            onChange={setPhotoValue}
-                        />
-                        <small className="text-color-secondary">
-                            JPEG, PNG ou WebP · máx. 2 MB. Exibida na listagem e perfil.
-                        </small>
-                    </div>
-                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                        {parlamentar.user && (
-                            <Dropdown
-                                id="pe-partido"
-                                label="Partido Político"
-                                options={partidoOptions}
-                                value={politicalPartyId}
-                                onChange={(v) => setPoliticalPartyId(String(v))}
-                                placeholder="Selecione (opcional)"
-                            />
-                        )}
-                        <div className="sigl-filtro-campo">
-                            <label htmlFor="pe-gabinete">Nº do Gabinete</label>
-                            <InputText
-                                id="pe-gabinete"
-                                value={officeNumber}
-                                onChange={(e) => setOfficeNumber(e.target.value)}
-                                placeholder="Ex.: 31, 31A, Térreo"
-                                className="w-full"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {mandatoAtivo && (
-                    <div className="sigl-dialog-secao">
-                        <span className="sigl-dialog-secao-titulo">
-                            <i className="pi pi-calendar" aria-hidden />
-                            Mandato
-                        </span>
-                        <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                            <div className="sigl-filtro-campo">
-                                <label htmlFor="pe-legislatura">Legislatura *</label>
-                                <Dropdown
-                                    id="pe-legislatura"
-                                    options={legislaturaOptions}
-                                    value={legislaturaId || null}
-                                    onChange={(v) => setLegislaturaId(String(v))}
-                                    placeholder="Selecione a legislatura"
-                                    className="w-full"
-                                />
-                            </div>
-                            <div className="sigl-filtro-campo">
-                                <span className="sigl-field-label">Condição</span>
-                                <div className="sigl-radio-row sigl-radio-row--align-field">
-                                    <div className="flex align-items-center gap-2">
-                                        <RadioButton
-                                            inputId="pe-titular"
-                                            name="pe-condicao"
-                                            value="TITULAR"
-                                            checked={condicao === 'TITULAR'}
-                                            onChange={(e) =>
-                                                setCondicao(e.value as CondicaoMandato)
-                                            }
+            <div className="sigl-dialog-body sigl-dialog-body--dense parlamentar-edit-body">
+                <div className="parlamentar-ver-layout">
+                    <div className="parlamentar-ver-col">
+                        <div className="sigl-dialog-secao">
+                            <span className="sigl-dialog-secao-titulo">
+                                <i className="pi pi-user" aria-hidden />
+                                Conta de acesso
+                            </span>
+                            {parlamentar.user ? (
+                                <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="pe-cpf">CPF</label>
+                                        <InputText
+                                            id="pe-cpf"
+                                            value={formatCpf(parlamentar.user.cpf)}
+                                            disabled
+                                            className="w-full"
                                         />
-                                        <label htmlFor="pe-titular" className="sigl-radio-option-label">
-                                            Titular
-                                        </label>
                                     </div>
-                                    <div className="flex align-items-center gap-2">
-                                        <RadioButton
-                                            inputId="pe-suplente"
-                                            name="pe-condicao"
-                                            value="SUPLENTE"
-                                            checked={condicao === 'SUPLENTE'}
-                                            onChange={(e) =>
-                                                setCondicao(e.value as CondicaoMandato)
-                                            }
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="pe-email">E-mail</label>
+                                        <InputText
+                                            id="pe-email"
+                                            value={parlamentar.user.email}
+                                            disabled
+                                            className="w-full"
                                         />
-                                        <label htmlFor="pe-suplente" className="sigl-radio-option-label">
-                                            Suplente
+                                        <small className="text-color-secondary">
+                                            CPF e e-mail não podem ser alterados nesta tela.
+                                        </small>
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="pe-senha-nova">Nova senha</label>
+                                        <Password
+                                            id="pe-senha-nova"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            toggleMask
+                                            feedback={false}
+                                            className={`w-full${passwordFilled && !passwordValid ? ' p-invalid' : ''}`}
+                                            inputClassName="w-full"
+                                            autoComplete="new-password"
+                                        />
+                                        <small className="text-color-secondary">
+                                            Deixe em branco para manter a senha atual.
+                                        </small>
+                                        {passwordFilled && !passwordValid ? (
+                                            <small className="p-error">
+                                                Mínimo de {MIN_SENHA} caracteres
+                                            </small>
+                                        ) : null}
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="pe-senha-confirm">
+                                            Confirmar nova senha
                                         </label>
+                                        <Password
+                                            id="pe-senha-confirm"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            toggleMask
+                                            feedback={false}
+                                            className={`w-full${confirmPassword && !passwordsMatch ? ' p-invalid' : ''}`}
+                                            inputClassName="w-full"
+                                            autoComplete="new-password"
+                                        />
+                                        {confirmPassword && !passwordsMatch ? (
+                                            <small className="p-error">
+                                                As senhas não coincidem
+                                            </small>
+                                        ) : null}
+                                    </div>
+                                    <div className="sigl-filtro-campo sigl-col-full">
+                                        <span className="sigl-field-label">
+                                            Vínculo de acesso *
+                                        </span>
+                                        <div className="sigl-radio-row sigl-radio-row--align-field">
+                                            <div className="flex align-items-center gap-2">
+                                                <RadioButton
+                                                    inputId="pe-acesso-ativo"
+                                                    name="pe-acesso"
+                                                    value="ACTIVE"
+                                                    checked={statusAcesso === 'ACTIVE'}
+                                                    onChange={(e) =>
+                                                        handleStatusAcessoChange(
+                                                            e.value as ParliamentarianUserStatus,
+                                                        )
+                                                    }
+                                                />
+                                                <label
+                                                    htmlFor="pe-acesso-ativo"
+                                                    className="sigl-radio-option-label"
+                                                >
+                                                    Ativo
+                                                </label>
+                                            </div>
+                                            <div className="flex align-items-center gap-2">
+                                                <RadioButton
+                                                    inputId="pe-acesso-inativo"
+                                                    name="pe-acesso"
+                                                    value="INACTIVE"
+                                                    checked={statusAcesso === 'INACTIVE'}
+                                                    onChange={(e) =>
+                                                        handleStatusAcessoChange(
+                                                            e.value as ParliamentarianUserStatus,
+                                                        )
+                                                    }
+                                                />
+                                                <label
+                                                    htmlFor="pe-acesso-inativo"
+                                                    className="sigl-radio-option-label"
+                                                >
+                                                    Inativo
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <small className="text-color-secondary">
+                                            {statusAcesso === 'ACTIVE'
+                                                ? 'Login com CPF e senha.'
+                                                : 'Conta mantida sem acesso ao CâmaraGest.'}
+                                        </small>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        {condicao === 'SUPLENTE' && (
-                            <SuplenteExercicioFields
-                                idPrefix="pe-exercicio"
-                                legislatureId={legislaturaId}
-                                value={exercicio}
-                                onChange={setExercicio}
-                                partidoId={politicalPartyId || undefined}
-                                suplenteId={parlamentarianId}
-                            />
-                        )}
-
-                        <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                            <div className="sigl-filtro-campo">
-                                <DateRangePicker
-                                    id="pe-periodo-mandato"
-                                    label="Período do mandato"
-                                    value={periodoMandato}
-                                    onChange={() => {}}
-                                    placeholder="Início — Fim"
-                                    className="w-full"
-                                    disabled
-                                />
-                                <small className="text-color-secondary">
-                                    Período vinculado ao mandato ativo. Alterações pela gestão de mandatos.
-                                </small>
-                            </div>
-                            {parlamentar.user && (
-                                <div className="sigl-filtro-campo">
-                                    <span className="sigl-field-label">Vínculo de acesso *</span>
-                                    <div className="sigl-radio-row sigl-radio-row--align-field">
-                                        <div className="flex align-items-center gap-2">
-                                            <RadioButton
-                                                inputId="pe-acesso-ativo"
-                                                name="pe-acesso"
-                                                value="ACTIVE"
-                                                checked={statusAcesso === 'ACTIVE'}
-                                                onChange={(e) =>
-                                                    handleStatusAcessoChange(
-                                                        e.value as ParliamentarianUserStatus,
-                                                    )
-                                                }
-                                            />
-                                            <label
-                                                htmlFor="pe-acesso-ativo"
-                                                className="sigl-radio-option-label"
-                                            >
-                                                Ativo
-                                            </label>
-                                        </div>
-                                        <div className="flex align-items-center gap-2">
-                                            <RadioButton
-                                                inputId="pe-acesso-inativo"
-                                                name="pe-acesso"
-                                                value="INACTIVE"
-                                                checked={statusAcesso === 'INACTIVE'}
-                                                onChange={(e) =>
-                                                    handleStatusAcessoChange(
-                                                        e.value as ParliamentarianUserStatus,
-                                                    )
-                                                }
-                                            />
-                                            <label
-                                                htmlFor="pe-acesso-inativo"
-                                                className="sigl-radio-option-label"
-                                            >
-                                                Inativo
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <small className="text-color-secondary">
-                                        {statusAcesso === 'ACTIVE'
-                                            ? 'Login com CPF e senha.'
-                                            : 'Conta mantida sem acesso ao CâmaraGest.'}
-                                    </small>
-                                </div>
+                            ) : (
+                                <p className="text-color-secondary m-0">
+                                    Nenhum usuário vinculado. O acesso ao CâmaraGest não está
+                                    configurado.
+                                </p>
                             )}
                         </div>
+
+                        <div className="sigl-dialog-secao">
+                            <span className="sigl-dialog-secao-titulo">
+                                <i className="pi pi-id-card" aria-hidden />
+                                Identificação parlamentar
+                            </span>
+                            <div className="sigl-filtro-campo">
+                                <label htmlFor="pe-nome">Nome Parlamentar *</label>
+                                <InputText
+                                    id="pe-nome"
+                                    value={parliamentaryName}
+                                    onChange={(e) => setParliamentaryName(e.target.value)}
+                                    placeholder="Nome de urna"
+                                    className={`w-full${parliamentaryName && !nomeValido ? ' p-invalid' : ''}`}
+                                />
+                                <small className="text-color-secondary">
+                                    Nome de urna usado nas proposições e documentos oficiais.
+                                </small>
+                            </div>
+                            <div className="sigl-filtro-campo">
+                                <FileUpload
+                                    id="pe-foto"
+                                    label="Foto do parlamentar"
+                                    accept={PARLAMENTAR_PHOTO_ACCEPT}
+                                    value={photoValue}
+                                    onChange={setPhotoValue}
+                                />
+                                <small className="text-color-secondary">
+                                    JPEG, PNG ou WebP · máx. 2 MB. Exibida na listagem e perfil.
+                                </small>
+                            </div>
+                            <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                {parlamentar.user && (
+                                    <Dropdown
+                                        id="pe-partido"
+                                        label="Partido Político"
+                                        options={partidoOptions}
+                                        value={politicalPartyId}
+                                        onChange={(v) => setPoliticalPartyId(String(v))}
+                                        placeholder="Selecione (opcional)"
+                                    />
+                                )}
+                                <div className="sigl-filtro-campo">
+                                    <label htmlFor="pe-gabinete">Nº do Gabinete</label>
+                                    <InputText
+                                        id="pe-gabinete"
+                                        value={officeNumber}
+                                        onChange={(e) => setOfficeNumber(e.target.value)}
+                                        placeholder="Ex.: 31, 31A, Térreo"
+                                        className="w-full"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                )}
+
+                    <div className="parlamentar-ver-col">
+                        {mandatoAtivo ? (
+                            <div className="sigl-dialog-secao">
+                                <span className="sigl-dialog-secao-titulo">
+                                    <i className="pi pi-calendar" aria-hidden />
+                                    Mandato
+                                </span>
+                                <div className="sigl-dialog-grid sigl-dialog-grid-2">
+                                    <div className="sigl-filtro-campo">
+                                        <label htmlFor="pe-legislatura">Legislatura *</label>
+                                        <Dropdown
+                                            id="pe-legislatura"
+                                            options={legislaturaOptions}
+                                            value={legislaturaId || null}
+                                            onChange={(v) => setLegislaturaId(String(v))}
+                                            placeholder="Selecione a legislatura"
+                                            className="w-full"
+                                        />
+                                    </div>
+                                    <div className="sigl-filtro-campo">
+                                        <span className="sigl-field-label">Condição</span>
+                                        <div className="sigl-radio-row sigl-radio-row--align-field">
+                                            <div className="flex align-items-center gap-2">
+                                                <RadioButton
+                                                    inputId="pe-titular"
+                                                    name="pe-condicao"
+                                                    value="TITULAR"
+                                                    checked={condicao === 'TITULAR'}
+                                                    onChange={(e) =>
+                                                        setCondicao(e.value as CondicaoMandato)
+                                                    }
+                                                />
+                                                <label
+                                                    htmlFor="pe-titular"
+                                                    className="sigl-radio-option-label"
+                                                >
+                                                    Titular
+                                                </label>
+                                            </div>
+                                            <div className="flex align-items-center gap-2">
+                                                <RadioButton
+                                                    inputId="pe-suplente"
+                                                    name="pe-condicao"
+                                                    value="SUPLENTE"
+                                                    checked={condicao === 'SUPLENTE'}
+                                                    onChange={(e) =>
+                                                        setCondicao(e.value as CondicaoMandato)
+                                                    }
+                                                />
+                                                <label
+                                                    htmlFor="pe-suplente"
+                                                    className="sigl-radio-option-label"
+                                                >
+                                                    Suplente
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {condicao === 'SUPLENTE' ? (
+                                    <div className="parlamentar-edit-suplente-destaque">
+                                        <SuplenteExercicioFields
+                                            idPrefix="pe-exercicio"
+                                            legislatureId={legislaturaId}
+                                            value={exercicio}
+                                            onChange={setExercicio}
+                                            partidoId={politicalPartyId || undefined}
+                                            suplenteId={parlamentarianId}
+                                        />
+                                    </div>
+                                ) : null}
+
+                                <div className="sigl-filtro-campo">
+                                    <DateRangePicker
+                                        id="pe-periodo-mandato"
+                                        label="Período do mandato"
+                                        value={periodoMandato}
+                                        onChange={() => {}}
+                                        placeholder="Início — Fim"
+                                        className="w-full"
+                                        disabled
+                                    />
+                                    <small className="text-color-secondary">
+                                        Período vinculado ao mandato ativo. Alterações pela gestão
+                                        de mandatos.
+                                    </small>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-color-secondary m-0">
+                                Nenhum mandato ativo para editar nesta tela.
+                            </p>
+                        )}
+                    </div>
+                </div>
             </div>
         </Dialog>
     );

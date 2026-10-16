@@ -5,7 +5,7 @@ import { useAppToast } from '../../../hooks/useAppToast';
 import { usePermissions } from '../../../hooks/usePermissions';
 import type { PautaItemDetalhe, SessaoPlenariaDetalhe } from '../../../types/sessoes';
 import { PautaItemCard } from './PautaItemCard';
-import { PautaListaDetalhe } from './PautaListaDetalhe';
+import { PautaDetalhePanel } from './PautaDetalhePanel';
 import { AddPautaItemDialog } from './AddPautaItemDialog';
 import { PublicarPautaDialog } from './PublicarPautaDialog';
 import { AbrirVotacaoDialog } from './AbrirVotacaoDialog';
@@ -53,9 +53,19 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
     const podePublicar = sessao.statusSessao === 'AGENDADA';
     const podeDeliberar = canManageSessao && sessao.statusSessao === 'ABERTA';
 
-    const selecionarItem = useCallback((itemId: string) => {
-        setSelectedId(itemId);
-    }, []);
+    const selecionarItem = useCallback(
+        (itemId: string) => {
+            setSelectedId(itemId);
+            // Spec 018: com sessão aberta, persiste e sincroniza o painel automaticamente
+            if (sessao.statusSessao === 'ABERTA' || sessao.statusSessao === 'SUSPENSA') {
+                void sessoesApi
+                    .setPautaItemAtual(sessao.id, itemId)
+                    .then(() => enviarItemParaPainel(sessao.id, itemId))
+                    .catch((err) => showApiError(err));
+            }
+        },
+        [sessao.id, sessao.statusSessao, showApiError],
+    );
 
     /**
      * `mostrarLoading` desligado quando a tela já mostra o resultado esperado
@@ -229,18 +239,27 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
                 )}
             </section>
 
-            <PautaListaDetalhe
+            <PautaDetalhePanel
                 sessaoId={sessao.id}
                 statusSessao={sessao.statusSessao}
-                itens={itens}
-                selectedId={selectedId}
+                item={itens.find((i) => i.id === selectedId) ?? null}
                 somenteLeitura={somenteLeitura}
                 podeDeliberar={podeDeliberar}
-                onActiveChange={selecionarItem}
-                onRemover={handleRemover}
-                onAbrirVotacao={setAbrirVotacaoItem}
-                onFecharVotacao={setFecharVotacaoItem}
-                onExibirNoPainel={exibirItemNoPainel}
+                onRemover={async () => {
+                    if (!selectedId) return;
+                    await handleRemover(selectedId);
+                }}
+                onAbrirVotacao={() => {
+                    const item = itens.find((i) => i.id === selectedId);
+                    if (item) setAbrirVotacaoItem(item);
+                }}
+                onFecharVotacao={() => {
+                    const item = itens.find((i) => i.id === selectedId);
+                    if (item) setFecharVotacaoItem(item);
+                }}
+                onExibirNoPainel={
+                    selectedId ? () => exibirItemNoPainel(selectedId) : undefined
+                }
             />
 
             {dialogAdicionar && (

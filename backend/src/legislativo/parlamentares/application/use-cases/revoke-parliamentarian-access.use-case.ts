@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ParliamentarianStatus } from '../../domain/enums/parliamentarian-status.enum';
 import { ParliamentarianRepository } from '../../domain/repositories/parliamentarian.repository';
 import { ParlamentarianUserRepository } from '../../domain/repositories/parlamentarian-user.repository';
 import {
@@ -34,6 +35,11 @@ export class RevokeParliamentarianAccessUseCase {
         } catch {
             throw new ParliamentarianAccessNotFoundError();
         }
+
+        // Opção A (004/011): conta inativa → status legislativo INACTIVE.
+        await this.parliamentarianRepository.update(tenantId, parliamentarianId, {
+            status: ParliamentarianStatus.INACTIVE,
+        });
 
         const updated = await this.parliamentarianRepository.findById(
             tenantId,

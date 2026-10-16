@@ -129,6 +129,12 @@ export abstract class SessaoPlenariaRepository {
     abstract publicarPauta(sessaoId: string, tenantId: string): Promise<void>;
     // M11 — fase da sessão
     abstract setFase(id: string, tenantId: string, fase: FaseSessao): Promise<void>;
+    // Spec 018 — item atual no painel
+    abstract setPautaItemAtual(
+        id: string,
+        tenantId: string,
+        pautaItemId: string | null,
+    ): Promise<{ pautaItemAtualId: string | null }>;
     // M13 — sessão ativa para parlamentar
     abstract findAtiva(tenantId: string): Promise<SessaoPlenariaEntity | null>;
 

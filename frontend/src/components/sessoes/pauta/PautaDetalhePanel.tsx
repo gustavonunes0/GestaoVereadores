@@ -139,9 +139,9 @@ export function PautaDetalhePanel({
                 </div>
             )}
 
-            <header className="pauta-detalhe__header">
+            <header className="pauta-detalhe__header pauta-detalhe__header--compacto">
                 {temMetaGrid && (
-                    <div className="pauta-detalhe__meta-grid lex-dialog-grid">
+                    <div className="pauta-detalhe__meta-row">
                         {conteudo.autorPrincipal && (
                             <MetaAutorCampo autor={conteudo.autorPrincipal} />
                         )}

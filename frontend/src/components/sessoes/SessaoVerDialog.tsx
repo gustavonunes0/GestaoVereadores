@@ -209,6 +209,34 @@ export function SessaoVerDialog({ sessaoId, onClose, onUpdated }: Props) {
                                 {detail.statusSessao === 'AGENDADA' && (
                                     <>
                                         <SiglButton
+                                            label="Iniciar chamada"
+                                            icon="pi pi-users"
+                                            onClick={() => {
+                                                setLifecycleBusy(true);
+                                                void sessoesApi
+                                                    .iniciarChamada(sessaoId)
+                                                    .then(() => {
+                                                        showSuccess('Chamada iniciada.');
+                                                        refresh();
+                                                    })
+                                                    .catch(showApiError)
+                                                    .finally(() => setLifecycleBusy(false));
+                                            }}
+                                            disabled={lifecycleBusy}
+                                        />
+                                        <SiglButton
+                                            label="Cancelar sessão"
+                                            icon="pi pi-times"
+                                            severity="danger"
+                                            outlined
+                                            onClick={() => void handleLifecycle('cancelar')}
+                                            disabled={lifecycleBusy}
+                                        />
+                                    </>
+                                )}
+                                {detail.statusSessao === 'CHAMADA' && (
+                                    <>
+                                        <SiglButton
                                             label="Abrir sessão"
                                             icon="pi pi-play"
                                             onClick={() => setDialogAbrir(true)}

@@ -169,37 +169,6 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
             throw new NotFoundException('Câmara não encontrada');
         }
 
-        const board = await this.prisma.board.findFirst({
-            where: { tenantId, status: 'ACTIVE', isRemoved: false },
-            include: {
-                legislature: {
-                    select: { startDate: true, endDate: true, number: true },
-                },
-                members: {
-                    where: { isRemoved: false },
-                    include: {
-                        parliamentarian: {
-                            select: {
-                                parliamentaryName: true,
-                                parliamentarianUser: {
-                                    select: {
-                                        user: {
-                                            select: {
-                                                firstName: true,
-                                                lastName: true,
-                                                cpf: true,
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        boardRole: { select: { name: true } },
-                    },
-                },
-            },
-        });
-
         const secretaria = await this.prisma.tenantUser.findFirst({
             where: {
                 tenantId,
@@ -215,6 +184,56 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
 
         const dataBase = materia.dataProtocolo ?? materia.createdAt;
         const dataParts = formatDateParts(dataBase);
+        // Capa "DATA DO PROTOCOLO": só data legível; sem protocolo cadastrado → "—".
+        const dataProtocoloCurta = materia.dataProtocolo
+            ? formatDateParts(materia.dataProtocolo).curta
+            : '—';
+
+        // Mesa (Board) vigente na data da matéria — biênio vem de startDate/endDate do cadastro.
+        const boardInclude = {
+            legislature: {
+                select: { startDate: true, endDate: true, number: true },
+            },
+            members: {
+                where: { isRemoved: false },
+                include: {
+                    parliamentarian: {
+                        select: {
+                            parliamentaryName: true,
+                            parliamentarianUser: {
+                                select: {
+                                    user: {
+                                        select: {
+                                            firstName: true,
+                                            lastName: true,
+                                            cpf: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    boardRole: { select: { name: true } },
+                },
+            },
+        } as const;
+        const boardDateWhere = {
+            tenantId,
+            isRemoved: false,
+            startDate: { lte: dataBase },
+            OR: [{ endDate: null }, { endDate: { gte: dataBase } }],
+        };
+        const board =
+            (await this.prisma.board.findFirst({
+                where: { ...boardDateWhere, status: 'ACTIVE' },
+                include: boardInclude,
+                orderBy: { startDate: 'desc' },
+            })) ??
+            (await this.prisma.board.findFirst({
+                where: boardDateWhere,
+                include: boardInclude,
+                orderBy: { startDate: 'desc' },
+            }));
         const ano =
             materia.ano && 'valor' in materia.ano
                 ? Number((materia.ano as { valor: number }).valor)
@@ -348,11 +367,12 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
             ? `${secretaria.user.firstName} ${secretaria.user.lastName}`.trim()
             : 'Secretária Legislativa';
 
-        let bienio = String(ano);
-        if (board?.legislature) {
-            const ini = board.legislature.startDate.getFullYear();
-            const fim = board.legislature.endDate
-                ? board.legislature.endDate.getFullYear()
+        // Biênio da Mesa (Board.startDate/endDate). Sem inventar a partir do ano da matéria.
+        let bienio = '';
+        if (board?.startDate) {
+            const ini = board.startDate.getFullYear();
+            const fim = board.endDate
+                ? board.endDate.getFullYear()
                 : ini + 1;
             bienio = `${ini}/${fim}`;
         }
@@ -398,7 +418,7 @@ export class GenerateMateriaTextoOriginalPdfUseCase {
             numeroProcesso,
             dataProtocoloLabel,
             dataProtocoloExtenso: dataParts.extenso,
-            dataProtocoloCurta: dataParts.curta,
+            dataProtocoloCurta,
             horaProtocolo: dataParts.hora,
             autorNome,
             autorCargoPartido,

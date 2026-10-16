@@ -12,6 +12,7 @@ function makeSessao(statusSessao: StatusSessao): SessaoPlenariaEntity {
     s.id = 'sessao-1';
     s.tenantId = 'tenant-1';
     s.statusSessao = statusSessao;
+    s.dataInicioChamada = statusSessao === StatusSessao.CHAMADA ? new Date() : null;
     return s;
 }
 
@@ -51,22 +52,28 @@ describe('AbrirSessaoUseCase', () => {
             .rejects.toThrow(BadRequestException);
     });
 
-    it('lança UnprocessableEntityException quando quórum insuficiente', async () => {
+    it('lança BadRequestException ao abrir direto de AGENDADA (sem Chamada)', async () => {
         repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.AGENDADA));
+        await expect(useCase.execute('t1', 's1', {}, 'user-1'))
+            .rejects.toThrow(BadRequestException);
+    });
+
+    it('lança UnprocessableEntityException quando quórum insuficiente', async () => {
+        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.CHAMADA));
         repo.calcularQuorum.mockResolvedValue({ quorumMinimo: 5, quorumPresente: 3, temQuorum: false, totalMembros: 9 });
         await expect(useCase.execute('t1', 's1', {}, 'user-1'))
             .rejects.toThrow(UnprocessableEntityException);
     });
 
     it('não chama transicionarStatus quando quórum insuficiente', async () => {
-        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.AGENDADA));
+        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.CHAMADA));
         repo.calcularQuorum.mockResolvedValue({ quorumMinimo: 5, quorumPresente: 3, temQuorum: false, totalMembros: 9 });
         await expect(useCase.execute('t1', 's1', {}, 'user-1')).rejects.toThrow();
         expect(repo.transicionarStatus).not.toHaveBeenCalled();
     });
 
-    it('chama transicionarStatus com ABERTA quando quórum atingido', async () => {
-        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.AGENDADA));
+    it('chama transicionarStatus com ABERTA quando quórum atingido em Chamada', async () => {
+        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.CHAMADA));
         repo.calcularQuorum.mockResolvedValue({ quorumMinimo: 5, quorumPresente: 7, temQuorum: true, totalMembros: 9 });
         repo.transicionarStatus.mockResolvedValue(undefined);
 
@@ -82,7 +89,7 @@ describe('AbrirSessaoUseCase', () => {
     });
 
     it('abre em modo teste sem exigir quórum completo', async () => {
-        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.AGENDADA));
+        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.CHAMADA));
         repo.calcularQuorum.mockResolvedValue({ quorumMinimo: 3, quorumPresente: 1, temQuorum: false, totalMembros: 5 });
         repo.transicionarStatus.mockResolvedValue(undefined);
 
@@ -98,7 +105,7 @@ describe('AbrirSessaoUseCase', () => {
     });
 
     it('modo teste exige ao menos 1 presente', async () => {
-        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.AGENDADA));
+        repo.findSessaoById.mockResolvedValue(makeSessao(StatusSessao.CHAMADA));
         repo.calcularQuorum.mockResolvedValue({ quorumMinimo: 3, quorumPresente: 0, temQuorum: false, totalMembros: 5 });
 
         await expect(useCase.execute('t1', 's1', { modoTeste: true }, 'user-1'))

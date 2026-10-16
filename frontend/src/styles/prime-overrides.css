@@ -21,13 +21,15 @@
 }
 
 .p-button.p-button-icon-only:not(.p-button-lg) {
-    width: 2rem;
-    height: 2rem;
+    width: var(--sigl-action-hit-min);
+    height: var(--sigl-action-hit-min);
+    min-width: var(--sigl-action-hit-min);
+    min-height: var(--sigl-action-hit-min);
     padding: 0.4375rem;
 }
 
 .p-button:not(.p-button-lg) .p-button-icon {
-    font-size: 0.875rem;
+    font-size: var(--sigl-action-icon-size);
 }
 
 .p-button.p-button-sm,

@@ -25,8 +25,8 @@ export function VoteFooter({
                 role="status"
                 aria-live="polite"
                 aria-atomic="true"
+                aria-label="Placar"
             >
-                <span className="vp-card__label">Placar</span>
                 <div className="vp-footer__counters">
                     <VoteCounter label="SIM" value={votes.sim} tone="sim" />
                     <VoteCounter label="NÃO" value={votes.nao} tone="nao" />

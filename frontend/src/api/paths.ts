@@ -78,6 +78,8 @@ export const API_PATHS = {
     sessaoPedidoPalavraEncerrar: (sid: string, pid: string) =>
         `/legislative/sessoes-plenarias/${sid}/pedidos-palavra/${pid}/encerrar`,
     sessoesAbrir:        (id: string) => `/legislative/sessoes-plenarias/${id}/abrir`,
+    sessoesIniciarChamada: (id: string) => `/legislative/sessoes-plenarias/${id}/iniciar-chamada`,
+    sessoesPautaItemAtual: (id: string) => `/legislative/sessoes-plenarias/${id}/pauta-item-atual`,
     sessoesSuspender:    (id: string) => `/legislative/sessoes-plenarias/${id}/suspender`,
     sessoesEncerrar:     (id: string) => `/legislative/sessoes-plenarias/${id}/encerrar`,
     sessoesCancelar:     (id: string) => `/legislative/sessoes-plenarias/${id}/cancelar`,

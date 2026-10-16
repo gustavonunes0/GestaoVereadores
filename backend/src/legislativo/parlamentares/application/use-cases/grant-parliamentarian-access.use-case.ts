@@ -4,6 +4,7 @@ import { PASSWORD_HASHER, USER_REPOSITORY } from '../../../../identidade/users/u
 import { UserEntity } from '../../../../identidade/users/domain/user.entity';
 import { UserRepository } from '../../../../identidade/users/domain/user.repository';
 import { ParlamentarianUserEntity } from '../../domain/entities/parlamentarian-user.entity';
+import { ParliamentarianStatus } from '../../domain/enums/parliamentarian-status.enum';
 import { ParlamentarianUserStatus } from '../../domain/enums/parlamentarian-user-status.enum';
 import { ParliamentarianRepository } from '../../domain/repositories/parliamentarian.repository';
 import { ParlamentarianUserRepository } from '../../domain/repositories/parlamentarian-user.repository';
@@ -75,6 +76,7 @@ export class GrantParliamentarianAccessUseCase {
                     tenantId,
                     parliamentarianId,
                 );
+                await this.syncLegislativeActive(tenantId, parliamentarianId);
                 const updated = await this.parliamentarianRepository.findById(
                     tenantId,
                     parliamentarianId,
@@ -115,6 +117,7 @@ export class GrantParliamentarianAccessUseCase {
             userId,
         });
         await this.parlamentarianUserRepository.create(parlUser);
+        await this.syncLegislativeActive(tenantId, parliamentarianId);
 
         const updated = await this.parliamentarianRepository.findById(
             tenantId,
@@ -124,6 +127,16 @@ export class GrantParliamentarianAccessUseCase {
             throw new ParliamentarianNotFoundError();
         }
         return updated;
+    }
+
+    /** Opção A (004/011): conta ativa → status legislativo ACTIVE. */
+    private async syncLegislativeActive(
+        tenantId: string,
+        parliamentarianId: string,
+    ) {
+        await this.parliamentarianRepository.update(tenantId, parliamentarianId, {
+            status: ParliamentarianStatus.ACTIVE,
+        });
     }
 
     private async createUserForAccess(

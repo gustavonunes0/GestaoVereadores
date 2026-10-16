@@ -38,6 +38,13 @@ function formatPartyLabel(acronym: string, name: string): string {
 }
 
 function resolveMandateBadge(row: Parliamentarian): string | null {
+    // Afastado / inativo: não mostrar "Em exercício" (P-02 / 011).
+    if (row.status !== 'ACTIVE') {
+        if (row.activeMandate?.condicao) {
+            return CONDICAO_LABEL[row.activeMandate.condicao] ?? row.activeMandate.condicao;
+        }
+        return null;
+    }
     if (row.activeMandate?.condicao) {
         return CONDICAO_LABEL[row.activeMandate.condicao] ?? row.activeMandate.condicao;
     }

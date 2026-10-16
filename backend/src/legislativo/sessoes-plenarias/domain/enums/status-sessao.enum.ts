@@ -1,6 +1,7 @@
-/** Alinhado ao enum Prisma `StatusSessao` (Migration M4). */
+/** Alinhado ao enum Prisma `StatusSessao` (Migration M4 + spec 017). */
 export enum StatusSessao {
     AGENDADA = 'AGENDADA',
+    CHAMADA = 'CHAMADA',
     ABERTA = 'ABERTA',
     SUSPENSA = 'SUSPENSA',
     ENCERRADA = 'ENCERRADA',
@@ -9,6 +10,7 @@ export enum StatusSessao {
 
 export const STATUS_SESSAO_LABELS: Record<StatusSessao, string> = {
     [StatusSessao.AGENDADA]: 'Agendada',
+    [StatusSessao.CHAMADA]: 'Chamada',
     [StatusSessao.ABERTA]: 'Aberta',
     [StatusSessao.SUSPENSA]: 'Suspensa',
     [StatusSessao.ENCERRADA]: 'Encerrada',
@@ -37,6 +39,7 @@ export function statusSessaoToCodigoSituacao(
 ): 'AGENDADA' | 'EM_ANDAMENTO' | 'ENCERRADA' | 'CANCELADA' {
     switch (status) {
         case StatusSessao.AGENDADA:
+        case StatusSessao.CHAMADA:
             return 'AGENDADA';
         case StatusSessao.ABERTA:
         case StatusSessao.SUSPENSA:

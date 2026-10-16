@@ -31,7 +31,17 @@ export class AbrirSessaoUseCase {
 
         if (!sessao.podeTransicionarPara(StatusSessao.ABERTA)) {
             throw new BadRequestException(
-                `Transição inválida: ${sessao.statusSessao} → ${StatusSessao.ABERTA}`,
+                `Transição inválida: ${sessao.statusSessao} → ${StatusSessao.ABERTA}. A sessão deve estar em Chamada (ou Suspensa para retomar).`,
+            );
+        }
+
+        // Spec 017: abertura formal só a partir de Chamada (retomar Suspensa continua permitido).
+        if (
+            sessao.statusSessao !== StatusSessao.CHAMADA &&
+            sessao.statusSessao !== StatusSessao.SUSPENSA
+        ) {
+            throw new BadRequestException(
+                'É necessário iniciar a chamada antes de abrir a sessão.',
             );
         }
 
@@ -66,14 +76,21 @@ export class AbrirSessaoUseCase {
         });
 
         // RN-SPL-02: ao abrir, fase vai automaticamente para EXPEDIENTE
-        await this.repository.setFase(sessaoId, tenantId, FaseSessao.EXPEDIENTE);
+        if (sessao.statusSessao === StatusSessao.CHAMADA) {
+            await this.repository.setFase(sessaoId, tenantId, FaseSessao.EXPEDIENTE);
+        }
 
         await this.historicoRepository.registrar({
             sessaoId,
             tipoEvento: TipoEventoSessaoHistorico.SESSAO_ABERTA,
             responsavelId,
             descricao: dto.observacao,
-            metadata: { quorumPresente, modoTeste },
+            metadata: {
+                quorumPresente,
+                modoTeste,
+                dataInicioChamada: sessao.dataInicioChamada?.toISOString() ?? null,
+                presentesNaAbertura: quorumPresente,
+            },
         });
 
         return { statusSessao: StatusSessao.ABERTA, quorumPresente, modoTeste };

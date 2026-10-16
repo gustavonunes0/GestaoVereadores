@@ -22,6 +22,8 @@ export type ElencoExercicioSessao = {
 };
 
 const STATUS_QUE_CONGELAM = new Set(['ABERTA', 'SUSPENSA']);
+/** Sessões em andamento: ocupantes INACTIVE saem do elenco mesmo após congelamento. */
+const STATUS_SESSAO_AO_VIVO = new Set(['ABERTA', 'SUSPENSA']);
 
 /**
  * Fonte única de "quem exerce o mandato": presença, voto, chamada, quórum e painel
@@ -125,7 +127,12 @@ export class ExercicioMandatoService {
         );
 
         if (sessao.elencoExercicio.length > 0) {
-            return { legislatureId, congelado: true, vagas: sessao.elencoExercicio };
+            let vagas = sessao.elencoExercicio;
+            // Ao vivo: status atual manda (sem inactivatedAt). Encerrada: preserva snapshot.
+            if (STATUS_SESSAO_AO_VIVO.has(sessao.statusSessao)) {
+                vagas = await this.semOcupantesInativos(tenantId, vagas);
+            }
+            return { legislatureId, congelado: true, vagas };
         }
 
         const dataSessao = dataCivilDoInstante(sessao.dataInicio);

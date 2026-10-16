@@ -2975,10 +2975,17 @@ textarea:not(:disabled):focus {
 .ord-btn {
     background: none;
     border: none;
-    padding: 0.0625rem 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--sigl-action-hit-min);
+    height: var(--sigl-action-hit-min);
+    min-width: var(--sigl-action-hit-min);
+    min-height: var(--sigl-action-hit-min);
+    padding: 0;
     cursor: pointer;
     color: var(--text-muted);
-    font-size: 0.625rem;
+    font-size: var(--sigl-action-icon-size);
     line-height: 1;
     border-radius: 0.1875rem;
 }
@@ -2994,8 +3001,10 @@ textarea:not(:disabled):focus {
 }
 
 .pauta-remove-btn.p-button {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: var(--sigl-action-hit-min);
+    height: var(--sigl-action-hit-min);
+    min-width: var(--sigl-action-hit-min);
+    min-height: var(--sigl-action-hit-min);
     padding: 0;
 }
 
@@ -4141,11 +4150,80 @@ body.transmissao-fs-active {
 /* Dialog Ver parlamentar — campos fluidos na largura do modal */
 .parlamentar-ver-dialog .p-dialog-content {
     overflow-x: hidden;
+    max-height: min(88vh, 900px);
 }
 
 .parlamentar-ver-body {
     width: 100%;
     min-width: 0;
+}
+
+.parlamentar-ver-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #f59e0b;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.parlamentar-ver-banner .pi {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.parlamentar-ver-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px 20px;
+    width: 100%;
+    align-items: start;
+}
+
+.parlamentar-ver-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.parlamentar-ver-mandato--destaque {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+@media (max-width: 900px) {
+    .parlamentar-ver-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.parlamentar-edit-dialog .p-dialog-content {
+    overflow-x: hidden;
+    max-height: min(88vh, 900px);
+}
+
+.parlamentar-edit-suplente-destaque {
+    margin-top: 8px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #f59e0b;
+    background: #fffbeb;
+}
+
+.parlamentar-edit-suplente-destaque__titulo {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #92400e;
 }
 
 .parlamentar-ver-dialog .sigl-dialog-secao > .parlamentar-ver-full,
@@ -5467,18 +5545,96 @@ body.sessao-painel-body {
 .sessao-painel-main:has(.sessao-painel-inicio) {
     justify-content: flex-start;
     align-items: stretch;
-    padding: clamp(0.75rem, 1.5vw, 1.25rem);
+    padding: clamp(0.5rem, 1.2vw, 1rem);
+    overflow: hidden;
 }
 
-/* Tela inicial: mesa diretora | presença | pauta (carrossel) */
+/* Fullscreen 1920×1080: sem barra de rolagem no layout inicial */
+:fullscreen .sessao-painel-main:has(.sessao-painel-inicio),
+:-webkit-full-screen .sessao-painel-main:has(.sessao-painel-inicio) {
+    overflow: hidden;
+    padding: clamp(0.4rem, 0.9vw, 0.85rem);
+}
+
+/* Tela inicial: topo mesa | presença; pauta em faixa full-width (spec 001) */
+/* Spec 018 — tela da matéria / espera no painel */
+.sessao-painel-materia,
+.sessao-painel-espera {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+    width: 100%;
+    min-height: 50vh;
+    padding: 2rem clamp(1rem, 4vw, 3rem);
+}
+
+.sessao-painel-materia__posicao,
+.sessao-painel-espera__sub {
+    font-size: clamp(1rem, 2vw, 1.35rem);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted, #8492a6);
+}
+
+.sessao-painel-materia__titulo,
+.sessao-painel-espera__titulo {
+    margin: 0;
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 800;
+    color: var(--text-heading, #1c2f4a);
+    line-height: 1.2;
+    max-width: 48rem;
+}
+
+.sessao-painel-materia__ementa {
+    margin: 0;
+    font-size: clamp(1.05rem, 2.2vw, 1.5rem);
+    color: var(--text-body, #374151);
+    line-height: 1.45;
+    max-width: 52rem;
+}
+
+.sessao-painel-materia__tipo {
+    margin: 0;
+    font-size: clamp(0.95rem, 1.6vw, 1.2rem);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent, #2563a8);
+}
+
+.sessao-painel-quorum {
+    font-size: clamp(0.85rem, 1.4vw, 1.1rem);
+    font-weight: 700;
+    color: var(--text-heading, #1c2f4a);
+}
+
+.sessao-painel-fase--chamada {
+    background: #fef3c7;
+    color: #92400e;
+}
+
 .sessao-painel-inicio {
     width: 100%;
+    height: 100%;
+    min-height: 0;
     display: grid;
-    grid-template-columns: minmax(16rem, 21rem) minmax(0, 1fr) minmax(13rem, 16.5rem);
-    gap: clamp(0.85rem, 1.6vw, 1.35rem);
-    align-items: stretch;
+    grid-template-columns: minmax(16rem, 21rem) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: clamp(0.65rem, 1.2vw, 1.1rem);
+    align-items: start;
     position: relative;
     z-index: 1;
+}
+
+.sessao-painel-inicio .sessao-painel-carrossel,
+.sessao-painel-inicio .sessao-painel-pauta-faixa {
+    grid-column: 1 / -1;
+    align-self: end;
 }
 
 .sessao-painel-card {
@@ -5552,12 +5708,19 @@ body.sessao-painel-body {
     border-color: #fca5a5;
 }
 
+.sessao-painel-presenca {
+    min-height: 0;
+    height: auto;
+    align-self: start;
+}
+
 .sessao-painel-presenca__grade {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+    /* Largura extra do topo: ~6 cards/linha em 1920px sem distorcer */
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
     gap: 0.5rem;
     align-content: start;
 }
@@ -5676,12 +5839,33 @@ body.sessao-painel-body {
     color: #64748b;
 }
 
+.sessao-painel-pauta-faixa {
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+}
+
+.sessao-painel-pauta-faixa__cabecalho {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: baseline;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+    text-align: left;
+}
+
+.sessao-painel-pauta-faixa__cabecalho .sessao-painel-carrossel__sessao,
+.sessao-painel-pauta-faixa__cabecalho .sessao-painel-carrossel__resumo {
+    margin: 0;
+}
+
 .sessao-painel-carrossel__pagina {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: nowrap;
     gap: 0.55rem;
     animation: sessao-painel-carrossel-entrada 0.45s ease;
 }
@@ -5689,8 +5873,11 @@ body.sessao-painel-body {
 .sessao-painel-carrossel__slide {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.6rem 0.7rem;
+    gap: 0.5rem;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0.5rem 0.65rem;
     border-radius: 0.8rem;
     background: rgba(255, 255, 255, 0.96);
     border: 1px solid #cbd5e1;
@@ -5723,10 +5910,13 @@ body.sessao-painel-body {
 .sessao-painel-carrossel__titulo {
     margin: 0;
     min-width: 0;
-    font-size: 0.98rem;
+    font-size: 0.9rem;
     font-weight: 800;
     color: #0f172a;
     line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .sessao-painel-carrossel__nav {
@@ -5774,11 +5964,14 @@ body.sessao-painel-body {
 
 @media (max-width: 1280px) {
     .sessao-painel-inicio {
-        grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr);
+        grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
     }
+}
 
-    .sessao-painel-carrossel {
-        grid-column: 1 / -1;
+/* Fora de fullscreen / telas menores: permite rolagem se necessário */
+@media (max-height: 800px) {
+    .sessao-painel-main:has(.sessao-painel-inicio) {
+        overflow: auto;
     }
 }
 
@@ -5814,6 +6007,42 @@ body.sessao-painel-body {
         0 6px 18px rgba(37, 99, 235, 0.1),
         0 2px 6px rgba(15, 23, 42, 0.06);
     text-align: left;
+}
+
+.sessao-painel-inicio__mesa-card--presente {
+    border-left: 4px solid #16a34a;
+}
+
+.sessao-painel-inicio__mesa-card--ausente {
+    border-left: 4px solid #dc2626;
+    background: rgba(248, 250, 252, 0.9);
+}
+
+.sessao-painel-inicio__mesa-linha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.55rem;
+}
+
+.sessao-painel-inicio__mesa-status {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.sessao-painel-inicio__mesa-card--presente .sessao-painel-inicio__mesa-status {
+    color: #15803d;
+}
+
+.sessao-painel-inicio__mesa-card--ausente .sessao-painel-inicio__mesa-status {
+    color: #b91c1c;
+}
+
+.sessao-painel-inicio__mesa-card--ausente .sessao-painel-inicio__mesa-avatar {
+    filter: grayscale(1);
+    opacity: 0.65;
 }
 
 .sessao-painel-inicio__mesa-card--presidente {

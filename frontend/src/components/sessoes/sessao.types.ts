@@ -44,7 +44,8 @@ export function sessaoAceitaPauta(sessao: {
 }): boolean {
     if (
         sessao.statusSessao === 'ABERTA' ||
-        sessao.statusSessao === 'AGENDADA'
+        sessao.statusSessao === 'AGENDADA' ||
+        sessao.statusSessao === 'CHAMADA'
     ) {
         return true;
     }

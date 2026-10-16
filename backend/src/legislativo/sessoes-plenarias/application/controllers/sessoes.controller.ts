@@ -145,6 +145,9 @@ import {
 } from '../use-cases/session-lifecycle.use-case';
 import { UpdateSessaoPlenariaUseCase } from '../use-cases/update-sessao-plenaria.use-case';
 import { AbrirSessaoUseCase } from '../use-cases/abrir-sessao.use-case';
+import { IniciarChamadaUseCase } from '../use-cases/iniciar-chamada.use-case';
+import { SetPautaItemAtualUseCase } from '../use-cases/set-pauta-item-atual.use-case';
+import { SetPautaItemAtualDto } from '../dto/set-pauta-item-atual.dto';
 import { SuspenderSessaoUseCase } from '../use-cases/suspender-sessao.use-case';
 import { EncerrarSessaoUseCase } from '../use-cases/encerrar-sessao.use-case';
 import { CancelarSessaoUseCase } from '../use-cases/cancelar-sessao.use-case';
@@ -239,6 +242,8 @@ export class SessoesController {
         private readonly previewResultadoVotacao: PreviewResultadoVotacaoUseCase,
         private readonly finalizarVotacao: FinalizarVotacaoUseCase,
         private readonly abrirSessao: AbrirSessaoUseCase,
+        private readonly iniciarChamada: IniciarChamadaUseCase,
+        private readonly setPautaItemAtual: SetPautaItemAtualUseCase,
         private readonly suspenderSessao: SuspenderSessaoUseCase,
         private readonly encerrarSessao: EncerrarSessaoUseCase,
         private readonly cancelarSessao: CancelarSessaoUseCase,
@@ -790,6 +795,44 @@ export class SessoesController {
         } catch (error) {
             this.handleError(error);
         }
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/pauta-item-atual')
+    async setPautaItemAtualHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: SetPautaItemAtualDto,
+    ) {
+        try {
+            const result = await this.setPautaItemAtual.execute(tenantId, id, dto);
+            this.realtimeGateway.emitSessaoItemPainel(tenantId, {
+                sessaoId: id,
+                pautaItemAtualId: result.pautaItemAtualId,
+            });
+            return result;
+        } catch (error) {
+            if (error instanceof Error && error.message.includes('não encontrado')) {
+                throw new NotFoundException(error.message);
+            }
+            this.handleError(error);
+        }
+    }
+
+    @TenantRoles(...STAFF_AND_ABOVE)
+    @Post(':id/iniciar-chamada')
+    async iniciarChamadaHandler(
+        @TenantId() tenantId: string,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Req() req: Request,
+    ) {
+        const responsavelId = resolveTenantUserId(req.user as AuthenticatedUser);
+        const result = await this.iniciarChamada.execute(tenantId, id, responsavelId);
+        this.realtimeGateway.emitSessaoFase(tenantId, {
+            sessaoId: id,
+            faseAtual: 'CHAMADA',
+        });
+        return result;
     }
 
     @TenantRoles(...STAFF_AND_ABOVE)

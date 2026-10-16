@@ -2,6 +2,7 @@ import { pageWrapper } from './page-wrapper';
 import {
     ementaResumoParaCapa,
     escHtml,
+    stripFechoDoTexto,
     textToParagraphsHtml,
 } from './materia-texto-original.helpers';
 import {
@@ -52,14 +53,18 @@ export function materiaTextoOriginalTemplate(
     const camaraFull = `CÂMARA MUNICIPAL DE ${dados.municipio}`.toUpperCase();
 
     const coautores = (dados.coautores ?? []).filter((c) => c.nome.trim());
+    const ementaLimpa = stripFechoDoTexto(dados.ementa);
+    const justificativaLimpa = dados.justificativa?.trim()
+        ? stripFechoDoTexto(dados.justificativa.trim())
+        : '';
     const ementaCapa = textToParagraphsHtml(
-        ementaResumoParaCapa(dados.ementa),
+        ementaResumoParaCapa(ementaLimpa),
         'par',
     );
-    const ementaCorpo = textToParagraphsHtml(dados.ementa, 'par');
-    const justificativaHtml = dados.justificativa?.trim()
+    const ementaCorpo = textToParagraphsHtml(ementaLimpa, 'par');
+    const justificativaHtml = justificativaLimpa
         ? `<h3 class="sec">JUSTIFICATIVA</h3>
-${textToParagraphsHtml(dados.justificativa.trim(), 'par')}`
+${textToParagraphsHtml(justificativaLimpa, 'par')}`
         : '';
     const capaCoautoresHtml = coautores
         .map(
@@ -101,9 +106,12 @@ ${textToParagraphsHtml(dados.justificativa.trim(), 'par')}`
   ${rodape}
 </div>`;
 
+    const bienioHtml = dados.bienio.trim()
+        ? `<div class="bienio">BIÊNIO ${escHtml(dados.bienio)}</div>`
+        : '';
     const capaInner = `
   <div class="capa-titulo">
-    <div class="bienio">BIÊNIO ${escHtml(dados.bienio)}</div>
+    ${bienioHtml}
     <div class="titulo">PROCESSO LEGISLATIVO</div>
   </div>
 
@@ -114,7 +122,7 @@ ${textToParagraphsHtml(dados.justificativa.trim(), 'par')}`
     </div>
     <div class="campo">
       <div class="rotulo">DATA DO PROTOCOLO</div>
-      <div class="box"><div class="valor">${escHtml(dados.dataProtocoloLabel)}</div></div>
+      <div class="box"><div class="valor">${escHtml(dados.dataProtocoloCurta)}</div></div>
     </div>
   </div>
 

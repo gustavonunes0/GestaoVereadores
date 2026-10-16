@@ -6,14 +6,18 @@
     --pauta-margin-x: 12px;
     --pauta-doc-viewer-min: 26rem;
     --pauta-doc-viewer-height: min(62vh, 44rem);
+    --pauta-viewport-chrome: 11.5rem;
 }
 
 .pauta-split {
     display: flex;
     flex-direction: column;
     gap: var(--lex-gap-lg, 16px);
-    min-height: min(40rem, calc(100vh - 14rem));
     width: 100%;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
 }
 
 @media (min-width: 768px) {
@@ -32,20 +36,20 @@
     border: 1px solid var(--lex-outline-variant, #c4c6d2);
     border-radius: var(--lex-dialog-radius, 10px);
     overflow: hidden;
-    min-height: 20rem;
+    min-height: 0;
 }
 
 @media (min-width: 768px) {
     .pauta-split__lista {
         flex: 0 0 min(30%, 24rem);
         max-width: 24rem;
-        min-height: min(40rem, calc(100vh - 14rem));
+        height: 100%;
     }
 
     .pauta-split__detalhe {
         flex: 1;
         min-width: 0;
-        min-height: min(40rem, calc(100vh - 14rem));
+        height: 100%;
     }
 }
 
@@ -167,8 +171,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.25rem;
-    height: 1rem;
+    width: var(--sigl-action-hit-min);
+    height: var(--sigl-action-hit-min);
+    min-width: var(--sigl-action-hit-min);
+    min-height: var(--sigl-action-hit-min);
     padding: 0;
     border: none;
     background: transparent;
@@ -188,7 +194,7 @@
 }
 
 .pauta-card__ord-btn .pi {
-    font-size: 0.625rem;
+    font-size: var(--sigl-action-icon-size);
 }
 
 .pauta-card__ord-num {
@@ -245,11 +251,15 @@
 .pauta-detalhe__header {
     display: flex;
     flex-direction: column;
-    gap: var(--lex-gap-md, 12px);
-    padding: var(--lex-gap-md, 12px) var(--lex-gap-lg, 16px);
+    gap: var(--lex-gap-sm, 8px);
+    padding: var(--lex-gap-sm, 8px) var(--lex-gap-lg, 16px);
     border-bottom: 1px solid var(--lex-outline-variant, #c4c6d2);
     background: var(--lex-surface, #f8f9ff);
     flex-shrink: 0;
+}
+
+.pauta-detalhe__header--compacto {
+    gap: var(--lex-gap-xs, 4px);
 }
 
 .pauta-detalhe__meta-grid {
@@ -265,6 +275,33 @@
 .pauta-detalhe__meta-grid .pauta-detalhe__meta-campo {
     grid-column: span 6;
     min-width: 0;
+}
+
+/* Spec 006: Autor | Status | Votação na mesma linha */
+.pauta-detalhe__meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--lex-gap-md, 12px) var(--lex-gap-lg, 16px);
+    width: 100%;
+    min-width: 0;
+}
+
+.pauta-detalhe__meta-row > .pauta-detalhe__meta-campo {
+    flex: 1 1 8rem;
+    min-width: 0;
+}
+
+.pauta-detalhe__meta-row > .pauta-detalhe__meta-campo--votacao {
+    flex: 1 1 12rem;
+    max-width: 18rem;
+}
+
+@media (max-width: 1366px) {
+    .pauta-detalhe__meta-row > .pauta-detalhe__meta-campo--votacao {
+        flex: 1 1 100%;
+        max-width: none;
+    }
 }
 
 @media (max-width: 640px) {
@@ -416,6 +453,10 @@
     font: 600 17px/22px var(--lex-dialog-font, 'Public Sans', sans-serif);
     color: var(--lex-on-surface, #0b1c30);
     margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .pauta-detalhe__acoes {
@@ -654,10 +695,18 @@
 
 @media (max-width: 767px) {
     .pauta-split {
-        min-height: auto;
+        height: auto;
+        max-height: none;
+        overflow: visible;
         gap: var(--lex-gap-md, 12px);
         --pauta-doc-viewer-height: min(48vh, 32rem);
         --pauta-doc-viewer-min: 20rem;
+    }
+
+    .sessao-detalhe-page--lex:has(.pauta-split) {
+        height: auto;
+        max-height: none;
+        overflow: visible;
     }
 
     .pauta-split__lista,
@@ -698,6 +747,39 @@
     box-sizing: border-box;
     min-height: min(37.5rem, 100%);
     background: var(--lex-surface, #f8f9ff);
+}
+
+/* Aba Pauta: página sem scroll; painel interno rola */
+.sessao-detalhe-page--lex:has(.pauta-split) {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.sessao-detalhe-page--lex:has(.pauta-split) .sessao-detalhe-tabview {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sessao-detalhe-page--lex:has(.pauta-split) .sessao-detalhe-tabview > .p-tabview-panels {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.sessao-detalhe-page--lex:has(.pauta-split) .sessao-detalhe-tabview .p-tabview-panel:has(.pauta-split) {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .lex-sessao-header {

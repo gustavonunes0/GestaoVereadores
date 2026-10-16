@@ -27,6 +27,10 @@
     --accent-hover: #1d4f8a;
     --accent-icon: #4a7ab5;
 
+    /* Ícones de ação (spec 014): glifo +4px vs ~16px; hit ≥32×32 */
+    --sigl-action-icon-size: 1.25rem;
+    --sigl-action-hit-min: 2rem;
+
     /* Tabela */
     --table-header-bg: #f8f9fb;
     --table-header-text: #8492a6;

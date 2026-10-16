@@ -201,6 +201,25 @@ export function buildProtocoloLabel(params: {
 }
 
 /**
+ * Remove frases de fecho do texto digitado para o template não duplicar
+ * "Nestes Termos. / Pede e Aguarda Deferimento.".
+ */
+export function stripFechoDoTexto(value: string): string {
+    if (!value.trim()) return value;
+    return value
+        .replace(
+            /\bNestes\s+Termos\.?\s*/gi,
+            '',
+        )
+        .replace(
+            /\bPede\s+e\s+Aguarda\s+Deferimento\.?\s*/gi,
+            '',
+        )
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
+/**
  * Checklist de conformidade com os modelos em `.cursor/modelos`
  * (REQ/MOÇ completos + capa/termo PAR/PLOE/PIL).
  */

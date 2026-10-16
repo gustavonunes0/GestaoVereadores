@@ -49,6 +49,11 @@ export type SessaoFasePayload = {
     faseAtual: string;
 };
 
+export type SessaoItemPainelPayload = {
+    sessaoId: string;
+    pautaItemAtualId: string | null;
+};
+
 export type SessaoEncerradaPayload = {
     sessaoId: string;
 };
@@ -202,6 +207,10 @@ export class SessaoRealtimeGateway
 
     emitSessaoFase(tenantId: string, payload: SessaoFasePayload) {
         this.emitTenantAndPainel(tenantId, 'sessao:fase', payload);
+    }
+
+    emitSessaoItemPainel(tenantId: string, payload: SessaoItemPainelPayload) {
+        this.emitTenantAndPainel(tenantId, 'sessao:item-painel', payload);
     }
 
     emitSessaoEncerrada(tenantId: string, payload: SessaoEncerradaPayload) {

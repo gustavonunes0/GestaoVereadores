@@ -26,6 +26,7 @@ export type PainelPublicoResult = {
         statusSessao: string;
         faseAtual: { value: string; label: string } | null;
         quorumMinimo?: number | null;
+        pautaItemAtualId?: string | null;
         tipo: { id: string; nome: string; label?: string };
         sessaoLegislativa?: {
             id: string;
@@ -208,12 +209,17 @@ export class GetPainelPublicoSessaoUseCase {
         } as const;
 
         const { vagas } = await this.exercicioMandato.elencoDaSessao(tenantId, sessao.id);
+        const sessaoAoVivo =
+            sessao.statusSessao === 'ABERTA' ||
+            sessao.statusSessao === 'SUSPENSA' ||
+            sessao.statusSessao === 'CHAMADA';
         const [parlamentares, titularesSubstituidos, board] = await Promise.all([
             this.prisma.parliamentarian.findMany({
                 where: {
                     id: { in: vagas.map((v) => v.emExercicioId) },
                     tenantId,
-                    status: 'ACTIVE',
+                    // Ao vivo: só ACTIVE. Encerrada: snapshot do elenco (histórico).
+                    ...(sessaoAoVivo ? { status: 'ACTIVE' as const } : {}),
                     isRemoved: false,
                 },
                 select: parliamentarianSelect,
@@ -307,12 +313,8 @@ export class GetPainelPublicoSessaoUseCase {
         const byRoleKey = new Map<string, (typeof boardMembersRaw)[number]>();
         for (const m of boardMembersRaw) {
             if (m.isRemoved) continue;
-            if (
-                !activeIds.has(m.parliamentarian.id) ||
-                m.parliamentarian.status !== 'ACTIVE'
-            ) {
-                continue;
-            }
+            if (!activeIds.has(m.parliamentarian.id)) continue;
+            if (sessaoAoVivo && m.parliamentarian.status !== 'ACTIVE') continue;
             const roleKey = m.boardRole.name.trim().toLowerCase();
             const prev = byRoleKey.get(roleKey);
             if (!prev || m.createdAt >= prev.createdAt) {
@@ -450,6 +452,9 @@ export class GetPainelPublicoSessaoUseCase {
                     label: faseLabel(sessao.faseAtual),
                 },
                 quorumMinimo: sessao.quorumMinimo,
+                pautaItemAtualId:
+                    (sessao as { pautaItemAtualId?: string | null }).pautaItemAtualId ??
+                    null,
                 tipo: {
                     id: sessao.tipoSessao.id,
                     nome: sessao.tipoSessao.nome,
