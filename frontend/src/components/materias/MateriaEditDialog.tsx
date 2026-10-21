@@ -6,6 +6,7 @@ import { materiasApi } from '../../api/legislative/materias.api';
 import type { Materia, MatterAuthorship } from '../../api/legislative/materias.api';
 import { useAppToast } from '../../hooks/useAppToast';
 import { useDominios } from '../../hooks/useDominios';
+import { usePermissions } from '../../hooks/usePermissions';
 import { DatePicker, LexDialogFooter } from '../../components/ui';
 import {
     resolveMateriaIdentificacao,
@@ -53,6 +54,7 @@ const EDIT_TABS: MateriaFormTab[] = ['identificacao', 'autoria', 'conteudo'];
 export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     const { showSuccess, showApiError } = useAppToast();
     const { anos } = useDominios();
+    const { isAdminStaff } = usePermissions();
     const [saving, setSaving] = useState(false);
     const [regeneratingPdf, setRegeneratingPdf] = useState(false);
     const [loadingAutoria, setLoadingAutoria] = useState(true);
@@ -62,7 +64,9 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
 
     const isRascunho = resolvedStatus === 'DRAFT';
     const isProtocolada = resolvedStatus === 'PROTOCOLADA';
-    const canEditConteudo = isRascunho || isProtocolada;
+    // Admin pode corrigir ementa/justificativa/autoria mesmo após votação.
+    const canEditConteudo = isAdminStaff || isRascunho || isProtocolada;
+    const canEditAutor = isAdminStaff || isRascunho;
 
     const [numeroMateria, setNumeroMateria] = useState(() =>
         materia.numero != null && materia.numero !== '' ? String(materia.numero) : '',
@@ -193,7 +197,7 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
     }
 
     async function syncAutor() {
-        if (!isRascunho || !autorPrincipal) return;
+        if (!canEditAutor || !autorPrincipal) return;
 
         const inicial = autorInicialRef.current;
         const autorAlterado =
@@ -236,7 +240,9 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                 numero: numeroResolvido.numero,
                 anoId: numeroResolvido.anoId,
             };
+        }
 
+        if (canEditAutor) {
             const autorError = validateAutorSelecionado(autorPrincipal);
             if (autorError) {
                 showApiError(new Error(autorError));
@@ -269,7 +275,7 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                 ...(numeroUpdate ?? {}),
             });
 
-            if (isRascunho) {
+            if (canEditAutor) {
                 await syncAutor();
             }
 
@@ -425,7 +431,7 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                                     onChange={setAutorPrincipal}
                                     labelTipo="Tipo de Autor *"
                                     labelAutor="Autor *"
-                                    disabled={!isRascunho}
+                                    disabled={!canEditAutor}
                                 />
                             </div>
 
@@ -473,8 +479,9 @@ export function MateriaEditDialog({ materia, onClose, onSaved }: Props) {
                     </div>
                     {canEditConteudo ? (
                         <p className="text-sm text-color-secondary m-0 mb-2">
-                            O texto original em PDF será regenerado automaticamente ao
-                            salvar, com base na ementa e demais dados da matéria.
+                            {isAdminStaff && !isRascunho && !isProtocolada
+                                ? 'Correção administrativa: ao salvar, o PDF será regenerado com ementa, justificativa e autoria atualizadas.'
+                                : 'O texto original em PDF será regenerado automaticamente ao salvar, com base na ementa e demais dados da matéria.'}
                         </p>
                     ) : (
                         <p className="text-sm text-color-secondary m-0 mb-2">
