@@ -4257,6 +4257,10 @@ body.transmissao-fs-active {
 }
 
 .parlamentar-edit-suplente-destaque {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     margin-top: 8px;
     padding: 12px 14px;
     border-radius: 10px;
@@ -7004,6 +7008,8 @@ body.sessao-painel-body {
 .p-dialog .sigl-dialog-secao > .sigl-file-upload,
 .p-dialog .sigl-dialog-secao > .enquadramento-foto,
 .p-dialog .sigl-dialog-secao > .parlamentar-edit-foto-stack,
+.p-dialog .sigl-dialog-secao > .parlamentar-edit-suplente-destaque,
+.p-dialog .sigl-dialog-secao > .suplente-exercicio-box,
 .p-dialog .sigl-dialog-secao > small,
 .p-dialog .sigl-dialog-secao > p,
 .p-dialog .sigl-dialog-secao > .p-error {

@@ -33,7 +33,7 @@ export function validatePhotoFramingFields(
     const erros: string[] = [];
     if (!inRange(input.photoPosX, 0, 100)) erros.push('photoPosX');
     if (!inRange(input.photoPosY, 0, 100)) erros.push('photoPosY');
-    if (!inRange(input.photoZoom, 1, 2.5)) erros.push('photoZoom');
+    if (!inRange(input.photoZoom, 0.85, 2.5)) erros.push('photoZoom');
     if (opts.requireConfirmed && input.photoPositionConfirmed !== true) {
         erros.push('photoPositionConfirmed');
     }

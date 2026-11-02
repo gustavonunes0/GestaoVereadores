@@ -213,7 +213,7 @@ export function EnquadramentoFoto({
                         <input
                             id="eq-zoom"
                             type="range"
-                            min={1}
+                            min={0.85}
                             max={2.5}
                             step={0.05}
                             value={value.photoZoom}
@@ -225,6 +225,9 @@ export function EnquadramentoFoto({
                                 )
                             }
                         />
+                        <small className="text-color-secondary">
+                            85% a 250% · padrão 100%
+                        </small>
                     </div>
                 </div>
 

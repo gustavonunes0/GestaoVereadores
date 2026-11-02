@@ -52,11 +52,11 @@ export class UpdateParliamentarianDto {
     @Max(100)
     photoPosY?: number;
 
-    @ApiPropertyOptional({ description: 'Zoom do enquadramento (1–2.5)' })
+    @ApiPropertyOptional({ description: 'Zoom do enquadramento (0.85–2.5)' })
     @IsOptional()
     @Type(() => Number)
     @IsNumber()
-    @Min(1)
+    @Min(0.85)
     @Max(2.5)
     photoZoom?: number;
 

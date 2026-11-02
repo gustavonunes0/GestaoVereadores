@@ -36,7 +36,7 @@ export class UpdateMeuPerfilDto {
     @IsOptional()
     @Type(() => Number)
     @IsNumber()
-    @Min(1)
+    @Min(0.85)
     @Max(2.5)
     photoZoom?: number;
 

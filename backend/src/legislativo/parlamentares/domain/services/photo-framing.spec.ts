@@ -26,7 +26,7 @@ describe('photo-framing', () => {
                 {
                     photoPosX: -1,
                     photoPosY: 101,
-                    photoZoom: 0.5,
+                    photoZoom: 0.5, // abaixo de 0.85
                     photoPositionConfirmed: false,
                 },
                 { requireConfirmed: true },
