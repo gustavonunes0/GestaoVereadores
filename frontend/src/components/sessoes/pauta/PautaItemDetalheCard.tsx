@@ -88,7 +88,7 @@ export const PautaItemDetalheCard = forwardRef<HTMLElement, PautaItemDetalheCard
             podeDeliberar && podeAbrirVotacaoNoItem(itemAcoes, statusSessao);
         const exibirFecharVotacao =
             podeDeliberar && podeFecharVotacaoNoItem(itemAcoes, statusSessao);
-        const exibirNoPainel = podeDeliberar && publicada && !!onExibirNoPainel;
+        const exibirNoPainel = publicada && !!onExibirNoPainel;
 
         async function confirmarRemocao() {
             setRemovendo(true);
@@ -175,6 +175,7 @@ export const PautaItemDetalheCard = forwardRef<HTMLElement, PautaItemDetalheCard
                                     icon="pi pi-stop-circle"
                                     size="small"
                                     severity="danger"
+                                    className="pauta-fechar-votacao-btn"
                                     onClick={onFecharVotacao}
                                 />
                             )}

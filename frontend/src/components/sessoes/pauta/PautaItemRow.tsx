@@ -67,7 +67,7 @@ export function PautaItemRow({
         podeDeliberar && podeAbrirVotacaoNoItem(item, statusSessao);
     const exibirFecharVotacao =
         podeDeliberar && podeFecharVotacaoNoItem(item, statusSessao);
-    const exibirNoPainel = podeDeliberar && publicada && !!onExibirNoPainel;
+    const exibirNoPainel = publicada && !!onExibirNoPainel;
     const emVotacao =
         item.materia?.status === 'EM_VOTACAO' ||
         (item.votacao && !item.votacao.finalizada && !item.votacao.resultado);
@@ -178,9 +178,9 @@ export function PautaItemRow({
                         {exibirFecharVotacao && (
                             <Button
                                 icon="pi pi-stop-circle"
-                                text
                                 size="small"
                                 severity="danger"
+                                className="pauta-fechar-votacao-btn pauta-fechar-votacao-btn--icon"
                                 aria-label="Fechar votação"
                                 tooltip="Fechar votação"
                                 tooltipOptions={SIGL_TOOLTIP_TOP}

@@ -3,7 +3,6 @@ import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
 import { Dialog } from 'primereact/dialog';
 import { InputNumber } from 'primereact/inputnumber';
-import { Message } from 'primereact/message';
 import { sessoesApi } from '../../../api/legislative/sessoes.api';
 import { useAppToast } from '../../../hooks/useAppToast';
 import type { VotacaoPlacarEvent } from '../../../types/legislative';
@@ -155,12 +154,13 @@ export function FecharVotacaoDialog({
     }
 
     const footer = (
-        <div className="flex justify-content-end gap-2">
+        <div className="fechar-votacao-dialog__footer">
             <Button label="Cancelar" severity="secondary" onClick={onClose} disabled={saving} />
             <Button
                 label="Fechar votação"
                 icon="pi pi-stop-circle"
                 severity="danger"
+                className="pauta-fechar-votacao-btn"
                 loading={saving}
                 disabled={loading || !detalhe?.votacao}
                 onClick={() => void confirmar()}
@@ -174,58 +174,69 @@ export function FecharVotacaoDialog({
             visible
             onHide={onClose}
             style={{ width: 'min(92vw, 480px)' }}
+            className="fechar-votacao-dialog"
             footer={footer}
             modal
         >
             {loading ? (
-                <div className="flex align-items-center gap-2 text-sm">
+                <div className="fechar-votacao-dialog__loading">
                     <i className="pi pi-spin pi-spinner" aria-hidden />
                     Carregando votação…
                 </div>
             ) : (
-                <div className="flex flex-column gap-3">
-                    <p className="mt-0 mb-0 text-sm">
+                <div className="fechar-votacao-dialog__body">
+                    <p className="fechar-votacao-dialog__intro">
                         Encerrar votação de <strong>{rotulo}</strong>. Novos votos não poderão
                         ser registrados.
                     </p>
 
                     {!entradaManual && (
-                        <Message
-                            severity="info"
-                            text={`Placar atual — Sim: ${simAtual} · Não: ${naoAtual} · Abstenções: ${abstAtual}`}
-                        />
+                        <div className="fechar-votacao-dialog__alert fechar-votacao-dialog__alert--info">
+                            <i className="pi pi-info-circle" aria-hidden />
+                            <span>
+                                Placar atual — Sim: {simAtual} · Não: {naoAtual} · Abstenções:{' '}
+                                {abstAtual}
+                            </span>
+                        </div>
                     )}
 
                     {placarZerado ? (
-                        <Message
-                            severity="warn"
-                            text="Nenhum voto individual registrado. Ao fechar, o resultado será empate (adiado) em maioria simples, ou rejeição conforme o quórum exigido."
-                        />
+                        <div className="fechar-votacao-dialog__alert fechar-votacao-dialog__alert--warn">
+                            <i className="pi pi-exclamation-triangle" aria-hidden />
+                            <span>
+                                Nenhum voto individual registrado. Ao fechar, o resultado será
+                                empate (adiado) em maioria simples, ou rejeição conforme o quórum
+                                exigido.
+                            </span>
+                        </div>
                     ) : null}
 
                     {entradaManual && (
-                        <div className="grid p-fluid">
-                            <div className="col-4">
-                                <label className="text-sm">Votos SIM</label>
+                        <div className="fechar-votacao-dialog__manual">
+                            <div className="fechar-votacao-dialog__field">
+                                <label htmlFor="fv-sim">Votos SIM</label>
                                 <InputNumber
+                                    inputId="fv-sim"
                                     value={votosSim}
                                     onValueChange={(e) => setVotosSim(e.value ?? 0)}
                                     min={0}
                                     className="w-full"
                                 />
                             </div>
-                            <div className="col-4">
-                                <label className="text-sm">Votos NÃO</label>
+                            <div className="fechar-votacao-dialog__field">
+                                <label htmlFor="fv-nao">Votos NÃO</label>
                                 <InputNumber
+                                    inputId="fv-nao"
                                     value={votosNao}
                                     onValueChange={(e) => setVotosNao(e.value ?? 0)}
                                     min={0}
                                     className="w-full"
                                 />
                             </div>
-                            <div className="col-4">
-                                <label className="text-sm">Abstenções</label>
+                            <div className="fechar-votacao-dialog__field">
+                                <label htmlFor="fv-abs">Abstenções</label>
                                 <InputNumber
+                                    inputId="fv-abs"
                                     value={abstencoes}
                                     onValueChange={(e) => setAbstencoes(e.value ?? 0)}
                                     min={0}
@@ -233,27 +244,29 @@ export function FecharVotacaoDialog({
                                 />
                             </div>
                             {votosSim === 0 && votosNao === 0 ? (
-                                <div className="col-12">
-                                    <Message
-                                        severity="warn"
-                                        text="Placar zerado: o resultado será empate (matéria adiada na pauta)."
-                                    />
+                                <div className="fechar-votacao-dialog__alert fechar-votacao-dialog__alert--warn fechar-votacao-dialog__alert--full">
+                                    <i className="pi pi-exclamation-triangle" aria-hidden />
+                                    <span>
+                                        Placar zerado: o resultado será empate (matéria adiada na
+                                        pauta).
+                                    </span>
                                 </div>
                             ) : null}
                         </div>
                     )}
 
                     {!entradaManual && simAtual === naoAtual && simAtual > 0 && (
-                        <div className="flex align-items-center gap-2">
+                        <label
+                            htmlFor="voto-qualidade"
+                            className="fechar-votacao-dialog__check"
+                        >
                             <Checkbox
                                 inputId="voto-qualidade"
                                 checked={votoQualidade}
                                 onChange={(e) => setVotoQualidade(!!e.checked)}
                             />
-                            <label htmlFor="voto-qualidade" className="text-sm cursor-pointer">
-                                Voto de qualidade do presidente (aprovar em empate)
-                            </label>
-                        </div>
+                            <span>Voto de qualidade do presidente (aprovar em empate)</span>
+                        </label>
                     )}
                 </div>
             )}

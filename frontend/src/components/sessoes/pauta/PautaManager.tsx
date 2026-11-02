@@ -11,6 +11,10 @@ import { PublicarPautaDialog } from './PublicarPautaDialog';
 import { AbrirVotacaoDialog } from './AbrirVotacaoDialog';
 import { FecharVotacaoDialog } from './FecharVotacaoDialog';
 import { enviarItemParaPainel, painelUrl } from '../../../utils/sessaoPainelChannel';
+import {
+    podeControlarPainelSessao,
+    podeDeliberarSessao,
+} from '../../../utils/sessaoPainelControle';
 import { SIGL_TOOLTIP_BOTTOM } from '../../../utils/primeTooltip';
 
 interface Props {
@@ -51,16 +55,20 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
     const pautaPublicada = itens.some((i) => i.status === 'PUBLICADA' || i.status === 'ENCERRADA');
     const somenteLeitura = !canWrite || ['ENCERRADA', 'CANCELADA'].includes(sessao.statusSessao);
     const podePublicar = sessao.statusSessao === 'AGENDADA';
-    const podeDeliberar = canManageSessao && sessao.statusSessao === 'ABERTA';
+    const podeDeliberar = podeDeliberarSessao(canManageSessao, sessao.statusSessao);
+    const podeControlarPainel = podeControlarPainelSessao(
+        canManageSessao,
+        sessao.statusSessao,
+    );
 
     const selecionarItem = useCallback(
         (itemId: string) => {
             setSelectedId(itemId);
-            // Spec 018: com sessão aberta, persiste e sincroniza o painel automaticamente
+            // Sempre atualiza o monitor local; persiste no servidor só com sessão aberta/suspensa.
+            enviarItemParaPainel(sessao.id, itemId);
             if (sessao.statusSessao === 'ABERTA' || sessao.statusSessao === 'SUSPENSA') {
                 void sessoesApi
                     .setPautaItemAtual(sessao.id, itemId)
-                    .then(() => enviarItemParaPainel(sessao.id, itemId))
                     .catch((err) => showApiError(err));
             }
         },
@@ -145,7 +153,7 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
                         {pautaPublicada && (
                             <span className="badge badge--success">Publicada</span>
                         )}
-                        {podeDeliberar && (
+                        {podeControlarPainel && (
                             <Button
                                 icon="pi pi-desktop"
                                 size="small"
@@ -258,7 +266,9 @@ export function PautaManager({ sessao, votacaoSyncKey, onVotacaoFechada }: Props
                     if (item) setFecharVotacaoItem(item);
                 }}
                 onExibirNoPainel={
-                    selectedId ? () => exibirItemNoPainel(selectedId) : undefined
+                    podeControlarPainel && selectedId
+                        ? () => exibirItemNoPainel(selectedId)
+                        : undefined
                 }
             />
 

@@ -188,7 +188,11 @@ function PainelMesaDiretora({
                                                 {m.party}
                                             </span>
                                         ) : null}
-                                        <span className="sessao-painel-inicio__mesa-status">
+                                        <span
+                                            className={`sessao-painel-inicio__mesa-status sessao-painel-inicio__mesa-status--${
+                                                m.status === 'ausente' ? 'ausente' : 'presente'
+                                            }`}
+                                        >
                                             {m.status === 'ausente' ? 'Ausente' : 'Presente'}
                                         </span>
                                     </span>
@@ -228,20 +232,24 @@ function PainelPresencaVereadores({
     const baseTotais = elencoTotais ?? vereadores;
     const presentes = baseTotais.filter((v) => v.status !== 'ausente').length;
     const ausentes = baseTotais.length - presentes;
+    const composicao = baseTotais.length;
 
     return (
         <section
             className="sessao-painel-card sessao-painel-presenca"
             aria-label="Presença dos vereadores"
         >
-            <header className="sessao-painel-card__cabecalho">
+            <header className="sessao-painel-card__cabecalho sessao-painel-presenca__cabecalho">
                 <div className="sessao-painel-etiqueta">Presença dos vereadores</div>
                 <div className="sessao-painel-presenca__totais">
+                    <span className="sessao-painel-presenca__total">
+                        Composição: <strong>{composicao}</strong>
+                    </span>
                     <span className="sessao-painel-presenca__total sessao-painel-presenca__total--presente">
-                        <strong>{presentes}</strong> presentes
+                        Presentes: <strong>{presentes}</strong>
                     </span>
                     <span className="sessao-painel-presenca__total sessao-painel-presenca__total--ausente">
-                        <strong>{ausentes}</strong> ausentes
+                        Ausentes: <strong>{ausentes}</strong>
                     </span>
                 </div>
             </header>
@@ -266,7 +274,7 @@ function PainelPresencaVereadores({
                                     presente ? 'presente' : 'ausente'
                                 }`}
                             >
-                                <div className="sessao-painel-presenca__avatar" aria-hidden>
+                                <div className="sessao-painel-presenca__foto" aria-hidden>
                                     {photo ? (
                                         <img
                                             src={photo}
@@ -278,20 +286,32 @@ function PainelPresencaVereadores({
                                             })}
                                         />
                                     ) : (
-                                        <span>{iniciaisDe(v.name) || '—'}</span>
-                                    )}
-                                </div>
-                                <div className="sessao-painel-presenca__texto">
-                                    <strong className="sessao-painel-presenca__nome">{v.name}</strong>
-                                    <span className="sessao-painel-presenca__linha">
-                                        {v.party ? (
-                                            <span className="sessao-painel-presenca__partido">
-                                                {v.party}
-                                            </span>
-                                        ) : null}
-                                        <span className="sessao-painel-presenca__status">
-                                            {presente ? 'Presente' : 'Ausente'}
+                                        <span className="sessao-painel-presenca__iniciais">
+                                            {iniciaisDe(v.name) || '—'}
                                         </span>
+                                    )}
+                                    <span
+                                        className={`sessao-painel-presenca__dot sessao-painel-presenca__dot--${
+                                            presente ? 'presente' : 'ausente'
+                                        }`}
+                                        aria-hidden
+                                    />
+                                </div>
+                                <div className="sessao-painel-presenca__info">
+                                    <strong className="sessao-painel-presenca__nome">
+                                        {v.name}
+                                    </strong>
+                                    {v.party ? (
+                                        <span className="sessao-painel-presenca__partido">
+                                            {v.party}
+                                        </span>
+                                    ) : null}
+                                    <span
+                                        className={`sessao-painel-presenca__status sessao-painel-presenca__status--${
+                                            presente ? 'presente' : 'ausente'
+                                        }`}
+                                    >
+                                        {presente ? 'Presente' : 'Ausente'}
                                     </span>
                                 </div>
                             </li>

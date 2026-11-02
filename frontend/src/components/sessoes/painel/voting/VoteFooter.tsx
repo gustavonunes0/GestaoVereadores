@@ -29,7 +29,7 @@ export function VoteFooter({
                 <div className="vp-footer__counters">
                     <VoteCounter label="SIM" value={votes.sim} tone="sim" />
                     <VoteCounter label="NÃO" value={votes.nao} tone="nao" />
-                    <VoteCounter label="ABS" value={votes.abs} tone="abs" />
+                    <VoteCounter label="ABSTENÇÃO" value={votes.abs} tone="abs" />
                 </div>
             </div>
             <div className="vp-card vp-card--stats">

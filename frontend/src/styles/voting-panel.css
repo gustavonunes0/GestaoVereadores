@@ -409,6 +409,8 @@
 }
 
 .vp-row--card {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
     flex-direction: column;
     align-items: stretch;
     gap: 0;
@@ -436,10 +438,10 @@
 
 .vp-row__photo {
     position: relative;
-    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
     width: 100%;
-    /* Mock nova-ui: faixa alta; um pouco mais de altura com o placar à direita */
-    min-height: clamp(10rem, 20vh, 14rem);
+    height: 100%;
     background: #e8eef5;
     overflow: hidden;
 }
@@ -489,11 +491,13 @@
 }
 
 .vp-card--members .vp-row__info {
-    padding: 0.32rem 0.4rem 0.42rem;
+    padding: 0.28rem 0.4rem 0.34rem;
+    gap: 0.16rem;
 }
 
 .vp-card--mesa .vp-row__info {
-    padding: 0.35rem 0.4rem 0.45rem;
+    padding: 0.3rem 0.4rem 0.36rem;
+    gap: 0.16rem;
 }
 
 .vp-avatar__fallback {
@@ -540,13 +544,15 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.22rem;
+    gap: 0.18rem;
     min-width: 0;
-    flex: 0 0 auto;
     width: 100%;
-    padding: 0.4rem 0.45rem 0.5rem;
+    padding: 0.34rem 0.4rem 0.4rem;
     text-align: center;
-    background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+    background: #fff;
+    border-top: 1px solid #eef2f7;
+    /* Sempre reservado na grade do card — evita cortar o partido */
+    z-index: 1;
 }
 
 .vp-row__role {
@@ -561,12 +567,12 @@
 
 .vp-row__name {
     color: #0f172a;
-    font-size: clamp(0.7rem, 1.05vw, 0.88rem);
-    font-weight: 900;
+    font-size: clamp(0.64rem, 0.95vw, 0.8rem);
+    font-weight: 800;
     min-width: 0;
     max-width: 100%;
-    min-height: 1.2em;
-    line-height: 1.25;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
     text-transform: uppercase;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -580,16 +586,17 @@
     align-items: center;
     justify-content: center;
     font-family: var(--font-ui);
-    font-size: clamp(0.6rem, 0.9vw, 0.75rem);
-    font-weight: 900;
-    line-height: 1.2;
+    font-size: clamp(0.58rem, 0.82vw, 0.7rem);
+    font-weight: 800;
+    line-height: 1;
     color: #1e3a8a;
-    background: #bfdbfe;
-    border-radius: 0.35rem;
-    padding: 0.2rem 0.55rem;
+    background: #dbeafe;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    padding: 0.22rem 0.55rem;
     max-width: 100%;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -805,15 +812,17 @@
 .vp-counter__label {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    font-size: clamp(0.72rem, 1.15vw, 0.9rem);
+    gap: 0.4rem;
+    font-size: clamp(1.05rem, 2vw, 1.45rem);
     font-weight: 900;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
+    line-height: 1.1;
+    text-align: center;
 }
 
 .vp-counter__label .pi {
-    font-size: 0.85em;
+    font-size: 0.95em;
 }
 
 .vp-counter__value {
@@ -998,8 +1007,9 @@
         gap: 0.85rem;
     }
 
-    .vp-row__photo {
-        min-height: clamp(11rem, 22vh, 15rem);
+    .vp-row--card .vp-row__photo {
+        /* Grid do card reserva o rodapé (nome + partido); foto só preenche o resto */
+        min-height: 0;
     }
 
     .vp-header__title {

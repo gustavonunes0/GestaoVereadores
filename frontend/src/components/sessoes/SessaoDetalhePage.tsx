@@ -26,7 +26,6 @@ import { PedidosPalavraPanel } from './PedidosPalavraPanel';
 import { AtaTab } from './ata/AtaTab';
 import { HistoricoTimeline } from './historico/HistoricoTimeline';
 import { RegistrarVotoDialog } from './RegistrarVotoDialog';
-import { FecharVotacaoDialog } from './pauta/FecharVotacaoDialog';
 
 const STATUS_BADGE: Record<StatusSessao, { className: string; icon: string; label: string }> = {
     AGENDADA:  { className: 'badge--info',    icon: 'pi pi-calendar',    label: 'Agendada'  },
@@ -48,12 +47,11 @@ export function SessaoDetalhePage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { showApiError, showToast } = useAppToast();
-    const { canVotar, canManageSessao, parliamentarianId } = usePermissions();
+    const { canVotar, parliamentarianId } = usePermissions();
 
     const [sessao, setSessao] = useState<SessaoPlenariaDetalhe | null>(null);
     const [loading, setLoading] = useState(true);
     const [dialogVoto, setDialogVoto] = useState(false);
-    const [dialogFecharVotacao, setDialogFecharVotacao] = useState(false);
     const ultimaVotacaoNotificada = useRef<string | null>(null);
 
     const {
@@ -122,7 +120,6 @@ export function SessaoDetalhePage() {
         if (!votacaoAberta) {
             ultimaVotacaoNotificada.current = null;
             setDialogVoto(false);
-            setDialogFecharVotacao(false);
         }
     }, [votacaoAberta]);
 
@@ -154,13 +151,6 @@ export function SessaoDetalhePage() {
     const faseCfg = FASE_BADGE[faseExibida];
     const placarAtual =
         placar?.votacaoId === votacaoAberta?.votacaoId ? placar : null;
-    const podeRegistrarVoto =
-        podeVotarNaSessao &&
-        !!parliamentarianId &&
-        !!votacaoAberta?.aceitaVotoIndividual &&
-        sessao.statusSessao === 'ABERTA';
-    const podeFecharVotacao =
-        canManageSessao && !!votacaoAberta && sessao.statusSessao === 'ABERTA';
 
     return (
         <div className="sessao-detalhe-page sessao-detalhe-page--lex">
@@ -218,56 +208,6 @@ export function SessaoDetalhePage() {
                     </div>
                 </div>
             </header>
-
-            {votacaoAberta && (
-                <div className="sessao-votacao-banner">
-                    <div className="sessao-votacao-banner__info">
-                        <span>
-                            <strong>Votação em andamento:</strong> {votacaoAberta.titulo}
-                        </span>
-                        {votacaoAberta.ementa && (
-                            <span className="sessao-votacao-banner__ementa">
-                                {votacaoAberta.ementa}
-                            </span>
-                        )}
-                        <span>
-                            SIM:{' '}
-                            <strong className="voto-cor--sim">
-                                {placarAtual?.votosSim ?? votacaoAberta.votosSim}
-                            </strong>
-                            {' | '}
-                            NÃO:{' '}
-                            <strong className="voto-cor--nao">
-                                {placarAtual?.votosNao ?? votacaoAberta.votosNao}
-                            </strong>
-                            {' | '}
-                            ABSTENÇÃO:{' '}
-                            <strong className="voto-cor--abstencao">
-                                {placarAtual?.abstencoes ?? votacaoAberta.abstencoes}
-                            </strong>
-                        </span>
-                    </div>
-                    <div className="sessao-votacao-banner__acoes flex gap-2">
-                        {podeFecharVotacao && (
-                            <Button
-                                label="Fechar votação"
-                                icon="pi pi-stop-circle"
-                                size="small"
-                                severity="danger"
-                                onClick={() => setDialogFecharVotacao(true)}
-                            />
-                        )}
-                        {podeRegistrarVoto && (
-                            <Button
-                                label="Registrar meu voto"
-                                icon="pi pi-check-circle"
-                                size="small"
-                                onClick={() => setDialogVoto(true)}
-                            />
-                        )}
-                    </div>
-                </div>
-            )}
 
             <TabView className="sessao-detalhe-tabview sigl-tabview-menu">
                 <TabPanel
@@ -381,17 +321,6 @@ export function SessaoDetalhePage() {
                     titulo={votacaoAberta.titulo}
                     onClose={() => setDialogVoto(false)}
                     onSaved={() => void syncVotacaoFromPauta()}
-                />
-            )}
-
-            {dialogFecharVotacao && votacaoAberta && (
-                <FecharVotacaoDialog
-                    sessaoId={sessao.id}
-                    item={{ id: votacaoAberta.pautaItemId }}
-                    placar={placarAtual}
-                    titulo={votacaoAberta.titulo}
-                    onClose={() => setDialogFecharVotacao(false)}
-                    onFechada={() => void syncVotacaoFromPauta()}
                 />
             )}
         </div>
