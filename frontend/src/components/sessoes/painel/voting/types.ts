@@ -20,6 +20,9 @@ export interface Councilor {
     status: CouncilorStatus;
     side: 'left' | 'right';
     photoUrl?: string | null;
+    photoPosX?: number;
+    photoPosY?: number;
+    photoZoom?: number;
 }
 
 export interface VoteTotals {

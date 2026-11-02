@@ -22,6 +22,10 @@ import {
     PoliticalPartyRemovedForParliamentarianError,
 } from '../errors/parliamentarian.errors';
 import { ParliamentarianViewModel } from '../view-models/parliamentarian.view-model';
+import {
+    assertPhotoFraming,
+    defaultPhotoFraming,
+} from '../../domain/services/photo-framing';
 
 @Injectable()
 export class CreateParliamentarianUseCase {
@@ -50,11 +54,28 @@ export class CreateParliamentarianUseCase {
             );
         }
 
+        const hasPhoto = Boolean(dto.photoUrl?.trim());
+        const framing = hasPhoto
+            ? assertPhotoFraming(
+                  {
+                      photoPosX: dto.photoPosX,
+                      photoPosY: dto.photoPosY,
+                      photoZoom: dto.photoZoom,
+                      photoPositionConfirmed: dto.photoPositionConfirmed,
+                  },
+                  { requireConfirmed: true },
+              )
+            : defaultPhotoFraming();
+
         const saved = await this.parliamentarianRepository.create({
             tenantId,
             parliamentaryName: dto.parliamentaryName.trim(),
             officeNumber: dto.officeNumber ?? null,
             photoUrl: dto.photoUrl ?? null,
+            photoPosX: framing.photoPosX,
+            photoPosY: framing.photoPosY,
+            photoZoom: framing.photoZoom,
+            photoPositionConfirmed: framing.photoPositionConfirmed,
             biography: dto.biography ?? null,
         });
 

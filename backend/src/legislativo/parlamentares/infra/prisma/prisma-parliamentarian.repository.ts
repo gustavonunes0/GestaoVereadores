@@ -116,6 +116,10 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
                 parliamentaryName: data.parliamentaryName,
                 officeNumber: data.officeNumber ?? null,
                 photoUrl: data.photoUrl ?? null,
+                photoPosX: data.photoPosX ?? 50,
+                photoPosY: data.photoPosY ?? 30,
+                photoZoom: data.photoZoom ?? 1,
+                photoPositionConfirmed: data.photoPositionConfirmed ?? false,
                 biography: data.biography ?? null,
             },
             include: includeRelations,
@@ -146,6 +150,14 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
                     legislatureId: query.legislatureId,
                 },
             };
+        }
+        if (query.fotoPendente === true) {
+            where.AND = [
+                ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+                { photoUrl: { not: null } },
+                { NOT: { photoUrl: '' } },
+                { photoPositionConfirmed: false },
+            ];
         }
         if (query.search?.trim()) {
             const term = query.search.trim();
@@ -329,6 +341,18 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
                 ...(data.photoUrl !== undefined
                     ? { photoUrl: data.photoUrl }
                     : {}),
+                ...(data.photoPosX !== undefined
+                    ? { photoPosX: data.photoPosX }
+                    : {}),
+                ...(data.photoPosY !== undefined
+                    ? { photoPosY: data.photoPosY }
+                    : {}),
+                ...(data.photoZoom !== undefined
+                    ? { photoZoom: data.photoZoom }
+                    : {}),
+                ...(data.photoPositionConfirmed !== undefined
+                    ? { photoPositionConfirmed: data.photoPositionConfirmed }
+                    : {}),
                 ...(data.biography !== undefined
                     ? { biography: data.biography }
                     : {}),
@@ -407,6 +431,10 @@ export class PrismaParliamentarianRepository extends ParliamentarianRepository {
                 parliamentaryName: row.parliamentaryName,
                 officeNumber: row.officeNumber,
                 photoUrl: row.photoUrl,
+                photoPosX: Number(row.photoPosX),
+                photoPosY: Number(row.photoPosY),
+                photoZoom: Number(row.photoZoom),
+                photoPositionConfirmed: row.photoPositionConfirmed,
                 biography: row.biography,
                 status: row.status as ParliamentarianStatus,
                 isRemoved: row.isRemoved,

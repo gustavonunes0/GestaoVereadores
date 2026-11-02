@@ -16,12 +16,18 @@ import {
     resolveParlamentarPhotoUrl,
 } from './parlamentar-photo';
 import {
+    defaultEnquadramento,
+    EnquadramentoFoto,
+    type EnquadramentoFotoValue,
+} from './EnquadramentoFoto';
+import {
     registrarExercicioSuplente,
     SuplenteExercicioFields,
     suplenteExercicioInicial,
     suplenteExercicioValido,
     type SuplenteExercicioValue,
 } from './substituicoes/SuplenteExercicioFields';
+import { ApiError } from '../../api/client';
 
 type Partido = { id: string; name: string; acronym: string };
 type Legislatura = {
@@ -59,7 +65,22 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
     const [periodoMandato, setPeriodoMandato] = useState<[Date | null, Date | null]>([null, null]);
     const [statusAcesso, setStatusAcesso] = useState<ParliamentarianUserStatus>('ACTIVE');
     const [photoValue, setPhotoValue] = useState<File | string | null>(null);
+    const [enquadramento, setEnquadramento] = useState<EnquadramentoFotoValue>(
+        defaultEnquadramento(),
+    );
+    const [enquadramentoError, setEnquadramentoError] = useState<string | null>(null);
     const [exercicio, setExercicio] = useState<SuplenteExercicioValue>(suplenteExercicioInicial);
+
+    const photoPreviewSrc = useMemo(() => {
+        if (photoValue instanceof File) return URL.createObjectURL(photoValue);
+        if (typeof photoValue === 'string' && photoValue.trim()) return photoValue;
+        return null;
+    }, [photoValue]);
+
+    useEffect(() => {
+        if (!(photoValue instanceof File) || !photoPreviewSrc) return;
+        return () => URL.revokeObjectURL(photoPreviewSrc);
+    }, [photoValue, photoPreviewSrc]);
 
     useEffect(() => {
         apiList<Legislatura>(API_PATHS.legislaturas, { limit: 50 })
@@ -121,6 +142,9 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
         [partidos],
     );
 
+    const fotoOk =
+        Boolean(photoPreviewSrc) && enquadramento.photoPositionConfirmed;
+
     const canSubmit =
         cpfValido &&
         senhaValida &&
@@ -129,13 +153,19 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
         nomeValido &&
         !!legislaturaId &&
         periodoMandatoValido &&
+        fotoOk &&
         (condicao !== 'SUPLENTE' || suplenteExercicioValido(exercicio));
 
     async function handleSubmit() {
         if (!canSubmit) return;
         setSaving(true);
+        setEnquadramentoError(null);
         try {
             const photoUrl = await resolveParlamentarPhotoUrl(photoValue);
+            if (!photoUrl) {
+                setEnquadramentoError('Envie e confirme o enquadramento da foto.');
+                return;
+            }
 
             const created = await parlamentaresApi.create({
                 cpf: normalizeCpf(cpf),
@@ -144,7 +174,11 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                 ...(email.trim() ? { email: email.trim().toLowerCase() } : {}),
                 ...(officeNumber.trim() ? { officeNumber: officeNumber.trim() } : {}),
                 ...(politicalPartyId ? { politicalPartyId } : {}),
-                ...(photoUrl ? { photoUrl } : {}),
+                photoUrl,
+                photoPosX: enquadramento.photoPosX,
+                photoPosY: enquadramento.photoPosY,
+                photoZoom: enquadramento.photoZoom,
+                photoPositionConfirmed: true,
             });
 
             await parlamentaresApi.createMandato(created.id, {
@@ -175,6 +209,9 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
             onSaved();
             onClose();
         } catch (err) {
+            if (err instanceof ApiError && err.status === 422) {
+                setEnquadramentoError('Defina o enquadramento da foto');
+            }
             showApiError(err);
         } finally {
             setSaving(false);
@@ -412,14 +449,28 @@ export function ParlamentarCreateDialog({ onClose, onSaved }: Props) {
                     <div className="sigl-filtro-campo">
                         <FileUpload
                             id="pc-foto"
-                            label="Foto do parlamentar"
+                            label="Foto do parlamentar *"
                             accept={PARLAMENTAR_PHOTO_ACCEPT}
                             value={photoValue}
-                            onChange={setPhotoValue}
+                            onChange={(v) => {
+                                setPhotoValue(v);
+                                setEnquadramento(defaultEnquadramento());
+                                setEnquadramentoError(null);
+                            }}
                         />
                         <small className="text-color-secondary">
-                            JPEG, PNG ou WebP · máx. 2 MB. Exibida na listagem e perfil.
+                            JPEG, PNG ou WebP · máx. 2 MB. Obrigatório marcar o rosto e confirmar.
                         </small>
+                        <EnquadramentoFoto
+                            photoSrc={photoPreviewSrc}
+                            value={enquadramento}
+                            onChange={(next) => {
+                                setEnquadramento(next);
+                                setEnquadramentoError(null);
+                            }}
+                            error={enquadramentoError}
+                            disabled={saving}
+                        />
                     </div>
                     <div className="sigl-dialog-grid sigl-dialog-grid-2">
                         <Dropdown

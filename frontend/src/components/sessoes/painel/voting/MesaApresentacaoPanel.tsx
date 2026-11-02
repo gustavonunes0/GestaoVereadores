@@ -1,5 +1,6 @@
 import { useClock } from './useClock';
 import { ROLE_LABEL_APRESENTACAO, type Councilor } from './types';
+import { estiloFoto } from '../../../../utils/estiloFoto';
 import { resolveMateriaTextoOriginalUrl } from '../../../../utils/materiaDisplay';
 
 const MESES_CURTO = [
@@ -26,10 +27,16 @@ function resolvePhoto(url?: string | null): string | null {
 function Avatar({
     name,
     photoUrl,
+    photoPosX,
+    photoPosY,
+    photoZoom,
     size,
 }: {
     name: string;
     photoUrl?: string | null;
+    photoPosX?: number | null;
+    photoPosY?: number | null;
+    photoZoom?: number | null;
     size: 'lg' | 'md';
 }) {
     const src = resolvePhoto(photoUrl);
@@ -39,11 +46,12 @@ function Avatar({
         .slice(0, 2)
         .map((p) => p[0]?.toUpperCase() ?? '')
         .join('');
+    const framing = estiloFoto({ photoPosX, photoPosY, photoZoom });
 
     return (
         <div className={`mesa-avatar mesa-avatar--${size}`} aria-hidden={!src}>
             {src ? (
-                <img src={src} alt="" className="mesa-avatar__img" />
+                <img src={src} alt="" className="mesa-avatar__img" style={framing} />
             ) : (
                 <span className="mesa-avatar__fallback">{initials || '—'}</span>
             )}
@@ -116,6 +124,9 @@ export function MesaApresentacaoPanel({
                             <Avatar
                                 name={president.name}
                                 photoUrl={president.photoUrl}
+                                photoPosX={president.photoPosX}
+                                photoPosY={president.photoPosY}
+                                photoZoom={president.photoZoom}
                                 size="lg"
                             />
                             <span className="mesa-apresentacao__cargo">Presidente</span>
@@ -141,7 +152,14 @@ export function MesaApresentacaoPanel({
                     ) : (
                         demais.map((m) => (
                             <li key={m.id} className="mesa-apresentacao__membro">
-                                <Avatar name={m.name} photoUrl={m.photoUrl} size="md" />
+                                <Avatar
+                                    name={m.name}
+                                    photoUrl={m.photoUrl}
+                                    photoPosX={m.photoPosX}
+                                    photoPosY={m.photoPosY}
+                                    photoZoom={m.photoZoom}
+                                    size="md"
+                                />
                                 <div className="mesa-apresentacao__membro-texto">
                                     <span className="mesa-apresentacao__cargo">
                                         {roleLabel(m)}

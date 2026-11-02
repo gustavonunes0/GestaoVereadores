@@ -1,4 +1,16 @@
-import { IsEmail, IsOptional, IsString, IsUrl, MaxLength, MinLength } from 'class-validator';
+import {
+    IsBoolean,
+    IsEmail,
+    IsNumber,
+    IsOptional,
+    IsString,
+    IsUrl,
+    Max,
+    MaxLength,
+    Min,
+    MinLength,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateMeuPerfilDto {
     @IsOptional() @IsString() @MinLength(3) @MaxLength(100)
@@ -6,6 +18,31 @@ export class UpdateMeuPerfilDto {
 
     @IsOptional() @IsUrl()
     photoUrl?: string;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @Min(0)
+    @Max(100)
+    photoPosX?: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @Min(0)
+    @Max(100)
+    photoPosY?: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @Min(1)
+    @Max(2.5)
+    photoZoom?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    photoPositionConfirmed?: boolean;
 
     @IsOptional() @IsEmail()
     email?: string;

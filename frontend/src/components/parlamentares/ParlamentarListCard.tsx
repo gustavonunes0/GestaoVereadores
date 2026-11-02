@@ -98,6 +98,13 @@ export function ParlamentarListCard({ row }: Props) {
                             }
                             className="text-xs"
                         />
+                        {row.photoUrl && !row.photoPositionConfirmed ? (
+                            <Tag
+                                value="Foto pendente de ajuste"
+                                severity="warning"
+                                className="text-xs"
+                            />
+                        ) : null}
                     </div>
                 </div>
                 <p className="parlamentar-list-card__line">{email ?? EMPTY}</p>

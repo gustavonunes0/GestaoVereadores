@@ -344,6 +344,14 @@ model Parliamentarian {
     parliamentaryName String
     officeNumber      String?
     photoUrl          String?
+    /** Ponto focal horizontal da foto (0–100). */
+    photoPosX Decimal @default(50) @db.Decimal(5, 2)
+    /** Ponto focal vertical da foto (0–100). */
+    photoPosY Decimal @default(30) @db.Decimal(5, 2)
+    /** Zoom do enquadramento (1.00–2.50). */
+    photoZoom Decimal @default(1) @db.Decimal(4, 2)
+    /** true quando o cadastrador confirmou o enquadramento na tela. */
+    photoPositionConfirmed Boolean @default(false)
     biography         String?
 
     status ParliamentarianStatus @default(ACTIVE)

@@ -30,7 +30,9 @@ export function StatusDot({
         >
             {voted ? (
                 <i className="pi pi-check vp-dot__check" aria-hidden />
-            ) : null}
+            ) : (
+                <i className="pi pi-circle vp-dot__idle" aria-hidden />
+            )}
         </span>
     );
 }

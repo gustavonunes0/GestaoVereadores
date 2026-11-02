@@ -23,6 +23,7 @@ import './index.css';
 import './styles/lex-sessao.css';
 import './styles/lex-presenca.css';
 import './styles/voting-panel.css';
+import './styles/enquadramento-foto.css';
 
 import App from './App';
 import { reloadForStaleChunk } from './app/routes/chunk-reload';

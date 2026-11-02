@@ -1,12 +1,17 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
+    IsBoolean,
     IsEnum,
+    IsNumber,
     IsOptional,
     IsString,
     IsUUID,
+    Max,
+    Min,
     MinLength,
     ValidateIf,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ParliamentarianStatus } from '../../domain/enums/parliamentarian-status.enum';
 import { CondicaoMandato } from '../../mandatos/domain/enums/condicao-mandato.enum';
 
@@ -30,6 +35,35 @@ export class UpdateParliamentarianDto {
     @IsOptional()
     @IsString()
     photoUrl?: string;
+
+    @ApiPropertyOptional({ description: 'Ponto focal X (0–100)' })
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @Min(0)
+    @Max(100)
+    photoPosX?: number;
+
+    @ApiPropertyOptional({ description: 'Ponto focal Y (0–100)' })
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @Min(0)
+    @Max(100)
+    photoPosY?: number;
+
+    @ApiPropertyOptional({ description: 'Zoom do enquadramento (1–2.5)' })
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @Min(1)
+    @Max(2.5)
+    photoZoom?: number;
+
+    @ApiPropertyOptional({ description: 'Confirmação do enquadramento' })
+    @IsOptional()
+    @IsBoolean()
+    photoPositionConfirmed?: boolean;
 
     @ApiPropertyOptional()
     @IsOptional()

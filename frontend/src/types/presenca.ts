@@ -14,6 +14,10 @@ export interface PresencaParlamentar {
     gabinete?: string;
     cargoMesa?: string;
     fotoUrl?: string;
+    photoPosX?: number;
+    photoPosY?: number;
+    photoZoom?: number;
+    photoPositionConfirmed?: boolean;
     presente: boolean;
     situacao?: SituacaoPresencaValor;
     origem: OrigemPresenca;

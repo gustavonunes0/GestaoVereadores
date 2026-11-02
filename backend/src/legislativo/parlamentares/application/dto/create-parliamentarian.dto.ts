@@ -1,13 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+    IsBoolean,
     IsEmail,
     IsNotEmpty,
+    IsNumber,
     IsOptional,
     IsString,
     IsUUID,
     Matches,
+    Max,
+    Min,
     MinLength,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateParliamentarianDto {
     @ApiProperty({ example: '123.456.789-09' })
@@ -46,6 +51,35 @@ export class CreateParliamentarianDto {
     @IsOptional()
     @IsString()
     photoUrl?: string;
+
+    @ApiPropertyOptional({ description: 'Ponto focal X (0–100)' })
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @Min(0)
+    @Max(100)
+    photoPosX?: number;
+
+    @ApiPropertyOptional({ description: 'Ponto focal Y (0–100)' })
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @Min(0)
+    @Max(100)
+    photoPosY?: number;
+
+    @ApiPropertyOptional({ description: 'Zoom do enquadramento (1–2.5)' })
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @Min(1)
+    @Max(2.5)
+    photoZoom?: number;
+
+    @ApiPropertyOptional({ description: 'Confirmação do enquadramento' })
+    @IsOptional()
+    @IsBoolean()
+    photoPositionConfirmed?: boolean;
 
     @ApiPropertyOptional()
     @IsOptional()

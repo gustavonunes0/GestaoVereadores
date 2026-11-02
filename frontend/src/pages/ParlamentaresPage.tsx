@@ -35,7 +35,12 @@ const STATUS_OPTIONS = [
     { label: 'Inativo', value: 'INACTIVE' },
 ];
 
-const EMPTY_FILTROS = { search: '', politicalPartyId: '', status: '' };
+const FOTO_OPTIONS = [
+    { label: 'Todas', value: '' },
+    { label: 'Pendentes de ajuste', value: 'true' },
+];
+
+const EMPTY_FILTROS = { search: '', politicalPartyId: '', status: '', fotoPendente: '' };
 
 export function ParlamentaresPage() {
     const { canEdit, canDelete } = usePermissions();
@@ -87,6 +92,7 @@ export function ParlamentaresPage() {
         if (filtros.search.trim()) params.search = filtros.search.trim();
         if (filtros.politicalPartyId) params.politicalPartyId = filtros.politicalPartyId;
         if (filtros.status) params.status = filtros.status;
+        if (filtros.fotoPendente === 'true') params.fotoPendente = 'true';
         setPage(1);
         setFiltrosApplied(params);
     }
@@ -140,6 +146,17 @@ export function ParlamentaresPage() {
                             value={filtros.status}
                             options={STATUS_OPTIONS}
                             onChange={(v) => setFiltros((f) => ({ ...f, status: String(v) }))}
+                        />
+                    </div>
+                    <div className="sigl-filtro-campo">
+                        <label htmlFor="pf-foto">Foto</label>
+                        <Dropdown
+                            id="pf-foto"
+                            value={filtros.fotoPendente}
+                            options={FOTO_OPTIONS}
+                            onChange={(v) =>
+                                setFiltros((f) => ({ ...f, fotoPendente: String(v) }))
+                            }
                         />
                     </div>
                 </FiltroLayout>

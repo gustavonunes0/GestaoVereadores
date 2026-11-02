@@ -20,12 +20,19 @@ import {
     resolveParlamentarPhotoUrl,
 } from './parlamentar-photo';
 import {
+    defaultEnquadramento,
+    EnquadramentoFoto,
+    type EnquadramentoFotoValue,
+} from './EnquadramentoFoto';
+import {
     registrarExercicioSuplente,
     SuplenteExercicioFields,
     suplenteExercicioInicial,
     suplenteExercicioValido,
     type SuplenteExercicioValue,
 } from './substituicoes/SuplenteExercicioFields';
+import { ApiError } from '../../api/client';
+import { resolveMateriaTextoOriginalUrl } from '../../utils/materiaDisplay';
 
 const MIN_SENHA = 8;
 
@@ -70,6 +77,18 @@ export function ParlamentarEditDialog({
     );
     const [photoValue, setPhotoValue] = useState<File | string | null>(
         parlamentar.photoUrl ?? null,
+    );
+    const [enquadramento, setEnquadramento] = useState<EnquadramentoFotoValue>(
+        defaultEnquadramento({
+            photoPosX: parlamentar.photoPosX ?? 50,
+            photoPosY: parlamentar.photoPosY ?? 30,
+            photoZoom: parlamentar.photoZoom ?? 1,
+            photoPositionConfirmed: parlamentar.photoPositionConfirmed ?? false,
+        }),
+    );
+    const [enquadramentoError, setEnquadramentoError] = useState<string | null>(null);
+    const [focusEnquadramento, setFocusEnquadramento] = useState(
+        Boolean(parlamentar.photoUrl && !parlamentar.photoPositionConfirmed),
     );
     const [partidos, setPartidos] = useState<Partido[]>([]);
     const [legislaturas, setLegislaturas] = useState<Legislatura[]>([]);
@@ -160,17 +179,58 @@ export function ParlamentarEditDialog({
         setStatusAcesso(value);
     };
 
+    const photoPreviewSrc = useMemo(() => {
+        if (photoValue instanceof File) return URL.createObjectURL(photoValue);
+        if (typeof photoValue === 'string' && photoValue.trim()) {
+            return resolveMateriaTextoOriginalUrl(photoValue.trim());
+        }
+        return null;
+    }, [photoValue]);
+
+    useEffect(() => {
+        if (!(photoValue instanceof File) || !photoPreviewSrc) return;
+        return () => URL.revokeObjectURL(photoPreviewSrc);
+    }, [photoValue, photoPreviewSrc]);
+
+    const fotoOk = !photoPreviewSrc || enquadramento.photoPositionConfirmed;
+
     const exercicioValido = condicao !== 'SUPLENTE' || suplenteExercicioValido(exercicio);
-    const canSubmit = nomeValido && passwordValid && passwordsMatch && exercicioValido;
+    const canSubmit =
+        nomeValido &&
+        passwordValid &&
+        passwordsMatch &&
+        exercicioValido &&
+        fotoOk;
 
     async function handleSubmit() {
         if (!canSubmit) return;
         setSaving(true);
+        setEnquadramentoError(null);
         try {
             const photoUrl = await resolveParlamentarPhotoUrl(
                 photoValue,
                 parlamentar.photoUrl,
             );
+            // Só envia photoUrl se trocou/removeu — evita reenviar base64 gigante a cada save.
+            const photoChanged =
+                photoValue instanceof File ||
+                (photoUrl === null && Boolean(parlamentar.photoUrl)) ||
+                (typeof photoUrl === 'string' &&
+                    photoUrl !== (parlamentar.photoUrl ?? null));
+
+            const framingPayload = photoPreviewSrc
+                ? {
+                      photoPosX: enquadramento.photoPosX,
+                      photoPosY: enquadramento.photoPosY,
+                      photoZoom: enquadramento.photoZoom,
+                      photoPositionConfirmed: enquadramento.photoPositionConfirmed,
+                  }
+                : {
+                      photoPosX: 50,
+                      photoPosY: 30,
+                      photoZoom: 1,
+                      photoPositionConfirmed: false,
+                  };
 
             await parlamentaresApi.update(parlamentarianId, {
                 parliamentaryName: parliamentaryName.trim(),
@@ -178,9 +238,10 @@ export function ParlamentarEditDialog({
                 ...(parlamentar.user
                     ? { politicalPartyId: politicalPartyId || null }
                     : {}),
-                ...(photoUrl !== undefined
-                    ? { photoUrl: photoUrl === null ? '' : photoUrl }
+                ...(photoChanged
+                    ? { photoUrl: photoUrl === null ? '' : (photoUrl as string) }
                     : {}),
+                ...framingPayload,
                 ...(passwordFilled && parlamentar.user ? { password } : {}),
                 ...(mandatoAtivo
                     ? {
@@ -214,6 +275,10 @@ export function ParlamentarEditDialog({
 
             onSaved();
         } catch (err) {
+            if (err instanceof ApiError && err.status === 422) {
+                setEnquadramentoError('Defina o enquadramento da foto');
+                setFocusEnquadramento(true);
+            }
             showApiError(err);
         } finally {
             setSaving(false);
@@ -244,7 +309,7 @@ export function ParlamentarEditDialog({
             className="sigl-dialog-parlamentar-create parlamentar-edit-dialog"
         >
             <div className="sigl-dialog-body sigl-dialog-body--dense parlamentar-edit-body">
-                <div className="parlamentar-ver-layout">
+                <div className="parlamentar-ver-layout parlamentar-edit-layout">
                     <div className="parlamentar-ver-col">
                         <div className="sigl-dialog-secao">
                             <span className="sigl-dialog-secao-titulo">
@@ -392,18 +457,6 @@ export function ParlamentarEditDialog({
                                     Nome de urna usado nas proposições e documentos oficiais.
                                 </small>
                             </div>
-                            <div className="sigl-filtro-campo">
-                                <FileUpload
-                                    id="pe-foto"
-                                    label="Foto do parlamentar"
-                                    accept={PARLAMENTAR_PHOTO_ACCEPT}
-                                    value={photoValue}
-                                    onChange={setPhotoValue}
-                                />
-                                <small className="text-color-secondary">
-                                    JPEG, PNG ou WebP · máx. 2 MB. Exibida na listagem e perfil.
-                                </small>
-                            </div>
                             <div className="sigl-dialog-grid sigl-dialog-grid-2">
                                 {parlamentar.user && (
                                     <Dropdown
@@ -427,9 +480,7 @@ export function ParlamentarEditDialog({
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="parlamentar-ver-col">
                         {mandatoAtivo ? (
                             <div className="sigl-dialog-secao">
                                 <span className="sigl-dialog-secao-titulo">
@@ -523,6 +574,57 @@ export function ParlamentarEditDialog({
                                 Nenhum mandato ativo para editar nesta tela.
                             </p>
                         )}
+                    </div>
+
+                    <div className="parlamentar-ver-col parlamentar-edit-col--foto">
+                        <div
+                            className="sigl-dialog-secao"
+                            ref={(el) => {
+                                if (el && focusEnquadramento) {
+                                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    setFocusEnquadramento(false);
+                                }
+                            }}
+                        >
+                            <span className="sigl-dialog-secao-titulo">
+                                <i className="pi pi-image" aria-hidden />
+                                Foto e enquadramento
+                            </span>
+                            <div className="parlamentar-edit-foto-stack">
+                                <FileUpload
+                                    id="pe-foto"
+                                    label="Foto do parlamentar"
+                                    accept={PARLAMENTAR_PHOTO_ACCEPT}
+                                    value={photoValue}
+                                    onChange={(v) => {
+                                        setPhotoValue(v);
+                                        setEnquadramento(defaultEnquadramento());
+                                        setEnquadramentoError(null);
+                                    }}
+                                />
+                                <div className="parlamentar-edit-foto-msgs" role="status">
+                                    <small className="text-color-secondary">
+                                        JPEG, PNG ou WebP · máx. 2 MB.
+                                    </small>
+                                    {parlamentar.photoUrl &&
+                                    !parlamentar.photoPositionConfirmed ? (
+                                        <small className="p-error">
+                                            Foto pendente de ajuste — marque o rosto e confirme.
+                                        </small>
+                                    ) : null}
+                                </div>
+                                <EnquadramentoFoto
+                                    photoSrc={photoPreviewSrc}
+                                    value={enquadramento}
+                                    onChange={(next) => {
+                                        setEnquadramento(next);
+                                        setEnquadramentoError(null);
+                                    }}
+                                    error={enquadramentoError}
+                                    disabled={saving}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

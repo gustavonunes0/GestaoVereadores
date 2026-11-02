@@ -72,6 +72,9 @@ export function mapPresencaToCouncilors(params: {
         status: resolveStatus(p, idsQueVotaram, revealNominal),
         side,
         photoUrl: p.fotoUrl ?? null,
+        photoPosX: p.photoPosX,
+        photoPosY: p.photoPosY,
+        photoZoom: p.photoZoom,
     });
 
     const mesaRaw = params.presenca.mesaMembros;

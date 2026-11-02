@@ -47,44 +47,34 @@ export function VotingPanel({
         : `CÂMARA MUNICIPAL DE ${institutionName.toUpperCase()}`;
 
     const leftColumn = president ? [president, ...left] : left;
-    const hasMateria = Boolean(materiaTitulo);
+    const mesaCount = leftColumn.length;
+    const awaitingCount = right.filter((m) => m.status === 'presente').length;
 
     return (
         <section
             className={`voting-panel voting-panel--dashboard voting-panel--compact${
-                hasMateria ? ' voting-panel--with-materia' : ''
-            }${mode === 'result' ? ' voting-panel--result' : ''}`}
+                mode === 'result' ? ' voting-panel--result' : ''
+            }`}
             aria-label="Painel eletrônico de votação"
         >
-            <PanelHeader title={title} logoSrc={logoSrc} />
-            {hasMateria ? (
-                <div
-                    className="vp-card vp-materia"
-                    role="status"
-                    aria-live="polite"
-                    aria-label={
-                        mode === 'live'
-                            ? `Votação aberta: ${materiaTitulo}`
-                            : `Resultado ${resultadoLabel ?? ''}: ${materiaTitulo}`
-                    }
-                >
-                    <span className="vp-card__label">Matéria em votação</span>
-                    <div className="vp-materia__grid">
-                        <span className="vp-materia__badge">
-                            {mode === 'live'
-                                ? 'VOTAÇÃO ABERTA'
-                                : resultadoLabel ?? 'RESULTADO'}
-                        </span>
-                        <strong className="vp-materia__titulo">
-                            {materiaTitulo}
-                        </strong>
-                    </div>
-                </div>
-            ) : null}
+            <PanelHeader
+                title={title}
+                logoSrc={logoSrc}
+                materiaTitulo={materiaTitulo}
+                mode={mode}
+                resultadoLabel={resultadoLabel}
+            />
+
             <div className="vp-body">
                 <article className="vp-card vp-card--mesa">
                     <header className="vp-card__head">
-                        <h2 className="vp-card__label">Mesa diretora</h2>
+                        <h2 className="vp-card__label">
+                            <span className="vp-card__accent" aria-hidden />
+                            Mesa Diretora
+                        </h2>
+                        <span className="vp-card__meta vp-card__meta--muted">
+                            {mesaCount} Membros
+                        </span>
                     </header>
                     <CouncilorColumn
                         side="left"
@@ -92,16 +82,37 @@ export function VotingPanel({
                         showRole
                     />
                 </article>
+
                 <article className="vp-card vp-card--members">
                     <header className="vp-card__head">
-                        <h2 className="vp-card__label">Parlamentares</h2>
-                        <span className="vp-card__meta">
-                            {right.length.toString().padStart(2, '0')}
-                        </span>
+                        <h2 className="vp-card__label">
+                            <span className="vp-card__accent" aria-hidden />
+                            Parlamentares
+                        </h2>
+                        <div className="vp-card__head-meta">
+                            {mode === 'live' ? (
+                                <span className="vp-card__awaiting">
+                                    <span
+                                        className="vp-card__awaiting-dot"
+                                        aria-hidden
+                                    />
+                                    Aguardando Votação
+                                </span>
+                            ) : null}
+                            <span className="vp-card__meta">
+                                Total: {right.length.toString().padStart(2, '0')}
+                            </span>
+                        </div>
                     </header>
                     <CouncilorColumn side="right" members={right} />
+                    {mode === 'live' && awaitingCount > 0 ? (
+                        <span className="sr-only">
+                            {awaitingCount} parlamentares aguardando votação
+                        </span>
+                    ) : null}
                 </article>
             </div>
+
             <VoteFooter
                 clock={clock}
                 date={dateLabel}

@@ -7,6 +7,10 @@ type ParliamentarianProps = {
     parliamentaryName: string;
     officeNumber: string | null;
     photoUrl: string | null;
+    photoPosX: number;
+    photoPosY: number;
+    photoZoom: number;
+    photoPositionConfirmed: boolean;
     biography: string | null;
     status: ParliamentarianStatus;
     isRemoved: boolean;
@@ -22,6 +26,10 @@ export type CreateParliamentarianParams = {
     parliamentaryName: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
+    photoPosX?: number;
+    photoPosY?: number;
+    photoZoom?: number;
+    photoPositionConfirmed?: boolean;
     biography?: string | null;
 };
 
@@ -29,6 +37,10 @@ export type UpdateParliamentarianParams = {
     parliamentaryName?: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
+    photoPosX?: number;
+    photoPosY?: number;
+    photoZoom?: number;
+    photoPositionConfirmed?: boolean;
     biography?: string | null;
     status?: ParliamentarianStatus;
 };
@@ -46,6 +58,10 @@ export class ParliamentarianEntity {
                 params.officeNumber,
             ),
             photoUrl: ParliamentarianEntity.normalizeOptional(params.photoUrl),
+            photoPosX: params.photoPosX ?? 50,
+            photoPosY: params.photoPosY ?? 30,
+            photoZoom: params.photoZoom ?? 1,
+            photoPositionConfirmed: params.photoPositionConfirmed ?? false,
             biography: ParliamentarianEntity.normalizeOptional(
                 params.biography,
             ),
@@ -62,6 +78,10 @@ export class ParliamentarianEntity {
     static restore(props: ParliamentarianPrimitives) {
         return new ParliamentarianEntity({
             ...props,
+            photoPosX: props.photoPosX ?? 50,
+            photoPosY: props.photoPosY ?? 30,
+            photoZoom: props.photoZoom ?? 1,
+            photoPositionConfirmed: props.photoPositionConfirmed ?? false,
             status: props.status as ParliamentarianStatus,
             createdAt: new Date(props.createdAt),
             updatedAt: new Date(props.updatedAt),
@@ -90,6 +110,18 @@ export class ParliamentarianEntity {
             this.props.photoUrl = ParliamentarianEntity.normalizeOptional(
                 params.photoUrl,
             );
+        }
+        if (params.photoPosX !== undefined) {
+            this.props.photoPosX = params.photoPosX;
+        }
+        if (params.photoPosY !== undefined) {
+            this.props.photoPosY = params.photoPosY;
+        }
+        if (params.photoZoom !== undefined) {
+            this.props.photoZoom = params.photoZoom;
+        }
+        if (params.photoPositionConfirmed !== undefined) {
+            this.props.photoPositionConfirmed = params.photoPositionConfirmed;
         }
         if (params.biography !== undefined) {
             this.props.biography = ParliamentarianEntity.normalizeOptional(

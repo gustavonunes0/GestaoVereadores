@@ -2,6 +2,14 @@ import { CouncilorAvatar } from './CouncilorAvatar';
 import { StatusDot } from './StatusDot';
 import { ROLE_LABEL, type Councilor } from './types';
 
+/** Rótulos da mesa no overlay do mock nova-ui. */
+const MESA_ROLE_LABEL: Record<NonNullable<Councilor['role']>, string> = {
+    PRESIDENTE: 'Presidente',
+    VICE: 'Vice-Presidente',
+    '1SEC': '1º Secretário',
+    '2SEC': '2º Secretário',
+};
+
 export function CouncilorRow({
     member,
     showRole,
@@ -10,31 +18,51 @@ export function CouncilorRow({
     showRole?: boolean;
 }) {
     const isPresident = member.role === 'PRESIDENTE';
-    const roleLabel =
-        showRole && member.role && member.role !== 'PRESIDENTE'
-            ? ROLE_LABEL[member.role]
-            : isPresident && showRole
-              ? 'PRESIDENTE'
-              : null;
+    const isMesa = Boolean(showRole);
+    const roleLabel = isMesa
+        ? member.cargoLabel?.trim() ||
+          (member.role ? MESA_ROLE_LABEL[member.role] : null) ||
+          (member.role ? ROLE_LABEL[member.role] : null)
+        : null;
 
     return (
-        <li className={`vp-row${isPresident ? ' vp-row--president' : ''}`}>
-            {isPresident ? null : (
-                <StatusDot status={member.status} name={member.name} />
-            )}
-            <CouncilorAvatar
-                name={member.name}
-                photoUrl={member.photoUrl}
-                highlighted={isPresident}
-            />
-            <div className="vp-row__info">
+        <li
+            className={`vp-row vp-row--card${
+                isPresident ? ' vp-row--president' : ''
+            }${isMesa ? ' vp-row--mesa' : ' vp-row--member'}`}
+        >
+            <div className="vp-row__photo">
+                <CouncilorAvatar
+                    name={member.name}
+                    photoUrl={member.photoUrl}
+                    photoPosX={member.photoPosX}
+                    photoPosY={member.photoPosY}
+                    photoZoom={member.photoZoom}
+                    highlighted={isPresident}
+                />
                 {roleLabel ? (
-                    <span className="vp-row__role">{roleLabel}</span>
+                    <span
+                        className={`vp-row__role-badge${
+                            isPresident ? ' vp-row__role-badge--president' : ''
+                        }`}
+                    >
+                        {isPresident ? (
+                            <i className="pi pi-star-fill" aria-hidden />
+                        ) : null}
+                        {roleLabel}
+                    </span>
                 ) : null}
-                <span className="vp-row__name">{member.name.toUpperCase()}</span>
+                <StatusDot status={member.status} name={member.name} />
+            </div>
+            <div className="vp-row__info">
+                <span className="vp-row__name">
+                    {member.name.toUpperCase()}
+                </span>
                 {member.party ? (
                     <span className="vp-row__party">{member.party}</span>
-                ) : null}
+                ) : (
+                    <span className="vp-row__party vp-row__party--empty">—</span>
+                )}
             </div>
         </li>
     );

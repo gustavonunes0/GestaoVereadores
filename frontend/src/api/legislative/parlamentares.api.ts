@@ -23,6 +23,10 @@ export type Parliamentarian = {
     parliamentaryName: string;
     officeNumber?: string;
     photoUrl?: string;
+    photoPosX?: number;
+    photoPosY?: number;
+    photoZoom?: number;
+    photoPositionConfirmed?: boolean;
     biography?: string;
     status: string;
     hasAccess: boolean;
@@ -117,6 +121,10 @@ export type CreateParliamentarianInput = {
     parliamentaryName: string;
     officeNumber?: string;
     photoUrl?: string;
+    photoPosX?: number;
+    photoPosY?: number;
+    photoZoom?: number;
+    photoPositionConfirmed?: boolean;
     biography?: string;
 };
 
@@ -124,6 +132,10 @@ export type UpdateParliamentarianInput = {
     parliamentaryName?: string;
     officeNumber?: string;
     photoUrl?: string | null;
+    photoPosX?: number;
+    photoPosY?: number;
+    photoZoom?: number;
+    photoPositionConfirmed?: boolean;
     biography?: string;
     politicalPartyId?: string | null;
     status?: string;

@@ -10,6 +10,10 @@ export type PainelPublicoParlamentar = {
     partidoSigla?: string;
     cargoMesa?: string;
     fotoUrl?: string | null;
+    photoPosX?: number;
+    photoPosY?: number;
+    photoZoom?: number;
+    photoPositionConfirmed?: boolean;
     presente: boolean;
     situacao?: 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADO';
     origem: 'APP' | 'STAFF' | null;
@@ -200,6 +204,10 @@ export class GetPainelPublicoSessaoUseCase {
             id: true,
             parliamentaryName: true,
             photoUrl: true,
+            photoPosX: true,
+            photoPosY: true,
+            photoZoom: true,
+            photoPositionConfirmed: true,
             status: true,
             parliamentarianUser: {
                 select: {
@@ -284,6 +292,12 @@ export class GetPainelPublicoSessaoUseCase {
             partido?: string | null,
             cargoMesa?: string,
             fotoUrl?: string | null,
+            framing?: {
+                photoPosX: unknown;
+                photoPosY: unknown;
+                photoZoom: unknown;
+                photoPositionConfirmed: boolean;
+            },
         ): PainelPublicoParlamentar => {
             const reg = presencaPorId.get(id);
             const situacao =
@@ -302,6 +316,10 @@ export class GetPainelPublicoSessaoUseCase {
                 partidoSigla: partido ?? undefined,
                 cargoMesa,
                 fotoUrl: fotoUrl ?? null,
+                photoPosX: framing ? Number(framing.photoPosX) : 50,
+                photoPosY: framing ? Number(framing.photoPosY) : 30,
+                photoZoom: framing ? Number(framing.photoZoom) : 1,
+                photoPositionConfirmed: framing?.photoPositionConfirmed ?? false,
                 presente,
                 situacao,
                 origem: presente ? (reg?.autoRegistrado ? 'APP' : 'STAFF') : null,
@@ -335,6 +353,7 @@ export class GetPainelPublicoSessaoUseCase {
                     party,
                     m.boardRole.name,
                     m.parliamentarian.photoUrl,
+                    m.parliamentarian,
                 );
             });
 
@@ -350,6 +369,7 @@ export class GetPainelPublicoSessaoUseCase {
                 party,
                 mesa?.cargoMesa,
                 p.photoUrl,
+                p,
             );
         });
 

@@ -33,6 +33,10 @@ import {
     PoliticalPartyRemovedForParliamentarianError,
 } from '../errors/parliamentarian.errors';
 import { ParliamentarianViewModel } from '../view-models/parliamentarian.view-model';
+import {
+    assertPhotoFraming,
+    defaultPhotoFraming,
+} from '../../domain/services/photo-framing';
 
 @Injectable()
 export class UpdateParliamentarianUseCase {
@@ -94,10 +98,58 @@ export class UpdateParliamentarianUseCase {
             );
         }
 
+        const prev = existing.entity.toPrimitives();
+        const photoChanging =
+            dto.photoUrl !== undefined &&
+            (dto.photoUrl?.trim() || null) !== (prev.photoUrl ?? null);
+        const framingOnly =
+            !photoChanging &&
+            (dto.photoPosX !== undefined ||
+                dto.photoPosY !== undefined ||
+                dto.photoZoom !== undefined ||
+                dto.photoPositionConfirmed !== undefined);
+
+        let framingUpdate: {
+            photoPosX?: number;
+            photoPosY?: number;
+            photoZoom?: number;
+            photoPositionConfirmed?: boolean;
+        } = {};
+
+        if (photoChanging) {
+            const nextPhoto = dto.photoUrl?.trim() || null;
+            if (nextPhoto) {
+                const framing = assertPhotoFraming(
+                    {
+                        photoPosX: dto.photoPosX,
+                        photoPosY: dto.photoPosY,
+                        photoZoom: dto.photoZoom,
+                        photoPositionConfirmed: dto.photoPositionConfirmed,
+                    },
+                    { requireConfirmed: true },
+                );
+                framingUpdate = framing;
+            } else {
+                framingUpdate = defaultPhotoFraming();
+            }
+        } else if (framingOnly) {
+            framingUpdate = assertPhotoFraming(
+                {
+                    photoPosX: dto.photoPosX ?? prev.photoPosX,
+                    photoPosY: dto.photoPosY ?? prev.photoPosY,
+                    photoZoom: dto.photoZoom ?? prev.photoZoom,
+                    photoPositionConfirmed:
+                        dto.photoPositionConfirmed ?? prev.photoPositionConfirmed,
+                },
+                { requireConfirmed: false },
+            );
+        }
+
         existing.entity.update({
             parliamentaryName: dto.parliamentaryName,
             officeNumber: dto.officeNumber,
             photoUrl: dto.photoUrl,
+            ...framingUpdate,
             biography: dto.biography,
             status: dto.status,
         });
@@ -107,6 +159,10 @@ export class UpdateParliamentarianUseCase {
             parliamentaryName: p.parliamentaryName,
             officeNumber: p.officeNumber,
             photoUrl: p.photoUrl,
+            photoPosX: p.photoPosX,
+            photoPosY: p.photoPosY,
+            photoZoom: p.photoZoom,
+            photoPositionConfirmed: p.photoPositionConfirmed,
             biography: p.biography,
             status: p.status,
         });

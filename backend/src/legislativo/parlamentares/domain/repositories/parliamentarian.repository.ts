@@ -51,6 +51,10 @@ export type CreateParliamentarianRepositoryInput = {
     parliamentaryName: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
+    photoPosX?: number;
+    photoPosY?: number;
+    photoZoom?: number;
+    photoPositionConfirmed?: boolean;
     biography?: string | null;
 };
 
@@ -58,6 +62,10 @@ export type UpdateParliamentarianRepositoryInput = {
     parliamentaryName?: string;
     officeNumber?: string | null;
     photoUrl?: string | null;
+    photoPosX?: number;
+    photoPosY?: number;
+    photoZoom?: number;
+    photoPositionConfirmed?: boolean;
     biography?: string | null;
     status?: ParliamentarianStatus;
 };
@@ -68,6 +76,8 @@ export type ListParliamentariansRepositoryQuery = {
     politicalPartyId?: string;
     /** Filtra parlamentares com mandato ACTIVE nesta legislatura. */
     legislatureId?: string;
+    /** true = foto presente e enquadramento não confirmado. */
+    fotoPendente?: boolean;
     page?: number;
     limit?: number;
 };

@@ -5,6 +5,10 @@ export type ParliamentarianHttp = {
     parliamentaryName: string;
     officeNumber?: string;
     photoUrl?: string;
+    photoPosX: number;
+    photoPosY: number;
+    photoZoom: number;
+    photoPositionConfirmed: boolean;
     biography?: string;
     status: string;
     hasAccess: boolean;
@@ -87,6 +91,10 @@ export class ParliamentarianViewModel {
                 : {}),
             ...(p.officeNumber ? { officeNumber: p.officeNumber } : {}),
             ...(p.photoUrl ? { photoUrl: p.photoUrl } : {}),
+            photoPosX: p.photoPosX ?? 50,
+            photoPosY: p.photoPosY ?? 30,
+            photoZoom: p.photoZoom ?? 1,
+            photoPositionConfirmed: p.photoPositionConfirmed ?? false,
             ...(p.biography ? { biography: p.biography } : {}),
             ...(data.activeMandatesCount !== undefined
                 ? { activeMandatesCount: data.activeMandatesCount }

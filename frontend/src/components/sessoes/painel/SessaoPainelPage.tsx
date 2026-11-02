@@ -21,6 +21,7 @@ import {
     type Councilor,
 } from './voting';
 import { ROLE_LABEL_APRESENTACAO } from './voting/types';
+import { estiloFoto } from '../../../utils/estiloFoto';
 import { resolveMateriaTextoOriginalUrl } from '../../../utils/materiaDisplay';
 
 const FASE_LABEL: Partial<Record<FaseSessao, string>> = {
@@ -161,7 +162,15 @@ function PainelMesaDiretora({
                                     aria-hidden
                                 >
                                     {photo ? (
-                                        <img src={photo} alt="" />
+                                        <img
+                                            src={photo}
+                                            alt=""
+                                            style={estiloFoto({
+                                                photoPosX: m.photoPosX,
+                                                photoPosY: m.photoPosY,
+                                                photoZoom: m.photoZoom,
+                                            })}
+                                        />
                                     ) : (
                                         <span>{initials || '—'}</span>
                                     )}
@@ -259,7 +268,15 @@ function PainelPresencaVereadores({
                             >
                                 <div className="sessao-painel-presenca__avatar" aria-hidden>
                                     {photo ? (
-                                        <img src={photo} alt="" />
+                                        <img
+                                            src={photo}
+                                            alt=""
+                                            style={estiloFoto({
+                                                photoPosX: v.photoPosX,
+                                                photoPosY: v.photoPosY,
+                                                photoZoom: v.photoZoom,
+                                            })}
+                                        />
                                     ) : (
                                         <span>{iniciaisDe(v.name) || '—'}</span>
                                     )}

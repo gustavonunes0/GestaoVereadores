@@ -1,3 +1,4 @@
+import { estiloFoto } from '../../../../utils/estiloFoto';
 import { resolveMateriaTextoOriginalUrl } from '../../../../utils/materiaDisplay';
 
 function resolvePhoto(url?: string | null): string | null {
@@ -9,10 +10,16 @@ function resolvePhoto(url?: string | null): string | null {
 export function CouncilorAvatar({
     name,
     photoUrl,
+    photoPosX,
+    photoPosY,
+    photoZoom,
     highlighted,
 }: {
     name: string;
     photoUrl?: string | null;
+    photoPosX?: number | null;
+    photoPosY?: number | null;
+    photoZoom?: number | null;
     highlighted?: boolean;
 }) {
     const src = resolvePhoto(photoUrl);
@@ -22,6 +29,7 @@ export function CouncilorAvatar({
         .slice(0, 2)
         .map((p) => p[0]?.toUpperCase() ?? '')
         .join('');
+    const framing = estiloFoto({ photoPosX, photoPosY, photoZoom });
 
     return (
         <span
@@ -29,7 +37,7 @@ export function CouncilorAvatar({
             aria-hidden
         >
             {src ? (
-                <img src={src} alt="" className="vp-avatar__img" />
+                <img src={src} alt="" className="vp-avatar__img" style={framing} />
             ) : (
                 <span className="vp-avatar__fallback">{initials || '—'}</span>
             )}
