@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputMask } from 'primereact/inputmask';
@@ -13,7 +13,7 @@ import {
 } from '../../api/user-manager.api';
 import { Dropdown } from '../ui';
 import { useAppToast } from '../../hooks/useAppToast';
-import { isValidCpf, normalizeCpf } from '../../utils/cpf';
+import { formatCpf, isValidCpf, normalizeCpf } from '../../utils/cpf';
 
 const ROLE_OPTIONS: { label: string; value: TenantStaffRole }[] = [
     { label: 'Administrador', value: 'ADMIN_STAFF' },
@@ -41,6 +41,34 @@ function isValidEmail(value: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
+function buildInternalEmail(cpfDigits: string) {
+    const digits = cpfDigits.replace(/\D/g, '');
+    if (digits.length !== 11) return '';
+    return `staff.${digits}@interno.sigl.local`;
+}
+
+function FieldLabel({
+    htmlFor,
+    children,
+    required,
+    meta,
+}: {
+    htmlFor?: string;
+    children: ReactNode;
+    required?: boolean;
+    meta?: ReactNode;
+}) {
+    return (
+        <div className="usr-field-label-row">
+            <label htmlFor={htmlFor} className="sigl-field-label">
+                {children}
+                {required ? <span className="usr-required"> *</span> : null}
+            </label>
+            {meta ? <span className="usr-field-meta">{meta}</span> : null}
+        </div>
+    );
+}
+
 export function UsuarioFormDialog(props: Props) {
     const { showSuccess, showApiError } = useAppToast();
     const isEdit = props.mode === 'edit';
@@ -64,6 +92,7 @@ export function UsuarioFormDialog(props: Props) {
         setConfirmPassword('');
     }, [isEdit, props]);
 
+    const cpfDigits = isEdit ? props.usuario.cpf : normalizeCpf(cpf);
     const cpfValid = isEdit || isValidCpf(cpf);
     const emailValid = isValidEmail(email);
     const passwordFilled = password.length > 0;
@@ -71,8 +100,15 @@ export function UsuarioFormDialog(props: Props) {
         ? !passwordFilled || password.length >= MIN_SENHA
         : password.length >= MIN_SENHA;
     const passwordsMatch = isEdit
-        ? !passwordFilled || (password === confirmPassword && confirmPassword.length > 0)
+        ? !passwordFilled ||
+          (password === confirmPassword && confirmPassword.length > 0)
         : password.length > 0 && password === confirmPassword;
+
+    const previewInternalEmail = useMemo(() => {
+        if (isEdit) return props.usuario.email;
+        if (email.trim()) return email.trim().toLowerCase();
+        return buildInternalEmail(cpfDigits);
+    }, [isEdit, props, email, cpfDigits]);
 
     const canSubmit = useMemo(() => {
         if (!nome.trim() || !emailValid) return false;
@@ -103,7 +139,7 @@ export function UsuarioFormDialog(props: Props) {
                 showSuccess('Usuário atualizado com sucesso.');
             } else {
                 const body: ConvidarUsuarioInput = {
-                    cpf: normalizeCpf(cpf),
+                    cpf: cpfDigits,
                     password,
                     nome: nome.trim(),
                     role,
@@ -125,6 +161,7 @@ export function UsuarioFormDialog(props: Props) {
         <div className="flex justify-content-end gap-2">
             <Button
                 label="Cancelar"
+                text
                 severity="secondary"
                 onClick={props.onClose}
                 disabled={loading}
@@ -144,116 +181,124 @@ export function UsuarioFormDialog(props: Props) {
             header={isEdit ? `Editar — ${props.usuario.nome}` : 'Novo usuário'}
             visible
             onHide={props.onClose}
-            style={{ width: 'min(90vw, 560px)' }}
+            style={{ width: 'min(92vw, 520px)' }}
             footer={footer}
             modal
+            className="usr-form-dialog"
         >
-            <div className="sigl-dialog-body">
+            <div className="sigl-dialog-body sigl-dialog-body--dense">
                 <div className="sigl-dialog-secao">
                     <span className="sigl-dialog-secao-titulo">Acesso</span>
-                    <div className="sigl-dialog-grid sigl-dialog-grid-2">
-                        {!isEdit ? (
-                            <>
-                                <div className="sigl-filtro-campo">
-                                    <label htmlFor="usr-cpf">CPF *</label>
+                    <div className="sigl-dialog-grid">
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <FieldLabel
+                                htmlFor={isEdit ? undefined : 'usr-cpf'}
+                                required={!isEdit}
+                                meta={
+                                    isEdit ? (
+                                        <>
+                                            <i className="pi pi-lock" aria-hidden />
+                                            Identificador fixo
+                                        </>
+                                    ) : cpfValid ? (
+                                        <>
+                                            <i className="pi pi-check-circle" aria-hidden />
+                                            Pronto para cadastro
+                                        </>
+                                    ) : (
+                                        'Login por CPF'
+                                    )
+                                }
+                            >
+                                CPF
+                            </FieldLabel>
+                            {isEdit ? (
+                                <div className="usr-input-with-badge">
+                                    <InputText
+                                        value={formatCpf(props.usuario.cpf)}
+                                        readOnly
+                                        className="w-full"
+                                    />
+                                    <span className="usr-verified-badge">
+                                        <i className="pi pi-verified" aria-hidden />
+                                        Verificado
+                                    </span>
+                                </div>
+                            ) : (
+                                <div
+                                    className={`usr-input-with-badge${cpfValid ? ' is-verified' : ''}`}
+                                >
                                     <InputMask
                                         id="usr-cpf"
                                         mask="999.999.999-99"
                                         value={cpf}
                                         onChange={(e) => setCpf(e.value ?? '')}
                                         className="w-full"
+                                        autoClear={false}
                                     />
-                                </div>
-                                <div className="sigl-filtro-campo">
-                                    <label htmlFor="usr-senha">Senha *</label>
-                                    <Password
-                                        id="usr-senha"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        toggleMask
-                                        feedback={false}
-                                        className={`w-full${password && !passwordValid ? ' p-invalid' : ''}`}
-                                        inputClassName="w-full"
-                                    />
-                                    {password && !passwordValid ? (
-                                        <small className="p-error">
-                                            Mínimo de {MIN_SENHA} caracteres
-                                        </small>
+                                    {cpfValid ? (
+                                        <span className="usr-verified-badge">
+                                            <i className="pi pi-verified" aria-hidden />
+                                            Verificado
+                                        </span>
                                     ) : null}
                                 </div>
-                                <div className="sigl-filtro-campo sigl-col-full">
-                                    <label htmlFor="usr-confirm">Confirmar senha *</label>
-                                    <Password
-                                        id="usr-confirm"
-                                        value={confirmPassword}
-                                        onChange={(e) =>
-                                            setConfirmPassword(e.target.value)
-                                        }
-                                        toggleMask
-                                        feedback={false}
-                                        className={`w-full${confirmPassword && !passwordsMatch ? ' p-invalid' : ''}`}
-                                        inputClassName="w-full"
-                                    />
-                                    {confirmPassword && !passwordsMatch ? (
-                                        <small className="p-error">
-                                            As senhas não coincidem
-                                        </small>
-                                    ) : null}
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="sigl-filtro-campo sigl-col-full">
-                                    <label>CPF</label>
-                                    <InputText
-                                        value={props.usuario.cpf}
-                                        readOnly
-                                        className="w-full"
-                                    />
-                                </div>
-                                <div className="sigl-filtro-campo">
-                                    <label htmlFor="usr-senha-nova">Nova senha</label>
-                                    <Password
-                                        id="usr-senha-nova"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        toggleMask
-                                        feedback={false}
-                                        className={`w-full${passwordFilled && !passwordValid ? ' p-invalid' : ''}`}
-                                        inputClassName="w-full"
-                                        autoComplete="new-password"
-                                    />
-                                    <small className="text-color-secondary">
-                                        Deixe em branco para manter a senha atual.
-                                    </small>
-                                    {passwordFilled && !passwordValid ? (
-                                        <small className="p-error">
-                                            Mínimo de {MIN_SENHA} caracteres
-                                        </small>
-                                    ) : null}
-                                </div>
-                                <div className="sigl-filtro-campo">
-                                    <label htmlFor="usr-confirm-nova">Confirmar nova senha</label>
-                                    <Password
-                                        id="usr-confirm-nova"
-                                        value={confirmPassword}
-                                        onChange={(e) =>
-                                            setConfirmPassword(e.target.value)
-                                        }
-                                        toggleMask
-                                        feedback={false}
-                                        className={`w-full${confirmPassword && !passwordsMatch ? ' p-invalid' : ''}`}
-                                        inputClassName="w-full"
-                                        autoComplete="new-password"
-                                    />
-                                    {confirmPassword && !passwordsMatch ? (
-                                        <small className="p-error">
-                                            As senhas não coincidem
-                                        </small>
-                                    ) : null}
-                                </div>
-                            </>
-                        )}
+                            )}
+                        </div>
+
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <FieldLabel
+                                htmlFor="usr-senha"
+                                required={!isEdit}
+                            >
+                                {isEdit ? 'Nova senha' : 'Senha'}
+                            </FieldLabel>
+                            <Password
+                                id="usr-senha"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                toggleMask
+                                feedback={false}
+                                className={`w-full${passwordFilled && !passwordValid ? ' p-invalid' : ''}`}
+                                inputClassName="w-full"
+                                autoComplete="new-password"
+                            />
+                            {passwordFilled && !passwordValid ? (
+                                <small className="p-error">
+                                    Mínimo de {MIN_SENHA} caracteres
+                                </small>
+                            ) : null}
+                        </div>
+
+                        <div className="sigl-filtro-campo sigl-col-full">
+                            <FieldLabel
+                                htmlFor="usr-confirm"
+                                required={!isEdit || passwordFilled}
+                            >
+                                {isEdit ? 'Confirmar nova senha' : 'Confirmar senha'}
+                            </FieldLabel>
+                            <Password
+                                id="usr-confirm"
+                                value={confirmPassword}
+                                onChange={(e) =>
+                                    setConfirmPassword(e.target.value)
+                                }
+                                toggleMask
+                                feedback={false}
+                                className={`w-full${confirmPassword && !passwordsMatch ? ' p-invalid' : ''}`}
+                                inputClassName="w-full"
+                                autoComplete="new-password"
+                            />
+                            {confirmPassword && !passwordsMatch ? (
+                                <small className="p-error">
+                                    As senhas não coincidem
+                                </small>
+                            ) : isEdit ? (
+                                <small className="text-color-secondary">
+                                    Deixe em branco para manter a senha atual
+                                </small>
+                            ) : null}
+                        </div>
                     </div>
                 </div>
 
@@ -261,16 +306,21 @@ export function UsuarioFormDialog(props: Props) {
                     <span className="sigl-dialog-secao-titulo">Perfil</span>
                     <div className="sigl-dialog-grid sigl-dialog-grid-2">
                         <div className="sigl-filtro-campo">
-                            <label htmlFor="usr-nome">Nome exibido *</label>
+                            <FieldLabel htmlFor="usr-nome" required>
+                                Nome exibido
+                            </FieldLabel>
                             <InputText
                                 id="usr-nome"
                                 value={nome}
                                 onChange={(e) => setNome(e.target.value)}
                                 className="w-full"
+                                placeholder="Ex.: Romero Silva"
                             />
                         </div>
                         <div className="sigl-filtro-campo">
-                            <label htmlFor="usr-role">Perfil *</label>
+                            <FieldLabel htmlFor="usr-role" required>
+                                Perfil
+                            </FieldLabel>
                             <Dropdown
                                 id="usr-role"
                                 value={role}
@@ -279,28 +329,76 @@ export function UsuarioFormDialog(props: Props) {
                             />
                         </div>
                         <div className="sigl-filtro-campo sigl-col-full">
-                            <label htmlFor="usr-email">E-mail</label>
-                            <InputText
-                                id="usr-email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="vereador@camara.gov.br"
-                                readOnly={isEdit}
-                                className={`w-full${email && !emailValid ? ' p-invalid' : ''}`}
-                            />
-                            {email && !emailValid ? (
-                                <small className="p-error">E-mail inválido</small>
-                            ) : null}
+                            <FieldLabel
+                                htmlFor="usr-email"
+                                meta={
+                                    isEdit || !email.trim() ? (
+                                        <>
+                                            <i className="pi pi-building" aria-hidden />
+                                            Endereço corporativo interno
+                                        </>
+                                    ) : (
+                                        'E-mail informado'
+                                    )
+                                }
+                            >
+                                E-mail
+                            </FieldLabel>
+                            {isEdit ? (
+                                <InputText
+                                    id="usr-email"
+                                    value={email}
+                                    readOnly
+                                    className="w-full"
+                                />
+                            ) : (
+                                <>
+                                    <InputText
+                                        id="usr-email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder={
+                                            previewInternalEmail ||
+                                            'Opcional — gera automático pelo CPF'
+                                        }
+                                        className={`w-full${email && !emailValid ? ' p-invalid' : ''}`}
+                                    />
+                                    {email && !emailValid ? (
+                                        <small className="p-error">
+                                            E-mail inválido
+                                        </small>
+                                    ) : previewInternalEmail && !email.trim() ? (
+                                        <small className="text-color-secondary">
+                                            Será usado: {previewInternalEmail}
+                                        </small>
+                                    ) : null}
+                                </>
+                            )}
                         </div>
                         {isEdit ? (
-                            <div className="sigl-filtro-campo sigl-col-full flex align-items-center gap-2">
-                                <input
-                                    id="usr-ativo"
-                                    type="checkbox"
-                                    checked={ativo}
-                                    onChange={(e) => setAtivo(e.target.checked)}
-                                />
-                                <label htmlFor="usr-ativo">Usuário ativo</label>
+                            <div className="sigl-filtro-campo sigl-col-full">
+                                <label
+                                    htmlFor="usr-ativo"
+                                    className="usr-ativo-row"
+                                >
+                                    <input
+                                        id="usr-ativo"
+                                        type="checkbox"
+                                        checked={ativo}
+                                        onChange={(e) =>
+                                            setAtivo(e.target.checked)
+                                        }
+                                    />
+                                    <span>
+                                        <span className="usr-ativo-title">
+                                            Usuário ativo
+                                        </span>
+                                        <small className="text-color-secondary block">
+                                            Habilita autenticação e permissões
+                                            imediatas
+                                        </small>
+                                    </span>
+                                </label>
                             </div>
                         ) : null}
                     </div>

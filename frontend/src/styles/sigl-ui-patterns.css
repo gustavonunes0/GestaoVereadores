@@ -7295,3 +7295,90 @@ body.sessao-painel-body #root {
 .suplente-exercicio-box__head .pi {
     color: var(--primary-color, #2563eb);
 }
+
+/* ——— Usuário staff form dialog ——— */
+.usr-form-dialog .sigl-dialog-grid .sigl-col-full {
+    grid-column: 1 / -1;
+}
+
+.usr-field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 1.125rem;
+}
+
+.usr-field-label-row .sigl-field-label {
+    margin: 0;
+}
+
+.usr-required {
+    color: var(--red-500, #ef4444);
+    font-weight: 600;
+}
+
+.usr-field-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--text-muted, #64748b);
+    white-space: nowrap;
+}
+
+.usr-field-meta .pi {
+    font-size: 0.6875rem;
+}
+
+.usr-input-with-badge {
+    position: relative;
+}
+
+.usr-input-with-badge .p-inputtext {
+    padding-right: 6.5rem;
+}
+
+.usr-verified-badge {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--green-500, #22c55e) 14%, transparent);
+    color: var(--green-700, #15803d);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.usr-verified-badge .pi {
+    font-size: 0.75rem;
+}
+
+.usr-ativo-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    cursor: pointer;
+    margin: 0.125rem 0 0;
+}
+
+.usr-ativo-row input[type='checkbox'] {
+    margin-top: 0.2rem;
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--primary-color, #2563eb);
+}
+
+.usr-ativo-title {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-color, #0f172a);
+}

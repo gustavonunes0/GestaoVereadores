@@ -1,4 +1,5 @@
 import { TenantUserRole, TenantUserStatus } from '@prisma/client';
+import { StaffUserNameService } from '../../domain/staff-user-name.service';
 
 type TenantStaffRow = {
     id: string;
@@ -14,6 +15,8 @@ type TenantStaffRow = {
     };
 };
 
+const nameService = new StaffUserNameService();
+
 export class TenantStaffViewModel {
     static toHttp(row: TenantStaffRow) {
         return {
@@ -21,7 +24,10 @@ export class TenantStaffViewModel {
             userId: row.userId,
             cpf: row.user.cpf,
             email: row.user.email,
-            nome: `${row.user.firstName} ${row.user.lastName}`.trim(),
+            nome: nameService.composeDisplayName(
+                row.user.firstName,
+                row.user.lastName,
+            ),
             role: row.role,
             ativo: row.status === TenantUserStatus.ACTIVE,
             createdAt: row.createdAt,

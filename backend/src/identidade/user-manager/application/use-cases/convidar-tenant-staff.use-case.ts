@@ -106,10 +106,18 @@ export class ConvidarTenantStaffUseCase {
             if (error instanceof UserEmailAlreadyInUseError) {
                 throw new ConflictException(error.message);
             }
-            if (error instanceof Error && error.message === 'Nome é obrigatório') {
+            if (error instanceof Error && isNameValidationError(error)) {
                 throw new UnprocessableEntityException(error.message);
             }
             throw error;
         }
     }
+}
+
+function isNameValidationError(error: Error): boolean {
+    return (
+        error.message === 'Nome é obrigatório' ||
+        error.message.startsWith('Primeiro nome') ||
+        error.message.startsWith('Sobrenome')
+    );
 }

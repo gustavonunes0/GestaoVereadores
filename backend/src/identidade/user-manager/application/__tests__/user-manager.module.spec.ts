@@ -78,4 +78,14 @@ describe('UserManagerModule (parity with former UsuariosIdentidadeModule)', () =
         expect(parts.firstName).toBe('Maria');
         expect(parts.lastName).toBe('Silva Souza');
     });
+
+    it('StaffUserNameService aceita nome único sem quebrar validação de sobrenome', () => {
+        const svc = new StaffUserNameService();
+        const parts = svc.splitDisplayName('Romero');
+        expect(parts.firstName).toBe('Romero');
+        expect(parts.lastName.length).toBeGreaterThanOrEqual(2);
+        expect(svc.composeDisplayName(parts.firstName, parts.lastName)).toBe(
+            'Romero',
+        );
+    });
 });
